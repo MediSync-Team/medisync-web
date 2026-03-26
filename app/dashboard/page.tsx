@@ -274,7 +274,7 @@ export default function ProfesionalDashboard() {
           <div className="p-6">
             {activeTab === 'calendario' ? (
               <CalendarioView
-                selectedDate={selectedDate}
+                selectedDate={selectedDate ?? new Date()}
                 setSelectedDate={setSelectedDate}
                 getSemanaActual={getSemanaActual}
                 turnosDelDia={turnosDelDia}

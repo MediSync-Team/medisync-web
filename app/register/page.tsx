@@ -47,6 +47,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (formData.telefono && !/^[\d\s\-\+\(\)]{8,20}$/.test(formData.telefono)) {
+      setError('El teléfono debe contener solo números y tener entre 8 y 20 caracteres');
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -173,6 +178,8 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                 placeholder="+54 11 1234 5678"
+                pattern="[\d\s\-\+\(\)]{8,20}"
+                title="Solo números, espacios, guiones, paréntesis y +"
               />
             </div>
 

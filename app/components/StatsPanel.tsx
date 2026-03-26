@@ -81,7 +81,7 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
                     cx="50%"
                     cy="50%"
                     labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
                     outerRadius={80}
                     fill="#8884d8"
                     dataKey="value"
@@ -124,7 +124,7 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" fontSize={12} />
                 <YAxis tickFormatter={(value) => `$${value / 1000}k`} />
-                <Tooltip formatter={(value: number) => [`$${value.toLocaleString('es-AR')}`, '']} />
+                <Tooltip formatter={(value) => [`$${Number(value).toLocaleString('es-AR')}`, '']} />
                 <Bar dataKey="bruto" name="Bruto" fill="#3B82F6" />
                 <Bar dataKey="neto" name="Neto" fill="#10B981" />
               </BarChart>
