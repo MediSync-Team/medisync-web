@@ -28,6 +28,7 @@ export default function ProfesionalDashboard() {
   const [turnosDelDia, setTurnosDelDia] = useState<Turno[]>([]);
   const [nuevaDisp, setNuevaDisp] = useState({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL' as const });
   const [slotActual, setSlotActual] = useState<Turno | null>(null);
+  const [recordatorios, setRecordatorios] = useState<any[]>([]);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
 
@@ -46,6 +47,7 @@ export default function ProfesionalDashboard() {
     }
     if (user?.profesional) {
       loadData();
+      loadRecordatorios();
     }
   }, [user, authLoading, router]);
 
@@ -75,6 +77,15 @@ export default function ProfesionalDashboard() {
       console.error('Error loading data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadRecordatorios = async () => {
+    try {
+      const data = await api.recordatorios.getProfesional();
+      setRecordatorios(data.turnos || []);
+    } catch (err) {
+      console.error('Error loading recordatorios:', err);
     }
   };
 
@@ -156,6 +167,27 @@ export default function ProfesionalDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {recordatorios.length > 0 && (
+        <div className="bg-blue-50 border-b border-blue-200">
+          <div className="max-w-7xl mx-auto px-4 py-3">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">📅</span>
+              <div>
+                <p className="font-medium text-blue-800">
+                  Tenés {recordatorios.length} turno{recordatorios.length > 1 ? 's' : ''} en las próximas 24 horas
+                </p>
+                {recordatorios.map((rec: any) => (
+                  <p key={rec.id} className="text-sm text-blue-700">
+                    {new Date(rec.fechaHora).toLocaleDateString('es-AR')} às {new Date(rec.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} - {rec.paciente?.nombre} {rec.paciente?.apellido}
+                    {rec.modalidad === 'VIRTUAL' && ' 📹'}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -444,19 +476,34 @@ function DisponibilidadView({
   );
 }
 
+type Archivo = {
+  id: string;
+  url: string;
+  nombreOriginal: string;
+  tipo: string;
+  tamanoBytes: number;
+  mimeType: string;
+};
+
 function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () => void; onUpdate: () => void }) {
   const [evolucion, setEvolucion] = useState<Evolucion | null>(null);
   const [notas, setNotas] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [loadingEvolucion, setLoadingEvolucion] = useState(true);
+  const [archivos, setArchivos] = useState<Archivo[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const [fileType, setFileType] = useState('OTRO');
+
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
   useEffect(() => {
     loadEvolucion();
+    loadArchivos();
   }, [turno.id]);
 
   const loadEvolucion = async () => {
     try {
-      const data = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/turnos/${turno.id}/evolucion`, {
+      const data = await fetch(`${API_URL}/turnos/${turno.id}/evolucion`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
@@ -472,10 +519,26 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
     }
   };
 
+  const loadArchivos = async () => {
+    try {
+      const res = await fetch(`${API_URL}/archivos/turno/${turno.id}`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setArchivos(data.data || []);
+      }
+    } catch (err) {
+      console.error('Error loading archivos:', err);
+    }
+  };
+
   const handleGuardarNotas = async () => {
     setGuardando(true);
     try {
-      await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/turnos/${turno.id}/evolucion`, {
+      await fetch(`${API_URL}/turnos/${turno.id}/evolucion`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -491,6 +554,89 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
     } finally {
       setGuardando(false);
     }
+  };
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('archivo', file);
+    formData.append('tipo', fileType);
+
+    try {
+      const res = await fetch(`${API_URL}/archivos/${turno.id}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('Archivo subido correctamente');
+        loadArchivos();
+      } else {
+        alert(data.error?.message || 'Error al subir archivo');
+      }
+    } catch (err) {
+      console.error('Error uploading:', err);
+      alert('Error al subir archivo');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  const handleDeleteArchivo = async (id: string) => {
+    if (!confirm('¿Eliminar este archivo?')) return;
+
+    try {
+      const res = await fetch(`${API_URL}/archivos/${id}`, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+      });
+      const data = await res.json();
+      if (data.success) {
+        loadArchivos();
+      }
+    } catch (err) {
+      console.error('Error deleting:', err);
+    }
+  };
+
+  const handleActualizarEstado = async (nuevoEstado: string) => {
+    if (!confirm(`¿Marcar este turno como ${nuevoEstado.toLowerCase()}?`)) return;
+
+    try {
+      const res = await fetch(`${API_URL}/turnos/${turno.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`,
+        },
+        body: JSON.stringify({ estado: nuevoEstado }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert(`Turno marcado como ${nuevoEstado.toLowerCase()}`);
+        onUpdate();
+        onClose();
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      alert('Error al actualizar estado');
+    }
+  };
+
+  const formatFileSize = (bytes: number) => {
+    if (bytes < 1024) return bytes + ' B';
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+    return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
   };
 
   return (
@@ -546,7 +692,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
           </div>
         </div>
 
-        <div className="border-t pt-4">
+        <div className="border-t pt-4 mb-4">
           <h4 className="font-semibold text-gray-900 mb-3">📋 Evolución Clínica</h4>
           
           {loadingEvolucion ? (
@@ -557,7 +703,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
                 value={notas}
                 onChange={(e) => setNotas(e.target.value)}
                 placeholder="Escribí las notas de la consulta, diagnóstico, tratamiento..."
-                className="w-full h-40 p-3 border rounded-lg resize-none text-sm"
+                className="w-full h-32 p-3 border rounded-lg resize-none text-sm"
               />
               <button
                 onClick={handleGuardarNotas}
@@ -570,14 +716,77 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
           )}
         </div>
 
+        <div className="border-t pt-4">
+          <h4 className="font-semibold text-gray-900 mb-3">📎 Archivos</h4>
+          
+          <div className="flex gap-2 mb-4">
+            <select
+              value={fileType}
+              onChange={(e) => setFileType(e.target.value)}
+              className="px-3 py-2 border rounded-md text-sm"
+            >
+              <option value="LABORATORIO">Laboratorio</option>
+              <option value="IMAGEN">Imagen</option>
+              <option value="EVOLUCION">Evolución</option>
+              <option value="OTRO">Otro</option>
+            </select>
+            <label className="flex-1">
+              <input
+                type="file"
+                onChange={handleUpload}
+                disabled={uploading}
+                accept=".pdf,.jpg,.jpeg,.png,.gif"
+                className="hidden"
+              />
+              <span className={`inline-block w-full px-4 py-2 text-center border rounded-md cursor-pointer text-sm ${
+                uploading ? 'bg-gray-100 text-gray-400' : 'bg-gray-50 hover:bg-gray-100'
+              }`}>
+                {uploading ? 'Subiendo...' : 'Seleccionar archivo'}
+              </span>
+            </label>
+          </div>
+
+          {archivos.length > 0 ? (
+            <div className="space-y-2">
+              {archivos.map((archivo) => (
+                <div key={archivo.id} className="flex items-center gap-3 p-2 bg-gray-50 rounded-md">
+                  <span className="text-2xl">
+                    {archivo.mimeType.includes('pdf') ? '📄' : '🖼️'}
+                  </span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{archivo.nombreOriginal}</p>
+                    <p className="text-xs text-gray-500">
+                      {archivo.tipo} • {formatFileSize(archivo.tamanoBytes)}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => handleDeleteArchivo(archivo.id)}
+                    className="text-red-500 hover:text-red-700 text-sm"
+                  >
+                    Eliminar
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-gray-400 text-sm">No hay archivos adjuntos</p>
+          )}
+        </div>
+
         <div className="mt-6 pt-4 border-t flex gap-3">
           {turno.estado !== 'COMPLETADO' && (
-            <button className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+            <button 
+              onClick={() => handleActualizarEstado('COMPLETADO')}
+              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
               Marcar Completado
             </button>
           )}
           {turno.estado !== 'CANCELADO' && (
-            <button className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700">
+            <button 
+              onClick={() => handleActualizarEstado('CANCELADO')}
+              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+            >
               Cancelar Turno
             </button>
           )}

@@ -6,12 +6,16 @@ import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
 import { api, Turno } from '../../lib/api';
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+
 export default function PacienteDashboard() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'proximos' | 'pasados'>('proximos');
+  const [recordatorios, setRecordatorios] = useState<any[]>([]);
+  const [pagosPendientes, setPagosPendientes] = useState<Record<string, { necesitaPago: boolean; initPoint?: string }>>({});
 
   useEffect(() => {
     if (!authLoading) {
@@ -19,6 +23,7 @@ export default function PacienteDashboard() {
         router.push('/login');
       } else if (user.paciente) {
         loadTurnos();
+        loadRecordatorios();
       } else {
         router.push('/dashboard');
       }
@@ -29,10 +34,70 @@ export default function PacienteDashboard() {
     try {
       const data = await api.turnos.misTurnos();
       setTurnos(data);
+      loadPagosInfo(data);
     } catch (err) {
       console.error('Error loading turnos:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadPagosInfo = async (turnosData: Turno[]) => {
+    const token = localStorage.getItem('token');
+    const pagos: Record<string, any> = {};
+    
+    for (const turno of turnosData) {
+      if (turno.estado === 'RESERVADO' && Number(turno.profesional?.precioConsulta) > 0) {
+        try {
+          const res = await fetch(`${API_URL}/pagos/estado/${turno.id}`, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const data = await res.json();
+          if (data.success) {
+            pagos[turno.id] = data.data;
+          }
+        } catch (err) {
+          console.error('Error loading pago:', err);
+        }
+      }
+    }
+    setPagosPendientes(pagos);
+  };
+
+  const loadRecordatorios = async () => {
+    try {
+      const data = await api.recordatorios.getPaciente();
+      setRecordatorios(data.turnos || []);
+    } catch (err) {
+      console.error('Error loading recordatorios:', err);
+    }
+  };
+
+  const handlePagar = async (turnoId: string) => {
+    router.push(`/pago?turno=${turnoId}`);
+  };
+
+  const handleCancelar = async (turnoId: string) => {
+    if (!confirm('¿Estás seguro de que querés cancelar este turno?')) return;
+    
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_URL}/turnos/${turnoId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ estado: 'CANCELADO' }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert('Turno cancelado');
+        loadTurnos();
+      }
+    } catch (err) {
+      console.error('Error:', err);
+      alert('Error al cancelar turno');
     }
   };
 
@@ -57,6 +122,27 @@ export default function PacienteDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      {recordatorios.length > 0 && (
+        <div className="bg-yellow-50 border-b border-yellow-200">
+          <div className="max-w-4xl mx-auto px-4 py-3">
+            <div className="flex items-start gap-3">
+              <span className="text-2xl">🔔</span>
+              <div>
+                <p className="font-medium text-yellow-800">
+                  Tenés {recordatorios.length} turno{recordatorios.length > 1 ? 's' : ''} en las próximas 24 horas
+                </p>
+                {recordatorios.map((rec: any) => (
+                  <p key={rec.id} className="text-sm text-yellow-700">
+                    📅 {new Date(rec.fechaHora).toLocaleDateString('es-AR')} às {new Date(rec.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} con {rec.profesional?.nombre} {rec.profesional?.apellido}
+                    {rec.modalidad === 'VIRTUAL' && ' 📹 Virtual'}
+                  </p>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <nav className="bg-white shadow-sm">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -191,14 +277,25 @@ export default function PacienteDashboard() {
                     )}
 
                     {turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO' ? (
-                      <div className="mt-4 pt-4 border-t flex gap-3">
+                      <div className="mt-4 pt-4 border-t flex flex-wrap gap-3">
+                        {turno.profesional?.precioConsulta && Number(turno.profesional.precioConsulta) > 0 && (
+                          <button
+                            onClick={() => handlePagar(turno.id)}
+                            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm"
+                          >
+                            💳 Pagar ${Number(turno.profesional.precioConsulta).toLocaleString('es-AR')}
+                          </button>
+                        )}
                         <Link 
                           href={`/profesional/${turno.profesional?.id}`}
                           className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
                         >
                           Ver profesional
                         </Link>
-                        <button className="px-4 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 text-sm">
+                        <button 
+                          onClick={() => handleCancelar(turno.id)}
+                          className="px-4 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 text-sm"
+                        >
                           Cancelar turno
                         </button>
                       </div>

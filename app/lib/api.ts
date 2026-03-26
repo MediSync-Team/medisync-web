@@ -84,6 +84,10 @@ export const api = {
       return fetchApi<Turno[]>(`/turnos/profesional/${id}${query}`);
     },
   },
+  recordatorios: {
+    getProfesional: () => fetchApi<any>('/recordatorios/profesional'),
+    getPaciente: () => fetchApi<any>('/recordatorios/paciente'),
+  },
 };
 
 export type LoginData = {
