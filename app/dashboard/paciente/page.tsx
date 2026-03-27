@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
 import { api, Turno } from '../../lib/api';
+import ProfileModal from '../../components/ProfileModal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
@@ -16,6 +17,7 @@ export default function PacienteDashboard() {
   const [activeTab, setActiveTab] = useState<'proximos' | 'pasados'>('proximos');
   const [recordatorios, setRecordatorios] = useState<any[]>([]);
   const [pagosPendientes, setPagosPendientes] = useState<Record<string, { necesitaPago: boolean; initPoint?: string }>>({});
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -155,6 +157,13 @@ export default function PacienteDashboard() {
               <Link href="/" className="text-blue-600 hover:text-blue-700 text-sm">
                 Buscar profesionales
               </Link>
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="text-gray-600 hover:text-blue-600 text-sm flex items-center gap-1"
+              >
+                <span>👤</span>
+                <span>Mi Perfil</span>
+              </button>
               <span className="text-gray-600">
                 {user.paciente.nombre} {user.paciente.apellido}
               </span>
@@ -307,6 +316,18 @@ export default function PacienteDashboard() {
           </div>
         </div>
       </main>
+
+      {showProfileModal && user && (
+        <ProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          userType="paciente"
+          user={user}
+          onUpdate={() => {
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

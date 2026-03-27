@@ -4,7 +4,14 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
-import { api, Especialidad } from '../lib/api';
+import { api, Especialidad, Genero } from '../lib/api';
+
+const GENERO_OPCIONES: { value: Genero; label: string }[] = [
+  { value: 'NO_ESPECIFICADO', label: 'Prefiero no decirlo' },
+  { value: 'MASCULINO', label: 'Masculino' },
+  { value: 'FEMENINO', label: 'Femenino' },
+  { value: 'OTRO', label: 'Otro' },
+];
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -18,6 +25,7 @@ export default function RegisterPage() {
     nombre: '',
     apellido: '',
     telefono: '',
+    genero: 'NO_ESPECIFICADO' as Genero,
     matricula: '',
     especialidadId: '',
     precioConsulta: '',
@@ -47,6 +55,11 @@ export default function RegisterPage() {
       return;
     }
 
+    if (formData.nombre.length < 2 || formData.apellido.length < 2) {
+      setError('El nombre y apellido deben tener al menos 2 caracteres');
+      return;
+    }
+
     if (formData.telefono && !/^[\d\s\-\+\(\)]{8,20}$/.test(formData.telefono)) {
       setError('El teléfono debe contener solo números y tener entre 8 y 20 caracteres');
       return;
@@ -62,6 +75,7 @@ export default function RegisterPage() {
         nombre: formData.nombre,
         apellido: formData.apellido,
         telefono: formData.telefono || undefined,
+        genero: formData.genero,
         matricula: formData.rol === 'PROFESIONAL' ? formData.matricula : undefined,
         especialidadId: formData.rol === 'PROFESIONAL' ? formData.especialidadId : undefined,
         precioConsulta: formData.rol === 'PROFESIONAL' && formData.precioConsulta 
@@ -181,6 +195,25 @@ export default function RegisterPage() {
                 pattern="[\d\s\-\+\(\)]{8,20}"
                 title="Solo números, espacios, guiones, paréntesis y +"
               />
+            </div>
+
+            <div>
+              <label htmlFor="genero" className="block text-sm font-medium text-gray-700">
+                Género
+              </label>
+              <select
+                id="genero"
+                name="genero"
+                value={formData.genero}
+                onChange={handleChange}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+              >
+                {GENERO_OPCIONES.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
             </div>
 
             {formData.rol === 'PROFESIONAL' && (

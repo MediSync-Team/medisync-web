@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, Evolucion } from '../lib/api';
 import StatsPanel from '../components/StatsPanel';
+import ProfileModal from '../components/ProfileModal';
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
@@ -31,6 +32,7 @@ export default function ProfesionalDashboard() {
   const [recordatorios, setRecordatorios] = useState<any[]>([]);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
 
   useEffect(() => {
     if (!selectedDate) {
@@ -197,6 +199,13 @@ export default function ProfesionalDashboard() {
               <span className="text-gray-600">Panel Profesional</span>
             </div>
             <div className="flex items-center gap-4">
+              <button
+                onClick={() => setShowProfileModal(true)}
+                className="text-gray-600 hover:text-blue-600 text-sm flex items-center gap-1"
+              >
+                <span>👤</span>
+                <span>Mi Perfil</span>
+              </button>
               <span className="text-gray-600">
                 Dr/a. {user.profesional.nombre} {user.profesional.apellido}
               </span>
@@ -298,6 +307,16 @@ export default function ProfesionalDashboard() {
 
       {slotActual && (
         <TurnoModal turno={slotActual} onClose={() => setSlotActual(null)} onUpdate={loadData} />
+      )}
+
+      {showProfileModal && user && (
+        <ProfileModal
+          isOpen={showProfileModal}
+          onClose={() => setShowProfileModal(false)}
+          userType="profesional"
+          user={user}
+          onUpdate={() => window.location.reload()}
+        />
       )}
     </div>
   );

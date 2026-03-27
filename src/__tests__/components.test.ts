@@ -8,13 +8,26 @@ describe('UI Components Logic', () => {
     };
 
     const validatePhone = (phone: string) => {
-      const phoneRegex = /^[\d\s\-\+\(\)]{8,}$/;
+      const phoneRegex = /^[\d\s\-\+\(\)]{8,20}$/;
       return phoneRegex.test(phone);
     };
 
     const validateDNI = (dni: string) => {
-      const dniRegex = /^[\d]{7,8}$/;
+      const dniRegex = /^\d{7,8}$/;
       return dniRegex.test(dni);
+    };
+
+    const validateGenero = (genero: string) => {
+      return ['MASCULINO', 'FEMENINO', 'OTRO', 'NO_ESPECIFICADO'].includes(genero);
+    };
+
+    const validateURL = (url: string) => {
+      try {
+        new URL(url);
+        return true;
+      } catch {
+        return false;
+      }
     };
 
     it('should validate email formats', () => {
@@ -26,12 +39,13 @@ describe('UI Components Logic', () => {
       expect(validateEmail('')).toBe(false);
     });
 
-    it('should validate phone formats', () => {
+    it('should validate phone formats with correct length', () => {
       expect(validatePhone('12345678')).toBe(true);
       expect(validatePhone('+54 11 1234 5678')).toBe(true);
       expect(validatePhone('(11) 1234-5678')).toBe(true);
       expect(validatePhone('123')).toBe(false);
       expect(validatePhone('abc')).toBe(false);
+      expect(validatePhone('123456789012345678901')).toBe(false);
     });
 
     it('should validate DNI formats', () => {
@@ -40,6 +54,22 @@ describe('UI Components Logic', () => {
       expect(validateDNI('123456')).toBe(false);
       expect(validateDNI('123456789')).toBe(false);
       expect(validateDNI('abcdefgh')).toBe(false);
+    });
+
+    it('should validate genero options', () => {
+      expect(validateGenero('MASCULINO')).toBe(true);
+      expect(validateGenero('FEMENINO')).toBe(true);
+      expect(validateGenero('OTRO')).toBe(true);
+      expect(validateGenero('NO_ESPECIFICADO')).toBe(true);
+      expect(validateGenero('invalid')).toBe(false);
+      expect(validateGenero('')).toBe(false);
+    });
+
+    it('should validate URL formats', () => {
+      expect(validateURL('https://example.com/photo.jpg')).toBe(true);
+      expect(validateURL('http://example.com/photo.png')).toBe(true);
+      expect(validateURL('not-a-url')).toBe(false);
+      expect(validateURL('')).toBe(false);
     });
   });
 

@@ -88,6 +88,21 @@ export const api = {
     getProfesional: () => fetchApi<any>('/recordatorios/profesional'),
     getPaciente: () => fetchApi<any>('/recordatorios/paciente'),
   },
+  pacientes: {
+    getPerfil: () => fetchApi<Paciente>('/pacientes/perfil'),
+    updatePerfil: (data: Partial<Paciente>) =>
+      fetchApi<Paciente>('/pacientes/perfil', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+  },
+  profesional: {
+    updatePerfil: (id: string, data: Partial<Profesional>) =>
+      fetchApi<Profesional>(`/profesionales/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+  },
 };
 
 export type LoginData = {
@@ -102,6 +117,7 @@ export type RegisterData = {
   nombre: string;
   apellido: string;
   telefono?: string;
+  genero?: Genero;
   matricula?: string;
   especialidadId?: string;
   precioConsulta?: number;
@@ -132,11 +148,14 @@ export type Especialidad = {
   icono?: string;
 };
 
+export type Genero = 'MASCULINO' | 'FEMENINO' | 'OTRO' | 'NO_ESPECIFICADO';
+
 export type Profesional = {
   id: string;
   nombre: string;
   apellido: string;
   telefono: string;
+  genero: Genero;
   precioConsulta: number;
   bio?: string;
   lugarAtencion?: string;
@@ -151,9 +170,11 @@ export type Paciente = {
   apellido: string;
   email: string;
   telefono?: string;
+  genero: Genero;
   fechaNacimiento?: string;
   dni?: string;
   obraSocial?: string;
+  fotoUrl?: string;
 };
 
 export type Disponibilidad = {
