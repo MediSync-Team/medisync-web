@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
-export default function PagoExitosoPage() {
+function PagoExitosoContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const turnoId = searchParams.get('turno');
@@ -20,8 +20,12 @@ export default function PagoExitosoPage() {
       }
 
       try {
+        const token = localStorage.getItem('token') || '';
         const res = await fetch(`${API_URL}/pagos/confirmar-pago?turnoId=${turnoId}`, {
           method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
         
         if (res.ok) {
@@ -29,7 +33,7 @@ export default function PagoExitosoPage() {
             method: 'PATCH',
             headers: { 
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+              'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify({ estado: 'CONFIRMADO' }),
           });
@@ -88,5 +92,13 @@ export default function PagoExitosoPage() {
         <p className="text-sm text-gray-400 mt-4">Redirigiendo en 5 segundos...</p>
       </div>
     </div>
+  );
+}
+
+export default function PagoExitosoPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <PagoExitosoContent />
+    </Suspense>
   );
 }

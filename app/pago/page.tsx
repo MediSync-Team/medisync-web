@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
-export default function PagoPage() {
+function PagoContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const turnoId = searchParams.get('turno');
@@ -65,5 +65,13 @@ export default function PagoPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PagoPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <PagoContent />
+    </Suspense>
   );
 }

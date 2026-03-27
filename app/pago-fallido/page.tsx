@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect } from 'react';
+import { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function PagoFallidoPage() {
+function PagoFallidoContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const turnoId = searchParams.get('turno');
@@ -42,5 +42,13 @@ export default function PagoFallidoPage() {
         <p className="text-sm text-gray-400 mt-4">Redirigiendo en 5 segundos...</p>
       </div>
     </div>
+  );
+}
+
+export default function PagoFallidoPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+      <PagoFallidoContent />
+    </Suspense>
   );
 }
