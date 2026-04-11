@@ -21,7 +21,7 @@ export default function ProfesionalPage() {
   const [reservando, setReservando] = useState(false);
   const [error, setError] = useState('');
   const [suscribiendoLista, setSuscribiendoLista] = useState(false);
-  const [listaEsperaActiva, setListaEsperaActiva] = useState<ListaEsperaItem | null>(null);
+  const [suscripcionesLista, setSuscripcionesLista] = useState<ListaEsperaItem[]>([]);
 
   useEffect(() => {
     loadProfesional();
@@ -29,7 +29,7 @@ export default function ProfesionalPage() {
 
   useEffect(() => {
     loadListaEsperaActiva();
-  }, [params.id, user?.paciente?.id, modalidad]);
+  }, [params.id, user?.paciente?.id]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -60,18 +60,25 @@ export default function ProfesionalPage() {
 
   const loadListaEsperaActiva = async () => {
     if (!user?.paciente) {
-      setListaEsperaActiva(null);
+      setSuscripcionesLista([]);
       return;
     }
 
     try {
       const data = await api.listaEspera.misSuscripciones();
-      const item = data.find((x) => x.profesionalId === (params.id as string) && x.modalidad === modalidad);
-      setListaEsperaActiva(item || null);
+      const items = data.filter((x) => x.profesionalId === (params.id as string));
+      setSuscripcionesLista(items);
     } catch (err) {
       console.error('Error loading waitlist:', err);
     }
   };
+
+  const selectedDateKey = selectedDate ? selectedDate.toISOString().split('T')[0] : null;
+  const selectedWaitlistItem = selectedDateKey
+    ? suscripcionesLista.find(
+        (x) => x.modalidad === modalidad && new Date(x.fecha).toISOString().split('T')[0] === selectedDateKey
+      )
+    : null;
 
   const handleUnirseListaEspera = async () => {
     if (!user) {
@@ -81,6 +88,11 @@ export default function ProfesionalPage() {
 
     if (!selectedDate) {
       alert('Primero selecciona un dia para lista de espera');
+      return;
+    }
+
+    if (selectedWaitlistItem) {
+      alert(`Ya estas en lista de espera para ${selectedDate.toLocaleDateString('es-AR')} (${modalidad.toLowerCase()}).`);
       return;
     }
 
@@ -95,20 +107,25 @@ export default function ProfesionalPage() {
       alert('Te anotamos en lista de espera. Te avisamos si se libera un turno.');
       await loadListaEsperaActiva();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'No se pudo registrar en lista de espera');
+      const message = err instanceof Error ? err.message : 'No se pudo registrar en lista de espera';
+      if (message.toLowerCase().includes('ya estas en la lista')) {
+        alert(`Ya estas anotado para ${selectedDate.toLocaleDateString('es-AR')} en modalidad ${modalidad.toLowerCase()}.`);
+      } else {
+        alert(message);
+      }
     } finally {
       setSuscribiendoLista(false);
     }
   };
 
   const handleSalirListaEspera = async () => {
-    if (!listaEsperaActiva) return;
+    if (!selectedWaitlistItem) return;
 
     setSuscribiendoLista(true);
     try {
-      await api.listaEspera.cancelar(listaEsperaActiva.id);
-      setListaEsperaActiva(null);
+      await api.listaEspera.cancelar(selectedWaitlistItem.id);
       alert('Saliste de la lista de espera.');
+      await loadListaEsperaActiva();
     } catch (err) {
       alert(err instanceof Error ? err.message : 'No se pudo cancelar la suscripcion');
     } finally {
@@ -303,10 +320,10 @@ export default function ProfesionalPage() {
                     Si queres, te anotamos en lista de espera y te avisamos cuando se libere un turno.
                   </p>
 
-                  {listaEsperaActiva ? (
+                  {selectedWaitlistItem ? (
                     <div className="mt-3 flex items-center justify-between gap-2">
                       <span className="text-sm text-amber-900">
-                        Ya estas en lista de espera ({listaEsperaActiva.estado}).
+                        Ya estas en lista de espera para {selectedDate.toLocaleDateString('es-AR')} ({selectedWaitlistItem.estado}).
                       </span>
                       <button
                         onClick={handleSalirListaEspera}
@@ -319,7 +336,7 @@ export default function ProfesionalPage() {
                   ) : (
                     <button
                       onClick={handleUnirseListaEspera}
-                      disabled={suscribiendoLista}
+                      disabled={suscribiendoLista || !selectedDate}
                       className="mt-3 px-4 py-2 rounded-md bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
                     >
                       {suscribiendoLista ? 'Guardando...' : 'Unirme a lista de espera'}
