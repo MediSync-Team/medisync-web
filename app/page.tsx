@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api, Especialidad, Profesional } from './lib/api';
+import { useAuth } from './lib/auth-context';
 
 export default function HomePage() {
+  const { user, logout } = useAuth();
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [search, setSearch] = useState('');
@@ -55,15 +57,34 @@ export default function HomePage() {
               <h1 className="text-xl font-bold text-blue-600">MediSync</h1>
             </div>
             <div className="flex items-center gap-4">
-              <Link href="/login" className="text-gray-600 hover:text-gray-900">
-                Iniciar sesión
-              </Link>
-              <Link 
-                href="/register" 
-                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                Registrate
-              </Link>
+              {user ? (
+                <>
+                  <Link
+                    href={user.paciente ? '/dashboard/paciente' : '/dashboard'}
+                    className="text-gray-600 hover:text-gray-900"
+                  >
+                    Mi panel
+                  </Link>
+                  <button
+                    onClick={logout}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                  >
+                    Cerrar sesión
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Link href="/login" className="text-gray-600 hover:text-gray-900">
+                    Iniciar sesión
+                  </Link>
+                  <Link
+                    href="/register"
+                    className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  >
+                    Registrate
+                  </Link>
+                </>
+              )}
             </div>
           </div>
         </div>

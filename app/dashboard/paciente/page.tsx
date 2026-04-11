@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
-import { api, Turno } from '../../lib/api';
+import { api, Turno, ListaEsperaItem } from '../../lib/api';
 import ProfileModal from '../../components/ProfileModal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
@@ -14,10 +14,13 @@ export default function PacienteDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'proximos' | 'pasados'>('proximos');
+  const [activeTab, setActiveTab] = useState<'proximos' | 'pasados' | 'listaEspera'>('proximos');
   const [recordatorios, setRecordatorios] = useState<any[]>([]);
   const [pagosPendientes, setPagosPendientes] = useState<Record<string, { necesitaPago: boolean; initPoint?: string }>>({});
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [horasMinCancelacion, setHorasMinCancelacion] = useState(24);
+  const [turnoReprogramar, setTurnoReprogramar] = useState<Turno | null>(null);
+  const [listaEspera, setListaEspera] = useState<ListaEsperaItem[]>([]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -26,6 +29,8 @@ export default function PacienteDashboard() {
       } else if (user.paciente) {
         loadTurnos();
         loadRecordatorios();
+        loadPoliticaCancelacion();
+        loadListaEspera();
       } else {
         router.push('/dashboard');
       }
@@ -75,6 +80,35 @@ export default function PacienteDashboard() {
     }
   };
 
+  const loadPoliticaCancelacion = async () => {
+    try {
+      const data = await api.turnos.getPoliticaCancelacion();
+      setHorasMinCancelacion(data.horasMinimas || 24);
+    } catch (err) {
+      console.error('Error loading cancellation policy:', err);
+    }
+  };
+
+  const loadListaEspera = async () => {
+    try {
+      const data = await api.listaEspera.misSuscripciones();
+      setListaEspera(data);
+    } catch (err) {
+      console.error('Error loading lista de espera:', err);
+    }
+  };
+
+  const cancelarListaEspera = async (id: string) => {
+    if (!confirm('¿Querés salir de esta lista de espera?')) return;
+
+    try {
+      await api.listaEspera.cancelar(id);
+      await loadListaEspera();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'No se pudo salir de la lista');
+    }
+  };
+
   const handlePagar = async (turnoId: string) => {
     router.push(`/pago?turno=${turnoId}`);
   };
@@ -101,6 +135,16 @@ export default function PacienteDashboard() {
       console.error('Error:', err);
       alert('Error al cancelar turno');
     }
+  };
+
+  const canCancel = (fechaHora: string) => {
+    const diffMs = new Date(fechaHora).getTime() - Date.now();
+    return diffMs >= horasMinCancelacion * 60 * 60 * 1000;
+  };
+
+  const canReschedule = (fechaHora: string) => {
+    const diffMs = new Date(fechaHora).getTime() - Date.now();
+    return diffMs >= horasMinCancelacion * 60 * 60 * 1000;
   };
 
   const handleLogout = () => {
@@ -202,10 +246,57 @@ export default function PacienteDashboard() {
               >
                 Turnos Pasados ({pasados.length})
               </button>
+              <button
+                onClick={() => setActiveTab('listaEspera')}
+                className={`px-6 py-3 text-sm font-medium ${
+                  activeTab === 'listaEspera'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Lista de Espera ({listaEspera.length})
+              </button>
             </nav>
           </div>
 
           <div className="p-6">
+            {activeTab === 'listaEspera' ? (
+              <div>
+                {listaEspera.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No estas en ninguna lista de espera activa.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {listaEspera.map((item) => (
+                      <div key={item.id} className="border rounded-lg p-4 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {item.profesional?.nombre} {item.profesional?.apellido}
+                          </p>
+                          <p className="text-sm text-blue-700">{item.profesional?.especialidad?.nombre}</p>
+                          <p className="text-sm text-gray-600">
+                            {new Date(item.fecha).toLocaleDateString('es-AR')} • {item.modalidad}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">Estado: {item.estado}</p>
+                        </div>
+                        <button
+                          onClick={() => cancelarListaEspera(item.id)}
+                          className="px-3 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        >
+                          Salir de lista
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+            <>
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-800">
+              Politica de cancelacion: para cancelar sin penalidad, hacelo con al menos {horasMinCancelacion} horas de anticipacion.
+            </div>
+
             {turnosMostrar.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-gray-500 mb-4">
@@ -290,9 +381,16 @@ export default function PacienteDashboard() {
                         {turno.profesional?.precioConsulta && Number(turno.profesional.precioConsulta) > 0 && (
                           <button
                             onClick={() => handlePagar(turno.id)}
-                            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm"
+                            disabled={pagosPendientes[turno.id]?.necesitaPago === false}
+                            className={`px-4 py-2 rounded-md text-sm ${
+                              pagosPendientes[turno.id]?.necesitaPago === false
+                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                                : 'bg-green-500 text-white hover:bg-green-600'
+                            }`}
                           >
-                            💳 Pagar ${Number(turno.profesional.precioConsulta).toLocaleString('es-AR')}
+                            {pagosPendientes[turno.id]?.necesitaPago === false
+                              ? 'Pago registrado'
+                              : `💳 Completar pago $${Number(turno.profesional.precioConsulta).toLocaleString('es-AR')}`}
                           </button>
                         )}
                         <Link 
@@ -301,9 +399,35 @@ export default function PacienteDashboard() {
                         >
                           Ver profesional
                         </Link>
+                        <button
+                          onClick={() => setTurnoReprogramar(turno)}
+                          disabled={!canReschedule(turno.fechaHora)}
+                          className={`px-4 py-2 rounded-md text-sm ${
+                            canReschedule(turno.fechaHora)
+                              ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
+                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          }`}
+                          title={
+                            canReschedule(turno.fechaHora)
+                              ? 'Reprogramar turno'
+                              : `No disponible: menos de ${horasMinCancelacion}h de anticipacion`
+                          }
+                        >
+                          Reprogramar
+                        </button>
                         <button 
                           onClick={() => handleCancelar(turno.id)}
-                          className="px-4 py-2 bg-red-50 text-red-600 rounded-md hover:bg-red-100 text-sm"
+                          disabled={!canCancel(turno.fechaHora)}
+                          className={`px-4 py-2 rounded-md text-sm ${
+                            canCancel(turno.fechaHora)
+                              ? 'bg-red-50 text-red-600 hover:bg-red-100'
+                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          }`}
+                          title={
+                            canCancel(turno.fechaHora)
+                              ? 'Cancelar turno'
+                              : `No disponible: menos de ${horasMinCancelacion}h de anticipacion`
+                          }
                         >
                           Cancelar turno
                         </button>
@@ -312,6 +436,8 @@ export default function PacienteDashboard() {
                   </div>
                 ))}
               </div>
+            )}
+            </>
             )}
           </div>
         </div>
@@ -328,6 +454,154 @@ export default function PacienteDashboard() {
           }}
         />
       )}
+
+      {turnoReprogramar && (
+        <ReprogramarModal
+          turno={turnoReprogramar}
+          onClose={() => setTurnoReprogramar(null)}
+          onSuccess={() => {
+            setTurnoReprogramar(null);
+            loadTurnos();
+            loadRecordatorios();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function ReprogramarModal({
+  turno,
+  onClose,
+  onSuccess,
+}: {
+  turno: Turno;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const [fecha, setFecha] = useState('');
+  const [slots, setSlots] = useState<{ hora: string; disponible: boolean }[]>([]);
+  const [horaSeleccionada, setHoraSeleccionada] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  useEffect(() => {
+    const profesionalId = turno.profesional?.id;
+
+    if (!fecha || !profesionalId) {
+      setSlots([]);
+      setHoraSeleccionada('');
+      return;
+    }
+
+    const loadSlots = async () => {
+      setLoadingSlots(true);
+      try {
+        const data = await api.profesionales.getSlots(profesionalId, fecha, turno.modalidad);
+        setSlots(data.filter((s) => s.disponible));
+      } catch (err) {
+        console.error('Error loading slots for reprogramacion:', err);
+        setSlots([]);
+      } finally {
+        setLoadingSlots(false);
+      }
+    };
+
+    loadSlots();
+  }, [fecha, turno.profesional?.id, turno.modalidad]);
+
+  const handleGuardar = async () => {
+    if (!fecha || !horaSeleccionada) {
+      alert('Selecciona fecha y horario disponible');
+      return;
+    }
+
+    const fechaHora = new Date(`${fecha}T${horaSeleccionada}:00`);
+    if (Number.isNaN(fechaHora.getTime()) || fechaHora <= new Date()) {
+      alert('Selecciona una fecha futura valida');
+      return;
+    }
+
+    setGuardando(true);
+    try {
+      await api.turnos.reprogramar(turno.id, {
+        fechaHora: fechaHora.toISOString(),
+        modalidad: turno.modalidad,
+      });
+      alert('Turno reprogramado correctamente');
+      onSuccess();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'No se pudo reprogramar');
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Reprogramar turno</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Elegi una nueva fecha y hora para tu consulta.
+        </p>
+
+        <div className="space-y-3">
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Fecha</label>
+            <input
+              type="date"
+              value={fecha}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(e) => {
+                setFecha(e.target.value);
+                setHoraSeleccionada('');
+              }}
+              className="w-full px-3 py-2 border rounded-md"
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-700 mb-1">Horario disponible</label>
+            {loadingSlots ? (
+              <p className="text-sm text-gray-500">Cargando horarios...</p>
+            ) : slots.length === 0 ? (
+              <p className="text-sm text-gray-500">No hay horarios disponibles para esta fecha.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {slots.map((slot) => (
+                  <button
+                    key={slot.hora}
+                    type="button"
+                    onClick={() => setHoraSeleccionada(slot.hora)}
+                    className={`px-3 py-1 rounded-md text-sm ${
+                      horaSeleccionada === slot.hora
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {slot.hora}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 flex gap-3">
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={handleGuardar}
+            disabled={guardando}
+            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+          >
+            {guardando ? 'Guardando...' : 'Confirmar'}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

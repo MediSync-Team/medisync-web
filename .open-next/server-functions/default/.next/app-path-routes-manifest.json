@@ -1,0 +1,16 @@
+{
+  "/_not-found/page": "/_not-found",
+  "/_global-error/page": "/_global-error",
+  "/favicon.ico/route": "/favicon.ico",
+  "/api/pagos/webhook/route": "/api/pagos/webhook",
+  "/dashboard/paciente/page": "/dashboard/paciente",
+  "/dashboard/page": "/dashboard",
+  "/login/page": "/login",
+  "/page": "/",
+  "/pago-exitoso/page": "/pago-exitoso",
+  "/pago-fallido/page": "/pago-fallido",
+  "/pago-pendiente/page": "/pago-pendiente",
+  "/pago/page": "/pago",
+  "/profesional/[id]/page": "/profesional/[id]",
+  "/register/page": "/register"
+}

@@ -25,9 +25,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setToken(storedToken);
       api.auth.me()
         .then(setUser)
-        .catch(() => {
-          localStorage.removeItem('token');
-          setToken(null);
+        .catch((err) => {
+          const msg = err instanceof Error ? err.message.toLowerCase() : '';
+          if (msg.includes('token') || msg.includes('sesion') || msg.includes('sesión') || msg.includes('unauthorized')) {
+            localStorage.removeItem('token');
+            setToken(null);
+          }
         })
         .finally(() => setLoading(false));
     } else {
