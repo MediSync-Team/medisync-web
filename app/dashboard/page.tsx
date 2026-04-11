@@ -104,6 +104,19 @@ export default function ProfesionalDashboard() {
     }
   };
 
+  const handleEliminarDisponibilidad = async (disponibilidadId: string) => {
+    if (!user?.profesional) return;
+    
+    try {
+      await api.profesionales.eliminarDisponibilidad(user.profesional.id, disponibilidadId);
+      alert('Horario eliminado correctamente');
+      loadData();
+    } catch (err) {
+      console.error('Error:', err);
+      alert(err instanceof Error ? err.message : 'Error al eliminar horario');
+    }
+  };
+
   const getSemanaActual = () => {
     const dias = [];
     const hoy = new Date();
@@ -295,6 +308,7 @@ export default function ProfesionalDashboard() {
                 nuevaDisp={nuevaDisp}
                 setNuevaDisp={setNuevaDisp}
                 onAgregar={handleAgregarDisponibilidad}
+                onEliminar={handleEliminarDisponibilidad}
               />
             ) : (
               <div className="grid grid-cols-1 lg:grid-cols-1 gap-6">
@@ -409,11 +423,13 @@ function DisponibilidadView({
   nuevaDisp,
   setNuevaDisp,
   onAgregar,
+  onEliminar,
 }: {
   disponibilidades: Disponibilidad[];
   nuevaDisp: { diaSemana: number; horaInicio: string; horaFin: string; modalidad: 'PRESENCIAL' | 'VIRTUAL' };
   setNuevaDisp: (disp: any) => void;
   onAgregar: () => void;
+  onEliminar: (disponibilidadId: string) => void;
 }) {
   return (
     <div>
@@ -436,12 +452,23 @@ function DisponibilidadView({
               }`}>
                 {disp.modalidad}
               </span>
+              <button
+                onClick={() => {
+                  if (confirm('¿Eliminar este horario?')) {
+                    onEliminar(disp.id);
+                  }
+                }}
+                className="ml-auto text-red-500 hover:text-red-700 p-1"
+                title="Eliminar horario"
+              >
+                🗑️
+              </button>
             </div>
           ))}
         </div>
       )}
 
-      <h4 className="font-medium mb-3">Agregar horario</h4>
+      <h4 className="font-medium mb-3">Agregar nuevo horario</h4>
       <div className="flex gap-4 items-end flex-wrap">
         <div>
           <label className="block text-sm text-gray-600 mb-1">Día</label>

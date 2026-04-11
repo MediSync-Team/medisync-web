@@ -68,6 +68,10 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    eliminarDisponibilidad: (profesionalId: string, disponibilidadId: string) =>
+      fetchApi<{ deleted: boolean }>(`/profesionales/${profesionalId}/disponibilidad/${disponibilidadId}`, {
+        method: 'DELETE',
+      }),
   },
   turnos: {
     reservar: (data: ReservarTurnoData) =>
