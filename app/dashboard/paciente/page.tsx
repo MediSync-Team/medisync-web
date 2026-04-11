@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
-import { api, Turno } from '../../lib/api';
+import { api, Turno, ListaEsperaItem } from '../../lib/api';
 import ProfileModal from '../../components/ProfileModal';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
@@ -14,12 +14,13 @@ export default function PacienteDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'proximos' | 'pasados'>('proximos');
+  const [activeTab, setActiveTab] = useState<'proximos' | 'pasados' | 'listaEspera'>('proximos');
   const [recordatorios, setRecordatorios] = useState<any[]>([]);
   const [pagosPendientes, setPagosPendientes] = useState<Record<string, { necesitaPago: boolean; initPoint?: string }>>({});
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [horasMinCancelacion, setHorasMinCancelacion] = useState(24);
   const [turnoReprogramar, setTurnoReprogramar] = useState<Turno | null>(null);
+  const [listaEspera, setListaEspera] = useState<ListaEsperaItem[]>([]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -29,6 +30,7 @@ export default function PacienteDashboard() {
         loadTurnos();
         loadRecordatorios();
         loadPoliticaCancelacion();
+        loadListaEspera();
       } else {
         router.push('/dashboard');
       }
@@ -84,6 +86,26 @@ export default function PacienteDashboard() {
       setHorasMinCancelacion(data.horasMinimas || 24);
     } catch (err) {
       console.error('Error loading cancellation policy:', err);
+    }
+  };
+
+  const loadListaEspera = async () => {
+    try {
+      const data = await api.listaEspera.misSuscripciones();
+      setListaEspera(data);
+    } catch (err) {
+      console.error('Error loading lista de espera:', err);
+    }
+  };
+
+  const cancelarListaEspera = async (id: string) => {
+    if (!confirm('¿Querés salir de esta lista de espera?')) return;
+
+    try {
+      await api.listaEspera.cancelar(id);
+      await loadListaEspera();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'No se pudo salir de la lista');
     }
   };
 
@@ -224,10 +246,53 @@ export default function PacienteDashboard() {
               >
                 Turnos Pasados ({pasados.length})
               </button>
+              <button
+                onClick={() => setActiveTab('listaEspera')}
+                className={`px-6 py-3 text-sm font-medium ${
+                  activeTab === 'listaEspera'
+                    ? 'border-b-2 border-blue-500 text-blue-600'
+                    : 'text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                Lista de Espera ({listaEspera.length})
+              </button>
             </nav>
           </div>
 
           <div className="p-6">
+            {activeTab === 'listaEspera' ? (
+              <div>
+                {listaEspera.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">No estas en ninguna lista de espera activa.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {listaEspera.map((item) => (
+                      <div key={item.id} className="border rounded-lg p-4 flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                          <p className="font-semibold text-gray-900">
+                            {item.profesional?.nombre} {item.profesional?.apellido}
+                          </p>
+                          <p className="text-sm text-blue-700">{item.profesional?.especialidad?.nombre}</p>
+                          <p className="text-sm text-gray-600">
+                            {new Date(item.fecha).toLocaleDateString('es-AR')} • {item.modalidad}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">Estado: {item.estado}</p>
+                        </div>
+                        <button
+                          onClick={() => cancelarListaEspera(item.id)}
+                          className="px-3 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
+                        >
+                          Salir de lista
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : (
+            <>
             <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-800">
               Politica de cancelacion: para cancelar sin penalidad, hacelo con al menos {horasMinCancelacion} horas de anticipacion.
             </div>
@@ -371,6 +436,8 @@ export default function PacienteDashboard() {
                   </div>
                 ))}
               </div>
+            )}
+            </>
             )}
           </div>
         </div>

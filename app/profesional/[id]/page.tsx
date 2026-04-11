@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { api, Profesional, Slot } from '../../lib/api';
+import { api, Profesional, Slot, ListaEsperaItem } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 
 const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -20,10 +20,16 @@ export default function ProfesionalPage() {
   const [modalidad, setModalidad] = useState<'PRESENCIAL' | 'VIRTUAL'>('PRESENCIAL');
   const [reservando, setReservando] = useState(false);
   const [error, setError] = useState('');
+  const [suscribiendoLista, setSuscribiendoLista] = useState(false);
+  const [listaEsperaActiva, setListaEsperaActiva] = useState<ListaEsperaItem | null>(null);
 
   useEffect(() => {
     loadProfesional();
   }, [params.id]);
+
+  useEffect(() => {
+    loadListaEsperaActiva();
+  }, [params.id, user?.paciente?.id, modalidad]);
 
   useEffect(() => {
     if (selectedDate) {
@@ -49,6 +55,64 @@ export default function ProfesionalPage() {
       setSlots(data);
     } catch (err) {
       console.error('Error loading slots:', err);
+    }
+  };
+
+  const loadListaEsperaActiva = async () => {
+    if (!user?.paciente) {
+      setListaEsperaActiva(null);
+      return;
+    }
+
+    try {
+      const data = await api.listaEspera.misSuscripciones();
+      const item = data.find((x) => x.profesionalId === (params.id as string) && x.modalidad === modalidad);
+      setListaEsperaActiva(item || null);
+    } catch (err) {
+      console.error('Error loading waitlist:', err);
+    }
+  };
+
+  const handleUnirseListaEspera = async () => {
+    if (!user) {
+      router.push('/login');
+      return;
+    }
+
+    if (!selectedDate) {
+      alert('Primero selecciona un dia para lista de espera');
+      return;
+    }
+
+    setSuscribiendoLista(true);
+    try {
+      const fecha = selectedDate.toISOString().split('T')[0];
+      await api.listaEspera.suscribirme({
+        profesionalId: params.id as string,
+        fecha,
+        modalidad,
+      });
+      alert('Te anotamos en lista de espera. Te avisamos si se libera un turno.');
+      await loadListaEsperaActiva();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'No se pudo registrar en lista de espera');
+    } finally {
+      setSuscribiendoLista(false);
+    }
+  };
+
+  const handleSalirListaEspera = async () => {
+    if (!listaEsperaActiva) return;
+
+    setSuscribiendoLista(true);
+    try {
+      await api.listaEspera.cancelar(listaEsperaActiva.id);
+      setListaEsperaActiva(null);
+      alert('Saliste de la lista de espera.');
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'No se pudo cancelar la suscripcion');
+    } finally {
+      setSuscribiendoLista(false);
     }
   };
 
@@ -233,7 +297,35 @@ export default function ProfesionalPage() {
                 Horarios disponibles para el {selectedDate.toLocaleDateString('es-AR')}
               </label>
               {slots.length === 0 ? (
-                <p className="text-gray-500">No hay horarios disponibles para este día.</p>
+                <div className="rounded-md border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-amber-900 font-medium">No hay horarios disponibles para este dia.</p>
+                  <p className="text-amber-800 text-sm mt-1">
+                    Si queres, te anotamos en lista de espera y te avisamos cuando se libere un turno.
+                  </p>
+
+                  {listaEsperaActiva ? (
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <span className="text-sm text-amber-900">
+                        Ya estas en lista de espera ({listaEsperaActiva.estado}).
+                      </span>
+                      <button
+                        onClick={handleSalirListaEspera}
+                        disabled={suscribiendoLista}
+                        className="px-3 py-2 text-sm rounded-md bg-white border border-amber-300 text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                      >
+                        {suscribiendoLista ? 'Procesando...' : 'Salir de lista'}
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleUnirseListaEspera}
+                      disabled={suscribiendoLista}
+                      className="mt-3 px-4 py-2 rounded-md bg-amber-600 text-white hover:bg-amber-700 disabled:opacity-50"
+                    >
+                      {suscribiendoLista ? 'Guardando...' : 'Unirme a lista de espera'}
+                    </button>
+                  )}
+                </div>
               ) : (
                 <div className="flex gap-2 flex-wrap">
                   {slots.map((slot) => (

@@ -95,6 +95,18 @@ export const api = {
     getProfesional: () => fetchApi<any>('/recordatorios/profesional'),
     getPaciente: () => fetchApi<any>('/recordatorios/paciente'),
   },
+  listaEspera: {
+    misSuscripciones: () => fetchApi<ListaEsperaItem[]>('/lista-espera/mis-suscripciones'),
+    suscribirme: (data: { profesionalId: string; fecha: string; modalidad: 'PRESENCIAL' | 'VIRTUAL' }) =>
+      fetchApi<ListaEsperaItem>('/lista-espera/suscribirme', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    cancelar: (id: string) =>
+      fetchApi<ListaEsperaItem>(`/lista-espera/${id}`, {
+        method: 'DELETE',
+      }),
+  },
   pacientes: {
     getPerfil: () => fetchApi<Paciente>('/pacientes/perfil'),
     updatePerfil: (data: Partial<Paciente>) =>
@@ -214,6 +226,17 @@ export type Evolucion = {
 export type Slot = {
   hora: string;
   disponible: boolean;
+};
+
+export type ListaEsperaItem = {
+  id: string;
+  profesionalId: string;
+  pacienteId: string;
+  fecha: string;
+  modalidad: 'PRESENCIAL' | 'VIRTUAL';
+  estado: 'ACTIVA' | 'NOTIFICADA' | 'RESUELTA' | 'CANCELADA';
+  profesional?: Profesional;
+  createdAt: string;
 };
 
 export type ProfesionalesResponse = {
