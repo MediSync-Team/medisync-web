@@ -95,7 +95,12 @@ export default function ProfesionalPage() {
         };
       }
 
-      await api.turnos.reservar(reservaData);
+      const reserva = await api.turnos.reservar(reservaData);
+
+      if (profesional.precioConsulta > 0) {
+        router.push(`/pago?turno=${reserva.turno.id}`);
+        return;
+      }
 
       alert('¡Turno reservado con éxito!');
       router.push('/dashboard/paciente');

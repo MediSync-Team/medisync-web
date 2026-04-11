@@ -83,6 +83,13 @@ export const api = {
       const query = params ? '?' + new URLSearchParams(params).toString() : '';
       return fetchApi<Turno[]>(`/turnos/profesional/${id}${query}`);
     },
+    reprogramar: (id: string, data: { fechaHora: string; modalidad?: 'PRESENCIAL' | 'VIRTUAL' }) =>
+      fetchApi<Turno>(`/turnos/${id}/reprogramar`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    getPoliticaCancelacion: () =>
+      fetchApi<{ horasMinimas: number }>('/turnos/politica-cancelacion'),
   },
   recordatorios: {
     getProfesional: () => fetchApi<any>('/recordatorios/profesional'),

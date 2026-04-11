@@ -1,0 +1,16 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/favicon.ico/route": "app/favicon.ico/route.js",
+  "/api/pagos/webhook/route": "app/api/pagos/webhook/route.js",
+  "/dashboard/paciente/page": "app/dashboard/paciente/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/login/page": "app/login/page.js",
+  "/page": "app/page.js",
+  "/pago-exitoso/page": "app/pago-exitoso/page.js",
+  "/pago-fallido/page": "app/pago-fallido/page.js",
+  "/pago-pendiente/page": "app/pago-pendiente/page.js",
+  "/pago/page": "app/pago/page.js",
+  "/profesional/[id]/page": "app/profesional/[id]/page.js",
+  "/register/page": "app/register/page.js"
+}
