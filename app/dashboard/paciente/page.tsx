@@ -413,16 +413,43 @@ function ReprogramarModal({
   onSuccess: () => void;
 }) {
   const [fecha, setFecha] = useState('');
-  const [hora, setHora] = useState('');
+  const [slots, setSlots] = useState<{ hora: string; disponible: boolean }[]>([]);
+  const [horaSeleccionada, setHoraSeleccionada] = useState('');
   const [guardando, setGuardando] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const handleGuardar = async () => {
-    if (!fecha || !hora) {
-      alert('Selecciona fecha y hora');
+  useEffect(() => {
+    const profesionalId = turno.profesional?.id;
+
+    if (!fecha || !profesionalId) {
+      setSlots([]);
+      setHoraSeleccionada('');
       return;
     }
 
-    const fechaHora = new Date(`${fecha}T${hora}:00`);
+    const loadSlots = async () => {
+      setLoadingSlots(true);
+      try {
+        const data = await api.profesionales.getSlots(profesionalId, fecha, turno.modalidad);
+        setSlots(data.filter((s) => s.disponible));
+      } catch (err) {
+        console.error('Error loading slots for reprogramacion:', err);
+        setSlots([]);
+      } finally {
+        setLoadingSlots(false);
+      }
+    };
+
+    loadSlots();
+  }, [fecha, turno.profesional?.id, turno.modalidad]);
+
+  const handleGuardar = async () => {
+    if (!fecha || !horaSeleccionada) {
+      alert('Selecciona fecha y horario disponible');
+      return;
+    }
+
+    const fechaHora = new Date(`${fecha}T${horaSeleccionada}:00`);
     if (Number.isNaN(fechaHora.getTime()) || fechaHora <= new Date()) {
       alert('Selecciona una fecha futura valida');
       return;
@@ -457,18 +484,38 @@ function ReprogramarModal({
             <input
               type="date"
               value={fecha}
-              onChange={(e) => setFecha(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+              onChange={(e) => {
+                setFecha(e.target.value);
+                setHoraSeleccionada('');
+              }}
               className="w-full px-3 py-2 border rounded-md"
             />
           </div>
           <div>
-            <label className="block text-sm text-gray-700 mb-1">Hora</label>
-            <input
-              type="time"
-              value={hora}
-              onChange={(e) => setHora(e.target.value)}
-              className="w-full px-3 py-2 border rounded-md"
-            />
+            <label className="block text-sm text-gray-700 mb-1">Horario disponible</label>
+            {loadingSlots ? (
+              <p className="text-sm text-gray-500">Cargando horarios...</p>
+            ) : slots.length === 0 ? (
+              <p className="text-sm text-gray-500">No hay horarios disponibles para esta fecha.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {slots.map((slot) => (
+                  <button
+                    key={slot.hora}
+                    type="button"
+                    onClick={() => setHoraSeleccionada(slot.hora)}
+                    className={`px-3 py-1 rounded-md text-sm ${
+                      horaSeleccionada === slot.hora
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {slot.hora}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 
