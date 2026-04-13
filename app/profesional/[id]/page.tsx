@@ -50,7 +50,10 @@ export default function ProfesionalPage() {
 
   const loadSlots = async (date: Date) => {
     try {
-      const fecha = date.toISOString().split('T')[0];
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const fecha = `${year}-${month}-${day}`;
       const data = await api.profesionales.getSlots(params.id as string, fecha, modalidad);
       setSlots(data);
     } catch (err) {
@@ -73,7 +76,12 @@ export default function ProfesionalPage() {
     }
   };
 
-  const selectedDateKey = selectedDate ? selectedDate.toISOString().split('T')[0] : null;
+  const selectedDateKey = selectedDate ? (() => {
+    const y = selectedDate.getFullYear();
+    const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
+    const d = String(selectedDate.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  })() : null;
   const selectedWaitlistItem = selectedDateKey
     ? suscripcionesLista.find(
         (x) => x.modalidad === modalidad && new Date(x.fecha).toISOString().split('T')[0] === selectedDateKey
@@ -98,7 +106,10 @@ export default function ProfesionalPage() {
 
     setSuscribiendoLista(true);
     try {
-      const fecha = selectedDate.toISOString().split('T')[0];
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const fecha = `${year}-${month}-${day}`;
       await api.listaEspera.suscribirme({
         profesionalId: params.id as string,
         fecha,
@@ -156,13 +167,16 @@ export default function ProfesionalPage() {
     setError('');
 
     try {
-      const fechaHora = new Date(selectedDate);
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
       const [hora, minuto] = selectedSlot.split(':');
-      fechaHora.setHours(parseInt(hora), parseInt(minuto), 0, 0);
+      const fechaHora = new Date(`${year}-${month}-${day}T${hora}:${minuto}:00`);
+      const localDate = new Date(fechaHora.getTime() - fechaHora.getTimezoneOffset() * 60000);
 
       const reservaData: Parameters<typeof api.turnos.reservar>[0] = {
         profesionalId: profesional.id,
-        fechaHora: fechaHora.toISOString(),
+        fechaHora: localDate.toISOString(),
         modalidad,
       };
 
