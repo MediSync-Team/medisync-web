@@ -144,6 +144,9 @@ export type RegisterData = {
   matricula?: string;
   especialidadId?: string;
   precioConsulta?: number;
+  lugarAtencion?: string;
+  bio?: string;
+  fotoUrl?: string;
 };
 
 export type AuthResponse = {

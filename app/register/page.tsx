@@ -29,6 +29,9 @@ export default function RegisterPage() {
     matricula: '',
     especialidadId: '',
     precioConsulta: '',
+    lugarAtencion: '',
+    bio: '',
+    fotoUrl: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -81,6 +84,9 @@ export default function RegisterPage() {
         precioConsulta: formData.rol === 'PROFESIONAL' && formData.precioConsulta 
           ? Number(formData.precioConsulta) 
           : undefined,
+        lugarAtencion: formData.rol === 'PROFESIONAL' ? formData.lugarAtencion : undefined,
+        bio: formData.rol === 'PROFESIONAL' ? formData.bio : undefined,
+        fotoUrl: formData.rol === 'PROFESIONAL' ? formData.fotoUrl : undefined,
       });
       router.push('/dashboard');
     } catch (err) {
@@ -266,6 +272,50 @@ export default function RegisterPage() {
                     onChange={handleChange}
                     className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
                     placeholder="5000"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="lugarAtencion" className="block text-sm font-medium text-gray-700">
+                    Lugar de Atención
+                  </label>
+                  <input
+                    id="lugarAtencion"
+                    name="lugarAtencion"
+                    value={formData.lugarAtencion}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="Dirección o consultorio"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="fotoUrl" className="block text-sm font-medium text-gray-700">
+                    URL de Foto de Perfil
+                  </label>
+                  <input
+                    id="fotoUrl"
+                    name="fotoUrl"
+                    type="url"
+                    value={formData.fotoUrl}
+                    onChange={handleChange}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
+                    Biografía
+                  </label>
+                  <textarea
+                    id="bio"
+                    name="bio"
+                    value={formData.bio}
+                    onChange={handleChange}
+                    rows={3}
+                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md resize-none"
+                    placeholder="Breve descripción sobre vos..."
                   />
                 </div>
               </>
