@@ -168,15 +168,14 @@ export default function ProfesionalPage() {
 
     try {
       const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(selectedDate.getDate()).padStart(2, '0');
-      const [hora, minuto] = selectedSlot.split(':');
-      const fechaHora = new Date(`${year}-${month}-${day}T${hora}:${minuto}:00`);
-      const localDate = new Date(fechaHora.getTime() - fechaHora.getTimezoneOffset() * 60000);
+      const month = selectedDate.getMonth();
+      const day = selectedDate.getDate();
+      const [hora, minuto] = selectedSlot.split(':').map(Number);
+      const fechaHora = new Date(year, month, day, hora, minuto, 0, 0);
 
       const reservaData: Parameters<typeof api.turnos.reservar>[0] = {
         profesionalId: profesional.id,
-        fechaHora: localDate.toISOString(),
+        fechaHora: fechaHora.toISOString(),
         modalidad,
       };
 
