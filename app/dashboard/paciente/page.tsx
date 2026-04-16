@@ -4,8 +4,14 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
-import { api, Turno, ListaEsperaItem } from '../../lib/api';
+import { api, Turno, ListaEsperaItem, RecetaIndicacion } from '../../lib/api';
 import ProfileModal from '../../components/ProfileModal';
+import {
+  MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
+  BellIcon, VideoIcon, BuildingIcon, CreditCardIcon, RefreshIcon,
+  XIcon, SearchIcon, WaitlistIcon, CheckIcon, InfoIcon, ClipboardIcon,
+} from '../../components/icons';
+import { estadoBadge } from '../../lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
@@ -21,12 +27,15 @@ export default function PacienteDashboard() {
   const [horasMinCancelacion, setHorasMinCancelacion] = useState(24);
   const [turnoReprogramar, setTurnoReprogramar] = useState<Turno | null>(null);
   const [listaEspera, setListaEspera] = useState<ListaEsperaItem[]>([]);
+  const [showRecordatorios, setShowRecordatorios] = useState(false);
+  const [turnoPreconsulta, setTurnoPreconsulta] = useState<Turno | null>(null);
+  const [turnoReceta, setTurnoReceta] = useState<Turno | null>(null);
+  const [inlineNotice, setInlineNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading) {
-      if (!user) {
-        router.push('/login');
-      } else if (user.paciente) {
+      if (!user) { router.push('/login'); return; }
+      if (user.paciente) {
         loadTurnos();
         loadRecordatorios();
         loadPoliticaCancelacion();
@@ -42,17 +51,13 @@ export default function PacienteDashboard() {
       const data = await api.turnos.misTurnos();
       setTurnos(data);
       loadPagosInfo(data);
-    } catch (err) {
-      console.error('Error loading turnos:', err);
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { console.error(err); }
+    finally { setLoading(false); }
   };
 
   const loadPagosInfo = async (turnosData: Turno[]) => {
     const token = localStorage.getItem('token');
     const pagos: Record<string, any> = {};
-    
     for (const turno of turnosData) {
       if (turno.estado === 'RESERVADO' && Number(turno.profesional?.precioConsulta) > 0) {
         try {
@@ -60,12 +65,8 @@ export default function PacienteDashboard() {
             headers: { Authorization: `Bearer ${token}` },
           });
           const data = await res.json();
-          if (data.success) {
-            pagos[turno.id] = data.data;
-          }
-        } catch (err) {
-          console.error('Error loading pago:', err);
-        }
+          if (data.success) pagos[turno.id] = data.data;
+        } catch (err) { console.error(err); }
       }
     }
     setPagosPendientes(pagos);
@@ -75,87 +76,61 @@ export default function PacienteDashboard() {
     try {
       const data = await api.recordatorios.getPaciente();
       setRecordatorios(data.turnos || []);
-    } catch (err) {
-      console.error('Error loading recordatorios:', err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const loadPoliticaCancelacion = async () => {
     try {
       const data = await api.turnos.getPoliticaCancelacion();
       setHorasMinCancelacion(data.horasMinimas || 24);
-    } catch (err) {
-      console.error('Error loading cancellation policy:', err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const loadListaEspera = async () => {
     try {
       const data = await api.listaEspera.misSuscripciones();
       setListaEspera(data);
-    } catch (err) {
-      console.error('Error loading lista de espera:', err);
-    }
+    } catch (err) { console.error(err); }
   };
 
   const cancelarListaEspera = async (id: string) => {
-    if (!confirm('¿Querés salir de esta lista de espera?')) return;
-
     try {
       await api.listaEspera.cancelar(id);
       await loadListaEspera();
+      setInlineNotice({ type: 'success', text: 'Saliste de la lista de espera.' });
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'No se pudo salir de la lista');
+      setInlineNotice({ type: 'error', text: err instanceof Error ? err.message : 'No se pudo salir de la lista' });
     }
   };
 
-  const handlePagar = async (turnoId: string) => {
-    router.push(`/pago?turno=${turnoId}`);
-  };
-
   const handleCancelar = async (turnoId: string) => {
-    if (!confirm('¿Estás seguro de que querés cancelar este turno?')) return;
-    
     const token = localStorage.getItem('token');
     try {
       const res = await fetch(`${API_URL}/turnos/${turnoId}`, {
         method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ estado: 'CANCELADO' }),
       });
       const data = await res.json();
       if (data.success) {
-        alert('Turno cancelado');
         loadTurnos();
+        setInlineNotice({ type: 'success', text: 'Turno cancelado correctamente.' });
       }
-    } catch (err) {
-      console.error('Error:', err);
-      alert('Error al cancelar turno');
+    } catch {
+      setInlineNotice({ type: 'error', text: 'Error al cancelar turno' });
     }
   };
 
-  const canCancel = (fechaHora: string) => {
-    const diffMs = new Date(fechaHora).getTime() - Date.now();
-    return diffMs >= horasMinCancelacion * 60 * 60 * 1000;
-  };
-
-  const canReschedule = (fechaHora: string) => {
-    const diffMs = new Date(fechaHora).getTime() - Date.now();
-    return diffMs >= horasMinCancelacion * 60 * 60 * 1000;
-  };
-
-  const handleLogout = () => {
-    logout();
-    router.push('/');
-  };
+  const canCancel = (fechaHora: string) =>
+    new Date(fechaHora).getTime() - Date.now() >= horasMinCancelacion * 3_600_000;
 
   if (authLoading || !user || !user.paciente) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Cargando...</p>
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <svg className="animate-spin text-blue-600" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          <p className="text-slate-500 text-sm">Cargando...</p>
+        </div>
       </div>
     );
   }
@@ -164,294 +139,210 @@ export default function PacienteDashboard() {
   const proximos = turnos.filter(t => new Date(t.fechaHora) >= ahora && t.estado !== 'CANCELADO');
   const pasados = turnos.filter(t => new Date(t.fechaHora) < ahora || t.estado === 'CANCELADO');
 
-  const turnosMostrar = activeTab === 'proximos' ? proximos : pasados;
-
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-slate-50">
+      {/* ── Reminder banner ─────────────────────────────── */}
       {recordatorios.length > 0 && (
-        <div className="bg-yellow-50 border-b border-yellow-200">
-          <div className="max-w-4xl mx-auto px-4 py-3">
-            <div className="flex items-start gap-3">
-              <span className="text-2xl">🔔</span>
-              <div>
-                <p className="font-medium text-yellow-800">
-                  Tenés {recordatorios.length} turno{recordatorios.length > 1 ? 's' : ''} en las próximas 24 horas
-                </p>
+        <div className="bg-amber-500 text-white">
+          <div className="page-container py-2.5 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 text-sm">
+              <BellIcon size={15} className="shrink-0" />
+              <span className="font-medium">
+                {recordatorios.length} turno{recordatorios.length > 1 ? 's' : ''} mañana
+              </span>
+              <button onClick={() => setShowRecordatorios(!showRecordatorios)} className="underline underline-offset-2 text-amber-100 hover:text-white text-xs">
+                {showRecordatorios ? 'Ocultar' : 'Ver'}
+              </button>
+            </div>
+            <button onClick={() => setRecordatorios([])} className="text-amber-200 hover:text-white">
+              <XIcon size={14} />
+            </button>
+          </div>
+          {showRecordatorios && (
+            <div className="page-container pb-3">
+              <div className="bg-amber-600/50 rounded-lg p-3 space-y-1.5">
                 {recordatorios.map((rec: any) => (
-                  <p key={rec.id} className="text-sm text-yellow-700">
-                    📅 {new Date(rec.fechaHora).toLocaleDateString('es-AR')} às {new Date(rec.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} con {rec.profesional?.nombre} {rec.profesional?.apellido}
-                    {rec.modalidad === 'VIRTUAL' && ' 📹 Virtual'}
-                  </p>
+                  <div key={rec.id} className="flex items-center gap-3 text-sm text-amber-50">
+                    <CalendarIcon size={13} className="shrink-0 text-amber-200" />
+                    <span>
+                      {new Date(rec.fechaHora).toLocaleDateString('es-AR')} a las{' '}
+                      {new Date(rec.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                      {' con '}
+                      {rec.profesional?.nombre} {rec.profesional?.apellido}
+                    </span>
+                  </div>
                 ))}
               </div>
             </div>
-          </div>
+          )}
         </div>
       )}
 
-      <nav className="bg-white shadow-sm">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center gap-4">
-              <h1 className="text-xl font-bold text-blue-600">MediSync</h1>
-              <span className="text-gray-500">|</span>
-              <span className="text-gray-600">Mi Panel</span>
+      {/* ── Navbar ──────────────────────────────────────── */}
+      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+        <div className="page-container">
+          <div className="flex items-center justify-between h-14">
+            <div className="flex items-center gap-3">
+              <MediSyncLogo size={28} />
+              <div className="hidden sm:block">
+                <p className="text-sm font-bold text-slate-800 leading-none">MediSync</p>
+                <p className="text-xs text-slate-400 leading-none mt-0.5">Mi panel</p>
+              </div>
             </div>
-            <div className="flex items-center gap-4">
-              <Link href="/" className="text-blue-600 hover:text-blue-700 text-sm">
+            <div className="flex items-center gap-1.5">
+              <Link href="/" className="btn btn-ghost text-slate-600 text-sm hidden sm:inline-flex">
+                <SearchIcon size={15} />
                 Buscar profesionales
               </Link>
-              <button
-                onClick={() => setShowProfileModal(true)}
-                className="text-gray-600 hover:text-blue-600 text-sm flex items-center gap-1"
-              >
-                <span>👤</span>
-                <span>Mi Perfil</span>
+              <button onClick={() => setShowProfileModal(true)} className="btn btn-ghost text-slate-600 text-sm">
+                <UserIcon size={15} />
+                <span className="hidden sm:inline">{user.paciente.nombre} {user.paciente.apellido}</span>
               </button>
-              <span className="text-gray-600">
-                {user.paciente.nombre} {user.paciente.apellido}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="text-gray-500 hover:text-gray-700 text-sm"
-              >
-                Cerrar sesión
+              <button onClick={() => { logout(); router.push('/'); }} className="btn btn-secondary text-sm">
+                <LogOutIcon size={15} />
+                <span className="hidden sm:inline">Salir</span>
               </button>
             </div>
           </div>
         </div>
-      </nav>
+      </header>
 
-      <main className="max-w-4xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        <div className="bg-white rounded-lg shadow">
-          <div className="border-b">
-            <nav className="flex">
-              <button
-                onClick={() => setActiveTab('proximos')}
-                className={`px-6 py-3 text-sm font-medium ${
-                  activeTab === 'proximos'
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Turnos Próximos ({proximos.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('pasados')}
-                className={`px-6 py-3 text-sm font-medium ${
-                  activeTab === 'pasados'
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Turnos Pasados ({pasados.length})
-              </button>
-              <button
-                onClick={() => setActiveTab('listaEspera')}
-                className={`px-6 py-3 text-sm font-medium ${
-                  activeTab === 'listaEspera'
-                    ? 'border-b-2 border-blue-500 text-blue-600'
-                    : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                Lista de Espera ({listaEspera.length})
-              </button>
-            </nav>
+      <main className="page-container py-6 max-w-3xl mx-auto">
+        {inlineNotice && (
+          <div className={`alert mb-4 ${inlineNotice.type === 'success' ? 'alert-success' : inlineNotice.type === 'error' ? 'alert-error' : 'alert-info'}`} role="status" aria-live="polite">
+            <InfoIcon size={15} className="shrink-0" />
+            <span>{inlineNotice.text}</span>
+            <button className="ml-auto text-xs underline" onClick={() => setInlineNotice(null)}>Ocultar</button>
+          </div>
+        )}
+
+        {/* ── Cancellation policy notice ───────────────── */}
+        <div className="alert alert-info mb-4 text-xs">
+          <InfoIcon size={15} className="shrink-0" />
+          <span>
+            Política de cancelación: cancelá con al menos <strong>{horasMinCancelacion} horas</strong> de anticipación para evitar penalidades.
+          </span>
+        </div>
+
+        {/* ── Tabs ────────────────────────────────────── */}
+        <div className="card overflow-hidden">
+          <div className="tab-nav px-1 pt-1">
+            <button
+              onClick={() => setActiveTab('proximos')}
+              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'proximos' ? 'tab-btn-active' : ''}`}
+            >
+              <CalendarIcon size={13} />
+              Próximos
+              <span className="ml-1 bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {proximos.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('pasados')}
+              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'pasados' ? 'tab-btn-active' : ''}`}
+            >
+              <ClockIcon size={13} />
+              Pasados
+              <span className="ml-1 bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                {pasados.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('listaEspera')}
+              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'listaEspera' ? 'tab-btn-active' : ''}`}
+            >
+              <WaitlistIcon size={13} />
+              Lista de espera
+              {listaEspera.length > 0 && (
+                <span className="ml-1 bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {listaEspera.length}
+                </span>
+              )}
+            </button>
           </div>
 
-          <div className="p-6">
+          <div className="p-5">
             {activeTab === 'listaEspera' ? (
-              <div>
-                {listaEspera.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">No estas en ninguna lista de espera activa.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {listaEspera.map((item) => (
-                      <div key={item.id} className="border rounded-lg p-4 flex flex-wrap items-center justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-gray-900">
-                            {item.profesional?.nombre} {item.profesional?.apellido}
-                          </p>
-                          <p className="text-sm text-blue-700">{item.profesional?.especialidad?.nombre}</p>
-                          <p className="text-sm text-gray-600">
-                            {new Date(item.fecha).toLocaleDateString('es-AR')} • {item.modalidad}
-                          </p>
-                          <p className="text-xs text-gray-500 mt-1">Estado: {item.estado}</p>
+              /* ── Lista de espera ────────────────── */
+              listaEspera.length === 0 ? (
+                <div className="py-12 text-center">
+                  <WaitlistIcon size={32} className="mx-auto mb-3 text-slate-300" />
+                  <p className="text-slate-500 text-sm font-medium">No estás en ninguna lista de espera</p>
+                  <p className="text-slate-400 text-xs mt-1">Cuando no haya turnos disponibles, podés anotarte en lista de espera desde el perfil del profesional.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {listaEspera.map((item) => (
+                    <div key={item.id} className="border border-slate-200 rounded-xl p-4 flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="font-semibold text-slate-800">
+                          {item.profesional?.nombre} {item.profesional?.apellido}
+                        </p>
+                        <p className="text-sm text-blue-600 font-medium">{item.profesional?.especialidad?.nombre}</p>
+                        <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
+                          <span className="flex items-center gap-1"><CalendarIcon size={11} />{new Date(item.fecha).toLocaleDateString('es-AR')}</span>
+                          <span>{item.modalidad}</span>
                         </div>
-                        <button
-                          onClick={() => cancelarListaEspera(item.id)}
-                          className="px-3 py-2 text-sm rounded-md bg-gray-100 text-gray-700 hover:bg-gray-200"
-                        >
-                          Salir de lista
-                        </button>
+                        <span className="badge badge-yellow mt-2">{item.estado}</span>
                       </div>
-                    ))}
+                      <button onClick={() => cancelarListaEspera(item.id)} className="btn btn-secondary btn-sm">
+                        Salir de lista
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )
+            ) : loading ? (
+              <div className="space-y-3">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="border border-slate-200 rounded-xl p-4 space-y-2">
+                    <div className="skeleton h-4 w-40 rounded" />
+                    <div className="skeleton h-3 w-28 rounded" />
+                    <div className="skeleton h-8 w-32 rounded-lg mt-2" />
                   </div>
-                )}
+                ))}
               </div>
-            ) : (
-            <>
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-100 rounded-md text-sm text-blue-800">
-              Politica de cancelacion: para cancelar sin penalidad, hacelo con al menos {horasMinCancelacion} horas de anticipacion.
-            </div>
-
-            {turnosMostrar.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-500 mb-4">
-                  {activeTab === 'proximos' 
-                    ? 'No tenés turnos próximos reservados.' 
-                    : 'No tenés turnos anteriores.'}
+            ) : (activeTab === 'proximos' ? proximos : pasados).length === 0 ? (
+              <div className="py-12 text-center">
+                <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
+                <p className="text-slate-500 text-sm font-medium">
+                  {activeTab === 'proximos' ? 'No tenés turnos próximos' : 'No tenés turnos pasados'}
                 </p>
                 {activeTab === 'proximos' && (
-                  <Link 
-                    href="/" 
-                    className="inline-block px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                  >
-                    Buscar profesional
+                  <Link href="/" className="btn btn-primary btn-sm mt-4">
+                    <SearchIcon size={13} /> Buscar profesional
                   </Link>
                 )}
               </div>
             ) : (
-              <div className="space-y-4">
-                {turnosMostrar.map((turno) => (
-                  <div key={turno.id} className="border rounded-lg p-4">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <p className="font-semibold text-lg">
-                          {turno.profesional?.nombre} {turno.profesional?.apellido}
-                        </p>
-                        <p className="text-blue-600 text-sm">
-                          {turno.profesional?.especialidad?.nombre}
-                        </p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        turno.estado === 'CONFIRMADO' ? 'bg-green-100 text-green-700' :
-                        turno.estado === 'RESERVADO' ? 'bg-yellow-100 text-yellow-700' :
-                        turno.estado === 'CANCELADO' ? 'bg-red-100 text-red-700' :
-                        turno.estado === 'COMPLETADO' ? 'bg-blue-100 text-blue-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {turno.estado}
-                      </span>
-                    </div>
-
-                    <div className="mt-3 flex flex-wrap gap-4 text-sm text-gray-600">
-                      <div className="flex items-center gap-1">
-                        <span>📅</span>
-                        <span>
-                          {new Date(turno.fechaHora).toLocaleDateString('es-AR', {
-                            weekday: 'long',
-                            day: 'numeric',
-                            month: 'long',
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span>🕐</span>
-                        <span>
-                          {new Date(turno.fechaHora).toLocaleTimeString('es-AR', {
-                            hour: '2-digit',
-                            minute: '2-digit',
-                          })}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span>{turno.modalidad === 'VIRTUAL' ? '📹' : '🏥'}</span>
-                        <span>{turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}</span>
-                      </div>
-                    </div>
-
-                    {turno.modalidad === 'VIRTUAL' && turno.linkVideollamada && (
-                      <div className="mt-3">
-                        <a 
-                          href={turno.linkVideollamada} 
-                          target="_blank" 
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 text-sm"
-                        >
-                          Unirse a la videollamada
-                        </a>
-                      </div>
-                    )}
-
-                    {turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO' ? (
-                      <div className="mt-4 pt-4 border-t flex flex-wrap gap-3">
-                        {turno.profesional?.precioConsulta && Number(turno.profesional.precioConsulta) > 0 && (
-                          <button
-                            onClick={() => handlePagar(turno.id)}
-                            disabled={pagosPendientes[turno.id]?.necesitaPago === false}
-                            className={`px-4 py-2 rounded-md text-sm ${
-                              pagosPendientes[turno.id]?.necesitaPago === false
-                                ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
-                                : 'bg-green-500 text-white hover:bg-green-600'
-                            }`}
-                          >
-                            {pagosPendientes[turno.id]?.necesitaPago === false
-                              ? 'Pago registrado'
-                              : `💳 Completar pago $${Number(turno.profesional.precioConsulta).toLocaleString('es-AR')}`}
-                          </button>
-                        )}
-                        <Link 
-                          href={`/profesional/${turno.profesional?.id}`}
-                          className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-sm"
-                        >
-                          Ver profesional
-                        </Link>
-                        <button
-                          onClick={() => setTurnoReprogramar(turno)}
-                          disabled={!canReschedule(turno.fechaHora)}
-                          className={`px-4 py-2 rounded-md text-sm ${
-                            canReschedule(turno.fechaHora)
-                              ? 'bg-blue-50 text-blue-700 hover:bg-blue-100'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          }`}
-                          title={
-                            canReschedule(turno.fechaHora)
-                              ? 'Reprogramar turno'
-                              : `No disponible: menos de ${horasMinCancelacion}h de anticipacion`
-                          }
-                        >
-                          Reprogramar
-                        </button>
-                        <button 
-                          onClick={() => handleCancelar(turno.id)}
-                          disabled={!canCancel(turno.fechaHora)}
-                          className={`px-4 py-2 rounded-md text-sm ${
-                            canCancel(turno.fechaHora)
-                              ? 'bg-red-50 text-red-600 hover:bg-red-100'
-                              : 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                          }`}
-                          title={
-                            canCancel(turno.fechaHora)
-                              ? 'Cancelar turno'
-                              : `No disponible: menos de ${horasMinCancelacion}h de anticipacion`
-                          }
-                        >
-                          Cancelar turno
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
+              <div className="space-y-3">
+                {(activeTab === 'proximos' ? proximos : pasados).map((turno) => (
+                  <TurnoCard
+                    key={turno.id}
+                    turno={turno}
+                    pagoInfo={pagosPendientes[turno.id]}
+                    horasMinCancelacion={horasMinCancelacion}
+                    canCancel={canCancel(turno.fechaHora)}
+                    onPagar={() => router.push(`/pago?turno=${turno.id}`)}
+                    onCancelar={() => handleCancelar(turno.id)}
+                    onReprogramar={() => setTurnoReprogramar(turno)}
+                    onCompletarPreconsulta={() => setTurnoPreconsulta(turno)}
+                    onVerReceta={() => setTurnoReceta(turno)}
+                  />
                 ))}
               </div>
-            )}
-            </>
             )}
           </div>
         </div>
       </main>
 
-      {showProfileModal && user && (
+      {showProfileModal && (
         <ProfileModal
           isOpen={showProfileModal}
           onClose={() => setShowProfileModal(false)}
           userType="paciente"
           user={user}
-          onUpdate={() => {
-            window.location.reload();
-          }}
+          onUpdate={() => window.location.reload()}
         />
       )}
 
@@ -459,146 +350,534 @@ export default function PacienteDashboard() {
         <ReprogramarModal
           turno={turnoReprogramar}
           onClose={() => setTurnoReprogramar(null)}
+          onSuccess={() => { setTurnoReprogramar(null); loadTurnos(); loadRecordatorios(); }}
+        />
+      )}
+
+      {turnoPreconsulta && (
+        <PreconsultaModal
+          turno={turnoPreconsulta}
+          onClose={() => setTurnoPreconsulta(null)}
           onSuccess={() => {
-            setTurnoReprogramar(null);
+            setTurnoPreconsulta(null);
             loadTurnos();
-            loadRecordatorios();
           }}
         />
+      )}
+
+      {turnoReceta && (
+        <RecetaModal turno={turnoReceta} onClose={() => setTurnoReceta(null)} />
       )}
     </div>
   );
 }
 
-function ReprogramarModal({
-  turno,
-  onClose,
-  onSuccess,
+/* ── Turno Card ──────────────────────────────────────────── */
+function TurnoCard({
+  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, horasMinCancelacion,
 }: {
   turno: Turno;
-  onClose: () => void;
-  onSuccess: () => void;
+  pagoInfo?: { necesitaPago: boolean };
+  canCancel: boolean;
+  horasMinCancelacion: number;
+  onPagar: () => void;
+  onCancelar: () => void;
+  onReprogramar: () => void;
+  onCompletarPreconsulta: () => void;
+  onVerReceta: () => void;
 }) {
-  const [fecha, setFecha] = useState('');
-  const [slots, setSlots] = useState<{ hora: string; disponible: boolean }[]>([]);
-  const [horaSeleccionada, setHoraSeleccionada] = useState('');
-  const [guardando, setGuardando] = useState(false);
-  const [loadingSlots, setLoadingSlots] = useState(false);
+  const isActive = turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO';
+  const isFuture = new Date(turno.fechaHora) >= new Date();
+  const preconsultaCompletada = Boolean(turno.preconsultaCompletadaAt);
+
+  return (
+    <div className="border border-slate-200 rounded-xl overflow-hidden">
+      {/* Status bar */}
+      <div className={`px-4 py-1.5 text-xs font-semibold flex items-center justify-between ${
+        turno.estado === 'CONFIRMADO' ? 'bg-emerald-50 text-emerald-700' :
+        turno.estado === 'RESERVADO' ? 'bg-amber-50 text-amber-700' :
+        turno.estado === 'CANCELADO' ? 'bg-red-50 text-red-700' :
+        'bg-blue-50 text-blue-700'
+      }`}>
+        <span className="flex items-center gap-1.5">
+          {turno.estado === 'CONFIRMADO' && <CheckIcon size={11} />}
+          {turno.estado}
+        </span>
+        {turno.modalidad === 'VIRTUAL' ? (
+          <span className="flex items-center gap-1"><VideoIcon size={11} /> Virtual</span>
+        ) : (
+          <span className="flex items-center gap-1"><BuildingIcon size={11} /> Presencial</span>
+        )}
+      </div>
+
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          {/* Professional info */}
+          <div className="flex-1">
+            <p className="font-semibold text-slate-800">
+              {turno.profesional?.nombre} {turno.profesional?.apellido}
+            </p>
+            <p className="text-xs text-blue-600 font-medium mt-0.5">{turno.profesional?.especialidad?.nombre}</p>
+          </div>
+          {/* Date/time */}
+          <div className="text-right shrink-0">
+            <p className="text-sm font-bold text-slate-700">
+              {new Date(turno.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+            </p>
+            <p className="text-xs text-slate-500">
+              {new Date(turno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+        </div>
+
+        {/* Video link */}
+        {turno.modalidad === 'VIRTUAL' && turno.linkVideollamada && (
+          <a
+            href={turno.linkVideollamada}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn btn-success btn-sm mt-3 w-full"
+          >
+            <VideoIcon size={13} /> Unirse a la videollamada
+          </a>
+        )}
+
+        {/* Actions */}
+        {isActive && isFuture && (
+          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
+            {/* Pay button */}
+            {turno.profesional?.precioConsulta && Number(turno.profesional.precioConsulta) > 0 && (
+              <button
+                onClick={onPagar}
+                disabled={pagoInfo?.necesitaPago === false}
+                className={`btn btn-sm flex-1 ${pagoInfo?.necesitaPago === false ? 'btn-secondary opacity-60 cursor-not-allowed' : 'btn-success'}`}
+              >
+                <CreditCardIcon size={13} />
+                {pagoInfo?.necesitaPago === false
+                  ? 'Pago registrado'
+                  : `Pagar $${Number(turno.profesional.precioConsulta).toLocaleString('es-AR')}`}
+              </button>
+            )}
+
+            {/* Reschedule */}
+            <button
+              onClick={onReprogramar}
+              disabled={!canCancel}
+              className="btn btn-secondary btn-sm"
+              title={!canCancel ? `Requiere ${horasMinCancelacion}h de anticipación` : undefined}
+            >
+              <RefreshIcon size={13} /> Reprogramar
+            </button>
+
+            {/* Cancel */}
+            <button
+              onClick={onCancelar}
+              disabled={!canCancel}
+              className={`btn btn-sm ${canCancel ? 'btn-ghost text-red-500 hover:bg-red-50' : 'btn-ghost text-slate-400 cursor-not-allowed'}`}
+              title={!canCancel ? `Requiere ${horasMinCancelacion}h de anticipación` : undefined}
+            >
+              <XIcon size={13} /> Cancelar
+            </button>
+
+            <Link href={`/profesional/${turno.profesional?.id}`} className="btn btn-ghost btn-sm text-slate-500">
+              Ver profesional
+            </Link>
+
+            {!preconsultaCompletada ? (
+              <button onClick={onCompletarPreconsulta} className="btn btn-primary btn-sm">
+                <ClipboardIcon size={13} /> Completar preconsulta
+              </button>
+            ) : (
+              <span className="badge badge-green">Preconsulta lista</span>
+            )}
+
+            {(turno.estado === 'COMPLETADO' || turno.estado === 'CONFIRMADO') && (
+              <button onClick={onVerReceta} className="btn btn-secondary btn-sm">
+                <ClipboardIcon size={13} /> Ver receta/indicaciones
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RecetaModal({ turno, onClose }: { turno: Turno; onClose: () => void }) {
+  const [loading, setLoading] = useState(true);
+  const [receta, setReceta] = useState<RecetaIndicacion | null>(null);
 
   useEffect(() => {
-    const profesionalId = turno.profesional?.id;
-
-    if (!fecha || !profesionalId) {
-      setSlots([]);
-      setHoraSeleccionada('');
-      return;
-    }
-
-    const loadSlots = async () => {
-      setLoadingSlots(true);
+    const loadReceta = async () => {
+      setLoading(true);
       try {
-        const data = await api.profesionales.getSlots(profesionalId, fecha, turno.modalidad);
-        setSlots(data.filter((s) => s.disponible));
+        const data = await api.turnos.getReceta(turno.id);
+        setReceta(data);
       } catch (err) {
-        console.error('Error loading slots for reprogramacion:', err);
-        setSlots([]);
+        console.error(err);
+        setReceta(null);
       } finally {
-        setLoadingSlots(false);
+        setLoading(false);
       }
     };
 
-    loadSlots();
-  }, [fecha, turno.profesional?.id, turno.modalidad]);
+    loadReceta();
+  }, [turno.id]);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white">
+          <h3 className="font-bold text-slate-800">Receta e indicaciones</h3>
+          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+        </div>
+
+        <div className="px-6 py-5">
+          {loading ? (
+            <div className="space-y-2">
+              <div className="skeleton h-20 rounded-lg" />
+              <div className="skeleton h-20 rounded-lg" />
+            </div>
+          ) : !receta ? (
+            <div className="alert alert-warning text-sm">
+              <InfoIcon size={14} className="shrink-0" />
+              <span>Aun no hay receta/indicaciones emitidas para este turno.</span>
+            </div>
+          ) : (
+            <div className="space-y-3 text-sm">
+              <p className="text-xs text-slate-500">Emitida: {new Date(receta.emitidaAt).toLocaleString('es-AR')}</p>
+              <div>
+                <p className="font-semibold text-slate-700">Diagnostico</p>
+                <p className="text-slate-600 whitespace-pre-wrap">{receta.diagnostico}</p>
+              </div>
+              {receta.planTratamiento && (
+                <div>
+                  <p className="font-semibold text-slate-700">Plan de tratamiento</p>
+                  <p className="text-slate-600 whitespace-pre-wrap">{receta.planTratamiento}</p>
+                </div>
+              )}
+              {receta.medicamentos && (
+                <div>
+                  <p className="font-semibold text-slate-700">Medicamentos</p>
+                  <p className="text-slate-600 whitespace-pre-wrap">{receta.medicamentos}</p>
+                </div>
+              )}
+              <div>
+                <p className="font-semibold text-slate-700">Indicaciones</p>
+                <p className="text-slate-600 whitespace-pre-wrap">{receta.indicaciones}</p>
+              </div>
+              {receta.estudiosSolicitados && (
+                <div>
+                  <p className="font-semibold text-slate-700">Estudios solicitados</p>
+                  <p className="text-slate-600 whitespace-pre-wrap">{receta.estudiosSolicitados}</p>
+                </div>
+              )}
+              {receta.proximoControl && (
+                <div>
+                  <p className="font-semibold text-slate-700">Proximo control</p>
+                  <p className="text-slate-600">{receta.proximoControl}</p>
+                </div>
+              )}
+              {receta.advertencias && (
+                <div>
+                  <p className="font-semibold text-slate-700">Advertencias</p>
+                  <p className="text-slate-600 whitespace-pre-wrap">{receta.advertencias}</p>
+                </div>
+              )}
+              {receta.observaciones && (
+                <div>
+                  <p className="font-semibold text-slate-700">Observaciones</p>
+                  <p className="text-slate-600 whitespace-pre-wrap">{receta.observaciones}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50">
+          <button onClick={onClose} className="btn btn-secondary w-full">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PreconsultaModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
+  const [motivo, setMotivo] = useState('');
+  const [sintomas, setSintomas] = useState('');
+  const [escalaDolor, setEscalaDolor] = useState(0);
+  const [escalaAnsiedad, setEscalaAnsiedad] = useState(0);
+  const [inicioSintomas, setInicioSintomas] = useState('');
+  const [temperatura, setTemperatura] = useState('');
+  const [notasPaciente, setNotasPaciente] = useState('');
+  const [riesgo, setRiesgo] = useState<string | null>(null);
+  const [flags, setFlags] = useState<string[]>([]);
+  const [guardando, setGuardando] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [notice, setNotice] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  useEffect(() => {
+    const loadPreconsulta = async () => {
+      setLoading(true);
+      try {
+        const data = await api.turnos.getPreconsulta(turno.id);
+        setMotivo(data.motivo || '');
+        setSintomas(data.sintomas || '');
+        setEscalaDolor(data.escalaDolor ?? 0);
+        setEscalaAnsiedad(data.escalaAnsiedad ?? 0);
+        setInicioSintomas(data.inicioSintomas || '');
+        setTemperatura(typeof data.temperatura === 'number' ? data.temperatura.toString() : '');
+        setNotasPaciente(data.notasPaciente || '');
+        setRiesgo(data.riesgo);
+        setFlags(data.flags || []);
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPreconsulta();
+  }, [turno.id]);
 
   const handleGuardar = async () => {
-    if (!fecha || !horaSeleccionada) {
-      alert('Selecciona fecha y horario disponible');
-      return;
-    }
-
-    const fechaHora = new Date(`${fecha}T${horaSeleccionada}:00`);
-    if (Number.isNaN(fechaHora.getTime()) || fechaHora <= new Date()) {
-      alert('Selecciona una fecha futura valida');
+    if (motivo.trim().length < 5 || sintomas.trim().length < 5) {
+      setNotice({ type: 'error', text: 'Completa motivo y sintomas con al menos 5 caracteres.' });
       return;
     }
 
     setGuardando(true);
     try {
-      await api.turnos.reprogramar(turno.id, {
-        fechaHora: fechaHora.toISOString(),
-        modalidad: turno.modalidad,
+      const data = await api.turnos.updatePreconsulta(turno.id, {
+        motivo: motivo.trim(),
+        sintomas: sintomas.trim(),
+        escalaDolor,
+        escalaAnsiedad,
+        inicioSintomas: inicioSintomas.trim() || null,
+        temperatura: temperatura.trim() ? Number(temperatura) : null,
+        notasPaciente: notasPaciente.trim() || null,
       });
-      alert('Turno reprogramado correctamente');
+
+      setRiesgo(data.riesgo);
+      setFlags(data.flags || []);
+      setNotice({ type: 'success', text: 'Cuestionario guardado correctamente.' });
       onSuccess();
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'No se pudo reprogramar');
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : 'No se pudo guardar la preconsulta' });
     } finally {
       setGuardando(false);
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-lg shadow-lg p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Reprogramar turno</h3>
-        <p className="text-sm text-gray-600 mb-4">
-          Elegi una nueva fecha y hora para tu consulta.
-        </p>
+  const riskClass = riesgo === 'URGENTE'
+    ? 'badge-red'
+    : riesgo === 'ALTO'
+    ? 'badge-yellow'
+    : riesgo === 'MEDIO'
+    ? 'badge-blue'
+    : riesgo === 'BAJO'
+    ? 'badge-green'
+    : 'badge-gray';
 
-        <div className="space-y-3">
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white">
+          <h3 className="font-bold text-slate-800">Cuestionario preconsulta</h3>
+          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          {notice && (
+            <div className={`alert ${notice.type === 'error' ? 'alert-error' : 'alert-success'}`} role="status" aria-live="polite">
+              <InfoIcon size={14} className="shrink-0" />
+              <span>{notice.text}</span>
+            </div>
+          )}
+
+          <p className="text-sm text-slate-600">
+            Completar este cuestionario ayuda a priorizar tu atencion y a que el profesional llegue mejor preparado al turno.
+          </p>
+
+          {loading ? (
+            <div className="space-y-2">
+              <div className="skeleton h-20 rounded-lg" />
+              <div className="skeleton h-20 rounded-lg" />
+            </div>
+          ) : (
+            <>
+              <div>
+                <label className="field-label">Motivo principal de consulta</label>
+                <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} className="field-input resize-none min-h-[72px]" placeholder="Describe en pocas lineas el motivo principal..." />
+              </div>
+
+              <div>
+                <label className="field-label">Sintomas actuales</label>
+                <textarea value={sintomas} onChange={(e) => setSintomas(e.target.value)} className="field-input resize-none min-h-[88px]" placeholder="Que sintomas tenes, desde cuando y como evolucionaron..." />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="field-label">Nivel de dolor: {escalaDolor}/10</label>
+                  <input type="range" min={0} max={10} value={escalaDolor} onChange={(e) => setEscalaDolor(Number(e.target.value))} className="w-full" />
+                </div>
+                <div>
+                  <label className="field-label">Nivel de ansiedad: {escalaAnsiedad}/10</label>
+                  <input type="range" min={0} max={10} value={escalaAnsiedad} onChange={(e) => setEscalaAnsiedad(Number(e.target.value))} className="w-full" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="field-label">Inicio de sintomas</label>
+                  <input value={inicioSintomas} onChange={(e) => setInicioSintomas(e.target.value)} className="field-input" placeholder="Ej: hace 3 dias" />
+                </div>
+                <div>
+                  <label className="field-label">Temperatura corporal (opcional)</label>
+                  <input type="number" min="34" max="43" step="0.1" value={temperatura} onChange={(e) => setTemperatura(e.target.value)} className="field-input" placeholder="Ej: 38.2" />
+                </div>
+              </div>
+
+              <div>
+                <label className="field-label">Notas adicionales para el profesional</label>
+                <textarea value={notasPaciente} onChange={(e) => setNotasPaciente(e.target.value)} className="field-input resize-none min-h-[72px]" placeholder="Aclaraciones, medicacion previa, estudios recientes..." />
+              </div>
+
+              {riesgo && (
+                <div className="alert alert-info text-xs">
+                  <InfoIcon size={14} className="shrink-0" />
+                  <div className="space-y-1">
+                    <p className="flex items-center gap-2">Riesgo detectado: <span className={`badge ${riskClass}`}>{riesgo}</span></p>
+                    {flags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5">
+                        {flags.map((flag) => <span key={flag} className="badge badge-red">{flag}</span>)}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+          <button onClick={onClose} className="btn btn-secondary flex-1">Cancelar</button>
+          <button onClick={handleGuardar} disabled={guardando || loading} className="btn btn-primary flex-1">
+            {guardando ? 'Guardando...' : 'Guardar cuestionario'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Reprogramar Modal ───────────────────────────────────── */
+function ReprogramarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
+  const [fecha, setFecha] = useState('');
+  const [slots, setSlots] = useState<{ hora: string; disponible: boolean }[]>([]);
+  const [horaSeleccionada, setHoraSeleccionada] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [notice, setNotice] = useState<string>('');
+
+  useEffect(() => {
+    const profesionalId = turno.profesional?.id;
+    if (!fecha || !profesionalId) { setSlots([]); setHoraSeleccionada(''); return; }
+
+    const loadSlots = async () => {
+      setLoadingSlots(true);
+      try {
+        const data = await api.profesionales.getSlots(profesionalId, fecha, turno.modalidad);
+        setSlots(data.filter(s => s.disponible));
+      } catch (err) { setSlots([]); }
+      finally { setLoadingSlots(false); }
+    };
+    loadSlots();
+  }, [fecha, turno.profesional?.id, turno.modalidad]);
+
+  const handleGuardar = async () => {
+    if (!fecha || !horaSeleccionada) { setNotice('Selecciona fecha y horario.'); return; }
+    const fechaHora = new Date(`${fecha}T${horaSeleccionada}:00`);
+    if (Number.isNaN(fechaHora.getTime()) || fechaHora <= new Date()) { setNotice('Selecciona una fecha futura valida.'); return; }
+
+    setGuardando(true);
+    try {
+      await api.turnos.reprogramar(turno.id, { fechaHora: fechaHora.toISOString(), modalidad: turno.modalidad });
+      onSuccess();
+    } catch (err) { setNotice(err instanceof Error ? err.message : 'No se pudo reprogramar'); }
+    finally { setGuardando(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 className="font-bold text-slate-800">Reprogramar turno</h3>
+          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4">
+          {notice && (
+            <div className="alert alert-error text-sm" role="status" aria-live="polite">
+              <InfoIcon size={14} className="shrink-0" />
+              <span>{notice}</span>
+            </div>
+          )}
+
+          <p className="text-sm text-slate-600">
+            Estás reprogramando tu turno con <strong>{turno.profesional?.nombre} {turno.profesional?.apellido}</strong>.
+            Elegí nueva fecha y horario.
+          </p>
+
           <div>
-            <label className="block text-sm text-gray-700 mb-1">Fecha</label>
+            <label className="field-label">Nueva fecha</label>
             <input
               type="date"
               value={fecha}
               min={new Date().toISOString().split('T')[0]}
-              onChange={(e) => {
-                setFecha(e.target.value);
-                setHoraSeleccionada('');
-              }}
-              className="w-full px-3 py-2 border rounded-md"
+              onChange={(e) => { setFecha(e.target.value); setHoraSeleccionada(''); }}
+              className="field-input"
             />
           </div>
-          <div>
-            <label className="block text-sm text-gray-700 mb-1">Horario disponible</label>
-            {loadingSlots ? (
-              <p className="text-sm text-gray-500">Cargando horarios...</p>
-            ) : slots.length === 0 ? (
-              <p className="text-sm text-gray-500">No hay horarios disponibles para esta fecha.</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
-                {slots.map((slot) => (
-                  <button
-                    key={slot.hora}
-                    type="button"
-                    onClick={() => setHoraSeleccionada(slot.hora)}
-                    className={`px-3 py-1 rounded-md text-sm ${
-                      horaSeleccionada === slot.hora
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
-                  >
-                    {slot.hora}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+
+          {fecha && (
+            <div>
+              <label className="field-label">Horario disponible</label>
+              {loadingSlots ? (
+                <div className="flex gap-1.5 flex-wrap">
+                  {[1,2,3,4].map(i => <div key={i} className="skeleton h-8 w-16 rounded-lg" />)}
+                </div>
+              ) : slots.length === 0 ? (
+                <p className="text-sm text-slate-500 text-center py-4">No hay horarios disponibles para esta fecha</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {slots.map((slot) => (
+                    <button
+                      key={slot.hora}
+                      onClick={() => setHoraSeleccionada(slot.hora)}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                        horaSeleccionada === slot.hora
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                      }`}
+                    >
+                      {slot.hora}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
-        <div className="mt-6 flex gap-3">
-          <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-          >
-            Cancelar
-          </button>
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+          <button onClick={onClose} className="btn btn-secondary flex-1">Cancelar</button>
           <button
             onClick={handleGuardar}
-            disabled={guardando}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            disabled={guardando || !fecha || !horaSeleccionada}
+            className="btn btn-primary flex-1"
           >
-            {guardando ? 'Guardando...' : 'Confirmar'}
+            {guardando ? 'Guardando...' : 'Confirmar cambio'}
           </button>
         </div>
       </div>

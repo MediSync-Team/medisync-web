@@ -94,6 +94,20 @@ export const api = {
       }),
     getPoliticaCancelacion: () =>
       fetchApi<{ horasMinimas: number }>('/turnos/politica-cancelacion'),
+    getPreconsulta: (id: string) =>
+      fetchApi<PreconsultaTurno>(`/turnos/${id}/preconsulta`),
+    updatePreconsulta: (id: string, data: PreconsultaInput) =>
+      fetchApi<PreconsultaTurno>(`/turnos/${id}/preconsulta`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    getReceta: (id: string) =>
+      fetchApi<RecetaIndicacion | null>(`/turnos/${id}/receta`),
+    guardarReceta: (id: string, data: RecetaIndicacionInput) =>
+      fetchApi<{ receta: RecetaIndicacion; shareText: string }>(`/turnos/${id}/receta`, {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
   },
   recordatorios: {
     getProfesional: () => fetchApi<any>('/recordatorios/profesional'),
@@ -115,6 +129,13 @@ export const api = {
     getPerfil: () => fetchApi<Paciente>('/pacientes/perfil'),
     updatePerfil: (data: Partial<Paciente>) =>
       fetchApi<Paciente>('/pacientes/perfil', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    getHistoriaClinica: (pacienteId: string) =>
+      fetchApi<HistoriaClinicaPaciente>(`/pacientes/${pacienteId}/historia-clinica`),
+    updateHistoriaClinica: (pacienteId: string, data: Partial<HistoriaClinicaEditableFields>) =>
+      fetchApi<HistoriaClinicaEditableFields & { id: string; updatedAt: string }>(`/pacientes/${pacienteId}/historia-clinica`, {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
@@ -201,6 +222,58 @@ export type Paciente = {
   dni?: string;
   obraSocial?: string;
   fotoUrl?: string;
+  antecedentesPersonales?: string | null;
+  antecedentesFamiliares?: string | null;
+  alergias?: string | null;
+  medicacionActual?: string | null;
+  habitos?: string | null;
+  diagnosticosPrevios?: string | null;
+  notasClinicasGenerales?: string | null;
+};
+
+export type HistoriaClinicaEditableFields = {
+  antecedentesPersonales?: string | null;
+  antecedentesFamiliares?: string | null;
+  alergias?: string | null;
+  medicacionActual?: string | null;
+  habitos?: string | null;
+  diagnosticosPrevios?: string | null;
+  notasClinicasGenerales?: string | null;
+};
+
+export type HistoriaClinicaTimelineItem = {
+  id: string;
+  fechaHora: string;
+  modalidad: 'PRESENCIAL' | 'VIRTUAL';
+  estado: 'RESERVADO' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO' | 'AUSENTE';
+  profesional: {
+    id: string;
+    nombre: string;
+    apellido: string;
+    especialidad: string;
+  };
+  evolucion: {
+    id: string;
+    contenido: string;
+    updatedAt: string;
+  } | null;
+  archivos: {
+    id: string;
+    tipo: string;
+    nombreOriginal: string;
+    url: string;
+    createdAt: string;
+  }[];
+};
+
+export type HistoriaClinicaPaciente = {
+  paciente: Paciente;
+  resumen: {
+    totalConsultas: number;
+    consultasCompletadas: number;
+    ultimaConsulta: string | null;
+  };
+  timeline: HistoriaClinicaTimelineItem[];
 };
 
 export type Disponibilidad = {
@@ -220,6 +293,59 @@ export type Turno = {
   linkVideollamada?: string;
   profesional?: Profesional;
   paciente?: Paciente;
+  preconsultaRiesgo?: 'BAJO' | 'MEDIO' | 'ALTO' | 'URGENTE' | null;
+  preconsultaCompletadaAt?: string | null;
+};
+
+export type PreconsultaInput = {
+  motivo: string;
+  sintomas: string;
+  escalaDolor: number;
+  escalaAnsiedad: number;
+  inicioSintomas?: string | null;
+  temperatura?: number | null;
+  notasPaciente?: string | null;
+};
+
+export type PreconsultaTurno = {
+  motivo: string | null;
+  sintomas: string | null;
+  escalaDolor: number | null;
+  escalaAnsiedad: number | null;
+  inicioSintomas: string | null;
+  temperatura: number | null;
+  notasPaciente: string | null;
+  riesgo: 'BAJO' | 'MEDIO' | 'ALTO' | 'URGENTE' | null;
+  flags: string[] | null;
+  resumen: string | null;
+  completadaAt: string | null;
+};
+
+export type RecetaIndicacion = {
+  id: string;
+  turnoId: string;
+  diagnostico: string;
+  planTratamiento: string | null;
+  medicamentos: string | null;
+  indicaciones: string;
+  estudiosSolicitados: string | null;
+  proximoControl: string | null;
+  advertencias: string | null;
+  observaciones: string | null;
+  emitidaAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type RecetaIndicacionInput = {
+  diagnostico: string;
+  planTratamiento?: string | null;
+  medicamentos?: string | null;
+  indicaciones: string;
+  estudiosSolicitados?: string | null;
+  proximoControl?: string | null;
+  advertencias?: string | null;
+  observaciones?: string | null;
 };
 
 export type Evolucion = {

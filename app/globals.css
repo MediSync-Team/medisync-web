@@ -1,1 +1,423 @@
 @import "tailwindcss";
+
+@theme {
+  /* Medical Brand Palette */
+  --color-brand-50: #eff6ff;
+  --color-brand-100: #dbeafe;
+  --color-brand-200: #bfdbfe;
+  --color-brand-300: #93c5fd;
+  --color-brand-400: #60a5fa;
+  --color-brand-500: #3b82f6;
+  --color-brand-600: #2563eb;
+  --color-brand-700: #1d4ed8;
+  --color-brand-800: #1e40af;
+  --color-brand-900: #1e3a8a;
+
+  /* Health Green */
+  --color-health-50: #ecfdf5;
+  --color-health-100: #d1fae5;
+  --color-health-500: #10b981;
+  --color-health-600: #059669;
+  --color-health-700: #047857;
+
+  /* Background & Surface */
+  --color-surface: #ffffff;
+  --color-bg: #f8fafc;
+
+  /* Clinical state tokens */
+  --color-clinical-stable-bg: #ecfdf5;
+  --color-clinical-stable-fg: #065f46;
+  --color-clinical-watch-bg: #eff6ff;
+  --color-clinical-watch-fg: #1e40af;
+  --color-clinical-alert-bg: #fef3c7;
+  --color-clinical-alert-fg: #92400e;
+  --color-clinical-critical-bg: #fee2e2;
+  --color-clinical-critical-fg: #991b1b;
+
+  /* Font */
+  --font-sans: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* ============================================================
+   BASE STYLES
+   ============================================================ */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: #f8fafc;
+    color: #1e293b;
+    font-family: var(--font-geist-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Focus ring — accessible but not intrusive */
+  :focus-visible {
+    outline: 2px solid #2563eb;
+    outline-offset: 3px;
+    border-radius: 4px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  /* Smooth transitions on interactive elements */
+  button, a, input, select, textarea {
+    transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+    transition-duration: 150ms;
+    transition-timing-function: ease-in-out;
+  }
+}
+
+/* ============================================================
+   COMPONENT UTILITIES
+   ============================================================ */
+@layer components {
+  /* --- Buttons --- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    min-height: 2.5rem;
+  }
+  .btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .btn-primary {
+    background-color: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+  }
+  .btn-primary:hover:not(:disabled) {
+    background-color: #1d4ed8;
+    border-color: #1d4ed8;
+  }
+  .btn-primary:active:not(:disabled) {
+    background-color: #1e40af;
+  }
+
+  .btn-secondary {
+    background-color: #ffffff;
+    color: #374151;
+    border-color: #d1d5db;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    background-color: #f9fafb;
+    border-color: #9ca3af;
+  }
+
+  .btn-success {
+    background-color: #059669;
+    color: #ffffff;
+    border-color: #059669;
+  }
+  .btn-success:hover:not(:disabled) {
+    background-color: #047857;
+  }
+
+  .btn-danger {
+    background-color: #dc2626;
+    color: #ffffff;
+    border-color: #dc2626;
+  }
+  .btn-danger:hover:not(:disabled) {
+    background-color: #b91c1c;
+  }
+
+  .btn-ghost {
+    background-color: transparent;
+    color: #374151;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    background-color: #f3f4f6;
+  }
+
+  .btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    line-height: 1.5rem;
+    border-radius: 0.625rem;
+  }
+
+  .btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  /* --- Cards --- */
+  .card {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
+  }
+  .card-hover {
+    cursor: pointer;
+  }
+  .card-hover:hover {
+    border-color: #bfdbfe;
+    box-shadow: 0 4px 12px 0 rgb(37 99 235 / 0.08), 0 2px 4px -1px rgb(37 99 235 / 0.06);
+    transform: translateY(-1px);
+  }
+
+  /* --- Form fields --- */
+  .field-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.375rem;
+  }
+
+  .field-input {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    color: #1e293b;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.05);
+    min-height: 2.5rem;
+  }
+  .field-input:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.12), inset 0 1px 2px rgb(0 0 0 / 0.04);
+  }
+  .field-input::placeholder {
+    color: #9ca3af;
+  }
+  .field-input:disabled {
+    background-color: #f9fafb;
+    color: #9ca3af;
+    cursor: not-allowed;
+  }
+
+  .field-select {
+    display: block;
+    width: 100%;
+    padding: 0.5rem 2.5rem 0.5rem 0.875rem;
+    font-size: 0.875rem;
+    line-height: 1.5rem;
+    color: #1e293b;
+    background-color: #ffffff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.05);
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%236b7280'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.625rem center;
+    background-size: 1.25rem;
+  }
+  .field-select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgb(37 99 235 / 0.12);
+  }
+
+  /* --- Badges / Status pills --- */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.65rem;
+    border-radius: 9999px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    text-transform: uppercase;
+  }
+
+  .badge-blue {
+    background-color: #dbeafe;
+    color: #1d4ed8;
+  }
+  .badge-green {
+    background-color: #d1fae5;
+    color: #047857;
+  }
+  .badge-yellow {
+    background-color: #fef3c7;
+    color: #b45309;
+  }
+  .badge-red {
+    background-color: #fee2e2;
+    color: #b91c1c;
+  }
+  .badge-gray {
+    background-color: #f1f5f9;
+    color: #475569;
+  }
+  .badge-purple {
+    background-color: #ede9fe;
+    color: #6d28d9;
+  }
+
+  /* --- Alert banners --- */
+  .alert {
+    display: flex;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    align-items: flex-start;
+  }
+  .alert-info {
+    background-color: #eff6ff;
+    border: 1px solid #bfdbfe;
+    color: #1d4ed8;
+  }
+  .alert-success {
+    background-color: #ecfdf5;
+    border: 1px solid #a7f3d0;
+    color: #047857;
+  }
+  .alert-warning {
+    background-color: #fffbeb;
+    border: 1px solid #fde68a;
+    color: #b45309;
+  }
+  .alert-error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+  }
+
+  .clinical-state-stable {
+    background: var(--color-clinical-stable-bg);
+    color: var(--color-clinical-stable-fg);
+  }
+
+  .clinical-state-watch {
+    background: var(--color-clinical-watch-bg);
+    color: var(--color-clinical-watch-fg);
+  }
+
+  .clinical-state-alert {
+    background: var(--color-clinical-alert-bg);
+    color: var(--color-clinical-alert-fg);
+  }
+
+  .clinical-state-critical {
+    background: var(--color-clinical-critical-bg);
+    color: var(--color-clinical-critical-fg);
+  }
+
+  /* --- Section heading --- */
+  .section-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #1e293b;
+    letter-spacing: -0.01em;
+  }
+
+  /* --- Tab navigation --- */
+  .tab-nav {
+    display: flex;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .tab-btn {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #64748b;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    white-space: nowrap;
+  }
+  .tab-btn:hover {
+    color: #1e293b;
+    background-color: #f8fafc;
+  }
+  .tab-btn-active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+  }
+
+  /* --- Loading skeleton --- */
+  .skeleton {
+    background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.375rem;
+  }
+  @keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+
+  /* --- Page layout wrapper --- */
+  .page-container {
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  @media (min-width: 640px) {
+    .page-container {
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+  }
+  @media (min-width: 1024px) {
+    .page-container {
+      padding-left: 2rem;
+      padding-right: 2rem;
+    }
+  }
+
+  /* --- Stat card --- */
+  .stat-card {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+  .stat-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .stat-value {
+    font-size: 1.875rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+    margin-top: 0.25rem;
+  }
+  .stat-desc {
+    font-size: 0.75rem;
+    color: #94a3b8;
+    margin-top: 0.125rem;
+  }
+}
