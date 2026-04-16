@@ -9,6 +9,7 @@ import ProfileModal from '../../components/ProfileModal';
 import OnboardingTour from '../../components/OnboardingTour';
 import Pagination from '../../components/Pagination';
 import StarRating from '../../components/StarRating';
+import VideoCallModal from '../../components/VideoCallModal';
 
 const PACIENTE_TOUR_STEPS = [
   {
@@ -64,6 +65,7 @@ export default function PacienteDashboard() {
   const [turnoPreconsulta, setTurnoPreconsulta] = useState<Turno | null>(null);
   const [turnoReceta, setTurnoReceta] = useState<Turno | null>(null);
   const [turnoCalificar, setTurnoCalificar] = useState<Turno | null>(null);
+  const [turnoVideoCall, setTurnoVideoCall] = useState<Turno | null>(null);
   const [inlineNotice, setInlineNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   useEffect(() => {
@@ -382,6 +384,7 @@ export default function PacienteDashboard() {
                       onCompletarPreconsulta={() => setTurnoPreconsulta(turno)}
                       onVerReceta={() => setTurnoReceta(turno)}
                       onCalificar={() => setTurnoCalificar(turno)}
+                      onVideoCall={() => setTurnoVideoCall(turno)}
                     />
                   ))}
                 </div>
@@ -442,6 +445,15 @@ export default function PacienteDashboard() {
         />
       )}
 
+      {turnoVideoCall && (
+        <VideoCallModal
+          turnoId={turnoVideoCall.id}
+          profesionalNombre={turnoVideoCall.profesional ? `${turnoVideoCall.profesional.nombre} ${turnoVideoCall.profesional.apellido}` : 'Profesional'}
+          fechaHora={turnoVideoCall.fechaHora}
+          onClose={() => setTurnoVideoCall(null)}
+        />
+      )}
+
       <OnboardingTour
         storageKey="medisync-paciente-tour-v1"
         steps={PACIENTE_TOUR_STEPS}
@@ -453,7 +465,7 @@ export default function PacienteDashboard() {
 
 /* ── Turno Card ──────────────────────────────────────────── */
 function TurnoCard({
-  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, horasMinCancelacion,
+  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, onVideoCall, horasMinCancelacion,
 }: {
   turno: Turno;
   pagoInfo?: { necesitaPago: boolean };
@@ -465,6 +477,7 @@ function TurnoCard({
   onCompletarPreconsulta: () => void;
   onVerReceta: () => void;
   onCalificar: () => void;
+  onVideoCall: () => void;
 }) {
   const isActive = turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO';
   const isFuture = new Date(turno.fechaHora) >= new Date();
@@ -510,16 +523,14 @@ function TurnoCard({
           </div>
         </div>
 
-        {/* Video link */}
-        {turno.modalidad === 'VIRTUAL' && turno.linkVideollamada && (
-          <a
-            href={turno.linkVideollamada}
-            target="_blank"
-            rel="noopener noreferrer"
+        {/* Video call */}
+        {turno.modalidad === 'VIRTUAL' && (turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO') && (
+          <button
+            onClick={onVideoCall}
             className="btn btn-success btn-sm mt-3 w-full"
           >
             <VideoIcon size={13} /> Unirse a la videollamada
-          </a>
+          </button>
         )}
 
         {/* Actions */}

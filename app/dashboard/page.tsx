@@ -6,6 +6,7 @@ import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion } from '../lib/api';
 import StatsPanel from '../components/StatsPanel';
 import ProfileModal from '../components/ProfileModal';
+import VideoCallModal from '../components/VideoCallModal';
 import OnboardingTour from '../components/OnboardingTour';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
@@ -688,6 +689,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
   const [savingReceta, setSavingReceta] = useState(false);
   const [shareText, setShareText] = useState('');
   const [modalNotice, setModalNotice] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
+  const [showVideoCall, setShowVideoCall] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
@@ -952,6 +954,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
   };
 
   return (
+    <>
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
@@ -1007,10 +1010,13 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
                   <><BuildingIcon size={14} className="text-emerald-500" /><span className="font-semibold text-sm text-slate-800">Presencial</span></>
                 )}
               </div>
-              {turno.modalidad === 'VIRTUAL' && turno.linkVideollamada && (
-                <a href={turno.linkVideollamada} target="_blank" rel="noopener noreferrer" className="text-xs text-blue-600 hover:underline mt-1 block truncate">
-                  Abrir videollamada
-                </a>
+              {turno.modalidad === 'VIRTUAL' && (turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO') && (
+                <button
+                  onClick={() => setShowVideoCall(true)}
+                  className="mt-2 w-full flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-1.5 rounded-lg transition-colors"
+                >
+                  <VideoIcon size={12} /> Iniciar videollamada
+                </button>
               )}
             </div>
           </div>
@@ -1374,5 +1380,15 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
         </div>
       </div>
     </div>
+
+    {showVideoCall && (
+      <VideoCallModal
+        turnoId={turno.id}
+        profesionalNombre={turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : 'Paciente'}
+        fechaHora={turno.fechaHora}
+        onClose={() => setShowVideoCall(false)}
+      />
+    )}
+    </>
   );
 }

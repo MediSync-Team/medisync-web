@@ -114,6 +114,8 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
+    getVideoToken: (id: string) =>
+      fetchApi<{ joinUrl: string; token: string | null; roomName: string }>(`/turnos/${id}/video-token`),
     getReceta: (id: string) =>
       fetchApi<RecetaIndicacion | null>(`/turnos/${id}/receta`),
     guardarReceta: (id: string, data: RecetaIndicacionInput) =>
