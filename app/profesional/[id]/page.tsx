@@ -3,13 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { api, Profesional, Slot, ListaEsperaItem } from '../../lib/api';
+import { api, Profesional, Slot, ListaEsperaItem, ResenasResponse } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import {
   MediSyncLogo, ArrowLeftIcon, MapPinIcon, PhoneIcon, VideoIcon,
   BuildingIcon, CalendarIcon, ClockIcon, CheckIcon, XIcon, UserIcon, InfoIcon,
-  StarIcon, SearchIcon,
+  SearchIcon,
 } from '../../components/icons';
+import StarRating from '../../components/StarRating';
 import { DIAS_SEMANA, estadoBadge } from '../../lib/utils';
 
 export default function ProfesionalPage() {
@@ -28,8 +29,10 @@ export default function ProfesionalPage() {
   const [suscripcionesLista, setSuscripcionesLista] = useState<ListaEsperaItem[]>([]);
   const [successMessage, setSuccessMessage] = useState('');
   const [inlineNotice, setInlineNotice] = useState<{ type: 'info' | 'success' | 'warning' | 'error'; text: string } | null>(null);
+  const [resenas, setResenas] = useState<ResenasResponse | null>(null);
+  const [resenaPage, setResenaPage] = useState(1);
 
-  useEffect(() => { loadProfesional(); }, [params.id]);
+  useEffect(() => { loadProfesional(); loadResenas(1); }, [params.id]);
   useEffect(() => { loadListaEsperaActiva(); }, [params.id, user?.paciente?.id]);
   useEffect(() => { if (selectedDate) loadSlots(selectedDate); }, [selectedDate, modalidad]);
 
@@ -39,6 +42,14 @@ export default function ProfesionalPage() {
       setProfesional(data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
+  };
+
+  const loadResenas = async (p: number) => {
+    try {
+      const data = await api.resenas.getByProfesional(params.id as string, { page: p, limit: 5 });
+      setResenas(data);
+      setResenaPage(p);
+    } catch (err) { console.error(err); }
   };
 
   const loadSlots = async (date: Date) => {
@@ -287,12 +298,16 @@ export default function ProfesionalPage() {
                   <span className="badge badge-blue mt-1.5">{profesional.especialidad.nombre}</span>
                 )}
 
-                {/* Rating placeholder */}
-                <div className="flex items-center gap-0.5 mt-2 text-amber-400">
-                  {[1,2,3,4].map(i => <StarIcon key={i} size={13} />)}
-                  <StarIcon size={13} className="text-slate-200" />
-                  <span className="text-xs text-slate-500 ml-1.5">4.0</span>
-                </div>
+                {/* Rating */}
+                {resenas && resenas.stats.total > 0 ? (
+                  <div className="flex items-center gap-1.5 mt-2">
+                    <StarRating value={resenas.stats.promedio ?? 0} size={15} />
+                    <span className="text-sm font-semibold text-slate-700">{resenas.stats.promedio}</span>
+                    <span className="text-xs text-slate-400">({resenas.stats.total} reseña{resenas.stats.total !== 1 ? 's' : ''})</span>
+                  </div>
+                ) : (
+                  <p className="text-xs text-slate-400 mt-2">Sin calificaciones aún</p>
+                )}
               </div>
 
               {/* Details */}
@@ -345,6 +360,70 @@ export default function ProfesionalPage() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+            {/* ── Reseñas ──────────────────────────────── */}
+            {resenas && resenas.stats.total > 0 && (
+              <div className="card p-5">
+                <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B" className="shrink-0"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" /></svg>
+                  Calificaciones
+                </h3>
+
+                {/* Summary bar */}
+                <div className="flex items-center gap-3 mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                  <div className="text-center shrink-0">
+                    <p className="text-3xl font-extrabold text-slate-800">{resenas.stats.promedio}</p>
+                    <StarRating value={resenas.stats.promedio ?? 0} size={12} />
+                    <p className="text-xs text-slate-400 mt-0.5">{resenas.stats.total} reseña{resenas.stats.total !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+
+                {/* Reviews list */}
+                <div className="space-y-3">
+                  {resenas.resenas.map((r) => (
+                    <div key={r.id} className="border-b border-slate-100 last:border-0 pb-3 last:pb-0">
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 shrink-0">
+                            {r.paciente?.nombre?.[0]}{r.paciente?.apellido?.[0]}
+                          </div>
+                          <span className="text-sm font-medium text-slate-700">
+                            {r.paciente?.nombre} {r.paciente?.apellido}
+                          </span>
+                        </div>
+                        <StarRating value={r.rating} size={12} />
+                      </div>
+                      {r.comentario && (
+                        <p className="text-xs text-slate-500 ml-9 leading-relaxed">{r.comentario}</p>
+                      )}
+                      <p className="text-[10px] text-slate-400 ml-9 mt-1">
+                        {new Date(r.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {resenas.pagination.totalPages > 1 && (
+                  <div className="flex justify-between items-center mt-4 pt-3 border-t border-slate-100">
+                    <button
+                      disabled={resenaPage === 1}
+                      onClick={() => loadResenas(resenaPage - 1)}
+                      className="text-xs text-blue-600 disabled:text-slate-300 disabled:cursor-not-allowed hover:underline"
+                    >
+                      ← Anteriores
+                    </button>
+                    <span className="text-xs text-slate-400">{resenaPage} / {resenas.pagination.totalPages}</span>
+                    <button
+                      disabled={resenaPage === resenas.pagination.totalPages}
+                      onClick={() => loadResenas(resenaPage + 1)}
+                      className="text-xs text-blue-600 disabled:text-slate-300 disabled:cursor-not-allowed hover:underline"
+                    >
+                      Siguientes →
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>

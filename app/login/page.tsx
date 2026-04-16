@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
+import { api } from '../lib/api';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,7 +21,12 @@ export default function LoginPage() {
 
     try {
       await login(email, password);
-      router.push('/dashboard');
+      const me = await api.auth.me();
+      if (me.rol === 'ADMIN') {
+        router.push('/dashboard/admin');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al iniciar sesión');
     } finally {

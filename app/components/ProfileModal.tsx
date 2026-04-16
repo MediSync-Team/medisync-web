@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { api, Profesional, Paciente, Genero } from '../lib/api';
+import { api, Profesional, Paciente, Genero, NotificationPreferences } from '../lib/api';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -34,6 +34,11 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences | null>(null);
+  const [savingNotif, setSavingNotif] = useState(false);
+  const [notifMsg, setNotifMsg] = useState('');
+  const [sendingTest, setSendingTest] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -82,8 +87,42 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
       }
       setError('');
       setSuccess('');
+      setNotifMsg('');
+      api.notifications.getPreferences().then(setNotifPrefs).catch(() => {});
     }
   }, [isOpen, userType, user]);
+
+  const toggleNotif = (field: keyof NotificationPreferences) => {
+    if (!notifPrefs) return;
+    setNotifPrefs({ ...notifPrefs, [field]: !notifPrefs[field] });
+  };
+
+  const saveNotifPrefs = async () => {
+    if (!notifPrefs) return;
+    setSavingNotif(true);
+    setNotifMsg('');
+    try {
+      await api.notifications.updatePreferences(notifPrefs);
+      setNotifMsg('Preferencias guardadas');
+    } catch {
+      setNotifMsg('Error al guardar preferencias');
+    } finally {
+      setSavingNotif(false);
+    }
+  };
+
+  const sendTestNotif = async (canal: 'EMAIL' | 'WHATSAPP') => {
+    setSendingTest(true);
+    setNotifMsg('');
+    try {
+      await api.notifications.sendTest(canal);
+      setNotifMsg(`Prueba de ${canal === 'EMAIL' ? 'email' : 'WhatsApp'} enviada`);
+    } catch {
+      setNotifMsg('Error al enviar notificación de prueba');
+    } finally {
+      setSendingTest(false);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -361,6 +400,83 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                 />
               </div>
             </>
+          )}
+
+          {notifPrefs && (
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Notificaciones</h3>
+              <div className="space-y-3">
+                {(
+                  [
+                    { field: 'notifEmail' as const, label: 'Notificaciones por email' },
+                    { field: 'notifWhatsapp' as const, label: 'Notificaciones por WhatsApp' },
+                    ...(userType === 'paciente'
+                      ? [
+                          { field: 'aceptaRecordatorios' as const, label: 'Aceptar recordatorios de turnos' },
+                          { field: 'notifRecordatorio24h' as const, label: 'Recordatorio 24 horas antes' },
+                          { field: 'notifRecordatorio2h' as const, label: 'Recordatorio 2 horas antes' },
+                        ]
+                      : []),
+                  ] as { field: keyof NotificationPreferences; label: string }[]
+                ).map(({ field, label }) =>
+                  notifPrefs[field] !== undefined ? (
+                    <label key={field} className="flex items-center justify-between cursor-pointer select-none">
+                      <span className="text-sm text-gray-600">{label}</span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={!!notifPrefs[field]}
+                        onClick={() => toggleNotif(field)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          notifPrefs[field] ? 'bg-blue-600' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+                            notifPrefs[field] ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </label>
+                  ) : null
+                )}
+              </div>
+
+              {notifMsg && (
+                <p className={`mt-2 text-xs ${notifMsg.startsWith('Error') ? 'text-red-500' : 'text-emerald-600'}`}>
+                  {notifMsg}
+                </p>
+              )}
+
+              <div className="mt-3 flex gap-2">
+                <button
+                  type="button"
+                  onClick={saveNotifPrefs}
+                  disabled={savingNotif}
+                  className="flex-1 px-3 py-2 text-sm bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 disabled:opacity-50"
+                >
+                  {savingNotif ? 'Guardando...' : 'Guardar preferencias'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => sendTestNotif('EMAIL')}
+                  disabled={sendingTest}
+                  title="Enviar email de prueba"
+                  className="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {sendingTest ? '...' : '✉️'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => sendTestNotif('WHATSAPP')}
+                  disabled={sendingTest}
+                  title="Enviar WhatsApp de prueba"
+                  className="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                >
+                  {sendingTest ? '...' : '💬'}
+                </button>
+              </div>
+            </div>
           )}
 
           <div className="pt-4 flex gap-3">

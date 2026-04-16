@@ -63,6 +63,12 @@
       "namedRegex": "^/dashboard(?:/)?$"
     },
     {
+      "page": "/dashboard/admin",
+      "regex": "^/dashboard/admin(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/admin(?:/)?$"
+    },
+    {
       "page": "/dashboard/paciente",
       "regex": "^/dashboard/paciente(?:/)?$",
       "routeKeys": {},

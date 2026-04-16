@@ -3,6 +3,7 @@
   "/_global-error/page": "/_global-error",
   "/favicon.ico/route": "/favicon.ico",
   "/api/pagos/webhook/route": "/api/pagos/webhook",
+  "/dashboard/admin/page": "/dashboard/admin",
   "/dashboard/paciente/page": "/dashboard/paciente",
   "/dashboard/page": "/dashboard",
   "/login/page": "/login",

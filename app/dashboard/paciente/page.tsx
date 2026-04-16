@@ -1,11 +1,41 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
-import { api, Turno, ListaEsperaItem, RecetaIndicacion } from '../../lib/api';
+import { api, Turno, ListaEsperaItem, RecetaIndicacion, Resena } from '../../lib/api';
 import ProfileModal from '../../components/ProfileModal';
+import OnboardingTour from '../../components/OnboardingTour';
+import Pagination from '../../components/Pagination';
+import StarRating from '../../components/StarRating';
+
+const PACIENTE_TOUR_STEPS = [
+  {
+    selector: '[data-onboarding="pac-tab-proximos"]',
+    title: 'Tus próximos turnos',
+    description: 'Aquí vas a ver todos tus turnos futuros. Podés pagar, reprogramar o cancelar desde acá.',
+    position: 'bottom' as const,
+  },
+  {
+    selector: '[data-onboarding="pac-tab-lista-espera"]',
+    title: 'Lista de espera',
+    description: 'Si el profesional que querés no tiene turnos disponibles, podés anotarte en lista de espera y te avisamos cuando se libere un lugar.',
+    position: 'bottom' as const,
+  },
+  {
+    selector: '[data-onboarding="pac-buscar-link"]',
+    title: 'Buscá más profesionales',
+    description: 'Desde acá podés volver al buscador para encontrar nuevos especialistas y reservar más turnos.',
+    position: 'bottom' as const,
+  },
+  {
+    selector: '[data-onboarding="pac-profile-btn"]',
+    title: 'Tu perfil',
+    description: 'Actualizá tus datos de contacto y configuraciones personales haciendo clic en tu nombre.',
+    position: 'bottom' as const,
+  },
+];
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, VideoIcon, BuildingIcon, CreditCardIcon, RefreshIcon,
@@ -21,6 +51,9 @@ export default function PacienteDashboard() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'proximos' | 'pasados' | 'listaEspera'>('proximos');
+  const [page, setPage] = useState(1);
+  const [paginationMeta, setPaginationMeta] = useState({ total: 0, totalPages: 1 });
+  const TURNOS_LIMIT = 5;
   const [recordatorios, setRecordatorios] = useState<any[]>([]);
   const [pagosPendientes, setPagosPendientes] = useState<Record<string, { necesitaPago: boolean; initPoint?: string }>>({});
   const [showProfileModal, setShowProfileModal] = useState(false);
@@ -30,13 +63,14 @@ export default function PacienteDashboard() {
   const [showRecordatorios, setShowRecordatorios] = useState(false);
   const [turnoPreconsulta, setTurnoPreconsulta] = useState<Turno | null>(null);
   const [turnoReceta, setTurnoReceta] = useState<Turno | null>(null);
+  const [turnoCalificar, setTurnoCalificar] = useState<Turno | null>(null);
   const [inlineNotice, setInlineNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
 
   useEffect(() => {
     if (!authLoading) {
       if (!user) { router.push('/login'); return; }
       if (user.paciente) {
-        loadTurnos();
+        loadTurnos('proximos', 1);
         loadRecordatorios();
         loadPoliticaCancelacion();
         loadListaEspera();
@@ -46,14 +80,16 @@ export default function PacienteDashboard() {
     }
   }, [user, authLoading, router]);
 
-  const loadTurnos = async () => {
+  const loadTurnos = useCallback(async (tab: 'proximos' | 'pasados' = 'proximos', p: number = 1) => {
+    setLoading(true);
     try {
-      const data = await api.turnos.misTurnos();
-      setTurnos(data);
-      loadPagosInfo(data);
+      const data = await api.turnos.misTurnos({ tipo: tab, page: p, limit: TURNOS_LIMIT });
+      setTurnos(data.turnos);
+      setPaginationMeta({ total: data.pagination.total, totalPages: data.pagination.totalPages });
+      loadPagosInfo(data.turnos);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
-  };
+  }, []);
 
   const loadPagosInfo = async (turnosData: Turno[]) => {
     const token = localStorage.getItem('token');
@@ -113,7 +149,7 @@ export default function PacienteDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        loadTurnos();
+        loadTurnos(activeTab === 'listaEspera' ? 'proximos' : activeTab, page);
         setInlineNotice({ type: 'success', text: 'Turno cancelado correctamente.' });
       }
     } catch {
@@ -135,9 +171,19 @@ export default function PacienteDashboard() {
     );
   }
 
-  const ahora = new Date();
-  const proximos = turnos.filter(t => new Date(t.fechaHora) >= ahora && t.estado !== 'CANCELADO');
-  const pasados = turnos.filter(t => new Date(t.fechaHora) < ahora || t.estado === 'CANCELADO');
+  const handleTabChange = (tab: 'proximos' | 'pasados' | 'listaEspera') => {
+    setActiveTab(tab);
+    if (tab !== 'listaEspera') {
+      setPage(1);
+      loadTurnos(tab, 1);
+    }
+  };
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    loadTurnos(activeTab === 'listaEspera' ? 'proximos' : activeTab, newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -190,11 +236,11 @@ export default function PacienteDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              <Link href="/" className="btn btn-ghost text-slate-600 text-sm hidden sm:inline-flex">
+              <Link href="/" data-onboarding="pac-buscar-link" className="btn btn-ghost text-slate-600 text-sm hidden sm:inline-flex">
                 <SearchIcon size={15} />
                 Buscar profesionales
               </Link>
-              <button onClick={() => setShowProfileModal(true)} className="btn btn-ghost text-slate-600 text-sm">
+              <button data-onboarding="pac-profile-btn" onClick={() => setShowProfileModal(true)} className="btn btn-ghost text-slate-600 text-sm">
                 <UserIcon size={15} />
                 <span className="hidden sm:inline">{user.paciente.nombre} {user.paciente.apellido}</span>
               </button>
@@ -228,27 +274,33 @@ export default function PacienteDashboard() {
         <div className="card overflow-hidden">
           <div className="tab-nav px-1 pt-1">
             <button
-              onClick={() => setActiveTab('proximos')}
+              data-onboarding="pac-tab-proximos"
+              onClick={() => handleTabChange('proximos')}
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'proximos' ? 'tab-btn-active' : ''}`}
             >
               <CalendarIcon size={13} />
               Próximos
-              <span className="ml-1 bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                {proximos.length}
-              </span>
+              {activeTab === 'proximos' && paginationMeta.total > 0 && (
+                <span className="ml-1 bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {paginationMeta.total}
+                </span>
+              )}
             </button>
             <button
-              onClick={() => setActiveTab('pasados')}
+              onClick={() => handleTabChange('pasados')}
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'pasados' ? 'tab-btn-active' : ''}`}
             >
               <ClockIcon size={13} />
               Pasados
-              <span className="ml-1 bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                {pasados.length}
-              </span>
+              {activeTab === 'pasados' && paginationMeta.total > 0 && (
+                <span className="ml-1 bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {paginationMeta.total}
+                </span>
+              )}
             </button>
             <button
-              onClick={() => setActiveTab('listaEspera')}
+              data-onboarding="pac-tab-lista-espera"
+              onClick={() => handleTabChange('listaEspera')}
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'listaEspera' ? 'tab-btn-active' : ''}`}
             >
               <WaitlistIcon size={13} />
@@ -302,7 +354,7 @@ export default function PacienteDashboard() {
                   </div>
                 ))}
               </div>
-            ) : (activeTab === 'proximos' ? proximos : pasados).length === 0 ? (
+            ) : turnos.length === 0 ? (
               <div className="py-12 text-center">
                 <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
                 <p className="text-slate-500 text-sm font-medium">
@@ -315,22 +367,32 @@ export default function PacienteDashboard() {
                 )}
               </div>
             ) : (
-              <div className="space-y-3">
-                {(activeTab === 'proximos' ? proximos : pasados).map((turno) => (
-                  <TurnoCard
-                    key={turno.id}
-                    turno={turno}
-                    pagoInfo={pagosPendientes[turno.id]}
-                    horasMinCancelacion={horasMinCancelacion}
-                    canCancel={canCancel(turno.fechaHora)}
-                    onPagar={() => router.push(`/pago?turno=${turno.id}`)}
-                    onCancelar={() => handleCancelar(turno.id)}
-                    onReprogramar={() => setTurnoReprogramar(turno)}
-                    onCompletarPreconsulta={() => setTurnoPreconsulta(turno)}
-                    onVerReceta={() => setTurnoReceta(turno)}
-                  />
-                ))}
-              </div>
+              <>
+                <div className="space-y-3">
+                  {turnos.map((turno) => (
+                    <TurnoCard
+                      key={turno.id}
+                      turno={turno}
+                      pagoInfo={pagosPendientes[turno.id]}
+                      horasMinCancelacion={horasMinCancelacion}
+                      canCancel={canCancel(turno.fechaHora)}
+                      onPagar={() => router.push(`/pago?turno=${turno.id}`)}
+                      onCancelar={() => handleCancelar(turno.id)}
+                      onReprogramar={() => setTurnoReprogramar(turno)}
+                      onCompletarPreconsulta={() => setTurnoPreconsulta(turno)}
+                      onVerReceta={() => setTurnoReceta(turno)}
+                      onCalificar={() => setTurnoCalificar(turno)}
+                    />
+                  ))}
+                </div>
+                <Pagination
+                  page={page}
+                  totalPages={paginationMeta.totalPages}
+                  total={paginationMeta.total}
+                  limit={TURNOS_LIMIT}
+                  onPageChange={handlePageChange}
+                />
+              </>
             )}
           </div>
         </div>
@@ -350,7 +412,7 @@ export default function PacienteDashboard() {
         <ReprogramarModal
           turno={turnoReprogramar}
           onClose={() => setTurnoReprogramar(null)}
-          onSuccess={() => { setTurnoReprogramar(null); loadTurnos(); loadRecordatorios(); }}
+          onSuccess={() => { setTurnoReprogramar(null); loadTurnos(activeTab === 'listaEspera' ? 'proximos' : activeTab, page); loadRecordatorios(); }}
         />
       )}
 
@@ -360,7 +422,7 @@ export default function PacienteDashboard() {
           onClose={() => setTurnoPreconsulta(null)}
           onSuccess={() => {
             setTurnoPreconsulta(null);
-            loadTurnos();
+            loadTurnos(activeTab === 'listaEspera' ? 'proximos' : activeTab, page);
           }}
         />
       )}
@@ -368,13 +430,30 @@ export default function PacienteDashboard() {
       {turnoReceta && (
         <RecetaModal turno={turnoReceta} onClose={() => setTurnoReceta(null)} />
       )}
+
+      {turnoCalificar && (
+        <CalificarModal
+          turno={turnoCalificar}
+          onClose={() => setTurnoCalificar(null)}
+          onSuccess={() => {
+            setTurnoCalificar(null);
+            setInlineNotice({ type: 'success', text: '¡Gracias por tu calificación!' });
+          }}
+        />
+      )}
+
+      <OnboardingTour
+        storageKey="medisync-paciente-tour-v1"
+        steps={PACIENTE_TOUR_STEPS}
+        delay={1000}
+      />
     </div>
   );
 }
 
 /* ── Turno Card ──────────────────────────────────────────── */
 function TurnoCard({
-  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, horasMinCancelacion,
+  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, horasMinCancelacion,
 }: {
   turno: Turno;
   pagoInfo?: { necesitaPago: boolean };
@@ -385,6 +464,7 @@ function TurnoCard({
   onReprogramar: () => void;
   onCompletarPreconsulta: () => void;
   onVerReceta: () => void;
+  onCalificar: () => void;
 }) {
   const isActive = turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO';
   const isFuture = new Date(turno.fechaHora) >= new Date();
@@ -494,6 +574,13 @@ function TurnoCard({
             {(turno.estado === 'COMPLETADO' || turno.estado === 'CONFIRMADO') && (
               <button onClick={onVerReceta} className="btn btn-secondary btn-sm">
                 <ClipboardIcon size={13} /> Ver receta/indicaciones
+              </button>
+            )}
+
+            {turno.estado === 'COMPLETADO' && (
+              <button onClick={onCalificar} className="btn btn-ghost btn-sm text-amber-600 hover:bg-amber-50">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" /></svg>
+                Calificar
               </button>
             )}
           </div>
@@ -765,6 +852,117 @@ function PreconsultaModal({ turno, onClose, onSuccess }: { turno: Turno; onClose
           <button onClick={handleGuardar} disabled={guardando || loading} className="btn btn-primary flex-1">
             {guardando ? 'Guardando...' : 'Guardar cuestionario'}
           </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Calificar Modal ─────────────────────────────────────── */
+function CalificarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
+  const [rating, setRating] = useState(0);
+  const [comentario, setComentario] = useState('');
+  const [guardando, setGuardando] = useState(false);
+  const [resenaExistente, setResenaExistente] = useState<Resena | null | undefined>(undefined);
+  const [notice, setNotice] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+
+  useEffect(() => {
+    api.resenas.getMiResena(turno.id)
+      .then((r) => { setResenaExistente(r); if (r) { setRating(r.rating); setComentario(r.comentario || ''); } })
+      .catch(() => setResenaExistente(null));
+  }, [turno.id]);
+
+  const handleGuardar = async () => {
+    if (rating === 0) { setNotice({ type: 'error', text: 'Seleccioná al menos 1 estrella.' }); return; }
+    setGuardando(true);
+    try {
+      await api.resenas.crear({ turnoId: turno.id, rating, comentario: comentario.trim() || undefined });
+      onSuccess();
+    } catch (err) {
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : 'Error al guardar' });
+    } finally {
+      setGuardando(false);
+    }
+  };
+
+  const labels = ['', 'Malo', 'Regular', 'Bueno', 'Muy bueno', 'Excelente'];
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 className="font-bold text-slate-800">Calificar consulta</h3>
+          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+        </div>
+
+        <div className="px-6 py-5 space-y-5">
+          {notice && (
+            <div className={`alert ${notice.type === 'error' ? 'alert-error' : 'alert-success'}`}>
+              <InfoIcon size={14} className="shrink-0" /><span>{notice.text}</span>
+            </div>
+          )}
+
+          <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
+            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-lg shrink-0">
+              {turno.profesional?.fotoUrl
+                ? <img src={turno.profesional.fotoUrl} className="w-full h-full rounded-full object-cover" alt="" />
+                : '👨‍⚕️'}
+            </div>
+            <div>
+              <p className="font-semibold text-slate-800 text-sm">Dr/a. {turno.profesional?.nombre} {turno.profesional?.apellido}</p>
+              <p className="text-xs text-blue-600">{turno.profesional?.especialidad?.nombre}</p>
+              <p className="text-xs text-slate-400 mt-0.5">
+                {new Date(turno.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
+          </div>
+
+          {resenaExistente !== undefined && (
+            resenaExistente ? (
+              <div className="alert alert-info text-sm">
+                <InfoIcon size={14} className="shrink-0" />
+                <span>Ya calificaste esta consulta con {resenaExistente.rating} estrellas.</span>
+              </div>
+            ) : (
+              <>
+                <div className="text-center space-y-2">
+                  <p className="text-sm font-medium text-slate-600">¿Cómo fue tu experiencia?</p>
+                  <StarRating value={rating} onChange={setRating} size={36} />
+                  {rating > 0 && (
+                    <p className="text-sm font-semibold text-amber-600">{labels[rating]}</p>
+                  )}
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                    Comentario <span className="font-normal normal-case">(opcional)</span>
+                  </label>
+                  <textarea
+                    value={comentario}
+                    onChange={(e) => setComentario(e.target.value)}
+                    rows={3}
+                    maxLength={500}
+                    placeholder="Contá tu experiencia con el profesional..."
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none text-slate-800"
+                  />
+                  <p className="text-xs text-slate-400 text-right mt-1">{comentario.length}/500</p>
+                </div>
+              </>
+            )
+          )}
+        </div>
+
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+          <button onClick={onClose} className="btn btn-secondary flex-1">Cancelar</button>
+          {!resenaExistente && (
+            <button
+              onClick={handleGuardar}
+              disabled={guardando || rating === 0 || resenaExistente === undefined}
+              className="btn btn-primary flex-1"
+            >
+              {guardando ? 'Guardando...' : 'Enviar calificación'}
+            </button>
+          )}
         </div>
       </div>
     </div>

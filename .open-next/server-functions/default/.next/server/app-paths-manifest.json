@@ -3,6 +3,7 @@
   "/_global-error/page": "app/_global-error/page.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
   "/api/pagos/webhook/route": "app/api/pagos/webhook/route.js",
+  "/dashboard/admin/page": "app/dashboard/admin/page.js",
   "/dashboard/paciente/page": "app/dashboard/paciente/page.js",
   "/dashboard/page": "app/dashboard/page.js",
   "/login/page": "app/login/page.js",

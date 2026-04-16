@@ -98,6 +98,30 @@
         "x-next-revalidate-tag-token"
       ]
     },
+    "/dashboard/admin": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/dashboard/admin",
+      "dataRoute": "/dashboard/admin.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
     "/dashboard/paciente": {
       "experimentalBypassFor": [
         {
@@ -299,8 +323,8 @@
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "1cce31d09e2304ee0cebe8ff8dd60bba",
-    "previewModeSigningKey": "9de519a61421c694b54bfb2cf28ef53e17b139de37d5c84eda647502a9706af4",
-    "previewModeEncryptionKey": "45c720628aa7d9b74620bd8203a811be3812ca2f0aac1a0d0e6a6d88d03b0fee"
+    "previewModeId": "9f4b26153b0ed40e2c147f8560b43e10",
+    "previewModeSigningKey": "da1a4f4847a0647f65540728471d94e45fec92ee797916a67bc21f9c493fa610",
+    "previewModeEncryptionKey": "c5ca8ba8278b164c5d878cfd3536ad39149d7e32d43d3c9f5743f20182dfcc7a"
   }
 }

@@ -53,8 +53,17 @@ export const api = {
     getAll: () => fetchApi<Especialidad[]>('/especialidades'),
   },
   profesionales: {
-    getAll: (params?: Record<string, string>) => {
-      const query = params ? '?' + new URLSearchParams(params).toString() : '';
+    getAll: (params?: {
+      especialidad?: string;
+      precioMin?: string;
+      precioMax?: string;
+      modalidad?: 'PRESENCIAL' | 'VIRTUAL';
+      fecha?: string;
+      orderBy?: 'precio_asc' | 'precio_desc' | 'nombre_asc';
+      page?: string;
+      limit?: string;
+    }) => {
+      const query = params ? '?' + new URLSearchParams(params as Record<string, string>).toString() : '';
       return fetchApi<ProfesionalesResponse>(`/profesionales${query}`);
     },
     getById: (id: string) => fetchApi<Profesional>(`/profesionales/${id}`),
@@ -79,13 +88,17 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
-    misTurnos: (tipo?: 'proximos' | 'pasados') => {
-      const params = tipo ? `?tipo=${tipo}` : '';
-      return fetchApi<Turno[]>('/turnos/mis-turnos' + params);
+    misTurnos: (params?: { tipo?: 'proximos' | 'pasados'; page?: number; limit?: number }) => {
+      const q: Record<string, string> = {};
+      if (params?.tipo)  q.tipo  = params.tipo;
+      if (params?.page)  q.page  = String(params.page);
+      if (params?.limit) q.limit = String(params.limit);
+      const query = Object.keys(q).length ? '?' + new URLSearchParams(q).toString() : '';
+      return fetchApi<TurnosPaginatedResponse>('/turnos/mis-turnos' + query);
     },
     getByProfesional: (id: string, params?: Record<string, string>) => {
       const query = params ? '?' + new URLSearchParams(params).toString() : '';
-      return fetchApi<Turno[]>(`/turnos/profesional/${id}${query}`);
+      return fetchApi<TurnosPaginatedResponse>(`/turnos/profesional/${id}${query}`);
     },
     reprogramar: (id: string, data: { fechaHora: string; modalidad?: 'PRESENCIAL' | 'VIRTUAL' }) =>
       fetchApi<Turno>(`/turnos/${id}/reprogramar`, {
@@ -147,6 +160,52 @@ export const api = {
         body: JSON.stringify(data),
       }),
   },
+  admin: {
+    getStats: () => fetchApi<AdminStats>('/admin/stats'),
+    getUsuarios: (params?: { page?: number; limit?: number; search?: string }) => {
+      const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([,v]) => v !== undefined).map(([k,v]) => [k, String(v)]))).toString() : '';
+      return fetchApi<{ usuarios: AdminUsuario[]; pagination: PaginationMeta }>(`/admin/usuarios${q}`);
+    },
+    toggleActivo: (id: string) =>
+      fetchApi<{ activo: boolean }>(`/admin/usuarios/${id}/toggle-activo`, { method: 'PATCH' }),
+    getProfesionales: (params?: { page?: number; limit?: number; search?: string }) => {
+      const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([,v]) => v !== undefined).map(([k,v]) => [k, String(v)]))).toString() : '';
+      return fetchApi<{ profesionales: AdminProfesional[]; pagination: PaginationMeta }>(`/admin/profesionales${q}`);
+    },
+    getTurnos: (params?: { page?: number; limit?: number; search?: string; estado?: string }) => {
+      const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([,v]) => v !== undefined && v !== '').map(([k,v]) => [k, String(v)]))).toString() : '';
+      return fetchApi<{ turnos: AdminTurno[]; pagination: PaginationMeta }>(`/admin/turnos${q}`);
+    },
+    crearEspecialidad: (data: { nombre: string; descripcion?: string; icono?: string }) =>
+      fetchApi<Especialidad>('/admin/especialidades', { method: 'POST', body: JSON.stringify(data) }),
+    editarEspecialidad: (id: string, data: { nombre?: string; descripcion?: string; icono?: string }) =>
+      fetchApi<Especialidad>(`/admin/especialidades/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    eliminarEspecialidad: (id: string) =>
+      fetchApi<{ deleted: boolean }>(`/admin/especialidades/${id}`, { method: 'DELETE' }),
+  },
+  resenas: {
+    crear: (data: { turnoId: string; rating: number; comentario?: string }) =>
+      fetchApi<Resena>('/resenas', { method: 'POST', body: JSON.stringify(data) }),
+    getByProfesional: (profesionalId: string, params?: { page?: number; limit?: number }) => {
+      const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).map(([k,v]) => [k, String(v)]))).toString() : '';
+      return fetchApi<ResenasResponse>(`/resenas/profesional/${profesionalId}${q}`);
+    },
+    getMiResena: (turnoId: string) =>
+      fetchApi<Resena | null>(`/resenas/mi-resena/${turnoId}`),
+  },
+  notifications: {
+    getPreferences: () => fetchApi<NotificationPreferences>('/notifications/preferences'),
+    updatePreferences: (data: Partial<NotificationPreferences>) =>
+      fetchApi<NotificationPreferences>('/notifications/preferences', {
+        method: 'PUT',
+        body: JSON.stringify(data),
+      }),
+    sendTest: (canal: 'EMAIL' | 'WHATSAPP' | 'IN_APP') =>
+      fetchApi<{ ok: boolean; channel: string }>('/notifications/test', {
+        method: 'POST',
+        body: JSON.stringify({ canal }),
+      }),
+  },
 };
 
 export type LoginData = {
@@ -175,7 +234,7 @@ export type AuthResponse = {
   user: {
     id: string;
     email: string;
-    rol: 'PROFESIONAL' | 'PACIENTE';
+    rol: 'PROFESIONAL' | 'PACIENTE' | 'ADMIN';
     perfil?: Profesional | Paciente;
   };
 };
@@ -183,7 +242,7 @@ export type AuthResponse = {
 export type User = {
   id: string;
   email: string;
-  rol: 'PROFESIONAL' | 'PACIENTE';
+  rol: 'PROFESIONAL' | 'PACIENTE' | 'ADMIN';
   profesional?: Profesional;
   paciente?: Paciente;
 };
@@ -209,6 +268,25 @@ export type Profesional = {
   fotoUrl?: string;
   especialidad: Especialidad;
   disponibilidades?: Disponibilidad[];
+  ratingPromedio?: number | null;
+  totalResenas?: number;
+};
+
+export type Resena = {
+  id: string;
+  turnoId: string;
+  profesionalId: string;
+  pacienteId: string;
+  rating: number;
+  comentario: string | null;
+  createdAt: string;
+  paciente?: { nombre: string; apellido: string; fotoUrl?: string | null };
+};
+
+export type ResenasResponse = {
+  resenas: Resena[];
+  pagination: PaginationMeta;
+  stats: { promedio: number | null; total: number };
 };
 
 export type Paciente = {
@@ -372,14 +450,21 @@ export type ListaEsperaItem = {
   createdAt: string;
 };
 
+export type PaginationMeta = {
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
 export type ProfesionalesResponse = {
   profesionales: Profesional[];
-  pagination: {
-    page: number;
-    limit: number;
-    total: number;
-    totalPages: number;
-  };
+  pagination: PaginationMeta;
+};
+
+export type TurnosPaginatedResponse = {
+  turnos: Turno[];
+  pagination: PaginationMeta;
 };
 
 export type ReservarTurnoData = {
@@ -393,4 +478,56 @@ export type ReservarTurnoData = {
     telefono?: string;
     dni?: string;
   };
+};
+
+
+// ── Admin ──────────────────────────────────────────────────────────────────
+
+export type AdminStats = {
+  totalUsuarios: number;
+  totalProfesionales: number;
+  totalPacientes: number;
+  totalTurnos: number;
+  turnosPorEstado: Record<string, number>;
+  totalEspecialidades: number;
+  totalResenas: number;
+  ingresosAprobados: number;
+  turnosUltimos30: number;
+  registrosUltimos30: number;
+};
+
+export type AdminUsuario = {
+  id: string;
+  email: string;
+  rol: 'PROFESIONAL' | 'PACIENTE' | 'ADMIN';
+  createdAt: string;
+  profesional?: { id: string; nombre: string; apellido: string; activo: boolean; especialidad: { nombre: string } } | null;
+  paciente?: { id: string; nombre: string; apellido: string } | null;
+};
+
+export type AdminProfesional = Profesional & {
+  activo: boolean;
+  usuario: { email: string; createdAt: string };
+  _count: { turnos: number; resenas: number };
+  ratingPromedio: number | null;
+  totalResenas: number;
+};
+
+export type AdminTurno = {
+  id: string;
+  fechaHora: string;
+  modalidad: 'PRESENCIAL' | 'VIRTUAL';
+  estado: string;
+  profesional: { id: string; nombre: string; apellido: string; especialidad: { nombre: string } };
+  paciente: { id: string; nombre: string; apellido: string } | null;
+  pago: { monto: number; estado: string } | null;
+};
+
+export type NotificationPreferences = {
+  // Paciente
+  aceptaRecordatorios?: boolean;
+  notifEmail: boolean;
+  notifWhatsapp: boolean;
+  notifRecordatorio24h?: boolean;
+  notifRecordatorio2h?: boolean;
 };

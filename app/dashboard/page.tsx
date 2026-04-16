@@ -6,12 +6,46 @@ import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion } from '../lib/api';
 import StatsPanel from '../components/StatsPanel';
 import ProfileModal from '../components/ProfileModal';
+import OnboardingTour from '../components/OnboardingTour';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, ChartIcon, TrashIcon, ClipboardIcon, PaperclipIcon,
   XIcon, CheckIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon,
 } from '../components/icons';
 import { DIAS_SEMANA, estadoBadge, clinicalRiskBadge } from '../lib/utils';
+
+const PROF_TOUR_STEPS = [
+  {
+    selector: '[data-onboarding="stat-cards"]',
+    title: 'Tu resumen de actividad',
+    description: 'Mirá de un vistazo cuántos turnos tenés hoy, cuántos tuviste este mes y tu especialidad.',
+    position: 'bottom' as const,
+  },
+  {
+    selector: '[data-onboarding="tab-calendario"]',
+    title: 'Tu agenda diaria',
+    description: 'En la pestaña "Agenda" encontrás todos los turnos del día seleccionado. Hacé clic en cualquier turno para ver la evolución clínica, historia del paciente y emitir recetas.',
+    position: 'bottom' as const,
+  },
+  {
+    selector: '[data-onboarding="tab-disponibilidad"]',
+    title: 'Configurá tus horarios',
+    description: 'En "Disponibilidad" agregás los días y rangos horarios en los que atendés. Los pacientes solo podrán reservar en esos bloques.',
+    position: 'bottom' as const,
+  },
+  {
+    selector: '[data-onboarding="tab-stats"]',
+    title: 'Estadísticas y facturación',
+    description: 'Revisá la evolución de tus turnos e ingresos mes a mes en el panel de estadísticas.',
+    position: 'bottom' as const,
+  },
+  {
+    selector: '[data-onboarding="profile-btn"]',
+    title: 'Tu perfil profesional',
+    description: 'Actualizá tu foto, precio de consulta, lugar de atención y biografía para que los pacientes te encuentren más fácilmente.',
+    position: 'bottom' as const,
+  },
+];
 
 interface StatsData {
   turnosPorMes: any[];
@@ -45,6 +79,7 @@ export default function ProfesionalDashboard() {
 
   useEffect(() => {
     if (!authLoading && !user) { router.push('/login'); return; }
+    if (!authLoading && user?.rol === 'ADMIN') { router.push('/dashboard/admin'); return; }
     if (!authLoading && user?.paciente) { router.push('/dashboard/paciente'); return; }
     if (user?.profesional) { loadData(); loadRecordatorios(); }
   }, [user, authLoading, router]);
@@ -66,10 +101,11 @@ export default function ProfesionalDashboard() {
         api.turnos.getByProfesional(user.profesional.id, {
           desde: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
           hasta: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
+          limit: '200',
         }),
         api.profesionales.getById(user.profesional.id),
       ]);
-      setTurnos(turnosData);
+      setTurnos(turnosData.turnos);
       setDisponibilidades(dispData.disponibilidades || []);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
@@ -207,6 +243,7 @@ export default function ProfesionalDashboard() {
             </div>
             <div className="flex items-center gap-1.5">
               <button
+                data-onboarding="profile-btn"
                 onClick={() => setShowProfileModal(true)}
                 className="btn btn-ghost text-slate-600 text-sm"
               >
@@ -237,7 +274,7 @@ export default function ProfesionalDashboard() {
         )}
 
         {/* ── Stat cards ──────────────────────────────────── */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div data-onboarding="stat-cards" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="stat-card">
             <div className="flex items-start justify-between">
               <p className="stat-label">Turnos hoy</p>
@@ -280,12 +317,13 @@ export default function ProfesionalDashboard() {
         <div className="card overflow-hidden">
           <div className="tab-nav px-1 pt-1">
             {([
-              { id: 'calendario', label: 'Agenda', icon: <CalendarIcon size={14} /> },
-              { id: 'disponibilidad', label: 'Disponibilidad', icon: <ClockIcon size={14} /> },
-              { id: 'stats', label: 'Estadísticas', icon: <ChartIcon size={14} /> },
+              { id: 'calendario', label: 'Agenda', icon: <CalendarIcon size={14} />, onboarding: 'tab-calendario' },
+              { id: 'disponibilidad', label: 'Disponibilidad', icon: <ClockIcon size={14} />, onboarding: 'tab-disponibilidad' },
+              { id: 'stats', label: 'Estadísticas', icon: <ChartIcon size={14} />, onboarding: 'tab-stats' },
             ] as const).map(tab => (
               <button
                 key={tab.id}
+                data-onboarding={tab.onboarding}
                 onClick={() => setActiveTab(tab.id)}
                 className={`tab-btn flex items-center gap-1.5 ${activeTab === tab.id ? 'tab-btn-active' : ''}`}
               >
@@ -352,6 +390,12 @@ export default function ProfesionalDashboard() {
           onUpdate={() => window.location.reload()}
         />
       )}
+
+      <OnboardingTour
+        storageKey="medisync-prof-tour-v1"
+        steps={PROF_TOUR_STEPS}
+        delay={1000}
+      />
     </div>
   );
 }
