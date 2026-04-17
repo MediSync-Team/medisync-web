@@ -54,6 +54,7 @@ interface Filters {
   modalidad: Modalidad;
   fecha: string;
   orderBy: OrderBy;
+  disponibleEstaSemana: boolean;
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -64,10 +65,11 @@ const EMPTY_FILTERS: Filters = {
   modalidad: '',
   fecha: '',
   orderBy: '',
+  disponibleEstaSemana: false,
 };
 
 function activeFilterCount(f: Filters) {
-  return [f.precioMin, f.precioMax, f.modalidad, f.fecha, f.orderBy].filter(Boolean).length;
+  return [f.precioMin, f.precioMax, f.modalidad, f.fecha, f.orderBy, f.disponibleEstaSemana ? 'x' : ''].filter(Boolean).length;
 }
 
 export default function HomePage() {
@@ -100,6 +102,7 @@ export default function HomePage() {
       if (f.modalidad) params.modalidad = f.modalidad;
       if (f.fecha) params.fecha = f.fecha;
       if (f.orderBy) params.orderBy = f.orderBy;
+      if (f.disponibleEstaSemana) params.disponibleEstaSemana = 'true';
 
       const data = await api.profesionales.getAll(params);
       setProfesionales(data.profesionales);
@@ -132,7 +135,7 @@ export default function HomePage() {
   };
 
   const removeFilter = (key: keyof Filters) => {
-    const updated = { ...filters, [key]: '' };
+    const updated = { ...filters, [key]: key === 'disponibleEstaSemana' ? false : '' };
     applyFilters(updated);
     setDraft(updated);
   };
@@ -146,6 +149,7 @@ export default function HomePage() {
 
   // Labels for active filter pills
   const filterPills: { key: keyof Filters; label: string }[] = [
+    ...(filters.disponibleEstaSemana ? [{ key: 'disponibleEstaSemana' as const, label: '🟢 Con turno esta semana' }] : []),
     ...(filters.precioMin ? [{ key: 'precioMin' as const, label: `Precio mín: $${filters.precioMin}` }] : []),
     ...(filters.precioMax ? [{ key: 'precioMax' as const, label: `Precio máx: $${filters.precioMax}` }] : []),
     ...(filters.modalidad ? [{ key: 'modalidad' as const, label: filters.modalidad === 'PRESENCIAL' ? 'Presencial' : 'Virtual' }] : []),
@@ -249,22 +253,41 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* ── Advanced filter toggle ─────────────────── */}
-            <button
-              onClick={() => { setDraft(filters); setShowAdvanced(!showAdvanced); }}
-              className="mt-4 inline-flex items-center gap-2 text-blue-100 hover:text-white text-sm transition-colors"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="10" y1="18" x2="14" y2="18" />
-              </svg>
-              {h.advancedFilters}
-              {advCount > 0 && (
-                <span className="bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{advCount}</span>
-              )}
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`}>
-                <polyline points="6 9 12 15 18 9" />
-              </svg>
-            </button>
+            {/* ── Quick filter pills ─────────────────────── */}
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <button
+                onClick={() => {
+                  const updated = { ...filters, disponibleEstaSemana: !filters.disponibleEstaSemana };
+                  applyFilters({ ...draft, disponibleEstaSemana: updated.disponibleEstaSemana });
+                  setDraft((d) => ({ ...d, disponibleEstaSemana: updated.disponibleEstaSemana }));
+                }}
+                className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-sm font-semibold border-2 transition-all ${
+                  filters.disponibleEstaSemana
+                    ? 'bg-emerald-500 border-emerald-400 text-white shadow-md'
+                    : 'bg-white/15 border-white/30 text-white hover:bg-white/25'
+                }`}
+              >
+                <span className={`w-2 h-2 rounded-full ${filters.disponibleEstaSemana ? 'bg-white' : 'bg-emerald-400'} animate-pulse`} />
+                Turno disponible esta semana
+              </button>
+
+              {/* ── Advanced filter toggle ─────────────────── */}
+              <button
+                onClick={() => { setDraft(filters); setShowAdvanced(!showAdvanced); }}
+                className="inline-flex items-center gap-2 text-blue-100 hover:text-white text-sm transition-colors px-3.5 py-1.5 rounded-full border-2 border-white/20 bg-white/10 hover:bg-white/20"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="10" y1="18" x2="14" y2="18" />
+                </svg>
+                {h.advancedFilters}
+                {advCount > 0 && (
+                  <span className="bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{advCount}</span>
+                )}
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className={`transition-transform ${showAdvanced ? 'rotate-180' : ''}`}>
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </button>
+            </div>
           </div>
 
           {/* ── Advanced filter panel ────────────────────── */}
@@ -350,6 +373,20 @@ export default function HomePage() {
                     </select>
                   </div>
                 </div>
+
+                {/* Disponibilidad real esta semana */}
+                <label className="flex items-center gap-3 mt-4 p-3 rounded-xl border-2 border-emerald-200 bg-emerald-50 cursor-pointer hover:bg-emerald-100 transition-colors">
+                  <input
+                    type="checkbox"
+                    checked={draft.disponibleEstaSemana}
+                    onChange={(e) => setDraft({ ...draft, disponibleEstaSemana: e.target.checked })}
+                    className="w-4 h-4 accent-emerald-600"
+                  />
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-800">🟢 Solo con turno disponible esta semana</p>
+                    <p className="text-xs text-emerald-600">Muestra únicamente profesionales con slots libres en los próximos 7 días (verificación en tiempo real).</p>
+                  </div>
+                </label>
 
                 <div className="flex gap-3 mt-5 pt-4 border-t border-slate-100">
                   <button
@@ -444,7 +481,7 @@ export default function HomePage() {
             <>
               <div data-onboarding="prof-list" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {profesionales.map((prof) => (
-                  <ProfCard key={prof.id} prof={prof} />
+                  <ProfCard key={prof.id} prof={prof} showDisponible={filters.disponibleEstaSemana} />
                 ))}
               </div>
               <Pagination
@@ -462,7 +499,7 @@ export default function HomePage() {
   );
 }
 
-function ProfCard({ prof }: { prof: Profesional }) {
+function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDisponible?: boolean }) {
   const { t } = useLang();
   const h = t('home');
   const modalidades = [...new Set(prof.disponibilidades?.map((d) => d.modalidad) ?? [])];
@@ -470,7 +507,13 @@ function ProfCard({ prof }: { prof: Profesional }) {
   const tieneVirtual = modalidades.some((m) => m === 'VIRTUAL' || m === 'AMBOS');
 
   return (
-    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-600 transition-all flex flex-col">
+    <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border p-6 hover:shadow-md transition-all flex flex-col ${showDisponible ? 'border-emerald-200 dark:border-emerald-700 hover:border-emerald-300' : 'border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-600'}`}>
+      {showDisponible && (
+        <div className="flex items-center gap-1.5 mb-3 -mt-1">
+          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Turnos disponibles esta semana</span>
+        </div>
+      )}
       <div className="flex items-start gap-4">
         <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-2xl shrink-0 border border-blue-100 dark:border-blue-800 overflow-hidden">
           {prof.fotoUrl

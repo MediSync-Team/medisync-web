@@ -3658,12 +3658,12 @@
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/pago-exitoso/page_client-reference-manifest.js": {
+    ".open-next/server-functions/default/.next/server/app/pago-fallido/page_client-reference-manifest.js": {
       "bytes": 10642,
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/app/pago-fallido/page_client-reference-manifest.js": {
+    ".open-next/server-functions/default/.next/server/app/pago-exitoso/page_client-reference-manifest.js": {
       "bytes": 10642,
       "imports": [],
       "format": "cjs"
@@ -3752,14 +3752,14 @@
           "original": "C:\\Users\\Administrator\\Desktop\\INGE\\MediSync\\medisync-web\\.open-next\\server-functions\\default\\.next\\server\\app\\_global-error\\page_client-reference-manifest.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/app/pago-exitoso/page_client-reference-manifest.js",
-          "kind": "require-call",
-          "original": "C:\\Users\\Administrator\\Desktop\\INGE\\MediSync\\medisync-web\\.open-next\\server-functions\\default\\.next\\server\\app\\pago-exitoso\\page_client-reference-manifest.js"
-        },
-        {
           "path": ".open-next/server-functions/default/.next/server/app/pago-fallido/page_client-reference-manifest.js",
           "kind": "require-call",
           "original": "C:\\Users\\Administrator\\Desktop\\INGE\\MediSync\\medisync-web\\.open-next\\server-functions\\default\\.next\\server\\app\\pago-fallido\\page_client-reference-manifest.js"
+        },
+        {
+          "path": ".open-next/server-functions/default/.next/server/app/pago-exitoso/page_client-reference-manifest.js",
+          "kind": "require-call",
+          "original": "C:\\Users\\Administrator\\Desktop\\INGE\\MediSync\\medisync-web\\.open-next\\server-functions\\default\\.next\\server\\app\\pago-exitoso\\page_client-reference-manifest.js"
         },
         {
           "path": ".open-next/server-functions/default/.next/server/app/_not-found/page_client-reference-manifest.js",
@@ -4549,7 +4549,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/profesional/[id]/page.js": {
-      "bytes": 60690,
+      "bytes": 68166,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/next/dist/shared/lib/router/utils/app-paths.js",
@@ -8234,10 +8234,10 @@
         ".open-next/server-functions/default/.next/server/app/_global-error/page_client-reference-manifest.js": {
           "bytesInOutput": 9658
         },
-        ".open-next/server-functions/default/.next/server/app/pago-exitoso/page_client-reference-manifest.js": {
+        ".open-next/server-functions/default/.next/server/app/pago-fallido/page_client-reference-manifest.js": {
           "bytesInOutput": 9764
         },
-        ".open-next/server-functions/default/.next/server/app/pago-fallido/page_client-reference-manifest.js": {
+        ".open-next/server-functions/default/.next/server/app/pago-exitoso/page_client-reference-manifest.js": {
           "bytesInOutput": 9764
         },
         ".open-next/server-functions/default/.next/server/app/_not-found/page_client-reference-manifest.js": {
@@ -8358,7 +8358,7 @@
           "bytesInOutput": 64583
         },
         ".open-next/server-functions/default/.next/server/app/profesional/[id]/page.js": {
-          "bytesInOutput": 61048
+          "bytesInOutput": 68589
         },
         ".open-next/server-functions/default/.next/server/app/dashboard/admin/page.js": {
           "bytesInOutput": 51176
@@ -8547,7 +8547,7 @@
           "bytesInOutput": 62626
         }
       },
-      "bytes": 3974014
+      "bytes": 3981555
     }
   }
 }

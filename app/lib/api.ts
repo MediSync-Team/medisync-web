@@ -59,6 +59,7 @@ export const api = {
       precioMax?: string;
       modalidad?: 'PRESENCIAL' | 'VIRTUAL';
       fecha?: string;
+      disponibleEstaSemana?: string;
       orderBy?: 'precio_asc' | 'precio_desc' | 'nombre_asc';
       page?: string;
       limit?: string;
