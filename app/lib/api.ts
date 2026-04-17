@@ -201,6 +201,14 @@ export const api = {
     },
     getMiResena: (turnoId: string) =>
       fetchApi<Resena | null>(`/resenas/mi-resena/${turnoId}`),
+    getMisResenas: (params?: { page?: number; limit?: number; rating?: number }) => {
+      const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([,v]) => v !== undefined).map(([k,v]) => [k, String(v)]))).toString() : '';
+      return fetchApi<ResenasResponse>(`/resenas/mis-resenas${q}`);
+    },
+    responder: (id: string, respuesta: string) =>
+      fetchApi<Resena>(`/resenas/${id}/respuesta`, { method: 'PATCH', body: JSON.stringify({ respuesta }) }),
+    borrarRespuesta: (id: string) =>
+      fetchApi<Resena>(`/resenas/${id}/respuesta`, { method: 'DELETE' }),
   },
   notifications: {
     getPreferences: () => fetchApi<NotificationPreferences>('/notifications/preferences'),
@@ -289,14 +297,24 @@ export type Resena = {
   pacienteId: string;
   rating: number;
   comentario: string | null;
+  respuesta: string | null;
+  respondidaAt: string | null;
   createdAt: string;
+  updatedAt: string;
   paciente?: { nombre: string; apellido: string; fotoUrl?: string | null };
+  turno?: { fechaHora: string; modalidad: string };
+};
+
+export type ResenasStats = {
+  promedio: number | null;
+  total: number;
+  distribucion?: Record<number, number>;
 };
 
 export type ResenasResponse = {
   resenas: Resena[];
   pagination: PaginationMeta;
-  stats: { promedio: number | null; total: number };
+  stats: ResenasStats;
 };
 
 export type Paciente = {
