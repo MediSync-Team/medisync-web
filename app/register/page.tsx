@@ -5,368 +5,179 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, Especialidad, Genero } from '../lib/api';
-
-const GENERO_OPCIONES: { value: Genero; label: string }[] = [
-  { value: 'NO_ESPECIFICADO', label: 'Prefiero no decirlo' },
-  { value: 'MASCULINO', label: 'Masculino' },
-  { value: 'FEMENINO', label: 'Femenino' },
-  { value: 'OTRO', label: 'Otro' },
-];
+import { useLang } from '../lib/i18n/context';
+import ThemeLangToggle from '../components/ThemeLangToggle';
 
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
+  const { t } = useLang();
+  const a = t('auth');
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    confirmPassword: '',
+    email: '', password: '', confirmPassword: '',
     rol: 'PACIENTE' as 'PROFESIONAL' | 'PACIENTE',
-    nombre: '',
-    apellido: '',
-    telefono: '',
+    nombre: '', apellido: '', telefono: '',
     genero: 'NO_ESPECIFICADO' as Genero,
-    matricula: '',
-    especialidadId: '',
-    precioConsulta: '',
-    lugarAtencion: '',
-    bio: '',
-    fotoUrl: '',
+    matricula: '', especialidadId: '', precioConsulta: '',
+    lugarAtencion: '', bio: '', fotoUrl: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    api.especialidades.getAll().then(setEspecialidades).catch(console.error);
-  }, []);
+  useEffect(() => { api.especialidades.getAll().then(setEspecialidades).catch(console.error); }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-
-    if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
-      return;
-    }
-
-    if (formData.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
-      return;
-    }
-
-    if (formData.nombre.length < 2 || formData.apellido.length < 2) {
-      setError('El nombre y apellido deben tener al menos 2 caracteres');
-      return;
-    }
-
-    if (formData.telefono && !/^[\d\s\-\+\(\)]{8,20}$/.test(formData.telefono)) {
-      setError('El teléfono debe contener solo números y tener entre 8 y 20 caracteres');
-      return;
-    }
-
+    if (formData.password !== formData.confirmPassword) { setError('Las contraseñas no coinciden'); return; }
+    if (formData.password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return; }
+    if (formData.nombre.length < 2 || formData.apellido.length < 2) { setError('Nombre y apellido deben tener al menos 2 caracteres'); return; }
+    if (formData.telefono && !/^[\d\s\-\+\(\)]{8,20}$/.test(formData.telefono)) { setError('Teléfono inválido'); return; }
     setLoading(true);
-
     try {
       await register({
-        email: formData.email,
-        password: formData.password,
-        rol: formData.rol,
-        nombre: formData.nombre,
-        apellido: formData.apellido,
-        telefono: formData.telefono || undefined,
-        genero: formData.genero,
+        email: formData.email, password: formData.password, rol: formData.rol,
+        nombre: formData.nombre, apellido: formData.apellido,
+        telefono: formData.telefono || undefined, genero: formData.genero,
         matricula: formData.rol === 'PROFESIONAL' ? formData.matricula : undefined,
         especialidadId: formData.rol === 'PROFESIONAL' ? formData.especialidadId : undefined,
-        precioConsulta: formData.rol === 'PROFESIONAL' && formData.precioConsulta 
-          ? Number(formData.precioConsulta) 
-          : undefined,
+        precioConsulta: formData.rol === 'PROFESIONAL' && formData.precioConsulta ? Number(formData.precioConsulta) : undefined,
         lugarAtencion: formData.rol === 'PROFESIONAL' ? formData.lugarAtencion : undefined,
         bio: formData.rol === 'PROFESIONAL' ? formData.bio : undefined,
         fotoUrl: formData.rol === 'PROFESIONAL' ? formData.fotoUrl : undefined,
       });
       router.push('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al registrar');
+      setError(err instanceof Error ? err.message : a.registerBtn);
     } finally {
       setLoading(false);
     }
   };
 
+  const inp = 'field-input mt-1';
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4">
-      <div className="max-w-md w-full space-y-8 p-8 bg-white rounded-lg shadow-md">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-blue-600">MediSync</h1>
-          <p className="mt-2 text-gray-600">Crear cuenta</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 py-12 px-4">
+      <div className="fixed top-4 right-4"><ThemeLangToggle /></div>
+
+      <div className="w-full max-w-md">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 mb-3 shadow-lg">
+            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+            </svg>
+          </div>
+          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">MediSync</h1>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">{a.logoSubtitle}</p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
-              {error}
-            </div>
-          )}
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
+          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-6">{a.createAccount}</h2>
 
-          <div className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {error && <div className="alert alert-error text-sm">{error}</div>}
+
+            {/* Role */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Soy...
-              </label>
-              <div className="flex gap-4">
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="rol"
-                    value="PACIENTE"
-                    checked={formData.rol === 'PACIENTE'}
-                    onChange={handleChange}
-                    className="mr-2"
-                  />
-                  Paciente
-                </label>
-                <label className="flex items-center">
-                  <input
-                    type="radio"
-                    name="rol"
-                    value="PROFESIONAL"
-                    checked={formData.rol === 'PROFESIONAL'}
-                    onChange={handleChange}
-                    className="mr-2"
-                  />
-                  Profesional
-                </label>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="nombre" className="block text-sm font-medium text-gray-700">
-                  Nombre
-                </label>
-                <input
-                  id="nombre"
-                  name="nombre"
-                  required
-                  value={formData.nombre}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-              <div>
-                <label htmlFor="apellido" className="block text-sm font-medium text-gray-700">
-                  Apellido
-                </label>
-                <input
-                  id="apellido"
-                  name="apellido"
-                  required
-                  value={formData.apellido}
-                  onChange={handleChange}
-                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="telefono" className="block text-sm font-medium text-gray-700">
-                Teléfono
-              </label>
-              <input
-                id="telefono"
-                name="telefono"
-                type="tel"
-                value={formData.telefono}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="+54 11 1234 5678"
-                pattern="[\d\s\-\+\(\)]{8,20}"
-                title="Solo números, espacios, guiones, paréntesis y +"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="genero" className="block text-sm font-medium text-gray-700">
-                Género
-              </label>
-              <select
-                id="genero"
-                name="genero"
-                value={formData.genero}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              >
-                {GENERO_OPCIONES.map((opt) => (
-                  <option key={opt.value} value={opt.value}>
-                    {opt.label}
-                  </option>
+              <label className="field-label">{a.role}</label>
+              <div className="flex gap-6 mt-1">
+                {(['PACIENTE', 'PROFESIONAL'] as const).map(r => (
+                  <label key={r} className="flex items-center gap-2 cursor-pointer">
+                    <input type="radio" name="rol" value={r} checked={formData.rol === r} onChange={handleChange} className="accent-blue-600" />
+                    <span className="text-sm text-slate-700 dark:text-slate-300">{r === 'PACIENTE' ? a.patient : a.professional}</span>
+                  </label>
                 ))}
+              </div>
+            </div>
+
+            {/* Name grid */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="nombre" className="field-label">{a.firstName}</label>
+                <input id="nombre" name="nombre" required value={formData.nombre} onChange={handleChange} className={inp} />
+              </div>
+              <div>
+                <label htmlFor="apellido" className="field-label">{a.lastName}</label>
+                <input id="apellido" name="apellido" required value={formData.apellido} onChange={handleChange} className={inp} />
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="email" className="field-label">{a.email}</label>
+              <input id="email" name="email" type="email" required value={formData.email} onChange={handleChange} className={inp} />
+            </div>
+
+            <div>
+              <label htmlFor="telefono" className="field-label">{a.phone} <span className="text-slate-400 text-xs">({t('common').optional})</span></label>
+              <input id="telefono" name="telefono" type="tel" value={formData.telefono} onChange={handleChange} className={inp} placeholder="+54 11 1234 5678" />
+            </div>
+
+            <div>
+              <label htmlFor="genero" className="field-label">{a.gender}</label>
+              <select id="genero" name="genero" value={formData.genero} onChange={handleChange} className="field-select mt-1">
+                <option value="NO_ESPECIFICADO">{a.genderNS}</option>
+                <option value="MASCULINO">{a.genderM}</option>
+                <option value="FEMENINO">{a.genderF}</option>
+                <option value="OTRO">{a.genderO}</option>
               </select>
             </div>
 
             {formData.rol === 'PROFESIONAL' && (
               <>
                 <div>
-                  <label htmlFor="matricula" className="block text-sm font-medium text-gray-700">
-                    Matrícula Profesional
-                  </label>
-                  <input
-                    id="matricula"
-                    name="matricula"
-                    required
-                    value={formData.matricula}
-                    onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="MP 12345"
-                  />
+                  <label htmlFor="matricula" className="field-label">{a.license}</label>
+                  <input id="matricula" name="matricula" required value={formData.matricula} onChange={handleChange} className={inp} placeholder="MP 12345" />
                 </div>
-
                 <div>
-                  <label htmlFor="especialidadId" className="block text-sm font-medium text-gray-700">
-                    Especialidad
-                  </label>
-                  <select
-                    id="especialidadId"
-                    name="especialidadId"
-                    required
-                    value={formData.especialidadId}
-                    onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                  >
-                    <option value="">Seleccionar especialidad</option>
-                    {especialidades.map((esp) => (
-                      <option key={esp.id} value={esp.id}>
-                        {esp.nombre}
-                      </option>
-                    ))}
+                  <label htmlFor="especialidadId" className="field-label">{a.specialty}</label>
+                  <select id="especialidadId" name="especialidadId" required value={formData.especialidadId} onChange={handleChange} className="field-select mt-1">
+                    <option value="">—</option>
+                    {especialidades.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
                   </select>
                 </div>
-
                 <div>
-                  <label htmlFor="precioConsulta" className="block text-sm font-medium text-gray-700">
-                    Precio de Consulta ($)
-                  </label>
-                  <input
-                    id="precioConsulta"
-                    name="precioConsulta"
-                    type="number"
-                    value={formData.precioConsulta}
-                    onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="5000"
-                  />
+                  <label htmlFor="precioConsulta" className="field-label">{a.price}</label>
+                  <input id="precioConsulta" name="precioConsulta" type="number" value={formData.precioConsulta} onChange={handleChange} className={inp} placeholder="5000" />
                 </div>
-
                 <div>
-                  <label htmlFor="lugarAtencion" className="block text-sm font-medium text-gray-700">
-                    Lugar de Atención
-                  </label>
-                  <input
-                    id="lugarAtencion"
-                    name="lugarAtencion"
-                    value={formData.lugarAtencion}
-                    onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="Dirección o consultorio"
-                  />
+                  <label htmlFor="lugarAtencion" className="field-label">{a.location}</label>
+                  <input id="lugarAtencion" name="lugarAtencion" value={formData.lugarAtencion} onChange={handleChange} className={inp} />
                 </div>
-
                 <div>
-                  <label htmlFor="fotoUrl" className="block text-sm font-medium text-gray-700">
-                    URL de Foto de Perfil
-                  </label>
-                  <input
-                    id="fotoUrl"
-                    name="fotoUrl"
-                    type="url"
-                    value={formData.fotoUrl}
-                    onChange={handleChange}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-                    placeholder="https://..."
-                  />
+                  <label htmlFor="fotoUrl" className="field-label">{t('profile').photoUrl}</label>
+                  <input id="fotoUrl" name="fotoUrl" type="url" value={formData.fotoUrl} onChange={handleChange} className={inp} placeholder="https://..." />
                 </div>
-
                 <div>
-                  <label htmlFor="bio" className="block text-sm font-medium text-gray-700">
-                    Biografía
-                  </label>
-                  <textarea
-                    id="bio"
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleChange}
-                    rows={3}
-                    className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md resize-none"
-                    placeholder="Breve descripción sobre vos..."
-                  />
+                  <label htmlFor="bio" className="field-label">{a.bio}</label>
+                  <textarea id="bio" name="bio" value={formData.bio} onChange={handleChange} rows={3} className="field-input mt-1 resize-none" />
                 </div>
               </>
             )}
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Contraseña
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                value={formData.password}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
+              <label htmlFor="password" className="field-label">{a.password}</label>
+              <input id="password" name="password" type="password" required value={formData.password} onChange={handleChange} className={inp} placeholder="••••••••" />
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirmar Contraseña
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                value={formData.confirmPassword}
-                onChange={handleChange}
-                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
+              <label htmlFor="confirmPassword" className="field-label">{a.password} (confirmar)</label>
+              <input id="confirmPassword" name="confirmPassword" type="password" required value={formData.confirmPassword} onChange={handleChange} className={inp} placeholder="••••••••" />
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            {loading ? 'Creando cuenta...' : 'Crear cuenta'}
-          </button>
+            <button type="submit" disabled={loading} className="btn btn-primary w-full mt-2">
+              {loading ? a.registering : a.registerBtn}
+            </button>
 
-          <div className="text-center text-sm">
-            <span className="text-gray-600">¿Ya tenés cuenta? </span>
-            <Link href="/login" className="text-blue-600 hover:text-blue-500">
-              Iniciar sesión
-            </Link>
-          </div>
-        </form>
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400">
+              {a.haveAccount}{' '}
+              <Link href="/login" className="text-blue-600 hover:text-blue-500 font-medium">{a.loginBtn}</Link>
+            </p>
+          </form>
+        </div>
       </div>
     </div>
   );

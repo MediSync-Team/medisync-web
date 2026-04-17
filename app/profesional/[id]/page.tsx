@@ -5,18 +5,22 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api, Profesional, Slot, ListaEsperaItem, ResenasResponse } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
+import { useLang } from '../../lib/i18n/context';
+import ThemeLangToggle from '../../components/ThemeLangToggle';
 import {
   MediSyncLogo, ArrowLeftIcon, MapPinIcon, PhoneIcon, VideoIcon,
   BuildingIcon, CalendarIcon, ClockIcon, CheckIcon, XIcon, UserIcon, InfoIcon,
   SearchIcon,
 } from '../../components/icons';
 import StarRating from '../../components/StarRating';
+import AgendarCalendario from '../../components/AgendarCalendario';
 import { DIAS_SEMANA, estadoBadge } from '../../lib/utils';
 
 export default function ProfesionalPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
+  const { t } = useLang();
   const [profesional, setProfesional] = useState<Profesional | null>(null);
   const [loading, setLoading] = useState(true);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -29,6 +33,7 @@ export default function ProfesionalPage() {
   const [suscripcionesLista, setSuscripcionesLista] = useState<ListaEsperaItem[]>([]);
   const [successMessage, setSuccessMessage] = useState('');
   const [inlineNotice, setInlineNotice] = useState<{ type: 'info' | 'success' | 'warning' | 'error'; text: string } | null>(null);
+  const [turnoReservado, setTurnoReservado] = useState<{ id: string; fechaHora: string; duracionMin: number } | null>(null);
   const [resenas, setResenas] = useState<ResenasResponse | null>(null);
   const [resenaPage, setResenaPage] = useState(1);
 
@@ -169,14 +174,27 @@ export default function ProfesionalPage() {
 
       const reserva = await api.turnos.reservar(reservaData);
 
+      // Persist turno info so pago-exitoso page can build the calendar event
+      const calInfo = {
+        turnoId: reserva.turno.id,
+        fechaHora: reserva.turno.fechaHora,
+        duracionMin: reserva.turno.duracionMin,
+        modalidad,
+        profesionalNombre: profesional.nombre,
+        profesionalApellido: profesional.apellido,
+        especialidad: profesional.especialidad?.nombre ?? '',
+        lugarAtencion: profesional.lugarAtencion,
+      };
+      localStorage.setItem('medisync_last_turno_cal', JSON.stringify(calInfo));
+
       if (profesional.precioConsulta > 0) {
         router.push(`/pago?turno=${reserva.turno.id}`);
         return;
       }
 
+      // Free turno — show success screen with calendar buttons
+      setTurnoReservado({ id: reserva.turno.id, fechaHora: reserva.turno.fechaHora, duracionMin: reserva.turno.duracionMin });
       setSuccessMessage('¡Turno reservado con éxito!');
-      setInlineNotice({ type: 'success', text: 'Reserva completada. Redirigiendo a tu panel...' });
-      setTimeout(() => router.push('/dashboard/paciente'), 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al reservar');
       setInlineNotice({ type: 'error', text: err instanceof Error ? err.message : 'Error al reservar turno' });
@@ -187,7 +205,7 @@ export default function ProfesionalPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
         <header className="bg-white border-b border-slate-200">
           <div className="page-container py-3">
             <div className="skeleton h-5 w-24 rounded" />
@@ -211,7 +229,7 @@ export default function ProfesionalPage() {
 
   if (!profesional) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
         <div className="text-center card p-10">
           <UserIcon size={40} className="mx-auto mb-3 text-slate-300" />
           <p className="text-slate-600 font-medium">Profesional no encontrado</p>
@@ -227,41 +245,44 @@ export default function ProfesionalPage() {
   const bookingStep = !selectedDate ? 1 : !selectedSlot ? 2 : 3;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* ── Navbar ──────────────────────────────────────── */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors">
+            <Link href="/" className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors">
               <ArrowLeftIcon size={16} />
-              <span className="text-sm font-medium">Volver</span>
+              <span className="text-sm font-medium">{t('common').back}</span>
             </Link>
             <div className="flex items-center gap-2">
               <MediSyncLogo size={24} />
-              <span className="text-sm font-bold text-slate-700">MediSync</span>
+              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">MediSync</span>
             </div>
-            {user ? (
-              <Link href={user.paciente ? '/dashboard/paciente' : '/dashboard'} className="btn btn-ghost text-sm text-slate-600">
-                Mi panel
-              </Link>
-            ) : (
-              <Link href="/login" className="btn btn-primary btn-sm">Iniciar sesión</Link>
-            )}
+            <div className="flex items-center gap-2">
+              <ThemeLangToggle compact />
+              {user ? (
+                <Link href={user.paciente ? '/dashboard/paciente' : '/dashboard'} className="btn btn-ghost text-sm text-slate-600 dark:text-slate-300">
+                  {t('nav').dashboard}
+                </Link>
+              ) : (
+                <Link href="/login" className="btn btn-primary btn-sm">{t('auth').login}</Link>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
-      {/* ── Success banner ──────────────────────────────── */}
-      {successMessage && (
-        <div className="bg-emerald-600 text-white">
-          <div className="page-container py-3 flex items-center gap-2.5 text-sm">
-            <CheckIcon size={16} />
-            <span className="font-medium">{successMessage}</span>
-          </div>
-        </div>
-      )}
-
       <main className="page-container py-6 max-w-4xl mx-auto">
+        {/* ── Confirmation card (free turno) ─────────────── */}
+        {turnoReservado && profesional ? (
+          <ConfirmacionTurno
+            turno={turnoReservado}
+            profesional={profesional}
+            modalidad={modalidad}
+            onContinuar={() => router.push('/dashboard/paciente')}
+          />
+        ) : (
+        <>
         {inlineNotice && (
           <div className={`alert mb-4 ${
             inlineNotice.type === 'success' ? 'alert-success' :
@@ -371,7 +392,7 @@ export default function ProfesionalPage() {
                 </h3>
 
                 {/* Summary bar */}
-                <div className="flex items-center gap-3 mb-4 p-3 bg-amber-50 rounded-xl border border-amber-100">
+                <div className="flex items-center gap-3 mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800">
                   <div className="text-center shrink-0">
                     <p className="text-3xl font-extrabold text-slate-800">{resenas.stats.promedio}</p>
                     <StarRating value={resenas.stats.promedio ?? 0} size={12} />
@@ -433,7 +454,7 @@ export default function ProfesionalPage() {
             <div className="card p-5">
               <h2 className="text-lg font-bold text-slate-800 mb-4">Reservar turno</h2>
 
-              <div className="mb-5 bg-slate-50 border border-slate-200 rounded-xl p-3">
+              <div className="mb-5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl p-3">
                 <div className="flex items-center gap-2 text-xs sm:text-sm">
                   {[
                     { n: 1, label: 'Elegir dia' },
@@ -460,8 +481,8 @@ export default function ProfesionalPage() {
                   ].map(({ value, icon, label }) => (
                     <label key={value} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 cursor-pointer flex-1 justify-center font-medium text-sm transition-all ${
                       modalidad === value
-                        ? 'border-blue-500 bg-blue-50 text-blue-700'
-                        : 'border-slate-200 text-slate-600 hover:border-slate-300'
+                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                        : 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'
                     }`}>
                       <input type="radio" name="modalidad" value={value} checked={modalidad === value} onChange={() => { setModalidad(value); setSelectedSlot(null); }} className="sr-only" />
                       {icon}
@@ -486,8 +507,8 @@ export default function ProfesionalPage() {
                           isSelected
                             ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
                             : isToday
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                            ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                            : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
                         }`}
                       >
                         <span className="text-[9px] font-semibold uppercase tracking-wide">
@@ -544,10 +565,10 @@ export default function ProfesionalPage() {
                           disabled={!slot.disponible}
                           className={`px-3.5 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
                             !slot.disponible
-                              ? 'bg-slate-100 text-slate-400 border-slate-100 cursor-not-allowed line-through'
+                              ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border-slate-100 dark:border-slate-700 cursor-not-allowed line-through'
                               : selectedSlot === slot.hora
                               ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                              : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:border-emerald-400'
+                              : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400'
                           }`}
                         >
                           {slot.hora}
@@ -568,27 +589,27 @@ export default function ProfesionalPage() {
 
               {/* Booking summary + CTA */}
               {selectedSlot && selectedDate && (
-                <div className="border-2 border-blue-200 bg-blue-50 rounded-xl p-4 mt-2" aria-live="polite">
-                  <p className="text-sm text-blue-800 mb-3 font-medium">
+                <div className="border-2 border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mt-2" aria-live="polite">
+                  <p className="text-sm text-blue-800 dark:text-blue-300 mb-3 font-medium">
                     Reservando turno con <strong>{profesional.nombre} {profesional.apellido}</strong>
                   </p>
-                  <div className="flex flex-wrap gap-3 text-sm text-blue-700 mb-4">
-                    <span className="flex items-center gap-1.5 bg-white rounded-lg px-2.5 py-1 border border-blue-200">
+                  <div className="flex flex-wrap gap-3 text-sm text-blue-700 dark:text-blue-300 mb-4">
+                    <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
                       <CalendarIcon size={13} />
                       {selectedDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </span>
-                    <span className="flex items-center gap-1.5 bg-white rounded-lg px-2.5 py-1 border border-blue-200">
+                    <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
                       <ClockIcon size={13} />
                       {selectedSlot}
                     </span>
-                    <span className="flex items-center gap-1.5 bg-white rounded-lg px-2.5 py-1 border border-blue-200">
+                    <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
                       {modalidad === 'VIRTUAL' ? <VideoIcon size={13} /> : <BuildingIcon size={13} />}
                       {modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
                     </span>
                   </div>
 
                    {profesional.precioConsulta > 0 && (
-                     <p className="text-sm text-blue-700 mb-3">
+                     <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
                        Se te pedira el pago de <strong>${Number(profesional.precioConsulta).toLocaleString('es-AR')}</strong> via Mercado Pago al confirmar.
                      </p>
                    )}
@@ -619,15 +640,105 @@ export default function ProfesionalPage() {
               )}
 
               {!selectedDate && (
-                <div className="text-center py-6 text-slate-400">
+                <div className="text-center py-6 text-slate-400 dark:text-slate-500">
                   <CalendarIcon size={28} className="mx-auto mb-2 opacity-40" />
-                  <p className="text-sm">Seleccioná un día para ver los horarios disponibles</p>
+                  <p className="text-sm">{t('professional').selectDate}</p>
                 </div>
               )}
             </div>
           </div>
         </div>
+        </>
+        )}
       </main>
+    </div>
+  );
+}
+
+/* ── Confirmation screen after free booking ─────────────────────────────── */
+function ConfirmacionTurno({
+  turno, profesional, modalidad, onContinuar,
+}: {
+  turno: { id: string; fechaHora: string; duracionMin: number };
+  profesional: Profesional;
+  modalidad: 'PRESENCIAL' | 'VIRTUAL';
+  onContinuar: () => void;
+}) {
+  const fecha = new Date(turno.fechaHora);
+  const fechaStr = fecha.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const horaStr  = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+  return (
+    <div className="max-w-lg mx-auto">
+      <div className="card p-8 text-center space-y-5">
+        {/* Check circle */}
+        <div className="flex justify-center">
+          <div className="w-16 h-16 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">¡Turno confirmado!</h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+            Tu consulta fue reservada exitosamente.
+          </p>
+        </div>
+
+        {/* Turno details */}
+        <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-4 text-left space-y-2">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Profesional</span>
+            <span className="font-medium text-slate-800 dark:text-slate-100">
+              Dr/a. {profesional.nombre} {profesional.apellido}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Especialidad</span>
+            <span className="text-slate-700 dark:text-slate-300">{profesional.especialidad?.nombre}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Fecha</span>
+            <span className="text-slate-700 dark:text-slate-300 capitalize">{fechaStr}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Horario</span>
+            <span className="text-slate-700 dark:text-slate-300">{horaStr} h</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Modalidad</span>
+            <span className={`badge ${modalidad === 'VIRTUAL' ? 'badge-blue' : 'badge-gray'}`}>
+              {modalidad === 'VIRTUAL' ? '💻 Virtual' : '🏥 Presencial'}
+            </span>
+          </div>
+          {profesional.lugarAtencion && modalidad === 'PRESENCIAL' && (
+            <div className="flex items-center gap-2 text-sm">
+              <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Lugar</span>
+              <span className="text-slate-700 dark:text-slate-300">{profesional.lugarAtencion}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Calendar buttons */}
+        <AgendarCalendario
+          turno={{
+            turnoId: turno.id,
+            fechaHora: turno.fechaHora,
+            duracionMin: turno.duracionMin,
+            modalidad,
+            profesionalNombre: profesional.nombre,
+            profesionalApellido: profesional.apellido,
+            especialidad: profesional.especialidad?.nombre ?? '',
+            lugarAtencion: profesional.lugarAtencion,
+          }}
+        />
+
+        <button onClick={onContinuar} className="btn btn-primary w-full">
+          Ir a mis turnos
+        </button>
+      </div>
     </div>
   );
 }

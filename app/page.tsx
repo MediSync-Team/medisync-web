@@ -4,9 +4,11 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { api, Especialidad, Profesional } from './lib/api';
 import { useAuth } from './lib/auth-context';
+import { useLang } from './lib/i18n/context';
 import OnboardingTour from './components/OnboardingTour';
 import Pagination from './components/Pagination';
 import StarRating from './components/StarRating';
+import ThemeLangToggle from './components/ThemeLangToggle';
 
 const HOME_TOUR_STEPS = [
   {
@@ -70,6 +72,9 @@ function activeFilterCount(f: Filters) {
 
 export default function HomePage() {
   const { user, logout } = useAuth();
+  const { t } = useLang();
+  const h = t('home');
+  const nav = t('nav');
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(true);
@@ -149,13 +154,13 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {!user && (
         <OnboardingTour storageKey="medisync-home-tour-v1" steps={HOME_TOUR_STEPS} delay={1200} />
       )}
 
       {/* ── Navbar ───────────────────────────────────────── */}
-      <nav className="bg-white shadow-sm sticky top-0 z-20">
+      <nav className="bg-white dark:bg-slate-800 shadow-sm dark:border-b dark:border-slate-700 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-2.5">
@@ -167,20 +172,21 @@ export default function HomePage() {
               <span className="text-xl font-bold text-blue-600 tracking-tight">MediSync</span>
             </div>
             <div className="flex items-center gap-3">
+              <ThemeLangToggle />
               {user ? (
                 <>
-                  <Link href={user.paciente ? '/dashboard/paciente' : '/dashboard'} className="text-slate-600 hover:text-slate-900 text-sm font-medium">
-                    Mi panel
+                  <Link href={user.paciente ? '/dashboard/paciente' : '/dashboard'} className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium">
+                    {nav.dashboard}
                   </Link>
-                  <button onClick={logout} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-sm hover:bg-slate-200 font-medium">
-                    Cerrar sesión
+                  <button onClick={logout} className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 font-medium">
+                    {nav.logout}
                   </button>
                 </>
               ) : (
                 <>
-                  <Link href="/login" className="text-slate-600 hover:text-slate-900 text-sm font-medium">Iniciar sesión</Link>
+                  <Link href="/login" className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium">{t('auth').login}</Link>
                   <Link href="/register" data-onboarding="nav-register" className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 shadow-sm">
-                    Registrate
+                    {t('auth').register}
                   </Link>
                 </>
               )}
@@ -219,7 +225,7 @@ export default function HomePage() {
             >
               <input
                 type="text"
-                placeholder="Buscar por especialidad..."
+                placeholder={h.searchPlaceholder}
                 value={draft.search}
                 onChange={(e) => setDraft({ ...draft, search: e.target.value })}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -230,7 +236,7 @@ export default function HomePage() {
                 onChange={(e) => setDraft({ ...draft, especialidad: e.target.value, search: '' })}
                 className="px-4 py-3 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm"
               >
-                <option value="">Todas las especialidades</option>
+                <option value="">{h.allSpecialties}</option>
                 {especialidades.map((esp) => (
                   <option key={esp.id} value={esp.nombre}>{esp.nombre}</option>
                 ))}
@@ -239,7 +245,7 @@ export default function HomePage() {
                 onClick={handleSearch}
                 className="px-6 py-3 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-semibold text-sm shadow-sm shrink-0 transition-colors"
               >
-                Buscar
+                {t('common').search}
               </button>
             </div>
 
@@ -251,7 +257,7 @@ export default function HomePage() {
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="16" y2="12" /><line x1="10" y1="18" x2="14" y2="18" />
               </svg>
-              Filtros avanzados
+              {h.advancedFilters}
               {advCount > 0 && (
                 <span className="bg-emerald-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">{advCount}</span>
               )}
@@ -268,7 +274,7 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Price range */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Precio de consulta</label>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{h.priceMin} / {h.priceMax}</label>
                     <div className="flex items-center gap-2">
                       <div className="relative flex-1">
                         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-sm">$</span>
@@ -298,7 +304,7 @@ export default function HomePage() {
 
                   {/* Modalidad */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Modalidad</label>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{h.modality}</label>
                     <div className="flex gap-2">
                       {(['', 'PRESENCIAL', 'VIRTUAL'] as const).map((m) => (
                         <button
@@ -311,7 +317,7 @@ export default function HomePage() {
                               : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                           }`}
                         >
-                          {m === '' ? 'Todas' : m === 'PRESENCIAL' ? '🏥 Presencial' : '💻 Virtual'}
+                          {m === '' ? h.allModalities : m === 'PRESENCIAL' ? `🏥 ${h.inPerson}` : `💻 ${h.virtual}`}
                         </button>
                       ))}
                     </div>
@@ -319,7 +325,7 @@ export default function HomePage() {
 
                   {/* Fecha disponibilidad */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Disponible el día</label>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{h.date}</label>
                     <input
                       type="date"
                       value={draft.fecha}
@@ -331,16 +337,16 @@ export default function HomePage() {
 
                   {/* Ordenamiento */}
                   <div>
-                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Ordenar por</label>
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{h.orderBy}</label>
                     <select
                       value={draft.orderBy}
                       onChange={(e) => setDraft({ ...draft, orderBy: e.target.value as OrderBy })}
                       className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800"
                     >
-                      <option value="">Más recientes</option>
-                      <option value="precio_asc">Precio: menor a mayor</option>
-                      <option value="precio_desc">Precio: mayor a menor</option>
-                      <option value="nombre_asc">Nombre: A → Z</option>
+                      <option value="">{h.relevance}</option>
+                      <option value="precio_asc">{h.priceAsc}</option>
+                      <option value="precio_desc">{h.priceDesc}</option>
+                      <option value="nombre_asc">{h.nameAsc}</option>
                     </select>
                   </div>
                 </div>
@@ -350,13 +356,13 @@ export default function HomePage() {
                     onClick={() => { setDraft(EMPTY_FILTERS); }}
                     className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
                   >
-                    Limpiar
+                    {h.clearAll}
                   </button>
                   <button
                     onClick={() => applyFilters({ ...draft })}
                     className="flex-1 py-2 text-sm bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
                   >
-                    Aplicar filtros
+                    {h.applyFilters}
                   </button>
                 </div>
               </div>
@@ -365,8 +371,8 @@ export default function HomePage() {
         </section>
 
         {/* ── Feature pills ────────────────────────────────── */}
-        <section className="bg-white border-b border-slate-100">
-          <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap justify-center gap-6 text-sm text-slate-500">
+        <section className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
+          <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap justify-center gap-6 text-sm text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> Turnos online 24/7</span>
             <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> Pago seguro con Mercado Pago</span>
             <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> Historia clínica digital</span>
@@ -377,7 +383,7 @@ export default function HomePage() {
         {/* ── Active filter pills ──────────────────────────── */}
         {filterPills.length > 0 && (
           <div className="max-w-7xl mx-auto px-4 pt-5 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-slate-400 font-medium">Filtros activos:</span>
+            <span className="text-xs text-slate-400 font-medium">{h.activeFilters}:</span>
             {filterPills.map(({ key, label }) => (
               <span
                 key={key}
@@ -390,7 +396,7 @@ export default function HomePage() {
               </span>
             ))}
             <button onClick={clearAll} className="text-xs text-slate-400 hover:text-red-500 underline underline-offset-2">
-              Limpiar todo
+              {h.clearAll}
             </button>
           </div>
         )}
@@ -398,16 +404,16 @@ export default function HomePage() {
         {/* ── Professionals grid ───────────────────────────── */}
         <section id="prof-section" className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-slate-900">Profesionales Disponibles</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Profesionales Disponibles</h2>
             {!loading && pagination.total > 0 && (
-              <span className="text-sm text-slate-500">{pagination.total} encontrados</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">{pagination.total} encontrados</span>
             )}
           </div>
 
           {loading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {Array.from({ length: LIMIT }).map((_, i) => (
-                <div key={i} className="bg-white rounded-xl shadow-sm p-6 animate-pulse">
+                <div key={i} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm p-6 animate-pulse">
                   <div className="flex items-start gap-4">
                     <div className="w-16 h-16 bg-slate-200 rounded-full" />
                     <div className="flex-1 space-y-2">
@@ -421,16 +427,16 @@ export default function HomePage() {
               ))}
             </div>
           ) : profesionales.length === 0 ? (
-            <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-slate-100">
+            <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
               <div className="text-5xl mb-4">🔍</div>
-              <p className="text-slate-600 font-medium mb-1">
+              <p className="text-slate-600 dark:text-slate-300 font-medium mb-1">
                 {advCount > 0 || filters.search || filters.especialidad
-                  ? 'No hay profesionales que coincidan con los filtros.'
-                  : 'No hay profesionales disponibles.'}
+                  ? h.noResultsDesc
+                  : h.noResultsTitle}
               </p>
               {advCount > 0 && (
                 <button onClick={clearAll} className="mt-4 px-5 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold">
-                  Limpiar filtros
+                  {h.clearAll}
                 </button>
               )}
             </div>
@@ -457,23 +463,25 @@ export default function HomePage() {
 }
 
 function ProfCard({ prof }: { prof: Profesional }) {
+  const { t } = useLang();
+  const h = t('home');
   const modalidades = [...new Set(prof.disponibilidades?.map((d) => d.modalidad) ?? [])];
   const tienePresencial = modalidades.some((m) => m === 'PRESENCIAL' || m === 'AMBOS');
   const tieneVirtual = modalidades.some((m) => m === 'VIRTUAL' || m === 'AMBOS');
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-slate-100 p-6 hover:shadow-md hover:border-blue-200 transition-all flex flex-col">
+    <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700 p-6 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-600 transition-all flex flex-col">
       <div className="flex items-start gap-4">
-        <div className="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center text-2xl shrink-0 border border-blue-100 overflow-hidden">
+        <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-2xl shrink-0 border border-blue-100 dark:border-blue-800 overflow-hidden">
           {prof.fotoUrl
             ? <img src={prof.fotoUrl} alt={prof.nombre} className="w-full h-full object-cover" />
             : '👨‍⚕️'}
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-slate-900 truncate">Dr/a. {prof.nombre} {prof.apellido}</h3>
-          <p className="text-blue-600 text-sm font-medium mt-0.5">{prof.especialidad?.nombre}</p>
+          <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">Dr/a. {prof.nombre} {prof.apellido}</h3>
+          <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mt-0.5">{prof.especialidad?.nombre}</p>
           {prof.precioConsulta > 0 ? (
-            <p className="text-emerald-600 font-semibold text-sm mt-1">
+            <p className="text-emerald-600 dark:text-emerald-400 font-semibold text-sm mt-1">
               ${Number(prof.precioConsulta).toLocaleString('es-AR')}
             </p>
           ) : (
@@ -482,7 +490,7 @@ function ProfCard({ prof }: { prof: Profesional }) {
           {prof.ratingPromedio != null && (
             <div className="flex items-center gap-1.5 mt-1">
               <StarRating value={prof.ratingPromedio} size={13} />
-              <span className="text-xs text-slate-500 font-medium">{prof.ratingPromedio} ({prof.totalResenas})</span>
+              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{prof.ratingPromedio} ({prof.totalResenas})</span>
             </div>
           )}
         </div>
@@ -492,33 +500,33 @@ function ProfCard({ prof }: { prof: Profesional }) {
       {(tienePresencial || tieneVirtual) && (
         <div className="flex gap-1.5 mt-3">
           {tienePresencial && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full text-[11px] font-medium">
-              🏥 Presencial
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full text-[11px] font-medium">
+              🏥 {h.inPerson}
             </span>
           )}
           {tieneVirtual && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full text-[11px] font-medium">
-              💻 Virtual
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-[11px] font-medium">
+              💻 {h.virtual}
             </span>
           )}
         </div>
       )}
 
       {prof.lugarAtencion && (
-        <p className="text-slate-400 text-xs mt-2 flex items-center gap-1 truncate">
+        <p className="text-slate-400 dark:text-slate-500 text-xs mt-2 flex items-center gap-1 truncate">
           <span>📍</span> {prof.lugarAtencion}
         </p>
       )}
 
       {prof.bio && (
-        <p className="text-slate-500 text-xs mt-2 line-clamp-2">{prof.bio}</p>
+        <p className="text-slate-500 dark:text-slate-400 text-xs mt-2 line-clamp-2">{prof.bio}</p>
       )}
 
       <Link
         href={`/profesional/${prof.id}`}
-        className="block mt-4 text-center py-2.5 bg-blue-50 text-blue-600 rounded-lg text-sm font-semibold hover:bg-blue-100 transition-colors"
+        className="block mt-4 text-center py-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
       >
-        Ver perfil y reservar
+        {h.viewProfile}
       </Link>
     </div>
   );

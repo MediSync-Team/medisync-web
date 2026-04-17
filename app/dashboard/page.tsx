@@ -3,11 +3,16 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
-import { api, Turno, Disponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion } from '../lib/api';
+import { api, Turno, Disponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse } from '../lib/api';
 import StatsPanel from '../components/StatsPanel';
 import ProfileModal from '../components/ProfileModal';
 import VideoCallModal from '../components/VideoCallModal';
 import OnboardingTour from '../components/OnboardingTour';
+import ThemeLangToggle from '../components/ThemeLangToggle';
+import { useLang } from '../lib/i18n/context';
+import { NotificationBell } from '../components/NotificationBell';
+import ProfesionalOnboardingWizard from '../components/ProfesionalOnboardingWizard';
+import { imprimirReceta } from '../lib/receta-pdf';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, ChartIcon, TrashIcon, ClipboardIcon, PaperclipIcon,
@@ -57,10 +62,12 @@ interface StatsData {
 export default function ProfesionalDashboard() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
+  const { t } = useLang();
+  const d = t('dashboard');
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'calendario' | 'disponibilidad' | 'stats'>('calendario');
+  const [activeTab, setActiveTab] = useState<'calendario' | 'disponibilidad' | 'stats' | 'pagos'>('calendario');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [turnosDelDia, setTurnosDelDia] = useState<Turno[]>([]);
   const [nuevaDisp, setNuevaDisp] = useState({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL' as const });
@@ -75,6 +82,7 @@ export default function ProfesionalDashboard() {
   const [agendaEstado, setAgendaEstado] = useState<'TODOS' | 'RESERVADO' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO' | 'AUSENTE'>('TODOS');
   const [agendaModalidad, setAgendaModalidad] = useState<'TODAS' | 'PRESENCIAL' | 'VIRTUAL'>('TODAS');
   const [agendaSoloRiesgo, setAgendaSoloRiesgo] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => { if (!selectedDate) setSelectedDate(new Date()); }, [selectedDate]);
 
@@ -82,7 +90,7 @@ export default function ProfesionalDashboard() {
     if (!authLoading && !user) { router.push('/login'); return; }
     if (!authLoading && user?.rol === 'ADMIN') { router.push('/dashboard/admin'); return; }
     if (!authLoading && user?.paciente) { router.push('/dashboard/paciente'); return; }
-    if (user?.profesional) { loadData(); loadRecordatorios(); }
+    if (user?.profesional) { loadData(true); loadRecordatorios(); }
   }, [user, authLoading, router]);
 
   useEffect(() => {
@@ -95,7 +103,7 @@ export default function ProfesionalDashboard() {
     if (activeTab === 'stats') loadStats();
   }, [activeTab]);
 
-  const loadData = async () => {
+  const loadData = async (checkOnboarding = false) => {
     if (!user?.profesional) return;
     try {
       const [turnosData, dispData] = await Promise.all([
@@ -107,7 +115,12 @@ export default function ProfesionalDashboard() {
         api.profesionales.getById(user.profesional.id),
       ]);
       setTurnos(turnosData.turnos);
-      setDisponibilidades(dispData.disponibilidades || []);
+      const disps = dispData.disponibilidades || [];
+      setDisponibilidades(disps);
+      if (checkOnboarding) {
+        const done = localStorage.getItem(`medisync_onboarding_done_${user.id}`);
+        if (!done && disps.length === 0) setShowOnboarding(true);
+      }
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
   };
@@ -188,7 +201,17 @@ export default function ProfesionalDashboard() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+      {/* ── Onboarding wizard ───────────────────────────── */}
+      {showOnboarding && (
+        <ProfesionalOnboardingWizard
+          profesionalId={user.profesional.id}
+          userId={user.id}
+          nombre={user.profesional.nombre}
+          onComplete={() => { setShowOnboarding(false); loadData(); }}
+        />
+      )}
+
       {/* ── Reminder banner ─────────────────────────────── */}
       {recordatorios.length > 0 && (
         <div className="bg-blue-600 text-white">
@@ -232,21 +255,23 @@ export default function ProfesionalDashboard() {
       )}
 
       {/* ── Navbar ──────────────────────────────────────── */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
               <MediSyncLogo size={28} />
               <div className="hidden sm:block">
-                <p className="text-sm font-bold text-slate-800 leading-none">MediSync</p>
-                <p className="text-xs text-slate-400 leading-none mt-0.5">Panel profesional</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-none">MediSync</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 leading-none mt-0.5">{d.title}</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
+              <NotificationBell />
+              <ThemeLangToggle compact />
               <button
                 data-onboarding="profile-btn"
                 onClick={() => setShowProfileModal(true)}
-                className="btn btn-ghost text-slate-600 text-sm"
+                className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm"
               >
                 <UserIcon size={15} />
                 <span className="hidden sm:inline">
@@ -278,7 +303,7 @@ export default function ProfesionalDashboard() {
         <div data-onboarding="stat-cards" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <div className="stat-card">
             <div className="flex items-start justify-between">
-              <p className="stat-label">Turnos hoy</p>
+              <p className="stat-label">{d.appointments} — {d.today}</p>
               <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
                 <CalendarIcon size={15} className="text-blue-600" />
               </div>
@@ -291,7 +316,7 @@ export default function ProfesionalDashboard() {
 
           <div className="stat-card">
             <div className="flex items-start justify-between">
-              <p className="stat-label">Turnos del mes</p>
+              <p className="stat-label">{d.appointments} — {d.thisMonth}</p>
               <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
                 <ChartIcon size={15} className="text-emerald-600" />
               </div>
@@ -302,7 +327,7 @@ export default function ProfesionalDashboard() {
 
           <div className="stat-card">
             <div className="flex items-start justify-between">
-              <p className="stat-label">Especialidad</p>
+              <p className="stat-label">{d.specialtyLabel}</p>
               <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
                 <ClipboardIcon size={15} className="text-purple-600" />
               </div>
@@ -310,7 +335,7 @@ export default function ProfesionalDashboard() {
             <p className="text-lg font-bold text-slate-800 mt-1 leading-tight">
               {user.profesional.especialidad?.nombre || '—'}
             </p>
-            <p className="stat-desc">Panel profesional</p>
+            <p className="stat-desc">{d.title}</p>
           </div>
         </div>
 
@@ -318,9 +343,10 @@ export default function ProfesionalDashboard() {
         <div className="card overflow-hidden">
           <div className="tab-nav px-1 pt-1">
             {([
-              { id: 'calendario', label: 'Agenda', icon: <CalendarIcon size={14} />, onboarding: 'tab-calendario' },
-              { id: 'disponibilidad', label: 'Disponibilidad', icon: <ClockIcon size={14} />, onboarding: 'tab-disponibilidad' },
-              { id: 'stats', label: 'Estadísticas', icon: <ChartIcon size={14} />, onboarding: 'tab-stats' },
+              { id: 'calendario', label: d.agenda, icon: <CalendarIcon size={14} />, onboarding: 'tab-calendario' },
+              { id: 'disponibilidad', label: d.availability, icon: <ClockIcon size={14} />, onboarding: 'tab-disponibilidad' },
+              { id: 'stats', label: d.stats, icon: <ChartIcon size={14} />, onboarding: 'tab-stats' },
+              { id: 'pagos', label: 'Pagos', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>, onboarding: 'tab-pagos' },
             ] as const).map(tab => (
               <button
                 key={tab.id}
@@ -366,12 +392,15 @@ export default function ProfesionalDashboard() {
                 {loadingStats ? (
                   <div className="py-12 flex items-center justify-center gap-2 text-slate-500">
                     <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                    Cargando estadísticas...
+                    {t('common').loading}
                   </div>
                 ) : (
                   <StatsPanel stats={stats} />
                 )}
               </div>
+            )}
+            {activeTab === 'pagos' && (
+              <PagosView />
             )}
           </div>
         </div>
@@ -422,6 +451,9 @@ function CalendarioView({
   agendaSoloRiesgo: boolean;
   setAgendaSoloRiesgo: (v: boolean) => void;
 }) {
+  const { t } = useLang();
+  const d = t('dashboard');
+  const h = t('home');
   const hoy = typeof window !== 'undefined' ? new Date().toDateString() : '';
   const filteredTurnos = useMemo(() => {
     return turnosDelDia
@@ -481,26 +513,26 @@ function CalendarioView({
         <input
           value={agendaSearch}
           onChange={(e) => setAgendaSearch(e.target.value)}
-          placeholder="Buscar paciente..."
+          placeholder={`${t('common').search} ${d.patient}...`}
           className="field-input"
           aria-label="Buscar paciente en agenda"
         />
         <select value={agendaEstado} onChange={(e) => setAgendaEstado(e.target.value as any)} className="field-select" aria-label="Filtrar por estado">
-          <option value="TODOS">Todos los estados</option>
-          <option value="RESERVADO">Reservado</option>
-          <option value="CONFIRMADO">Confirmado</option>
-          <option value="COMPLETADO">Completado</option>
-          <option value="CANCELADO">Cancelado</option>
-          <option value="AUSENTE">Ausente</option>
+          <option value="TODOS">{t('status').all}</option>
+          <option value="RESERVADO">{t('status').RESERVADO}</option>
+          <option value="CONFIRMADO">{t('status').CONFIRMADO}</option>
+          <option value="COMPLETADO">{t('status').COMPLETADO}</option>
+          <option value="CANCELADO">{t('status').CANCELADO}</option>
+          <option value="AUSENTE">{t('status').AUSENTE}</option>
         </select>
         <select value={agendaModalidad} onChange={(e) => setAgendaModalidad(e.target.value as any)} className="field-select" aria-label="Filtrar por modalidad">
-          <option value="TODAS">Todas las modalidades</option>
-          <option value="PRESENCIAL">Presencial</option>
-          <option value="VIRTUAL">Virtual</option>
+          <option value="TODAS">{h.allModalities}</option>
+          <option value="PRESENCIAL">{h.inPerson}</option>
+          <option value="VIRTUAL">{h.virtual}</option>
         </select>
-        <label className="inline-flex items-center gap-2 text-sm text-slate-700 border border-slate-200 rounded-lg px-3 bg-white">
+        <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-lg px-3 bg-white dark:bg-slate-700">
           <input type="checkbox" checked={agendaSoloRiesgo} onChange={(e) => setAgendaSoloRiesgo(e.target.checked)} />
-          Riesgo alto/urgente
+          {t('status').highRisk}
         </label>
       </div>
 
@@ -508,7 +540,7 @@ function CalendarioView({
       {filteredTurnos.length === 0 ? (
         <div className="py-10 text-center text-slate-400">
           <CalendarIcon size={32} className="mx-auto mb-2 opacity-30" />
-          <p className="text-sm">No hay turnos para los filtros seleccionados</p>
+          <p className="text-sm">{d.noAppointments}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -573,15 +605,18 @@ function DisponibilidadView({
   onAgregar: () => void;
   onEliminar: (id: string) => void;
 }) {
+  const { t } = useLang();
+  const d = t('dashboard');
+  const h = t('home');
   return (
     <div className="space-y-6">
       {/* Current schedules */}
       <div>
-        <h3 className="section-title mb-3">Horarios configurados</h3>
+        <h3 className="section-title mb-3">{d.availability}</h3>
         {disponibilidades.length === 0 ? (
           <div className="py-8 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
             <ClockIcon size={28} className="mx-auto mb-2 opacity-30" />
-            <p className="text-sm">No hay horarios configurados</p>
+            <p className="text-sm">{t('common').noResults}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -612,11 +647,11 @@ function DisponibilidadView({
 
       {/* Add schedule form */}
       <div>
-        <h3 className="section-title mb-3">Agregar horario</h3>
+        <h3 className="section-title mb-3">{d.addAvailability}</h3>
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
-              <label className="field-label">Día</label>
+              <label className="field-label">{d.day}</label>
               <select
                 value={nuevaDisp.diaSemana}
                 onChange={(e) => setNuevaDisp({ ...nuevaDisp, diaSemana: parseInt(e.target.value) })}
@@ -626,7 +661,7 @@ function DisponibilidadView({
               </select>
             </div>
             <div>
-              <label className="field-label">Desde</label>
+              <label className="field-label">{d.from}</label>
               <input
                 type="time" value={nuevaDisp.horaInicio}
                 onChange={(e) => setNuevaDisp({ ...nuevaDisp, horaInicio: e.target.value })}
@@ -634,7 +669,7 @@ function DisponibilidadView({
               />
             </div>
             <div>
-              <label className="field-label">Hasta</label>
+              <label className="field-label">{d.to}</label>
               <input
                 type="time" value={nuevaDisp.horaFin}
                 onChange={(e) => setNuevaDisp({ ...nuevaDisp, horaFin: e.target.value })}
@@ -642,19 +677,19 @@ function DisponibilidadView({
               />
             </div>
             <div>
-              <label className="field-label">Modalidad</label>
+              <label className="field-label">{t('professional').modality}</label>
               <select
                 value={nuevaDisp.modalidad}
                 onChange={(e) => setNuevaDisp({ ...nuevaDisp, modalidad: e.target.value as any })}
                 className="field-select"
               >
-                <option value="PRESENCIAL">Presencial</option>
-                <option value="VIRTUAL">Virtual</option>
+                <option value="PRESENCIAL">{h.inPerson}</option>
+                <option value="VIRTUAL">{h.virtual}</option>
               </select>
             </div>
           </div>
           <button onClick={onAgregar} className="btn btn-primary mt-4">
-            + Agregar horario
+            + {d.addAvailability}
           </button>
         </div>
       </div>
@@ -683,6 +718,8 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
   const [historiaMessage, setHistoriaMessage] = useState('');
   const [preconsulta, setPreconsulta] = useState<PreconsultaTurno | null>(null);
   const [loadingPreconsulta, setLoadingPreconsulta] = useState(true);
+  const { t } = useLang();
+  const d = t('dashboard');
   const [receta, setReceta] = useState<RecetaIndicacion | null>(null);
   const [recetaForm, setRecetaForm] = useState<RecetaIndicacionInput>({ diagnostico: '', indicaciones: '' });
   const [loadingReceta, setLoadingReceta] = useState(true);
@@ -690,6 +727,12 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
   const [shareText, setShareText] = useState('');
   const [modalNotice, setModalNotice] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
   const [showVideoCall, setShowVideoCall] = useState(false);
+  const [showReprogramar, setShowReprogramar] = useState(false);
+  const [reprogramarFecha, setReprogramarFecha] = useState('');
+  const [reprogramarSlots, setReprogramarSlots] = useState<{ hora: string; disponible: boolean }[]>([]);
+  const [reprogramarHora, setReprogramarHora] = useState('');
+  const [cargandoSlots, setCargandoSlots] = useState(false);
+  const [reprogramando, setReprogramando] = useState(false);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
@@ -939,6 +982,38 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
     } catch (err) { console.error(err); }
   };
 
+  const cargarSlots = async (fecha: string) => {
+    setReprogramarHora('');
+    setReprogramarSlots([]);
+    if (!fecha) return;
+    setCargandoSlots(true);
+    try {
+      const slots = await api.profesionales.getSlots(turno.profesional?.id ?? '', fecha, turno.modalidad);
+      setReprogramarSlots(slots.filter((s) => s.disponible));
+    } catch (err) { console.error(err); }
+    finally { setCargandoSlots(false); }
+  };
+
+  const handleReprogramar = async () => {
+    if (!reprogramarFecha || !reprogramarHora) {
+      setModalNotice({ type: 'error', text: 'Seleccioná una fecha y un horario.' });
+      return;
+    }
+    const fechaHoraISO = `${reprogramarFecha}T${reprogramarHora}:00`;
+    setReprogramando(true);
+    try {
+      await api.turnos.reprogramar(turno.id, { fechaHora: fechaHoraISO });
+      setModalNotice({ type: 'success', text: 'Turno reprogramado. El paciente fue notificado.' });
+      setShowReprogramar(false);
+      onUpdate();
+      setTimeout(onClose, 1200);
+    } catch (err) {
+      setModalNotice({ type: 'error', text: err instanceof Error ? err.message : 'No se pudo reprogramar el turno.' });
+    } finally {
+      setReprogramando(false);
+    }
+  };
+
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return bytes + ' B';
     if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
@@ -959,7 +1034,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl">
-          <h3 className="font-bold text-slate-800 text-lg">Detalle del turno</h3>
+          <h3 className="font-bold text-slate-800 text-lg">{d.appointmentDetail}</h3>
           <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
             <XIcon size={18} />
           </button>
@@ -977,7 +1052,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
           {/* Info grid */}
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-slate-50 rounded-xl p-3.5">
-              <p className="text-xs text-slate-500 mb-1">Fecha y hora</p>
+              <p className="text-xs text-slate-500 mb-1">{d.dateTime}</p>
               <p className="font-semibold text-slate-800 text-sm">
                 {new Date(turno.fechaHora).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
               </p>
@@ -987,12 +1062,12 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
             </div>
 
             <div className="bg-slate-50 rounded-xl p-3.5">
-              <p className="text-xs text-slate-500 mb-1">Estado</p>
+              <p className="text-xs text-slate-500 mb-1">{d.status}</p>
               <span className={estadoBadge(turno.estado)}>{turno.estado}</span>
             </div>
 
             <div className="bg-slate-50 rounded-xl p-3.5">
-              <p className="text-xs text-slate-500 mb-1">Paciente</p>
+              <p className="text-xs text-slate-500 mb-1">{d.patient}</p>
               <p className="font-semibold text-slate-800 text-sm">
                 {turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : 'Sin cuenta'}
               </p>
@@ -1002,12 +1077,12 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
             </div>
 
             <div className="bg-slate-50 rounded-xl p-3.5">
-              <p className="text-xs text-slate-500 mb-1">Modalidad</p>
+              <p className="text-xs text-slate-500 mb-1">{t('professional').modality}</p>
               <div className="flex items-center gap-1.5">
                 {turno.modalidad === 'VIRTUAL' ? (
-                  <><VideoIcon size={14} className="text-blue-500" /><span className="font-semibold text-sm text-slate-800">Virtual</span></>
+                  <><VideoIcon size={14} className="text-blue-500" /><span className="font-semibold text-sm text-slate-800">{t('home').virtual}</span></>
                 ) : (
-                  <><BuildingIcon size={14} className="text-emerald-500" /><span className="font-semibold text-sm text-slate-800">Presencial</span></>
+                  <><BuildingIcon size={14} className="text-emerald-500" /><span className="font-semibold text-sm text-slate-800">{t('home').inPerson}</span></>
                 )}
               </div>
               {turno.modalidad === 'VIRTUAL' && (turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO') && (
@@ -1015,7 +1090,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
                   onClick={() => setShowVideoCall(true)}
                   className="mt-2 w-full flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-1.5 rounded-lg transition-colors"
                 >
-                  <VideoIcon size={12} /> Iniciar videollamada
+                  <VideoIcon size={12} /> {d.startVideoCall}
                 </button>
               )}
             </div>
@@ -1025,7 +1100,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
           <div className="border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <InfoIcon size={15} className="text-slate-400" />
-              <h4 className="font-semibold text-slate-700 text-sm">Cuestionario preconsulta</h4>
+              <h4 className="font-semibold text-slate-700 text-sm">{d.preconsulta}</h4>
             </div>
             {loadingPreconsulta ? (
               <div className="skeleton h-24 rounded-lg" />
@@ -1076,7 +1151,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
           <div className="border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <ClipboardIcon size={15} className="text-slate-400" />
-              <h4 className="font-semibold text-slate-700 text-sm">Evolución clínica</h4>
+              <h4 className="font-semibold text-slate-700 text-sm">{d.evolution}</h4>
               {savedMessage && (
                 <span className="badge badge-green ml-auto text-xs flex items-center gap-1">
                   <CheckIcon size={10} /> {savedMessage}
@@ -1098,7 +1173,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
                   disabled={guardando}
                   className="btn btn-primary btn-sm mt-2"
                 >
-                  {guardando ? 'Guardando...' : 'Guardar notas'}
+                  {guardando ? t('common').saving : d.saveNotes}
                 </button>
               </>
             )}
@@ -1314,6 +1389,33 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
                   >
                     Copiar para compartir
                   </button>
+                  {receta && turno.profesional && (
+                    <button
+                      onClick={() => imprimirReceta({
+                        receta,
+                        profesional: {
+                          nombre: turno.profesional!.nombre,
+                          apellido: turno.profesional!.apellido,
+                          especialidad: turno.profesional!.especialidad?.nombre ?? '',
+                          matricula: turno.profesional!.matricula,
+                          lugarAtencion: turno.profesional!.lugarAtencion,
+                          telefono: turno.profesional!.telefono,
+                          fotoUrl: turno.profesional!.fotoUrl,
+                        },
+                        paciente: turno.paciente
+                          ? { nombre: turno.paciente.nombre, apellido: turno.paciente.apellido, email: turno.paciente.email }
+                          : null,
+                        fechaHora: turno.fechaHora,
+                        modalidad: turno.modalidad,
+                      })}
+                      className="btn btn-primary btn-sm flex items-center gap-1.5"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Descargar PDF
+                    </button>
+                  )}
                 </div>
               </div>
             )}
@@ -1323,7 +1425,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
           <div className="border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <PaperclipIcon size={15} className="text-slate-400" />
-              <h4 className="font-semibold text-slate-700 text-sm">Archivos adjuntos</h4>
+              <h4 className="font-semibold text-slate-700 text-sm">{d.files}</h4>
             </div>
 
             <div className="flex gap-2 mb-3">
@@ -1336,7 +1438,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
               <label className="flex-1">
                 <input type="file" onChange={handleUpload} disabled={uploading} accept=".pdf,.jpg,.jpeg,.png,.gif" className="hidden" />
                 <span className={`btn btn-secondary btn-sm w-full justify-center cursor-pointer ${uploading ? 'opacity-50' : ''}`}>
-                  {uploading ? 'Subiendo...' : '+ Subir archivo'}
+                  {uploading ? t('common').saving : `+ ${d.uploadFile}`}
                 </span>
               </label>
             </div>
@@ -1360,21 +1462,98 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
                 ))}
               </div>
             ) : (
-              <p className="text-xs text-slate-400 text-center py-3">No hay archivos adjuntos</p>
+              <p className="text-xs text-slate-400 text-center py-3">{d.noFiles}</p>
             )}
           </div>
         </div>
 
+        {/* Reprogramar panel */}
+        {showReprogramar && (
+          <div className="mx-6 mb-4 border border-blue-200 bg-blue-50 rounded-xl p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-semibold text-blue-800 text-sm flex items-center gap-2">
+                <CalendarIcon size={15} className="text-blue-600" />
+                Reprogramar turno
+              </h4>
+              <button onClick={() => setShowReprogramar(false)} className="text-blue-400 hover:text-blue-600">
+                <XIcon size={15} />
+              </button>
+            </div>
+            <p className="text-xs text-blue-700">
+              El paciente recibirá una notificación con el nuevo horario.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label className="field-label">Nueva fecha</label>
+                <input
+                  type="date"
+                  value={reprogramarFecha}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    setReprogramarFecha(e.target.value);
+                    cargarSlots(e.target.value);
+                  }}
+                  className="field-input"
+                />
+              </div>
+              <div>
+                <label className="field-label">Horario disponible</label>
+                {cargandoSlots ? (
+                  <div className="field-input flex items-center gap-2 text-slate-400 text-sm">
+                    <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    Cargando slots...
+                  </div>
+                ) : reprogramarSlots.length === 0 ? (
+                  <div className="field-input text-slate-400 text-sm">
+                    {reprogramarFecha ? 'Sin disponibilidad ese día' : 'Seleccioná una fecha'}
+                  </div>
+                ) : (
+                  <select
+                    value={reprogramarHora}
+                    onChange={(e) => setReprogramarHora(e.target.value)}
+                    className="field-select"
+                  >
+                    <option value="">Seleccionar horario</option>
+                    {reprogramarSlots.map((s) => (
+                      <option key={s.hora} value={s.hora}>{s.hora}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
+            </div>
+            <div className="flex gap-2 justify-end pt-1">
+              <button onClick={() => setShowReprogramar(false)} className="btn btn-secondary btn-sm">
+                Cancelar
+              </button>
+              <button
+                onClick={handleReprogramar}
+                disabled={reprogramando || !reprogramarFecha || !reprogramarHora}
+                className="btn btn-primary btn-sm"
+              >
+                {reprogramando ? 'Reprogramando...' : 'Confirmar reprogramación'}
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Footer actions */}
-        <div className="px-6 py-4 border-t border-slate-100 flex gap-3 bg-slate-50 rounded-b-2xl">
+        <div className="px-6 py-4 border-t border-slate-100 flex flex-wrap gap-3 bg-slate-50 rounded-b-2xl">
+          {(turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO') && (
+            <button
+              onClick={() => { setShowReprogramar((v) => !v); setModalNotice(null); }}
+              className="btn btn-secondary flex-1"
+            >
+              <CalendarIcon size={15} /> Reprogramar
+            </button>
+          )}
           {turno.estado !== 'COMPLETADO' && (
             <button onClick={() => handleActualizarEstado('COMPLETADO')} className="btn btn-success flex-1">
-              <CheckIcon size={15} /> Marcar completado
+              <CheckIcon size={15} /> {d.complete}
             </button>
           )}
           {turno.estado !== 'CANCELADO' && (
             <button onClick={() => handleActualizarEstado('CANCELADO')} className="btn btn-danger flex-1">
-              <XIcon size={15} /> Cancelar turno
+              <XIcon size={15} /> {d.cancel}
             </button>
           )}
         </div>
@@ -1390,5 +1569,276 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
       />
     )}
     </>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PAGOS VIEW
+══════════════════════════════════════════════════════════════ */
+function PagosView() {
+  const [data, setData] = useState<PagosDashboardResponse | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+
+  // Filters
+  const currentYear = new Date().getFullYear();
+  const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
+  const [desde, setDesde] = useState(`${currentYear}-${currentMonth}-01`);
+  const [hasta, setHasta] = useState(`${currentYear}-${currentMonth}-${new Date(currentYear, new Date().getMonth() + 1, 0).getDate()}`);
+  const [estado, setEstado] = useState('TODOS');
+  const [applied, setApplied] = useState({ desde: '', hasta: '', estado: 'TODOS' });
+
+  const load = async (p = 1, filters = applied) => {
+    setLoading(true);
+    try {
+      const res = await api.profesional.getPagos({
+        desde: filters.desde || undefined,
+        hasta: filters.hasta || undefined,
+        estado: filters.estado !== 'TODOS' ? filters.estado : undefined,
+        page: p,
+        limit: 15,
+      });
+      setData(res);
+      setPage(p);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  useEffect(() => { load(1, { desde: '', hasta: '', estado: 'TODOS' }); }, []);
+
+  const applyFilters = () => {
+    const f = { desde, hasta, estado };
+    setApplied(f);
+    load(1, f);
+  };
+
+  const clearFilters = () => {
+    setDesde(`${currentYear}-${currentMonth}-01`);
+    setHasta(`${currentYear}-${currentMonth}-${new Date(currentYear, new Date().getMonth() + 1, 0).getDate()}`);
+    setEstado('TODOS');
+    const f = { desde: '', hasta: '', estado: 'TODOS' };
+    setApplied(f);
+    load(1, f);
+  };
+
+  const fmt = (n: number) =>
+    new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
+
+  const estadoBadgeClass = (e: string) => {
+    if (e === 'APROBADO') return 'badge badge-green';
+    if (e === 'PENDIENTE') return 'badge badge-yellow';
+    if (e === 'RECHAZADO') return 'badge badge-red';
+    return 'badge badge-gray';
+  };
+
+  const estadoLabel = (e: string) => {
+    const map: Record<string, string> = { APROBADO: 'Aprobado', PENDIENTE: 'Pendiente', RECHAZADO: 'Rechazado', REEMBOLSADO: 'Reembolsado' };
+    return map[e] ?? e;
+  };
+
+  const modalidadIcon = (m: string) => m === 'VIRTUAL' ? '💻' : '🏥';
+
+  // Bar chart helpers
+  const maxBruto = data ? Math.max(...data.mesesResumen.map(m => m.bruto), 1) : 1;
+
+  return (
+    <div className="space-y-6">
+
+      {/* ── Summary cards ──────────────────────────────── */}
+      {data && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[
+            { label: 'Facturado (bruto)', value: fmt(data.totales.bruto), sub: 'pagos aprobados', color: 'emerald' },
+            { label: 'Neto recibido', value: fmt(data.totales.neto), sub: '-10% comisión', color: 'blue' },
+            { label: 'Pendiente de cobro', value: fmt(data.totales.pendiente), sub: `${data.totales.pendientes} pago${data.totales.pendientes !== 1 ? 's' : ''}`, color: 'amber' },
+            { label: 'Transacciones', value: String(data.totales.aprobados + data.totales.pendientes), sub: `${data.totales.aprobados} aprob.`, color: 'purple' },
+          ].map(card => (
+            <div key={card.label} className="stat-card">
+              <p className="stat-label">{card.label}</p>
+              <p className={`text-xl font-bold mt-1 text-${card.color}-600 dark:text-${card.color}-400`}>{card.value}</p>
+              <p className="stat-desc">{card.sub}</p>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* ── Monthly bar chart ───────────────────────────── */}
+      {data && data.mesesResumen.some(m => m.bruto > 0) && (
+        <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4">
+          <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">
+            Facturación mensual — últimos 12 meses
+          </p>
+          <div className="flex items-end gap-1.5 h-28">
+            {data.mesesResumen.map((m, i) => (
+              <div key={i} className="flex-1 flex flex-col items-center gap-1 group relative">
+                {/* Tooltip */}
+                <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-slate-900 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-lg">
+                  <p className="font-semibold">{m.mes}</p>
+                  <p>{fmt(m.bruto)} bruto</p>
+                  <p className="text-slate-300">{fmt(m.neto)} neto</p>
+                  <p className="text-slate-400">{m.cantidad} pago{m.cantidad !== 1 ? 's' : ''}</p>
+                </div>
+                {/* Bar */}
+                <div
+                  className={`w-full rounded-t transition-all ${m.bruto > 0 ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-slate-200 dark:bg-slate-600'}`}
+                  style={{ height: `${Math.max(4, (m.bruto / maxBruto) * 96)}px` }}
+                />
+                <span className="text-[9px] text-slate-400 dark:text-slate-500 leading-none">{m.mes}</span>
+              </div>
+            ))}
+          </div>
+          {/* Y-axis reference */}
+          <div className="flex justify-between mt-2 text-[10px] text-slate-400">
+            <span>$0</span>
+            <span>{fmt(maxBruto / 2)}</span>
+            <span>{fmt(maxBruto)}</span>
+          </div>
+        </div>
+      )}
+
+      {/* ── Filters ─────────────────────────────────────── */}
+      <div className="flex flex-wrap items-end gap-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4">
+        <div>
+          <label className="field-label text-xs">Desde</label>
+          <input type="date" className="field-input mt-1 text-sm" value={desde} onChange={e => setDesde(e.target.value)} />
+        </div>
+        <div>
+          <label className="field-label text-xs">Hasta</label>
+          <input type="date" className="field-input mt-1 text-sm" value={hasta} onChange={e => setHasta(e.target.value)} />
+        </div>
+        <div>
+          <label className="field-label text-xs">Estado</label>
+          <select className="field-select mt-1 text-sm" value={estado} onChange={e => setEstado(e.target.value)}>
+            <option value="TODOS">Todos</option>
+            <option value="APROBADO">Aprobado</option>
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="RECHAZADO">Rechazado</option>
+          </select>
+        </div>
+        <div className="flex gap-2 mt-4 sm:mt-0">
+          <button onClick={applyFilters} className="btn btn-primary text-sm">Filtrar</button>
+          <button onClick={clearFilters} className="btn btn-ghost text-sm text-slate-500">Limpiar</button>
+        </div>
+      </div>
+
+      {/* ── Table ────────────────────────────────────────── */}
+      {loading ? (
+        <div className="py-12 flex items-center justify-center gap-2 text-slate-400">
+          <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          Cargando pagos...
+        </div>
+      ) : !data || data.pagos.length === 0 ? (
+        <div className="py-12 text-center">
+          <p className="text-3xl mb-2">💳</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">No hay pagos en el período seleccionado.</p>
+        </div>
+      ) : (
+        <>
+          {/* Desktop table */}
+          <div className="hidden sm:block overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-700">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
+                  {['Fecha', 'Paciente', 'Modalidad', 'Turno', 'Monto bruto', 'Neto', 'Estado'].map(h => (
+                    <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                {data.pagos.map(p => (
+                  <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
+                    <td className="px-4 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">
+                      {new Date(p.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                    </td>
+                    <td className="px-4 py-3">
+                      {p.turno.paciente
+                        ? <><p className="font-medium text-slate-800 dark:text-slate-100">{p.turno.paciente.nombre} {p.turno.paciente.apellido}</p>
+                            <p className="text-xs text-slate-400 dark:text-slate-500">{p.turno.paciente.email}</p></>
+                        : <span className="text-slate-400">Paciente sin cuenta</span>}
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
+                      <span>{modalidadIcon(p.turno.modalidad)}</span>
+                      <span className="ml-1">{p.turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}</span>
+                    </td>
+                    <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap text-xs">
+                      {new Date(p.turno.fechaHora).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
+                      {' '}
+                      {new Date(p.turno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                    </td>
+                    <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-100 whitespace-nowrap">
+                      {fmt(p.monto)}
+                    </td>
+                    <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
+                      {p.estado === 'APROBADO' ? fmt(p.montoNeto) : '—'}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={estadoBadgeClass(p.estado)}>{estadoLabel(p.estado)}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-3">
+            {data.pagos.map(p => (
+              <div key={p.id} className="card p-4 space-y-2">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-medium text-slate-800 dark:text-slate-100 text-sm">
+                      {p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : 'Paciente sin cuenta'}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {new Date(p.turno.fechaHora).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                      {' · '}
+                      {modalidadIcon(p.turno.modalidad)} {p.turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
+                    </p>
+                  </div>
+                  <span className={estadoBadgeClass(p.estado)}>{estadoLabel(p.estado)}</span>
+                </div>
+                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-700">
+                  <div>
+                    <p className="text-xs text-slate-400">Bruto</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-100">{fmt(p.monto)}</p>
+                  </div>
+                  {p.estado === 'APROBADO' && (
+                    <div className="text-right">
+                      <p className="text-xs text-slate-400">Neto</p>
+                      <p className="font-semibold text-emerald-600 dark:text-emerald-400">{fmt(p.montoNeto)}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {data.pagination.pages > 1 && (
+            <div className="flex items-center justify-between pt-2">
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Mostrando {((page - 1) * 15) + 1}–{Math.min(page * 15, data.pagination.total)} de {data.pagination.total}
+              </p>
+              <div className="flex gap-2">
+                <button
+                  disabled={page === 1}
+                  onClick={() => load(page - 1)}
+                  className="btn btn-ghost text-sm disabled:opacity-40"
+                >
+                  ← Anterior
+                </button>
+                <button
+                  disabled={page >= data.pagination.pages}
+                  onClick={() => load(page + 1)}
+                  className="btn btn-ghost text-sm disabled:opacity-40"
+                >
+                  Siguiente →
+                </button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }

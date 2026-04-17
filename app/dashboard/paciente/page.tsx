@@ -10,6 +10,11 @@ import OnboardingTour from '../../components/OnboardingTour';
 import Pagination from '../../components/Pagination';
 import StarRating from '../../components/StarRating';
 import VideoCallModal from '../../components/VideoCallModal';
+import ThemeLangToggle from '../../components/ThemeLangToggle';
+import { useLang } from '../../lib/i18n/context';
+import { NotificationBell } from '../../components/NotificationBell';
+import { imprimirReceta } from '../../lib/receta-pdf';
+import AgendarCalendario from '../../components/AgendarCalendario';
 
 const PACIENTE_TOUR_STEPS = [
   {
@@ -49,6 +54,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 export default function PacienteDashboard() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
+  const { t } = useLang();
+  const p = t('paciente');
+  const c = t('common');
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'proximos' | 'pasados' | 'listaEspera'>('proximos');
@@ -188,7 +196,7 @@ export default function PacienteDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* ── Reminder banner ─────────────────────────────── */}
       {recordatorios.length > 0 && (
         <div className="bg-amber-500 text-white">
@@ -227,22 +235,24 @@ export default function PacienteDashboard() {
       )}
 
       {/* ── Navbar ──────────────────────────────────────── */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-30">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
               <MediSyncLogo size={28} />
               <div className="hidden sm:block">
-                <p className="text-sm font-bold text-slate-800 leading-none">MediSync</p>
-                <p className="text-xs text-slate-400 leading-none mt-0.5">Mi panel</p>
+                <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-none">MediSync</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 leading-none mt-0.5">Mi panel</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
-              <Link href="/" data-onboarding="pac-buscar-link" className="btn btn-ghost text-slate-600 text-sm hidden sm:inline-flex">
+              <NotificationBell />
+              <ThemeLangToggle compact />
+              <Link href="/" data-onboarding="pac-buscar-link" className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm hidden sm:inline-flex">
                 <SearchIcon size={15} />
                 Buscar profesionales
               </Link>
-              <button data-onboarding="pac-profile-btn" onClick={() => setShowProfileModal(true)} className="btn btn-ghost text-slate-600 text-sm">
+              <button data-onboarding="pac-profile-btn" onClick={() => setShowProfileModal(true)} className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm">
                 <UserIcon size={15} />
                 <span className="hidden sm:inline">{user.paciente.nombre} {user.paciente.apellido}</span>
               </button>
@@ -281,7 +291,7 @@ export default function PacienteDashboard() {
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'proximos' ? 'tab-btn-active' : ''}`}
             >
               <CalendarIcon size={13} />
-              Próximos
+              {p.upcoming}
               {activeTab === 'proximos' && paginationMeta.total > 0 && (
                 <span className="ml-1 bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {paginationMeta.total}
@@ -293,7 +303,7 @@ export default function PacienteDashboard() {
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'pasados' ? 'tab-btn-active' : ''}`}
             >
               <ClockIcon size={13} />
-              Pasados
+              {p.past}
               {activeTab === 'pasados' && paginationMeta.total > 0 && (
                 <span className="ml-1 bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {paginationMeta.total}
@@ -306,7 +316,7 @@ export default function PacienteDashboard() {
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'listaEspera' ? 'tab-btn-active' : ''}`}
             >
               <WaitlistIcon size={13} />
-              Lista de espera
+              {p.waitlist}
               {listaEspera.length > 0 && (
                 <span className="ml-1 bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {listaEspera.length}
@@ -321,8 +331,7 @@ export default function PacienteDashboard() {
               listaEspera.length === 0 ? (
                 <div className="py-12 text-center">
                   <WaitlistIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                  <p className="text-slate-500 text-sm font-medium">No estás en ninguna lista de espera</p>
-                  <p className="text-slate-400 text-xs mt-1">Cuando no haya turnos disponibles, podés anotarte en lista de espera desde el perfil del profesional.</p>
+                  <p className="text-slate-500 text-sm font-medium">{p.noWaitlist}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -340,7 +349,7 @@ export default function PacienteDashboard() {
                         <span className="badge badge-yellow mt-2">{item.estado}</span>
                       </div>
                       <button onClick={() => cancelarListaEspera(item.id)} className="btn btn-secondary btn-sm">
-                        Salir de lista
+                        {p.cancel}
                       </button>
                     </div>
                   ))}
@@ -360,11 +369,11 @@ export default function PacienteDashboard() {
               <div className="py-12 text-center">
                 <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
                 <p className="text-slate-500 text-sm font-medium">
-                  {activeTab === 'proximos' ? 'No tenés turnos próximos' : 'No tenés turnos pasados'}
+                  {activeTab === 'proximos' ? p.noUpcoming : p.noPast}
                 </p>
                 {activeTab === 'proximos' && (
                   <Link href="/" className="btn btn-primary btn-sm mt-4">
-                    <SearchIcon size={13} /> Buscar profesional
+                    <SearchIcon size={13} /> {p.searchProfessional}
                   </Link>
                 )}
               </div>
@@ -479,6 +488,8 @@ function TurnoCard({
   onCalificar: () => void;
   onVideoCall: () => void;
 }) {
+  const { t } = useLang();
+  const p = t('paciente');
   const isActive = turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO';
   const isFuture = new Date(turno.fechaHora) >= new Date();
   const preconsultaCompletada = Boolean(turno.preconsultaCompletadaAt);
@@ -497,9 +508,9 @@ function TurnoCard({
           {turno.estado}
         </span>
         {turno.modalidad === 'VIRTUAL' ? (
-          <span className="flex items-center gap-1"><VideoIcon size={11} /> Virtual</span>
+          <span className="flex items-center gap-1"><VideoIcon size={11} /> {t('home').virtual}</span>
         ) : (
-          <span className="flex items-center gap-1"><BuildingIcon size={11} /> Presencial</span>
+          <span className="flex items-center gap-1"><BuildingIcon size={11} /> {t('home').inPerson}</span>
         )}
       </div>
 
@@ -529,7 +540,7 @@ function TurnoCard({
             onClick={onVideoCall}
             className="btn btn-success btn-sm mt-3 w-full"
           >
-            <VideoIcon size={13} /> Unirse a la videollamada
+            <VideoIcon size={13} /> {p.joinVideoCall}
           </button>
         )}
 
@@ -545,8 +556,8 @@ function TurnoCard({
               >
                 <CreditCardIcon size={13} />
                 {pagoInfo?.necesitaPago === false
-                  ? 'Pago registrado'
-                  : `Pagar $${Number(turno.profesional.precioConsulta).toLocaleString('es-AR')}`}
+                  ? p.paid
+                  : `${p.pay} $${Number(turno.profesional.precioConsulta).toLocaleString('es-AR')}`}
               </button>
             )}
 
@@ -557,7 +568,7 @@ function TurnoCard({
               className="btn btn-secondary btn-sm"
               title={!canCancel ? `Requiere ${horasMinCancelacion}h de anticipación` : undefined}
             >
-              <RefreshIcon size={13} /> Reprogramar
+              <RefreshIcon size={13} /> {p.reschedule}
             </button>
 
             {/* Cancel */}
@@ -567,7 +578,7 @@ function TurnoCard({
               className={`btn btn-sm ${canCancel ? 'btn-ghost text-red-500 hover:bg-red-50' : 'btn-ghost text-slate-400 cursor-not-allowed'}`}
               title={!canCancel ? `Requiere ${horasMinCancelacion}h de anticipación` : undefined}
             >
-              <XIcon size={13} /> Cancelar
+              <XIcon size={13} /> {p.cancel}
             </button>
 
             <Link href={`/profesional/${turno.profesional?.id}`} className="btn btn-ghost btn-sm text-slate-500">
@@ -576,24 +587,43 @@ function TurnoCard({
 
             {!preconsultaCompletada ? (
               <button onClick={onCompletarPreconsulta} className="btn btn-primary btn-sm">
-                <ClipboardIcon size={13} /> Completar preconsulta
+                <ClipboardIcon size={13} /> {p.preconsulta}
               </button>
             ) : (
-              <span className="badge badge-green">Preconsulta lista</span>
+              <span className="badge badge-green">{t('dashboard').preconsulta}</span>
             )}
 
             {(turno.estado === 'COMPLETADO' || turno.estado === 'CONFIRMADO') && (
               <button onClick={onVerReceta} className="btn btn-secondary btn-sm">
-                <ClipboardIcon size={13} /> Ver receta/indicaciones
+                <ClipboardIcon size={13} /> {p.viewPrescription}
               </button>
             )}
 
             {turno.estado === 'COMPLETADO' && (
               <button onClick={onCalificar} className="btn btn-ghost btn-sm text-amber-600 hover:bg-amber-50">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" /></svg>
-                Calificar
+                {p.rate}
               </button>
             )}
+          </div>
+        )}
+
+        {/* Calendar buttons for active future turnos */}
+        {isActive && isFuture && turno.profesional && (
+          <div className="mt-3 pt-3 border-t border-slate-100">
+            <AgendarCalendario
+              variant="compact"
+              turno={{
+                turnoId: turno.id,
+                fechaHora: turno.fechaHora,
+                duracionMin: turno.duracionMin,
+                modalidad: turno.modalidad,
+                profesionalNombre: turno.profesional.nombre,
+                profesionalApellido: turno.profesional.apellido,
+                especialidad: turno.profesional.especialidad?.nombre ?? '',
+                lugarAtencion: turno.profesional.lugarAtencion,
+              }}
+            />
           </div>
         )}
       </div>
@@ -692,8 +722,35 @@ function RecetaModal({ turno, onClose }: { turno: Turno; onClose: () => void }) 
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50">
-          <button onClick={onClose} className="btn btn-secondary w-full">Cerrar</button>
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+          {receta && turno.profesional && (
+            <button
+              onClick={() => imprimirReceta({
+                receta,
+                profesional: {
+                  nombre: turno.profesional!.nombre,
+                  apellido: turno.profesional!.apellido,
+                  especialidad: turno.profesional!.especialidad?.nombre ?? '',
+                  matricula: turno.profesional!.matricula,
+                  lugarAtencion: turno.profesional!.lugarAtencion,
+                  telefono: turno.profesional!.telefono,
+                  fotoUrl: turno.profesional!.fotoUrl,
+                },
+                paciente: turno.paciente
+                  ? { nombre: turno.paciente.nombre, apellido: turno.paciente.apellido, email: turno.paciente.email }
+                  : null,
+                fechaHora: turno.fechaHora,
+                modalidad: turno.modalidad,
+              })}
+              className="btn btn-primary flex-1 flex items-center justify-center gap-2"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              </svg>
+              Descargar PDF
+            </button>
+          )}
+          <button onClick={onClose} className="btn btn-secondary flex-1">Cerrar</button>
         </div>
       </div>
     </div>
@@ -871,6 +928,8 @@ function PreconsultaModal({ turno, onClose, onSuccess }: { turno: Turno; onClose
 
 /* ── Calificar Modal ─────────────────────────────────────── */
 function CalificarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
+  const { t } = useLang();
+  const p = t('paciente');
   const [rating, setRating] = useState(0);
   const [comentario, setComentario] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -902,7 +961,7 @@ function CalificarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: 
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800">Calificar consulta</h3>
+          <h3 className="font-bold text-slate-800">{p.rateTitle}</h3>
           <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
         </div>
 
@@ -964,14 +1023,14 @@ function CalificarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: 
         </div>
 
         <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
-          <button onClick={onClose} className="btn btn-secondary flex-1">Cancelar</button>
+          <button onClick={onClose} className="btn btn-secondary flex-1">{t('common').cancel}</button>
           {!resenaExistente && (
             <button
               onClick={handleGuardar}
               disabled={guardando || rating === 0 || resenaExistente === undefined}
               className="btn btn-primary flex-1"
             >
-              {guardando ? 'Guardando...' : 'Enviar calificación'}
+              {guardando ? t('common').saving : p.rateSubmit}
             </button>
           )}
         </div>

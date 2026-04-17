@@ -1,5 +1,7 @@
 'use client';
 
+import { useLang } from '../lib/i18n/context';
+
 interface PaginationProps {
   page: number;
   totalPages: number;
@@ -9,6 +11,8 @@ interface PaginationProps {
 }
 
 export default function Pagination({ page, totalPages, total, limit, onPageChange }: PaginationProps) {
+  const { t } = useLang();
+  const p = t('pagination');
   if (totalPages <= 1) return null;
 
   const from = (page - 1) * limit + 1;
@@ -28,33 +32,33 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
 
   return (
     <div className="flex flex-col items-center gap-3 py-4">
-      <p className="text-sm text-slate-500">
-        Mostrando <span className="font-medium text-slate-700">{from}–{to}</span> de{' '}
-        <span className="font-medium text-slate-700">{total}</span> resultados
+      <p className="text-sm text-slate-500 dark:text-slate-400">
+        {p.showing} <span className="font-medium text-slate-700 dark:text-slate-200">{from}–{to}</span> {p.of}{' '}
+        <span className="font-medium text-slate-700 dark:text-slate-200">{total}</span> {p.results}
       </p>
       <div className="flex items-center gap-1">
         <button
           onClick={() => onPageChange(page - 1)}
           disabled={page === 1}
-          className="px-3 py-1.5 text-sm rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-1.5 text-sm rounded-md border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          ← Anterior
+          ← {p.prev}
         </button>
 
-        {pages.map((p, i) =>
-          p === '...' ? (
-            <span key={`ellipsis-${i}`} className="px-2 text-slate-400 select-none">…</span>
+        {pages.map((pg, i) =>
+          pg === '...' ? (
+            <span key={`ellipsis-${i}`} className="px-2 text-slate-400 dark:text-slate-500 select-none">…</span>
           ) : (
             <button
-              key={p}
-              onClick={() => onPageChange(p)}
+              key={pg}
+              onClick={() => onPageChange(pg)}
               className={`w-9 h-9 text-sm rounded-md border transition-colors ${
-                p === page
+                pg === page
                   ? 'bg-blue-600 text-white border-blue-600 font-semibold'
-                  : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                  : 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700'
               }`}
             >
-              {p}
+              {pg}
             </button>
           )
         )}
@@ -62,9 +66,9 @@ export default function Pagination({ page, totalPages, total, limit, onPageChang
         <button
           onClick={() => onPageChange(page + 1)}
           disabled={page === totalPages}
-          className="px-3 py-1.5 text-sm rounded-md border border-slate-200 text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+          className="px-3 py-1.5 text-sm rounded-md border border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
         >
-          Siguiente →
+          {p.next} →
         </button>
       </div>
     </div>

@@ -161,6 +161,12 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
+    getPagos: (params?: { desde?: string; hasta?: string; estado?: string; page?: number; limit?: number }) => {
+      const q = params ? '?' + new URLSearchParams(
+        Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
+      ).toString() : '';
+      return fetchApi<PagosDashboardResponse>(`/profesional/pagos${q}`);
+    },
   },
   admin: {
     getStats: () => fetchApi<AdminStats>('/admin/stats'),
@@ -265,6 +271,7 @@ export type Profesional = {
   telefono: string;
   genero: Genero;
   precioConsulta: number;
+  matricula?: string;
   bio?: string;
   lugarAtencion?: string;
   fotoUrl?: string;
@@ -532,4 +539,58 @@ export type NotificationPreferences = {
   notifWhatsapp: boolean;
   notifRecordatorio24h?: boolean;
   notifRecordatorio2h?: boolean;
+};
+
+export type PagoItem = {
+  id: string;
+  monto: number;
+  montoNeto: number;
+  comisionPorcentaje: number;
+  estado: 'PENDIENTE' | 'APROBADO' | 'RECHAZADO' | 'REEMBOLSADO';
+  mpPaymentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  turno: {
+    id: string;
+    fechaHora: string;
+    modalidad: 'PRESENCIAL' | 'VIRTUAL';
+    estado: string;
+    paciente: { nombre: string; apellido: string; email: string } | null;
+  };
+};
+
+export type PagosMesResumen = {
+  mes: string;
+  bruto: number;
+  neto: number;
+  cantidad: number;
+};
+
+export type PagosDashboardResponse = {
+  pagos: PagoItem[];
+  pagination: { total: number; page: number; limit: number; pages: number };
+  totales: {
+    bruto: number;
+    neto: number;
+    pendiente: number;
+    aprobados: number;
+    pendientes: number;
+  };
+  mesesResumen: PagosMesResumen[];
+};
+
+export type InAppNotification = {
+  id: string;
+  tipo: string;
+  titulo: string;
+  cuerpo: string;
+  leida: boolean;
+  link: string | null;
+  createdAt: string;
+};
+
+export const notificationsApi = {
+  getInbox: () => fetchApi<{ notifs: InAppNotification[]; unread: number }>('/notifications/inbox'),
+  markRead: (id: string) => fetchApi<InAppNotification>(`/notifications/${id}/read`, { method: 'PATCH' }),
+  markAllRead: () => fetchApi<{ marked: number }>('/notifications/read-all', { method: 'PATCH' }),
 };

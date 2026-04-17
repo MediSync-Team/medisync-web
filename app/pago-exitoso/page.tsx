@@ -3,6 +3,8 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import AgendarCalendario from '../components/AgendarCalendario';
+import { TurnoCalendarInfo } from '../lib/calendar';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
@@ -11,8 +13,21 @@ function PagoExitosoContent() {
   const router = useRouter();
   const turnoId = searchParams.get('turno');
   const [confirming, setConfirming] = useState(true);
+  const [calInfo, setCalInfo] = useState<TurnoCalendarInfo | null>(null);
 
   useEffect(() => {
+    // Read calendar info persisted before the redirect to Mercado Pago
+    try {
+      const raw = localStorage.getItem('medisync_last_turno_cal');
+      if (raw) {
+        const parsed: TurnoCalendarInfo = JSON.parse(raw);
+        // Only use it if it matches the current turnoId
+        if (!turnoId || parsed.turnoId === turnoId) {
+          setCalInfo(parsed);
+        }
+      }
+    } catch { /* ignore */ }
+
     const confirmarPago = async () => {
       if (!turnoId) {
         setConfirming(false);
@@ -23,17 +38,15 @@ function PagoExitosoContent() {
         const token = localStorage.getItem('token') || '';
         const res = await fetch(`${API_URL}/pagos/confirmar-pago?turnoId=${turnoId}`, {
           method: 'POST',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-        
+
         if (res.ok) {
           await fetch(`${API_URL}/turnos/${turnoId}`, {
             method: 'PATCH',
-            headers: { 
+            headers: {
               'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
+              'Authorization': `Bearer ${token}`,
             },
             body: JSON.stringify({ estado: 'CONFIRMADO' }),
           });
@@ -46,50 +59,74 @@ function PagoExitosoContent() {
     };
 
     confirmarPago();
-
-    const timer = setTimeout(() => {
-      router.push('/dashboard/paciente');
-    }, 5000);
-
-    return () => clearTimeout(timer);
-  }, [turnoId, router]);
+  }, [turnoId]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg text-center">
-        <div className="text-6xl mb-4">{confirming ? '⏳' : '✅'}</div>
-        <h1 className="text-2xl font-bold text-green-600 mb-4">
-          {confirming ? 'Confirmando pago...' : '¡Pago exitoso!'}
-        </h1>
-        <p className="text-gray-600 mb-6">
-          {confirming 
-            ? 'Verificando tu pago con Mercado Pago...'
-            : 'Tu turno ha sido confirmado. Recibirás un email con los detalles.'}
-        </p>
-        {!confirming && (
-          <div className="space-y-3">
-            <Link 
-              href="/dashboard/paciente"
-              className="block w-full py-3 bg-green-600 text-white rounded-md hover:bg-green-700"
-            >
-              Ver mis turnos
-            </Link>
-            <Link 
-              href="/"
-              className="block w-full py-3 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-            >
-              Volver al inicio
-            </Link>
-          </div>
-        )}
-        {confirming && (
-          <div className="mt-4 animate-pulse">
-            <div className="w-full h-2 bg-gray-200 rounded">
-              <div className="h-2 bg-green-500 rounded" style={{ width: '60%' }}></div>
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
+      <div className="max-w-md w-full space-y-4">
+
+        {/* Main card */}
+        <div className="bg-white rounded-2xl shadow-lg p-8 text-center space-y-4">
+          <div className="flex justify-center">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${confirming ? 'bg-blue-100' : 'bg-emerald-100'}`}>
+              {confirming ? (
+                <svg className="animate-spin w-8 h-8 text-blue-500" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+              ) : (
+                <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                </svg>
+              )}
             </div>
           </div>
+
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800">
+              {confirming ? 'Confirmando pago...' : '¡Pago exitoso!'}
+            </h1>
+            <p className="text-slate-500 mt-1 text-sm">
+              {confirming
+                ? 'Verificando tu pago con Mercado Pago...'
+                : 'Tu turno quedó confirmado. Recibirás un email con los detalles.'}
+            </p>
+          </div>
+
+          {!confirming && (
+            <div className="flex flex-col gap-2 pt-2">
+              <Link
+                href="/dashboard/paciente"
+                className="btn btn-primary w-full"
+              >
+                Ver mis turnos
+              </Link>
+              <Link
+                href="/"
+                className="btn btn-ghost w-full text-slate-500"
+              >
+                Volver al inicio
+              </Link>
+            </div>
+          )}
+
+          {confirming && (
+            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full bg-blue-500 rounded-full animate-pulse" style={{ width: '60%' }} />
+            </div>
+          )}
+        </div>
+
+        {/* Calendar card — shown once payment is confirmed and we have turno info */}
+        {!confirming && calInfo && (
+          <AgendarCalendario turno={calInfo} />
         )}
-        <p className="text-sm text-gray-400 mt-4">Redirigiendo en 5 segundos...</p>
+
+        {!confirming && (
+          <p className="text-center text-xs text-slate-400">
+            Redirigiendo a tus turnos en 8 segundos...
+          </p>
+        )}
       </div>
     </div>
   );
@@ -97,7 +134,7 @@ function PagoExitosoContent() {
 
 export default function PagoExitosoPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
       <PagoExitosoContent />
     </Suspense>
   );

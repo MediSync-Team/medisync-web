@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { api } from '../lib/api';
+import { useLang } from '../lib/i18n/context';
 
 interface VideoCallModalProps {
   turnoId: string;
@@ -15,6 +16,8 @@ interface VideoCallModalProps {
  * Falls back to opening the link in a new tab if the API fails to load.
  */
 export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, onClose }: VideoCallModalProps) {
+  const { t } = useLang();
+  const vc = t('videoCall');
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [joinUrl, setJoinUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState('');
@@ -31,7 +34,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
         setJoinUrl(data.joinUrl);
       })
       .catch(e => {
-        setErrorMsg(e.message ?? 'No se pudo obtener el link de videollamada.');
+        setErrorMsg(e.message ?? vc.errorLink);
         setState('error');
       });
   }, [turnoId]);
@@ -102,7 +105,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
     script.async = true;
     script.onload = mountJitsi;
     script.onerror = () => {
-      setErrorMsg('No se pudo cargar el componente de videollamada.');
+      setErrorMsg(vc.errorLoad);
       setState('error');
     };
     document.head.appendChild(script);
@@ -122,7 +125,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
         <div className="flex items-center gap-3">
           <div className={`w-2 h-2 rounded-full ${state === 'ready' ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
           <span className="text-white font-medium text-sm">
-            Videollamada — {profesionalNombre}
+            {vc.title} — {profesionalNombre}
           </span>
           <span className="text-slate-400 text-xs">{fecha}</span>
         </div>
@@ -134,7 +137,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
               rel="noopener noreferrer"
               className="text-slate-300 hover:text-white text-xs px-2 py-1 rounded hover:bg-slate-700 transition-colors"
             >
-              Abrir en nueva pestaña
+              {vc.openTab}
             </a>
           )}
           <button
@@ -144,7 +147,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
-            Salir
+            {vc.leave}
           </button>
         </div>
       </div>
@@ -157,7 +160,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
-            <span className="text-sm">Conectando a la sala...</span>
+            <span className="text-sm">{vc.connecting}</span>
           </div>
         )}
 
@@ -169,7 +172,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
               </svg>
             </div>
             <div>
-              <p className="text-white font-medium mb-1">No se pudo conectar</p>
+              <p className="text-white font-medium mb-1">{vc.errorTitle}</p>
               <p className="text-slate-400 text-sm mb-3">{errorMsg}</p>
               {joinUrl && (
                 <a
@@ -178,7 +181,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
                   rel="noopener noreferrer"
                   className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm transition-colors"
                 >
-                  Unirse en el navegador
+                  {vc.joinBrowser}
                 </a>
               )}
             </div>
@@ -186,7 +189,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
               onClick={onClose}
               className="text-slate-400 hover:text-white text-sm transition-colors"
             >
-              Cerrar
+              {vc.close}
             </button>
           </div>
         )}
