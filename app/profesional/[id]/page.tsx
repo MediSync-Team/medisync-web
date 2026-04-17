@@ -36,6 +36,11 @@ export default function ProfesionalPage() {
   const [turnoReservado, setTurnoReservado] = useState<{ id: string; fechaHora: string; duracionMin: number } | null>(null);
   const [resenas, setResenas] = useState<ResenasResponse | null>(null);
   const [resenaPage, setResenaPage] = useState(1);
+  // Guest booking form
+  const [showGuestForm, setShowGuestForm] = useState(false);
+  const [guestForm, setGuestForm] = useState({ nombre: '', apellido: '', email: '', telefono: '' });
+  const [guestFormError, setGuestFormError] = useState('');
+  const [guestTurnoReservado, setGuestTurnoReservado] = useState<{ id: string; fechaHora: string; duracionMin: number; needsPago: boolean } | null>(null);
 
   useEffect(() => { loadProfesional(); loadResenas(1); }, [params.id]);
   useEffect(() => { loadListaEsperaActiva(); }, [params.id, user?.paciente?.id]);
@@ -142,39 +147,32 @@ export default function ProfesionalPage() {
     return dias;
   };
 
-  const handleReservar = async () => {
+  const buildFechaHora = () => {
+    if (!selectedDate || !selectedSlot) return null;
+    const [hora, minuto] = selectedSlot.split(':').map(Number);
+    return new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), hora, minuto, 0, 0);
+  };
+
+  const doReservar = async (pacienteData?: { nombre: string; apellido: string; email: string; telefono?: string }) => {
     if (!selectedSlot || !selectedDate || !profesional) return;
-    if (!user) { router.push('/login'); return; }
 
     setReservando(true);
     setError('');
+    setGuestFormError('');
 
     try {
-      const year = selectedDate.getFullYear();
-      const month = selectedDate.getMonth();
-      const day = selectedDate.getDate();
-      const [hora, minuto] = selectedSlot.split(':').map(Number);
-      const fechaHora = new Date(year, month, day, hora, minuto, 0, 0);
+      const fechaHora = buildFechaHora()!;
 
       const reservaData: Parameters<typeof api.turnos.reservar>[0] = {
         profesionalId: profesional.id,
         fechaHora: fechaHora.toISOString(),
         modalidad,
+        paciente: pacienteData,
       };
-
-      if (user.paciente) {
-        reservaData.paciente = {
-          nombre: user.paciente.nombre,
-          apellido: user.paciente.apellido,
-          email: user.paciente.email,
-          telefono: user.paciente.telefono,
-          dni: user.paciente.dni,
-        };
-      }
 
       const reserva = await api.turnos.reservar(reservaData);
 
-      // Persist turno info so pago-exitoso page can build the calendar event
+      // Persist turno info for calendar event
       const calInfo = {
         turnoId: reserva.turno.id,
         fechaHora: reserva.turno.fechaHora,
@@ -187,20 +185,63 @@ export default function ProfesionalPage() {
       };
       localStorage.setItem('medisync_last_turno_cal', JSON.stringify(calInfo));
 
-      if (profesional.precioConsulta > 0) {
+      const needsPago = Number(profesional.precioConsulta) > 0;
+
+      if (needsPago && user) {
         router.push(`/pago?turno=${reserva.turno.id}`);
         return;
       }
 
+      if (needsPago && !user) {
+        // Guest + paid: turno created, redirect to register so they can complete payment
+        setGuestTurnoReservado({ id: reserva.turno.id, fechaHora: reserva.turno.fechaHora, duracionMin: reserva.turno.duracionMin, needsPago: true });
+        return;
+      }
+
       // Free turno — show success screen with calendar buttons
-      setTurnoReservado({ id: reserva.turno.id, fechaHora: reserva.turno.fechaHora, duracionMin: reserva.turno.duracionMin });
+      if (user) {
+        setTurnoReservado({ id: reserva.turno.id, fechaHora: reserva.turno.fechaHora, duracionMin: reserva.turno.duracionMin });
+      } else {
+        setGuestTurnoReservado({ id: reserva.turno.id, fechaHora: reserva.turno.fechaHora, duracionMin: reserva.turno.duracionMin, needsPago: false });
+      }
       setSuccessMessage('¡Turno reservado con éxito!');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al reservar');
-      setInlineNotice({ type: 'error', text: err instanceof Error ? err.message : 'Error al reservar turno' });
+      const msg = err instanceof Error ? err.message : 'Error al reservar';
+      setError(msg);
+      setGuestFormError(msg);
+      setInlineNotice({ type: 'error', text: msg });
     } finally {
       setReservando(false);
     }
+  };
+
+  const handleReservar = async () => {
+    if (!selectedSlot || !selectedDate || !profesional) return;
+
+    if (!user) {
+      // Show guest form instead of redirecting to login
+      setShowGuestForm(true);
+      return;
+    }
+
+    await doReservar(
+      user.paciente
+        ? { nombre: user.paciente.nombre, apellido: user.paciente.apellido, email: user.paciente.email, telefono: user.paciente.telefono ?? undefined }
+        : undefined
+    );
+  };
+
+  const handleReservarInvitado = async () => {
+    const { nombre, apellido, email, telefono } = guestForm;
+    if (!nombre.trim() || !apellido.trim() || !email.trim()) {
+      setGuestFormError('Completá nombre, apellido y email.');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setGuestFormError('El email no es válido.');
+      return;
+    }
+    await doReservar({ nombre: nombre.trim(), apellido: apellido.trim(), email: email.trim().toLowerCase(), telefono: telefono.trim() || undefined });
   };
 
   if (loading) {
@@ -273,8 +314,16 @@ export default function ProfesionalPage() {
       </header>
 
       <main className="page-container py-6 max-w-4xl mx-auto">
-        {/* ── Confirmation card (free turno) ─────────────── */}
-        {turnoReservado && profesional ? (
+        {/* ── Guest confirmation (no account) ────────────── */}
+        {guestTurnoReservado && profesional ? (
+          <GuestConfirmacion
+            turno={guestTurnoReservado}
+            profesional={profesional}
+            modalidad={modalidad}
+            email={guestForm.email}
+          />
+        ) : turnoReservado && profesional ? (
+          /* ── Confirmation card (logged in, free turno) ── */
           <ConfirmacionTurno
             turno={turnoReservado}
             profesional={profesional}
@@ -608,32 +657,94 @@ export default function ProfesionalPage() {
                     </span>
                   </div>
 
-                   {profesional.precioConsulta > 0 && (
-                     <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                       Se te pedira el pago de <strong>${Number(profesional.precioConsulta).toLocaleString('es-AR')}</strong> via Mercado Pago al confirmar.
-                     </p>
-                   )}
+                  {profesional.precioConsulta > 0 && (
+                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
+                      Se te pedirá el pago de <strong>${Number(profesional.precioConsulta).toLocaleString('es-AR')}</strong> via Mercado Pago al confirmar.
+                    </p>
+                  )}
 
-                  <button
-                    onClick={handleReservar}
-                    disabled={reservando}
-                    className="btn btn-success btn-lg w-full"
-                  >
-                    {reservando ? (
-                      <>
-                        <svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                        Reservando...
-                      </>
-                    ) : (
-                      <><CheckIcon size={16} /> Confirmar reserva</>
-                    )}
-                  </button>
+                  {/* Guest form — shown when not logged in and user clicked "Confirmar" */}
+                  {!user && showGuestForm ? (
+                    <div className="space-y-3 mb-4 border-t border-blue-200 dark:border-blue-700 pt-4">
+                      <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">Tus datos para la reserva</p>
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="field-label">Nombre *</label>
+                          <input
+                            value={guestForm.nombre}
+                            onChange={(e) => setGuestForm((p) => ({ ...p, nombre: e.target.value }))}
+                            placeholder="Juan"
+                            className="field-input"
+                          />
+                        </div>
+                        <div>
+                          <label className="field-label">Apellido *</label>
+                          <input
+                            value={guestForm.apellido}
+                            onChange={(e) => setGuestForm((p) => ({ ...p, apellido: e.target.value }))}
+                            placeholder="García"
+                            className="field-input"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="field-label">Email * <span className="text-slate-400 font-normal">(recibirás la confirmación aquí)</span></label>
+                        <input
+                          type="email"
+                          value={guestForm.email}
+                          onChange={(e) => setGuestForm((p) => ({ ...p, email: e.target.value }))}
+                          placeholder="juan@email.com"
+                          className="field-input"
+                        />
+                      </div>
+                      <div>
+                        <label className="field-label">Teléfono <span className="text-slate-400 font-normal">(opcional)</span></label>
+                        <input
+                          type="tel"
+                          value={guestForm.telefono}
+                          onChange={(e) => setGuestForm((p) => ({ ...p, telefono: e.target.value }))}
+                          placeholder="+54 9 11 1234-5678"
+                          className="field-input"
+                        />
+                      </div>
+                      {guestFormError && (
+                        <p className="text-xs text-red-600 font-medium">{guestFormError}</p>
+                      )}
+                      <button
+                        onClick={handleReservarInvitado}
+                        disabled={reservando}
+                        className="btn btn-success btn-lg w-full"
+                      >
+                        {reservando ? (
+                          <><svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Reservando...</>
+                        ) : (
+                          <><CheckIcon size={16} />Confirmar como invitado</>
+                        )}
+                      </button>
+                      <p className="text-xs text-center text-blue-600 dark:text-blue-400">
+                        ¿Tenés cuenta?{' '}
+                        <Link href="/login" className="font-semibold underline">Iniciá sesión</Link>
+                        {' '}para acceder a tu historial.
+                      </p>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={handleReservar}
+                      disabled={reservando}
+                      className="btn btn-success btn-lg w-full"
+                    >
+                      {reservando ? (
+                        <><svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Reservando...</>
+                      ) : (
+                        <><CheckIcon size={16} />Confirmar reserva</>
+                      )}
+                    </button>
+                  )}
 
-                  {!user && (
-                    <p className="text-xs text-blue-600 mt-2.5 text-center">
-                      Necesitás{' '}
-                      <Link href="/login" className="font-semibold underline">iniciar sesión</Link>
-                      {' '}para completar la reserva.
+                  {!user && !showGuestForm && (
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mt-2.5 text-center">
+                      ¿Ya tenés cuenta?{' '}
+                      <Link href="/login" className="font-semibold underline">Iniciá sesión</Link>
                     </p>
                   )}
                 </div>
@@ -651,6 +762,116 @@ export default function ProfesionalPage() {
         </>
         )}
       </main>
+    </div>
+  );
+}
+
+/* ── Guest confirmation screen ───────────────────────────────────────────── */
+function GuestConfirmacion({
+  turno, profesional, modalidad, email,
+}: {
+  turno: { id: string; fechaHora: string; duracionMin: number; needsPago: boolean };
+  profesional: Profesional;
+  modalidad: 'PRESENCIAL' | 'VIRTUAL';
+  email: string;
+}) {
+  const fecha = new Date(turno.fechaHora);
+  const fechaStr = fecha.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const horaStr  = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+
+  return (
+    <div className="max-w-lg mx-auto">
+      <div className="card p-8 text-center space-y-5">
+        <div className="flex justify-center">
+          <div className={`w-16 h-16 rounded-full flex items-center justify-center ${turno.needsPago ? 'bg-amber-100 dark:bg-amber-900/40' : 'bg-emerald-100 dark:bg-emerald-900/40'}`}>
+            {turno.needsPago ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-amber-600 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 text-emerald-600 dark:text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+              </svg>
+            )}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
+            {turno.needsPago ? 'Turno reservado — pendiente de pago' : '¡Turno reservado!'}
+          </h2>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
+            {turno.needsPago
+              ? 'Tu lugar está guardado. Para confirmarlo, completá el pago iniciando sesión.'
+              : `Enviamos la confirmación a ${email}.`}
+          </p>
+        </div>
+
+        {/* Turno details */}
+        <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-4 text-left space-y-2">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Profesional</span>
+            <span className="font-medium text-slate-800 dark:text-slate-100">Dr/a. {profesional.nombre} {profesional.apellido}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Especialidad</span>
+            <span className="text-slate-700 dark:text-slate-300">{profesional.especialidad?.nombre}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Fecha</span>
+            <span className="text-slate-700 dark:text-slate-300 capitalize">{fechaStr}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Horario</span>
+            <span className="text-slate-700 dark:text-slate-300">{horaStr} h</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Modalidad</span>
+            <span className={`badge ${modalidad === 'VIRTUAL' ? 'badge-blue' : 'badge-gray'}`}>
+              {modalidad === 'VIRTUAL' ? '💻 Virtual' : '🏥 Presencial'}
+            </span>
+          </div>
+        </div>
+
+        {/* Calendar buttons — only for free turnos */}
+        {!turno.needsPago && (
+          <AgendarCalendario
+            turno={{
+              turnoId: turno.id,
+              fechaHora: turno.fechaHora,
+              duracionMin: turno.duracionMin,
+              modalidad,
+              profesionalNombre: profesional.nombre,
+              profesionalApellido: profesional.apellido,
+              especialidad: profesional.especialidad?.nombre ?? '',
+              lugarAtencion: profesional.lugarAtencion,
+            }}
+          />
+        )}
+
+        {turno.needsPago ? (
+          <div className="space-y-2">
+            <Link href="/login" className="btn btn-primary w-full">
+              Iniciar sesión para pagar
+            </Link>
+            <Link href="/register" className="btn btn-secondary w-full">
+              Crear cuenta en MediSync
+            </Link>
+          </div>
+        ) : (
+          <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-3 text-sm text-blue-700 dark:text-blue-300">
+            <p className="font-medium mb-1">¿Querés acceder a tu historial de turnos?</p>
+            <p className="text-xs mb-2">Creá una cuenta gratis con el mismo email para gestionar tus consultas.</p>
+            <Link href="/register" className="btn btn-primary btn-sm w-full">
+              Crear cuenta en MediSync
+            </Link>
+          </div>
+        )}
+
+        <Link href="/" className="text-xs text-slate-400 hover:text-slate-600 block">
+          Volver al inicio
+        </Link>
+      </div>
     </div>
   );
 }
