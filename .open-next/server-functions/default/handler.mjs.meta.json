@@ -3629,7 +3629,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/dashboard/paciente/page_client-reference-manifest.js": {
-      "bytes": 11034,
+      "bytes": 11176,
       "imports": [],
       "format": "cjs"
     },
@@ -3639,62 +3639,62 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/profesional/[id]/page_client-reference-manifest.js": {
-      "bytes": 10703,
+      "bytes": 10749,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/dashboard/admin/page_client-reference-manifest.js": {
-      "bytes": 10935,
+      "bytes": 11029,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/pago-pendiente/page_client-reference-manifest.js": {
-      "bytes": 10648,
+      "bytes": 10694,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/_global-error/page_client-reference-manifest.js": {
-      "bytes": 10535,
+      "bytes": 10581,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/pago-fallido/page_client-reference-manifest.js": {
-      "bytes": 10642,
+      "bytes": 10688,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/pago-exitoso/page_client-reference-manifest.js": {
-      "bytes": 10642,
+      "bytes": 10688,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/_not-found/page_client-reference-manifest.js": {
-      "bytes": 10529,
+      "bytes": 10575,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/dashboard/page_client-reference-manifest.js": {
-      "bytes": 10721,
+      "bytes": 10815,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/register/page_client-reference-manifest.js": {
-      "bytes": 10674,
+      "bytes": 10720,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/login/page_client-reference-manifest.js": {
-      "bytes": 10665,
+      "bytes": 10711,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/pago/page_client-reference-manifest.js": {
-      "bytes": 10572,
+      "bytes": 10618,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/page_client-reference-manifest.js": {
-      "bytes": 10426,
+      "bytes": 10472,
       "imports": [],
       "format": "cjs"
     },
@@ -4361,7 +4361,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/chunks/220.js": {
-      "bytes": 29304,
+      "bytes": 29843,
       "imports": [],
       "format": "cjs"
     },
@@ -4380,13 +4380,13 @@
       "imports": [],
       "format": "cjs"
     },
-    ".open-next/server-functions/default/.next/server/chunks/940.js": {
-      "bytes": 37152,
+    ".open-next/server-functions/default/.next/server/chunks/99.js": {
+      "bytes": 46058,
       "imports": [],
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/webpack-runtime.js": {
-      "bytes": 1850,
+      "bytes": 1848,
       "imports": [
         {
           "path": ".open-next/server-functions/default/.next/server/chunks/116.js",
@@ -4414,9 +4414,9 @@
           "original": "./chunks/741.js"
         },
         {
-          "path": ".open-next/server-functions/default/.next/server/chunks/940.js",
+          "path": ".open-next/server-functions/default/.next/server/chunks/99.js",
           "kind": "require-call",
-          "original": "./chunks/940.js"
+          "original": "./chunks/99.js"
         }
       ],
       "format": "cjs"
@@ -4463,7 +4463,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/dashboard/paciente/page.js": {
-      "bytes": 63962,
+      "bytes": 62474,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/next/dist/shared/lib/router/utils/app-paths.js",
@@ -4549,7 +4549,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/profesional/[id]/page.js": {
-      "bytes": 68166,
+      "bytes": 68675,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/next/dist/shared/lib/router/utils/app-paths.js",
@@ -5197,7 +5197,7 @@
       "format": "cjs"
     },
     ".open-next/server-functions/default/.next/server/app/dashboard/page.js": {
-      "bytes": 462027,
+      "bytes": 492136,
       "imports": [
         {
           "path": ".open-next/server-functions/default/node_modules/next/dist/shared/lib/router/utils/app-paths.js",
@@ -8217,46 +8217,46 @@
           "bytesInOutput": 586
         },
         ".open-next/server-functions/default/.next/server/app/dashboard/paciente/page_client-reference-manifest.js": {
-          "bytesInOutput": 10161
+          "bytesInOutput": 10303
         },
         ".open-next/server-functions/default/.next/server/app/api/pagos/webhook/route_client-reference-manifest.js": {
           "bytesInOutput": 550
         },
         ".open-next/server-functions/default/.next/server/app/profesional/[id]/page_client-reference-manifest.js": {
-          "bytesInOutput": 9829
+          "bytesInOutput": 9875
         },
         ".open-next/server-functions/default/.next/server/app/dashboard/admin/page_client-reference-manifest.js": {
-          "bytesInOutput": 10060
+          "bytesInOutput": 10154
         },
         ".open-next/server-functions/default/.next/server/app/pago-pendiente/page_client-reference-manifest.js": {
-          "bytesInOutput": 9772
+          "bytesInOutput": 9818
         },
         ".open-next/server-functions/default/.next/server/app/_global-error/page_client-reference-manifest.js": {
-          "bytesInOutput": 9658
+          "bytesInOutput": 9704
         },
         ".open-next/server-functions/default/.next/server/app/pago-fallido/page_client-reference-manifest.js": {
-          "bytesInOutput": 9764
+          "bytesInOutput": 9810
         },
         ".open-next/server-functions/default/.next/server/app/pago-exitoso/page_client-reference-manifest.js": {
-          "bytesInOutput": 9764
+          "bytesInOutput": 9810
         },
         ".open-next/server-functions/default/.next/server/app/_not-found/page_client-reference-manifest.js": {
-          "bytesInOutput": 9649
+          "bytesInOutput": 9695
         },
         ".open-next/server-functions/default/.next/server/app/dashboard/page_client-reference-manifest.js": {
-          "bytesInOutput": 9840
+          "bytesInOutput": 9934
         },
         ".open-next/server-functions/default/.next/server/app/register/page_client-reference-manifest.js": {
-          "bytesInOutput": 9793
+          "bytesInOutput": 9839
         },
         ".open-next/server-functions/default/.next/server/app/login/page_client-reference-manifest.js": {
-          "bytesInOutput": 9781
+          "bytesInOutput": 9827
         },
         ".open-next/server-functions/default/.next/server/app/pago/page_client-reference-manifest.js": {
-          "bytesInOutput": 9687
+          "bytesInOutput": 9733
         },
         ".open-next/server-functions/default/.next/server/app/page_client-reference-manifest.js": {
-          "bytesInOutput": 9536
+          "bytesInOutput": 9582
         },
         ".open-next/server-functions/default/node_modules/next/dist/server/load-manifest.external.js": {
           "bytesInOutput": 21762
@@ -8334,7 +8334,7 @@
           "bytesInOutput": 7914
         },
         ".open-next/server-functions/default/.next/server/chunks/220.js": {
-          "bytesInOutput": 29695
+          "bytesInOutput": 30257
         },
         ".open-next/server-functions/default/.next/server/chunks/336.js": {
           "bytesInOutput": 33425
@@ -8345,20 +8345,20 @@
         ".open-next/server-functions/default/.next/server/chunks/741.js": {
           "bytesInOutput": 156813
         },
-        ".open-next/server-functions/default/.next/server/chunks/940.js": {
-          "bytesInOutput": 37895
+        ".open-next/server-functions/default/.next/server/chunks/99.js": {
+          "bytesInOutput": 46872
         },
         ".open-next/server-functions/default/.next/server/webpack-runtime.js": {
-          "bytesInOutput": 1922
+          "bytesInOutput": 1921
         },
         ".open-next/server-functions/default/.next/server/app/api/pagos/webhook/route.js": {
           "bytesInOutput": 8457
         },
         ".open-next/server-functions/default/.next/server/app/dashboard/paciente/page.js": {
-          "bytesInOutput": 64583
+          "bytesInOutput": 63059
         },
         ".open-next/server-functions/default/.next/server/app/profesional/[id]/page.js": {
-          "bytesInOutput": 68589
+          "bytesInOutput": 69099
         },
         ".open-next/server-functions/default/.next/server/app/dashboard/admin/page.js": {
           "bytesInOutput": 51176
@@ -8382,7 +8382,7 @@
           "bytesInOutput": 21788
         },
         ".open-next/server-functions/default/.next/server/app/dashboard/page.js": {
-          "bytesInOutput": 523784
+          "bytesInOutput": 554896
         },
         ".open-next/server-functions/default/.next/server/app/register/page.js": {
           "bytesInOutput": 33449
@@ -8547,7 +8547,7 @@
           "bytesInOutput": 62626
         }
       },
-      "bytes": 3983737
+      "bytes": 4024163
     }
   }
 }

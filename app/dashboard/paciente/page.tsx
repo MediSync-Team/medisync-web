@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
-import { api, Turno, ListaEsperaItem, RecetaIndicacion, Resena } from '../../lib/api';
+import { api, Turno, ListaEsperaItem, RecetaIndicacion, Resena, HistorialTurno, HistorialPaginatedResponse } from '../../lib/api';
 import ProfileModal from '../../components/ProfileModal';
 import OnboardingTour from '../../components/OnboardingTour';
 import Pagination from '../../components/Pagination';
@@ -59,7 +59,12 @@ export default function PacienteDashboard() {
   const c = t('common');
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'proximos' | 'pasados' | 'listaEspera'>('proximos');
+  const [activeTab, setActiveTab] = useState<'proximos' | 'pasados' | 'listaEspera' | 'historial'>('proximos');
+  const [historial, setHistorial] = useState<HistorialTurno[]>([]);
+  const [historialPagination, setHistorialPagination] = useState({ total: 0, totalPages: 1 });
+  const [historialPage, setHistorialPage] = useState(1);
+  const [loadingHistorial, setLoadingHistorial] = useState(false);
+  const HISTORIAL_LIMIT = 5;
   const [page, setPage] = useState(1);
   const [paginationMeta, setPaginationMeta] = useState({ total: 0, totalPages: 1 });
   const TURNOS_LIMIT = 5;
@@ -132,6 +137,16 @@ export default function PacienteDashboard() {
     } catch (err) { console.error(err); }
   };
 
+  const loadHistorial = async (p: number = 1) => {
+    setLoadingHistorial(true);
+    try {
+      const data = await api.turnos.miHistorial({ page: p, limit: HISTORIAL_LIMIT });
+      setHistorial(data.turnos);
+      setHistorialPagination({ total: data.pagination.total, totalPages: data.pagination.totalPages });
+    } catch (err) { console.error(err); }
+    finally { setLoadingHistorial(false); }
+  };
+
   const loadListaEspera = async () => {
     try {
       const data = await api.listaEspera.misSuscripciones();
@@ -159,7 +174,7 @@ export default function PacienteDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        loadTurnos(activeTab === 'listaEspera' ? 'proximos' : activeTab, page);
+        loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' ? 'proximos' : activeTab, page);
         setInlineNotice({ type: 'success', text: 'Turno cancelado correctamente.' });
       }
     } catch {
@@ -181,9 +196,12 @@ export default function PacienteDashboard() {
     );
   }
 
-  const handleTabChange = (tab: 'proximos' | 'pasados' | 'listaEspera') => {
+  const handleTabChange = (tab: 'proximos' | 'pasados' | 'listaEspera' | 'historial') => {
     setActiveTab(tab);
-    if (tab !== 'listaEspera') {
+    if (tab === 'historial') {
+      setHistorialPage(1);
+      loadHistorial(1);
+    } else if (tab !== 'listaEspera') {
       setPage(1);
       loadTurnos(tab, 1);
     }
@@ -191,7 +209,7 @@ export default function PacienteDashboard() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    loadTurnos(activeTab === 'listaEspera' ? 'proximos' : activeTab, newPage);
+    loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' ? 'proximos' : activeTab, newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -323,10 +341,50 @@ export default function PacienteDashboard() {
                 </span>
               )}
             </button>
+            <button
+              onClick={() => handleTabChange('historial')}
+              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'historial' ? 'tab-btn-active' : ''}`}
+            >
+              <ClipboardIcon size={13} />
+              Historial clínico
+            </button>
           </div>
 
           <div className="p-5">
-            {activeTab === 'listaEspera' ? (
+            {activeTab === 'historial' ? (
+              /* ── Historial clínico ────────────────── */
+              loadingHistorial ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="border border-slate-200 rounded-xl p-4 space-y-2">
+                      <div className="skeleton h-4 w-40 rounded" />
+                      <div className="skeleton h-3 w-56 rounded" />
+                      <div className="skeleton h-16 w-full rounded-lg mt-2" />
+                    </div>
+                  ))}
+                </div>
+              ) : historial.length === 0 ? (
+                <div className="py-12 text-center">
+                  <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
+                  <p className="text-slate-500 text-sm font-medium">No hay consultas completadas en tu historial.</p>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-4">
+                    {historial.map(item => (
+                      <HistorialCard key={item.id} item={item} />
+                    ))}
+                  </div>
+                  <Pagination
+                    page={historialPage}
+                    totalPages={historialPagination.totalPages}
+                    total={historialPagination.total}
+                    limit={HISTORIAL_LIMIT}
+                    onPageChange={(p) => { setHistorialPage(p); loadHistorial(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                  />
+                </>
+              )
+            ) : activeTab === 'listaEspera' ? (
               /* ── Lista de espera ────────────────── */
               listaEspera.length === 0 ? (
                 <div className="py-12 text-center">
@@ -424,7 +482,7 @@ export default function PacienteDashboard() {
         <ReprogramarModal
           turno={turnoReprogramar}
           onClose={() => setTurnoReprogramar(null)}
-          onSuccess={() => { setTurnoReprogramar(null); loadTurnos(activeTab === 'listaEspera' ? 'proximos' : activeTab, page); loadRecordatorios(); }}
+          onSuccess={() => { setTurnoReprogramar(null); loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' ? 'proximos' : activeTab, page); loadRecordatorios(); }}
         />
       )}
 
@@ -434,7 +492,7 @@ export default function PacienteDashboard() {
           onClose={() => setTurnoPreconsulta(null)}
           onSuccess={() => {
             setTurnoPreconsulta(null);
-            loadTurnos(activeTab === 'listaEspera' ? 'proximos' : activeTab, page);
+            loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' ? 'proximos' : activeTab, page);
           }}
         />
       )}
@@ -1148,6 +1206,110 @@ function ReprogramarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose
             {guardando ? 'Guardando...' : 'Confirmar cambio'}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Historial Card ──────────────────────────────────────── */
+function HistorialCard({ item }: { item: HistorialTurno }) {
+  const [expanded, setExpanded] = useState(false);
+
+  return (
+    <div className="border border-slate-200 rounded-xl overflow-hidden">
+      {/* Header bar */}
+      <div className="px-4 py-2 bg-blue-50 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-sm font-semibold text-blue-800">
+          <CalendarIcon size={13} />
+          {new Date(item.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
+          <span className="text-blue-500 font-normal text-xs">
+            {new Date(item.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        </div>
+        <span className="badge badge-green text-[10px]">Completado</span>
+      </div>
+
+      <div className="p-4 space-y-3">
+        {/* Profesional info */}
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0 overflow-hidden">
+            {item.profesional?.fotoUrl
+              ? <img src={item.profesional.fotoUrl} alt="" className="w-full h-full object-cover" />
+              : <UserIcon size={16} className="text-blue-500" />}
+          </div>
+          <div>
+            <p className="font-semibold text-slate-800 text-sm">
+              Dr/a. {item.profesional?.nombre} {item.profesional?.apellido}
+            </p>
+            <p className="text-xs text-blue-600">{item.profesional?.especialidad?.nombre}</p>
+          </div>
+          <span className="ml-auto text-xs text-slate-400 flex items-center gap-1">
+            {item.modalidad === 'VIRTUAL'
+              ? <><VideoIcon size={11} /> Virtual</>
+              : <><BuildingIcon size={11} /> Presencial</>}
+          </span>
+        </div>
+
+        {/* Evolución clínica */}
+        {item.evolucion?.contenido && (
+          <div className="bg-slate-50 rounded-lg p-3 text-sm">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Evolución clínica</p>
+            <p className={`text-slate-700 leading-relaxed whitespace-pre-wrap ${!expanded && 'line-clamp-3'}`}>
+              {item.evolucion.contenido}
+            </p>
+            {item.evolucion.contenido.length > 200 && (
+              <button onClick={() => setExpanded(!expanded)} className="text-xs text-blue-600 hover:underline mt-1">
+                {expanded ? 'Ver menos' : 'Ver más'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Receta / indicaciones */}
+        {item.recetaIndicacion && (
+          <div className="border border-emerald-200 rounded-lg p-3 text-sm bg-emerald-50">
+            <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1.5">Receta e indicaciones</p>
+            <p className="text-slate-700 font-medium">{item.recetaIndicacion.diagnostico}</p>
+            {item.recetaIndicacion.medicamentos && (
+              <p className="text-xs text-slate-600 mt-1">
+                <span className="font-semibold">Medicamentos:</span> {item.recetaIndicacion.medicamentos}
+              </p>
+            )}
+            {item.recetaIndicacion.proximoControl && (
+              <p className="text-xs text-slate-500 mt-1">
+                <span className="font-semibold">Próximo control:</span> {item.recetaIndicacion.proximoControl}
+              </p>
+            )}
+          </div>
+        )}
+
+        {/* Archivos adjuntos */}
+        {item.archivos.length > 0 && (
+          <div>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Documentos adjuntos</p>
+            <div className="flex flex-wrap gap-2">
+              {item.archivos.map(archivo => (
+                <a
+                  key={archivo.id}
+                  href={archivo.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs text-slate-700 hover:text-blue-700 transition-colors"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                  </svg>
+                  {archivo.nombreOriginal}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Empty state */}
+        {!item.evolucion && !item.recetaIndicacion && item.archivos.length === 0 && (
+          <p className="text-xs text-slate-400 italic">Sin evolución clínica registrada para esta consulta.</p>
+        )}
       </div>
     </div>
   );

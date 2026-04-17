@@ -34,6 +34,7 @@ export default function ProfesionalPage() {
   const [successMessage, setSuccessMessage] = useState('');
   const [inlineNotice, setInlineNotice] = useState<{ type: 'info' | 'success' | 'warning' | 'error'; text: string } | null>(null);
   const [turnoReservado, setTurnoReservado] = useState<{ id: string; fechaHora: string; duracionMin: number } | null>(null);
+  const [lugarTurnoReservado, setLugarTurnoReservado] = useState<string | null>(null);
   const [resenas, setResenas] = useState<ResenasResponse | null>(null);
   const [resenaPage, setResenaPage] = useState(1);
   // Guest booking form
@@ -172,6 +173,11 @@ export default function ProfesionalPage() {
 
       const reserva = await api.turnos.reservar(reservaData);
 
+      // Resolve the location: prefer slot-level location, fall back to profesional-level
+      const slotInfo = slots.find(s => s.hora === selectedSlot);
+      const lugarResuelto = (modalidad === 'PRESENCIAL' ? (slotInfo?.lugarAtencion || profesional.lugarAtencion) : null) ?? null;
+      setLugarTurnoReservado(lugarResuelto);
+
       // Persist turno info for calendar event
       const calInfo = {
         turnoId: reserva.turno.id,
@@ -181,7 +187,7 @@ export default function ProfesionalPage() {
         profesionalNombre: profesional.nombre,
         profesionalApellido: profesional.apellido,
         especialidad: profesional.especialidad?.nombre ?? '',
-        lugarAtencion: profesional.lugarAtencion,
+        lugarAtencion: lugarResuelto,
       };
       localStorage.setItem('medisync_last_turno_cal', JSON.stringify(calInfo));
 
@@ -321,6 +327,7 @@ export default function ProfesionalPage() {
             profesional={profesional}
             modalidad={modalidad}
             email={guestForm.email}
+            lugarAtencion={lugarTurnoReservado}
           />
         ) : turnoReservado && profesional ? (
           /* ── Confirmation card (logged in, free turno) ── */
@@ -328,6 +335,7 @@ export default function ProfesionalPage() {
             turno={turnoReservado}
             profesional={profesional}
             modalidad={modalidad}
+            lugarAtencion={lugarTurnoReservado}
             onContinuar={() => router.push('/dashboard/paciente')}
           />
         ) : (
@@ -642,20 +650,32 @@ export default function ProfesionalPage() {
                   <p className="text-sm text-blue-800 dark:text-blue-300 mb-3 font-medium">
                     Reservando turno con <strong>{profesional.nombre} {profesional.apellido}</strong>
                   </p>
-                  <div className="flex flex-wrap gap-3 text-sm text-blue-700 dark:text-blue-300 mb-4">
-                    <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
-                      <CalendarIcon size={13} />
-                      {selectedDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
-                    </span>
-                    <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
-                      <ClockIcon size={13} />
-                      {selectedSlot}
-                    </span>
-                    <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
-                      {modalidad === 'VIRTUAL' ? <VideoIcon size={13} /> : <BuildingIcon size={13} />}
-                      {modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
-                    </span>
-                  </div>
+                  {(() => {
+                    const slotInfo = slots.find(s => s.hora === selectedSlot);
+                    const lugarSlot = slotInfo?.lugarAtencion || (modalidad === 'PRESENCIAL' ? profesional.lugarAtencion : null);
+                    return (
+                      <div className="flex flex-wrap gap-3 text-sm text-blue-700 dark:text-blue-300 mb-4">
+                        <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
+                          <CalendarIcon size={13} />
+                          {selectedDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                        </span>
+                        <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
+                          <ClockIcon size={13} />
+                          {selectedSlot}
+                        </span>
+                        <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
+                          {modalidad === 'VIRTUAL' ? <VideoIcon size={13} /> : <BuildingIcon size={13} />}
+                          {modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
+                        </span>
+                        {lugarSlot && modalidad === 'PRESENCIAL' && (
+                          <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
+                            <MapPinIcon size={13} />
+                            {lugarSlot}
+                          </span>
+                        )}
+                      </div>
+                    );
+                  })()}
 
                   {profesional.precioConsulta > 0 && (
                     <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
@@ -768,12 +788,13 @@ export default function ProfesionalPage() {
 
 /* ── Guest confirmation screen ───────────────────────────────────────────── */
 function GuestConfirmacion({
-  turno, profesional, modalidad, email,
+  turno, profesional, modalidad, email, lugarAtencion,
 }: {
   turno: { id: string; fechaHora: string; duracionMin: number; needsPago: boolean };
   profesional: Profesional;
   modalidad: 'PRESENCIAL' | 'VIRTUAL';
   email: string;
+  lugarAtencion?: string | null;
 }) {
   const fecha = new Date(turno.fechaHora);
   const fechaStr = fecha.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -844,7 +865,7 @@ function GuestConfirmacion({
               profesionalNombre: profesional.nombre,
               profesionalApellido: profesional.apellido,
               especialidad: profesional.especialidad?.nombre ?? '',
-              lugarAtencion: profesional.lugarAtencion,
+              lugarAtencion: lugarAtencion || profesional.lugarAtencion,
             }}
           />
         )}
@@ -878,11 +899,12 @@ function GuestConfirmacion({
 
 /* ── Confirmation screen after free booking ─────────────────────────────── */
 function ConfirmacionTurno({
-  turno, profesional, modalidad, onContinuar,
+  turno, profesional, modalidad, lugarAtencion, onContinuar,
 }: {
   turno: { id: string; fechaHora: string; duracionMin: number };
   profesional: Profesional;
   modalidad: 'PRESENCIAL' | 'VIRTUAL';
+  lugarAtencion?: string | null;
   onContinuar: () => void;
 }) {
   const fecha = new Date(turno.fechaHora);
@@ -934,10 +956,10 @@ function ConfirmacionTurno({
               {modalidad === 'VIRTUAL' ? '💻 Virtual' : '🏥 Presencial'}
             </span>
           </div>
-          {profesional.lugarAtencion && modalidad === 'PRESENCIAL' && (
+          {(lugarAtencion || profesional.lugarAtencion) && modalidad === 'PRESENCIAL' && (
             <div className="flex items-center gap-2 text-sm">
               <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Lugar</span>
-              <span className="text-slate-700 dark:text-slate-300">{profesional.lugarAtencion}</span>
+              <span className="text-slate-700 dark:text-slate-300">{lugarAtencion || profesional.lugarAtencion}</span>
             </div>
           )}
         </div>

@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
-import { api, Turno, Disponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse, Resena, ResenasStats } from '../lib/api';
+import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse, Resena, ResenasStats } from '../lib/api';
 import StarRating from '../components/StarRating';
 import StatsPanel from '../components/StatsPanel';
 import ProfileModal from '../components/ProfileModal';
@@ -14,6 +14,7 @@ import { useLang } from '../lib/i18n/context';
 import { NotificationBell } from '../components/NotificationBell';
 import ProfesionalOnboardingWizard from '../components/ProfesionalOnboardingWizard';
 import { imprimirReceta } from '../lib/receta-pdf';
+import { exportarHistoriaClinicaPDF } from '../lib/historia-clinica-pdf';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, ChartIcon, TrashIcon, ClipboardIcon, PaperclipIcon,
@@ -71,7 +72,7 @@ export default function ProfesionalDashboard() {
   const [activeTab, setActiveTab] = useState<'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas'>('calendario');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [turnosDelDia, setTurnosDelDia] = useState<Turno[]>([]);
-  const [nuevaDisp, setNuevaDisp] = useState({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL' as const });
+  const [nuevaDisp, setNuevaDisp] = useState({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL' as const, lugarAtencion: '' });
   const [slotActual, setSlotActual] = useState<Turno | null>(null);
   const [recordatorios, setRecordatorios] = useState<any[]>([]);
   const [showRecordatorios, setShowRecordatorios] = useState(false);
@@ -84,6 +85,9 @@ export default function ProfesionalDashboard() {
   const [agendaModalidad, setAgendaModalidad] = useState<'TODAS' | 'PRESENCIAL' | 'VIRTUAL'>('TODAS');
   const [agendaSoloRiesgo, setAgendaSoloRiesgo] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [profileCopied, setProfileCopied] = useState(false);
+  const [bloqueos, setBloqueos] = useState<BloqueoDisponibilidad[]>([]);
+  const [loadingBloqueos, setLoadingBloqueos] = useState(false);
 
   useEffect(() => { if (!selectedDate) setSelectedDate(new Date()); }, [selectedDate]);
 
@@ -102,6 +106,7 @@ export default function ProfesionalDashboard() {
 
   useEffect(() => {
     if (activeTab === 'stats') loadStats();
+    if (activeTab === 'disponibilidad') loadBloqueos();
   }, [activeTab]);
 
   const loadData = async (checkOnboarding = false) => {
@@ -146,11 +151,24 @@ export default function ProfesionalDashboard() {
     finally { setLoadingStats(false); }
   };
 
+  const loadBloqueos = async () => {
+    setLoadingBloqueos(true);
+    try {
+      const data = await api.bloqueos.getMisBloqueos();
+      setBloqueos(data);
+    } catch (err) { console.error(err); }
+    finally { setLoadingBloqueos(false); }
+  };
+
   const handleAgregarDisponibilidad = async () => {
     if (!user?.profesional) return;
     try {
-      await api.profesionales.crearDisponibilidad(user.profesional.id, nuevaDisp);
+      await api.profesionales.crearDisponibilidad(user.profesional.id, {
+        ...nuevaDisp,
+        lugarAtencion: nuevaDisp.lugarAtencion.trim() || undefined,
+      });
       loadData();
+      setNuevaDisp({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL', lugarAtencion: '' });
       setInlineFeedback({ type: 'success', text: 'Horario agregado correctamente.' });
     } catch (err) {
       setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al agregar horario' });
@@ -270,6 +288,33 @@ export default function ProfesionalDashboard() {
               <NotificationBell />
               <ThemeLangToggle compact />
               <button
+                onClick={() => {
+                  const url = `${window.location.origin}/profesional/${user.profesional!.id}`;
+                  navigator.clipboard.writeText(url).then(() => {
+                    setProfileCopied(true);
+                    setTimeout(() => setProfileCopied(false), 2500);
+                  });
+                }}
+                title="Copiar link de mi perfil"
+                className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm relative"
+              >
+                {profileCopied ? (
+                  <>
+                    <CheckIcon size={15} className="text-emerald-500" />
+                    <span className="hidden sm:inline text-emerald-600 text-xs">¡Copiado!</span>
+                  </>
+                ) : (
+                  <>
+                    {/* Share / link icon */}
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/>
+                      <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>
+                    </svg>
+                    <span className="hidden sm:inline">Compartir perfil</span>
+                  </>
+                )}
+              </button>
+              <button
                 data-onboarding="profile-btn"
                 onClick={() => setShowProfileModal(true)}
                 className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm"
@@ -387,6 +432,9 @@ export default function ProfesionalDashboard() {
                 setNuevaDisp={setNuevaDisp}
                 onAgregar={handleAgregarDisponibilidad}
                 onEliminar={handleEliminarDisponibilidad}
+                bloqueos={bloqueos}
+                loadingBloqueos={loadingBloqueos}
+                onReloadBloqueos={loadBloqueos}
               />
             )}
             {activeTab === 'stats' && (
@@ -601,21 +649,87 @@ function CalendarioView({
 /* ══════════════════════════════════════════════════════════════
    DISPONIBILIDAD VIEW
 ══════════════════════════════════════════════════════════════ */
+const MOTIVOS_BLOQUEO = ['Vacaciones', 'Feriado', 'Capacitación', 'Personal', 'Otro'];
+
 function DisponibilidadView({
   disponibilidades, nuevaDisp, setNuevaDisp, onAgregar, onEliminar,
+  bloqueos, loadingBloqueos, onReloadBloqueos,
 }: {
   disponibilidades: Disponibilidad[];
-  nuevaDisp: { diaSemana: number; horaInicio: string; horaFin: string; modalidad: 'PRESENCIAL' | 'VIRTUAL' };
+  nuevaDisp: { diaSemana: number; horaInicio: string; horaFin: string; modalidad: 'PRESENCIAL' | 'VIRTUAL'; lugarAtencion: string };
   setNuevaDisp: (d: any) => void;
   onAgregar: () => void;
   onEliminar: (id: string) => void;
+  bloqueos: BloqueoDisponibilidad[];
+  loadingBloqueos: boolean;
+  onReloadBloqueos: () => void;
 }) {
   const { t } = useLang();
   const d = t('dashboard');
   const h = t('home');
+
+  const [nuevoBloqueo, setNuevoBloqueo] = useState({
+    fechaInicio: '',
+    fechaFin: '',
+    horaInicio: '',
+    horaFin: '',
+    motivo: '',
+    esHoraParcial: false,
+  });
+  const [savingBloqueo, setSavingBloqueo] = useState(false);
+  const [bloqueoError, setBloqueoError] = useState('');
+  const [bloqueoOk, setBloqueoOk] = useState('');
+
+  const handleCrearBloqueo = async () => {
+    setBloqueoError('');
+    setBloqueoOk('');
+    if (!nuevoBloqueo.fechaInicio || !nuevoBloqueo.fechaFin) {
+      setBloqueoError('La fecha de inicio y fin son obligatorias.');
+      return;
+    }
+    if (nuevoBloqueo.esHoraParcial && (!nuevoBloqueo.horaInicio || !nuevoBloqueo.horaFin)) {
+      setBloqueoError('Para bloqueo parcial indicá hora de inicio y fin.');
+      return;
+    }
+    setSavingBloqueo(true);
+    try {
+      await api.bloqueos.crear({
+        fechaInicio: nuevoBloqueo.fechaInicio,
+        fechaFin: nuevoBloqueo.fechaFin,
+        horaInicio: nuevoBloqueo.esHoraParcial ? nuevoBloqueo.horaInicio : undefined,
+        horaFin: nuevoBloqueo.esHoraParcial ? nuevoBloqueo.horaFin : undefined,
+        motivo: nuevoBloqueo.motivo || undefined,
+      });
+      setBloqueoOk('Bloqueo guardado correctamente.');
+      setNuevoBloqueo({ fechaInicio: '', fechaFin: '', horaInicio: '', horaFin: '', motivo: '', esHoraParcial: false });
+      onReloadBloqueos();
+    } catch (err) {
+      setBloqueoError(err instanceof Error ? err.message : 'Error al guardar');
+    } finally {
+      setSavingBloqueo(false);
+    }
+  };
+
+  const handleEliminarBloqueo = async (id: string) => {
+    try {
+      await api.bloqueos.eliminar(id);
+      onReloadBloqueos();
+    } catch (err) {
+      setBloqueoError(err instanceof Error ? err.message : 'Error al eliminar');
+    }
+  };
+
+  const formatFechaBloqueo = (b: BloqueoDisponibilidad) => {
+    const inicio = new Date(b.fechaInicio + 'T12:00:00');
+    const fin = new Date(b.fechaFin + 'T12:00:00');
+    const fmt = (d: Date) => d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
+    if (b.fechaInicio === b.fechaFin) return fmt(inicio);
+    return `${fmt(inicio)} → ${fmt(fin)}`;
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Current schedules */}
+    <div className="space-y-8">
+      {/* ── Horarios recurrentes ── */}
       <div>
         <h3 className="section-title mb-3">{d.availability}</h3>
         {disponibilidades.length === 0 ? (
@@ -637,6 +751,12 @@ function DisponibilidadView({
                 <span className={`ml-1 badge ${disp.modalidad === 'VIRTUAL' ? 'badge-blue' : disp.modalidad === 'PRESENCIAL' ? 'badge-green' : 'badge-purple'}`}>
                   {disp.modalidad}
                 </span>
+                {disp.lugarAtencion && (
+                  <span className="flex items-center gap-1 text-xs text-slate-500 truncate max-w-[180px]">
+                    <MapPinIcon size={11} className="shrink-0 text-slate-400" />
+                    {disp.lugarAtencion}
+                  </span>
+                )}
                 <button
                   onClick={() => onEliminar(disp.id)}
                   className="ml-auto btn btn-ghost text-red-400 hover:text-red-600 p-1.5"
@@ -650,7 +770,7 @@ function DisponibilidadView({
         )}
       </div>
 
-      {/* Add schedule form */}
+      {/* ── Agregar horario ── */}
       <div>
         <h3 className="section-title mb-3">{d.addAvailability}</h3>
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
@@ -693,8 +813,154 @@ function DisponibilidadView({
               </select>
             </div>
           </div>
+          {/* Lugar de atención por horario */}
+          <div className="mt-3">
+            <label className="field-label flex items-center gap-1">
+              <MapPinIcon size={12} className="text-slate-400" />
+              Lugar de atención (para este horario)
+              <span className="text-slate-400 font-normal ml-1">— opcional</span>
+            </label>
+            <input
+              type="text"
+              placeholder={nuevaDisp.modalidad === 'VIRTUAL' ? 'Videollamada' : 'Ej: Consultorio 3 — Av. Corrientes 1234, CABA'}
+              value={nuevaDisp.lugarAtencion}
+              onChange={(e) => setNuevaDisp({ ...nuevaDisp, lugarAtencion: e.target.value })}
+              className="field-input"
+            />
+          </div>
           <button onClick={onAgregar} className="btn btn-primary mt-4">
             + {d.addAvailability}
+          </button>
+        </div>
+      </div>
+
+      {/* ══ Bloqueos de días ══ */}
+      <div className="border-t border-slate-200 pt-6">
+        <div className="flex items-center gap-2 mb-1">
+          {/* Calendar-off icon */}
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="2" y1="2" x2="22" y2="22"/>
+          </svg>
+          <h3 className="section-title">Ausencias y días bloqueados</h3>
+        </div>
+        <p className="text-xs text-slate-500 mb-4">Bloqueá días o rangos de fechas en los que no vas a atender. Los pacientes no podrán reservar turnos en esos períodos.</p>
+
+        {/* Lista de bloqueos activos */}
+        {loadingBloqueos ? (
+          <div className="py-6 flex justify-center text-slate-400 text-sm">Cargando...</div>
+        ) : bloqueos.length === 0 ? (
+          <div className="py-6 text-center text-slate-400 border-2 border-dashed border-amber-100 rounded-xl mb-4">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-2 opacity-30 text-amber-400">
+              <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+            <p className="text-sm">Sin bloqueos próximos</p>
+          </div>
+        ) : (
+          <div className="space-y-2 mb-4">
+            {bloqueos.map((b) => (
+              <div key={b.id} className="flex items-center gap-3 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-amber-500">
+                  <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                </svg>
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-slate-700 text-sm">{formatFechaBloqueo(b)}</p>
+                  <p className="text-xs text-slate-500">
+                    {b.horaInicio && b.horaFin ? `${b.horaInicio}–${b.horaFin}` : 'Día completo'}
+                    {b.motivo ? ` · ${b.motivo}` : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={() => handleEliminarBloqueo(b.id)}
+                  className="btn btn-ghost text-red-400 hover:text-red-600 p-1.5 shrink-0"
+                  title="Eliminar bloqueo"
+                >
+                  <TrashIcon size={15} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Formulario nuevo bloqueo */}
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
+          <h4 className="text-sm font-semibold text-amber-800 mb-3">Agregar nuevo bloqueo</h4>
+          {bloqueoError && <p className="text-xs text-red-600 mb-2">{bloqueoError}</p>}
+          {bloqueoOk && <p className="text-xs text-emerald-600 mb-2">{bloqueoOk}</p>}
+
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
+            <div>
+              <label className="field-label">Fecha inicio</label>
+              <input
+                type="date"
+                value={nuevoBloqueo.fechaInicio}
+                min={new Date().toISOString().split('T')[0]}
+                onChange={(e) => setNuevoBloqueo({ ...nuevoBloqueo, fechaInicio: e.target.value, fechaFin: e.target.value })}
+                className="field-input"
+              />
+            </div>
+            <div>
+              <label className="field-label">Fecha fin</label>
+              <input
+                type="date"
+                value={nuevoBloqueo.fechaFin}
+                min={nuevoBloqueo.fechaInicio || new Date().toISOString().split('T')[0]}
+                onChange={(e) => setNuevoBloqueo({ ...nuevoBloqueo, fechaFin: e.target.value })}
+                className="field-input"
+              />
+            </div>
+            <div>
+              <label className="field-label">Motivo (opcional)</label>
+              <select
+                value={nuevoBloqueo.motivo}
+                onChange={(e) => setNuevoBloqueo({ ...nuevoBloqueo, motivo: e.target.value })}
+                className="field-select"
+              >
+                <option value="">Sin especificar</option>
+                {MOTIVOS_BLOQUEO.map(m => <option key={m} value={m}>{m}</option>)}
+              </select>
+            </div>
+          </div>
+
+          {/* Toggle bloqueo parcial */}
+          <label className="flex items-center gap-2 cursor-pointer mb-3">
+            <input
+              type="checkbox"
+              checked={nuevoBloqueo.esHoraParcial}
+              onChange={(e) => setNuevoBloqueo({ ...nuevoBloqueo, esHoraParcial: e.target.checked })}
+              className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+            />
+            <span className="text-sm text-slate-600">Bloqueo parcial (solo un rango horario)</span>
+          </label>
+
+          {nuevoBloqueo.esHoraParcial && (
+            <div className="grid grid-cols-2 gap-3 mb-3">
+              <div>
+                <label className="field-label">Hora inicio</label>
+                <input
+                  type="time"
+                  value={nuevoBloqueo.horaInicio}
+                  onChange={(e) => setNuevoBloqueo({ ...nuevoBloqueo, horaInicio: e.target.value })}
+                  className="field-input"
+                />
+              </div>
+              <div>
+                <label className="field-label">Hora fin</label>
+                <input
+                  type="time"
+                  value={nuevoBloqueo.horaFin}
+                  onChange={(e) => setNuevoBloqueo({ ...nuevoBloqueo, horaFin: e.target.value })}
+                  className="field-input"
+                />
+              </div>
+            </div>
+          )}
+
+          <button
+            onClick={handleCrearBloqueo}
+            disabled={savingBloqueo}
+            className="btn btn-primary bg-amber-600 hover:bg-amber-700 border-amber-600 hover:border-amber-700"
+          >
+            {savingBloqueo ? 'Guardando...' : '+ Agregar bloqueo'}
           </button>
         </div>
       </div>
@@ -1244,17 +1510,36 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
                   ))}
                 </div>
 
-                <div className="mt-3 flex items-center justify-between gap-3">
+                <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
                   <p className="text-xs text-slate-500">
                     Este resumen se comparte en todos los turnos del paciente para este profesional.
                   </p>
-                  <button
-                    onClick={handleSaveHistoriaClinica}
-                    disabled={savingHistoria}
-                    className="btn btn-primary btn-sm shrink-0"
-                  >
-                    {savingHistoria ? 'Guardando...' : 'Guardar historia'}
-                  </button>
+                  <div className="flex items-center gap-2 shrink-0">
+                    <button
+                      onClick={() => exportarHistoriaClinicaPDF(historiaClinica!, {
+                        nombre: turno.profesional?.nombre ?? '',
+                        apellido: turno.profesional?.apellido ?? '',
+                        especialidad: turno.profesional?.especialidad?.nombre,
+                        matricula: turno.profesional?.matricula,
+                        lugarAtencion: turno.profesional?.lugarAtencion,
+                      })}
+                      className="btn btn-secondary btn-sm flex items-center gap-1.5"
+                      title="Exportar como PDF"
+                    >
+                      {/* Download icon */}
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+                      </svg>
+                      Exportar PDF
+                    </button>
+                    <button
+                      onClick={handleSaveHistoriaClinica}
+                      disabled={savingHistoria}
+                      className="btn btn-primary btn-sm"
+                    >
+                      {savingHistoria ? 'Guardando...' : 'Guardar historia'}
+                    </button>
+                  </div>
                 </div>
 
                 {historiaClinica && historiaClinica.timeline.length > 0 && (

@@ -73,7 +73,7 @@ export const api = {
       if (modalidad) params.append('modalidad', modalidad);
       return fetchApi<Slot[]>(`/profesionales/${id}/slots-disponibles?${params}`);
     },
-    crearDisponibilidad: (profesionalId: string, data: { diaSemana: number; horaInicio: string; horaFin: string; modalidad: string }) =>
+    crearDisponibilidad: (profesionalId: string, data: { diaSemana: number; horaInicio: string; horaFin: string; modalidad: string; lugarAtencion?: string }) =>
       fetchApi<Disponibilidad>(`/profesionales/${profesionalId}/disponibilidad`, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -116,7 +116,7 @@ export const api = {
         body: JSON.stringify(data),
       }),
     getVideoToken: (id: string) =>
-      fetchApi<{ joinUrl: string; token: string | null; roomName: string }>(`/turnos/${id}/video-token`),
+      fetchApi<{ ticket: string; roomId: string }>(`/turnos/${id}/video-token`),
     getReceta: (id: string) =>
       fetchApi<RecetaIndicacion | null>(`/turnos/${id}/receta`),
     guardarReceta: (id: string, data: RecetaIndicacionInput) =>
@@ -124,6 +124,13 @@ export const api = {
         method: 'POST',
         body: JSON.stringify(data),
       }),
+    miHistorial: (params?: { page?: number; limit?: number }) => {
+      const q: Record<string, string> = {};
+      if (params?.page)  q.page  = String(params.page);
+      if (params?.limit) q.limit = String(params.limit);
+      const query = Object.keys(q).length ? '?' + new URLSearchParams(q).toString() : '';
+      return fetchApi<HistorialPaginatedResponse>('/turnos/mi-historial' + query);
+    },
   },
   recordatorios: {
     getProfesional: () => fetchApi<any>('/recordatorios/profesional'),
@@ -209,6 +216,14 @@ export const api = {
       fetchApi<Resena>(`/resenas/${id}/respuesta`, { method: 'PATCH', body: JSON.stringify({ respuesta }) }),
     borrarRespuesta: (id: string) =>
       fetchApi<Resena>(`/resenas/${id}/respuesta`, { method: 'DELETE' }),
+  },
+  bloqueos: {
+    getMisBloqueos: (soloFuturos = true) =>
+      fetchApi<BloqueoDisponibilidad[]>(`/bloqueos?soloFuturos=${soloFuturos}`),
+    crear: (data: { fechaInicio: string; fechaFin: string; horaInicio?: string; horaFin?: string; motivo?: string }) =>
+      fetchApi<BloqueoDisponibilidad>('/bloqueos', { method: 'POST', body: JSON.stringify(data) }),
+    eliminar: (id: string) =>
+      fetchApi<{ deleted: boolean }>(`/bloqueos/${id}`, { method: 'DELETE' }),
   },
   notifications: {
     getPreferences: () => fetchApi<NotificationPreferences>('/notifications/preferences'),
@@ -388,6 +403,18 @@ export type Disponibilidad = {
   horaInicio: string;
   horaFin: string;
   modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'AMBOS';
+  lugarAtencion?: string | null;
+};
+
+export type BloqueoDisponibilidad = {
+  id: string;
+  profesionalId: string;
+  fechaInicio: string;
+  fechaFin: string;
+  horaInicio: string | null;
+  horaFin: string | null;
+  motivo: string | null;
+  createdAt: string;
 };
 
 export type Turno = {
@@ -465,6 +492,7 @@ export type Evolucion = {
 export type Slot = {
   hora: string;
   disponible: boolean;
+  lugarAtencion?: string | null;
 };
 
 export type ListaEsperaItem = {
@@ -492,6 +520,26 @@ export type ProfesionalesResponse = {
 
 export type TurnosPaginatedResponse = {
   turnos: Turno[];
+  pagination: PaginationMeta;
+};
+
+export type ArchivoTurno = {
+  id: string;
+  nombreOriginal: string;
+  url: string;
+  tipo: string;
+  tamanio: number;
+  createdAt: string;
+};
+
+export type HistorialTurno = Turno & {
+  evolucion: Evolucion | null;
+  recetaIndicacion: RecetaIndicacion | null;
+  archivos: ArchivoTurno[];
+};
+
+export type HistorialPaginatedResponse = {
+  turnos: HistorialTurno[];
   pagination: PaginationMeta;
 };
 
