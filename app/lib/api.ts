@@ -163,6 +163,7 @@ export const api = {
         method: 'PUT',
         body: JSON.stringify(data),
       }),
+    getMisStats: () => fetchApi<PacienteStats>('/pacientes/mis-stats'),
   },
   profesional: {
     updatePerfil: (id: string, data: Partial<Profesional>) =>
@@ -811,4 +812,30 @@ export const clinicasApi = {
 
   rechazarInvitacion: (token: string) =>
     fetchApi<{ rejected: boolean }>(`/clinicas/invitaciones/${token}/rechazar`, { method: 'POST' }),
+};
+
+export type PacienteStatsTopProf = {
+  profesional: { id: string; nombre: string; apellido: string; fotoUrl: string | null; especialidad: { nombre: string } } | null;
+  totalTurnos: number;
+};
+
+export type PacienteStatsPago = {
+  id: string;
+  monto: number;
+  fecha: string;
+  profesional: string;
+  especialidad: string;
+  mpPaymentId: string | null;
+};
+
+export type PacienteStats = {
+  totalTurnos: number;
+  completados: number;
+  cancelados: number;
+  confirmados: number;
+  reservados: number;
+  totalGastado: number;
+  pagos: PacienteStatsPago[];
+  topProfesionales: PacienteStatsTopProf[];
+  turnosPorMes: { mes: string; total: number }[];
 };

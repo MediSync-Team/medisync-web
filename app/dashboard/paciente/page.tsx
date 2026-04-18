@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
-import { api, Turno, ListaEsperaItem, RecetaIndicacion, Resena, HistorialTurno, HistorialPaginatedResponse } from '../../lib/api';
+import { api, Turno, ListaEsperaItem, RecetaIndicacion, Resena, HistorialTurno, HistorialPaginatedResponse, PacienteStats } from '../../lib/api';
 import ChatModal from '../../components/ChatModal';
 import ProfileModal from '../../components/ProfileModal';
 import OnboardingTour from '../../components/OnboardingTour';
@@ -61,7 +61,9 @@ export default function PacienteDashboard() {
   const c = t('common');
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'datosMedicos'>('proximos');
+  const [activeTab, setActiveTab] = useState<'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'datosMedicos' | 'estadisticas'>('proximos');
+  const [pacienteStats, setPacienteStats] = useState<PacienteStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(false);
   const [historial, setHistorial] = useState<HistorialTurno[]>([]);
   const [historialPagination, setHistorialPagination] = useState({ total: 0, totalPages: 1 });
   const [historialPage, setHistorialPage] = useState(1);
@@ -232,7 +234,7 @@ export default function PacienteDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' ? 'proximos' : activeTab, page);
+        loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' || activeTab === 'estadisticas' ? 'proximos' : activeTab, page);
         setInlineNotice({ type: 'success', text: 'Turno cancelado correctamente.' });
       }
     } catch {
@@ -254,13 +256,24 @@ export default function PacienteDashboard() {
     );
   }
 
-  const handleTabChange = (tab: 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'datosMedicos') => {
+  const loadStats = async () => {
+    setLoadingStats(true);
+    try {
+      const data = await api.pacientes.getMisStats();
+      setPacienteStats(data);
+    } catch (err) { console.error(err); }
+    finally { setLoadingStats(false); }
+  };
+
+  const handleTabChange = (tab: 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'datosMedicos' | 'estadisticas') => {
     setActiveTab(tab);
     if (tab === 'historial') {
       setHistorialPage(1);
       loadHistorial(1);
     } else if (tab === 'datosMedicos') {
       loadDatosMedicos();
+    } else if (tab === 'estadisticas') {
+      if (!pacienteStats) loadStats();
     } else if (tab !== 'listaEspera') {
       setPage(1);
       loadTurnos(tab, 1);
@@ -269,7 +282,7 @@ export default function PacienteDashboard() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' ? 'proximos' : activeTab, newPage);
+    loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' || activeTab === 'estadisticas' ? 'proximos' : activeTab, newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -415,10 +428,19 @@ export default function PacienteDashboard() {
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
               Mis datos médicos
             </button>
+            <button
+              onClick={() => handleTabChange('estadisticas')}
+              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'estadisticas' ? 'tab-btn-active' : ''}`}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Estadísticas
+            </button>
           </div>
 
           <div className="p-5">
-            {activeTab === 'historial' ? (
+            {activeTab === 'estadisticas' ? (
+              <EstadisticasPaciente stats={pacienteStats} loading={loadingStats} />
+            ) : activeTab === 'historial' ? (
               /* ── Historial clínico ────────────────── */
               loadingHistorial ? (
                 <div className="space-y-3">
@@ -645,7 +667,7 @@ export default function PacienteDashboard() {
         <ReprogramarModal
           turno={turnoReprogramar}
           onClose={() => setTurnoReprogramar(null)}
-          onSuccess={() => { setTurnoReprogramar(null); loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' ? 'proximos' : activeTab, page); loadRecordatorios(); }}
+          onSuccess={() => { setTurnoReprogramar(null); loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' || activeTab === 'estadisticas' ? 'proximos' : activeTab, page); loadRecordatorios(); }}
         />
       )}
 
@@ -655,7 +677,7 @@ export default function PacienteDashboard() {
           onClose={() => setTurnoPreconsulta(null)}
           onSuccess={() => {
             setTurnoPreconsulta(null);
-            loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' ? 'proximos' : activeTab, page);
+            loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' || activeTab === 'estadisticas' ? 'proximos' : activeTab, page);
           }}
         />
       )}
@@ -1584,6 +1606,132 @@ function HistorialCard({ item, onCalificar }: { item: HistorialTurno; onCalifica
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ── Patient statistics panel ────────────────────────────────────────────── */
+function EstadisticasPaciente({ stats, loading }: { stats: PacienteStats | null; loading: boolean }) {
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {[1,2,3,4].map(i => <div key={i} className="skeleton h-20 rounded-xl" />)}
+        </div>
+        <div className="skeleton h-40 rounded-xl" />
+        <div className="skeleton h-48 rounded-xl" />
+      </div>
+    );
+  }
+
+  if (!stats) return null;
+
+  const maxMes = Math.max(...stats.turnosPorMes.map(m => m.total), 1);
+  const MES_LABELS: Record<string, string> = {
+    '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr', '05': 'May', '06': 'Jun',
+    '07': 'Jul', '08': 'Ago', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic',
+  };
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <PacienteStatCard label="Total turnos" value={stats.totalTurnos} color="blue" />
+        <PacienteStatCard label="Completados" value={stats.completados} color="emerald" />
+        <PacienteStatCard label="Cancelados" value={stats.cancelados} color="red" />
+        <PacienteStatCard label="Total gastado" value={`$${stats.totalGastado.toLocaleString('es-AR')}`} color="amber" />
+      </div>
+
+      {stats.turnosPorMes.length > 0 && (
+        <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            Turnos por mes (últimos 12 meses)
+          </p>
+          <div className="flex items-end gap-1.5 h-28">
+            {stats.turnosPorMes.map(({ mes, total }) => {
+              const [, mm] = mes.split('-');
+              const pct = Math.round((total / maxMes) * 100);
+              return (
+                <div key={mes} className="flex-1 flex flex-col items-center gap-1 group">
+                  <span className="text-[10px] text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">{total}</span>
+                  <div className="w-full bg-blue-500 dark:bg-blue-600 rounded-t-sm transition-all" style={{ height: `${Math.max(pct, 4)}%` }} title={`${MES_LABELS[mm] ?? mm}: ${total}`} />
+                  <span className="text-[9px] text-slate-400">{MES_LABELS[mm] ?? mm}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {stats.topProfesionales.length > 0 && (
+        <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Profesionales más visitados</p>
+          <div className="space-y-3">
+            {stats.topProfesionales.map(({ profesional, totalTurnos }, i) => profesional && (
+              <div key={profesional.id} className="flex items-center gap-3">
+                <span className="text-xs font-bold text-slate-400 w-4 text-center">{i + 1}</span>
+                {profesional.fotoUrl ? (
+                  <img src={profesional.fotoUrl} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 shrink-0">
+                    {profesional.nombre[0]}{profesional.apellido[0]}
+                  </div>
+                )}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">Dr/a. {profesional.nombre} {profesional.apellido}</p>
+                  <p className="text-xs text-slate-500 truncate">{profesional.especialidad.nombre}</p>
+                </div>
+                <span className="text-xs font-semibold text-blue-600 shrink-0">{totalTurnos} turno{totalTurnos !== 1 ? 's' : ''}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {stats.pagos.length > 0 && (
+        <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center justify-between">
+            <span>Historial de pagos</span>
+            <span className="text-xs font-normal text-slate-400">{stats.pagos.length} pago{stats.pagos.length !== 1 ? 's' : ''}</span>
+          </p>
+          <div className="space-y-2">
+            {stats.pagos.map((pago) => (
+              <div key={pago.id} className="flex items-center justify-between gap-3 py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+                <div className="min-w-0">
+                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">Dr/a. {pago.profesional}</p>
+                  <p className="text-xs text-slate-500 truncate">{pago.especialidad} · {new Date(pago.fecha).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-sm font-bold text-emerald-600">${pago.monto.toLocaleString('es-AR')}</p>
+                  <span className="badge badge-green text-[10px]">Aprobado</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {stats.totalTurnos === 0 && (
+        <div className="py-12 text-center text-slate-400">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 opacity-40"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <p className="text-sm">Aún no tenés estadísticas. ¡Reservá tu primer turno!</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PacienteStatCard({ label, value, color }: { label: string; value: string | number; color: 'blue' | 'emerald' | 'red' | 'amber' }) {
+  const colors = {
+    blue:    'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-800',
+    emerald: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-800',
+    red:     'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-100 dark:border-red-800',
+    amber:   'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-100 dark:border-amber-800',
+  };
+  return (
+    <div className={`rounded-xl border p-4 text-center ${colors[color]}`}>
+      <p className="text-2xl font-extrabold">{value}</p>
+      <p className="text-xs font-medium mt-0.5 opacity-80">{label}</p>
     </div>
   );
 }
