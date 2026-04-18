@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
-import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse, Resena, ResenasStats } from '../lib/api';
+import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse, Resena, ResenasStats, CertificadoConDatos, TipoCertificado } from '../lib/api';
 import ChatModal from '../components/ChatModal';
 import StarRating from '../components/StarRating';
 import StatsPanel from '../components/StatsPanel';
@@ -16,6 +16,7 @@ import { NotificationBell } from '../components/NotificationBell';
 import ProfesionalOnboardingWizard from '../components/ProfesionalOnboardingWizard';
 import { imprimirReceta } from '../lib/receta-pdf';
 import { exportarHistoriaClinicaPDF } from '../lib/historia-clinica-pdf';
+import { imprimirCertificado } from '../lib/certificado-pdf';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, ChartIcon, TrashIcon, ClipboardIcon, PaperclipIcon,
@@ -974,6 +975,117 @@ function DisponibilidadView({
 }
 
 /* ══════════════════════════════════════════════════════════════
+   EMITIR CERTIFICADO MODAL
+══════════════════════════════════════════════════════════════ */
+const CERT_TEMPLATES: Record<TipoCertificado, string> = {
+  REPOSO: 'El/la paciente ha sido visto/a y luego del examen clínico, se prescribe reposo médico.',
+  CONSULTA: 'El/la paciente ha sido visto/a por consulta especializada.',
+  APTITUD: 'Por este medio se certifica que el/la paciente se encuentra apto/a para las actividades indicadas.',
+  LIBRE: '',
+};
+
+function EmitirCertificadoModal({
+  form,
+  setForm,
+  onSave,
+  loading,
+  onClose,
+}: {
+  form: { tipo: TipoCertificado; diagnostico: string; texto: string; diasReposo: number };
+  setForm: (f: any) => void;
+  onSave: () => void;
+  loading: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <h3 className="font-bold text-slate-800 text-lg">Emitir Certificado Médico</h3>
+          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
+            <XIcon size={18} />
+          </button>
+        </div>
+
+        <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
+          {/* Tipo de certificado */}
+          <div>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">Tipo de certificado</label>
+            <div className="flex flex-wrap gap-2">
+              {(['CONSULTA', 'REPOSO', 'APTITUD', 'LIBRE'] as TipoCertificado[]).map((tipo) => (
+                <button
+                  key={tipo}
+                  onClick={() => {
+                    setForm({ ...form, tipo, texto: CERT_TEMPLATES[tipo] });
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                    form.tipo === tipo
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-300'
+                  }`}
+                >
+                  {tipo === 'REPOSO' ? 'Reposo Médico'
+                    : tipo === 'CONSULTA' ? 'Justificación de Consulta'
+                    : tipo === 'APTITUD' ? 'Aptitud Física'
+                    : 'Certificado Libre'}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Diagnóstico */}
+          <div>
+            <label className="field-label">Diagnóstico (obligatorio)</label>
+            <textarea
+              value={form.diagnostico}
+              onChange={(e) => setForm({ ...form, diagnostico: e.target.value })}
+              placeholder="Diagnóstico principal de la consulta..."
+              className="field-input resize-none min-h-[64px] text-sm"
+            />
+          </div>
+
+          {/* Texto del certificado */}
+          <div>
+            <label className="field-label">Texto del certificado (obligatorio)</label>
+            <textarea
+              value={form.texto}
+              onChange={(e) => setForm({ ...form, texto: e.target.value })}
+              placeholder="Contenido del certificado médico..."
+              className="field-input resize-none min-h-[80px] text-sm"
+            />
+          </div>
+
+          {/* Días de reposo (solo si REPOSO) */}
+          {form.tipo === 'REPOSO' && (
+            <div>
+              <label className="field-label">Días de reposo (obligatorio)</label>
+              <input
+                type="number"
+                min="1"
+                max="90"
+                value={form.diasReposo}
+                onChange={(e) => setForm({ ...form, diasReposo: parseInt(e.target.value) || 0 })}
+                className="field-input"
+                placeholder="Ej: 3"
+              />
+            </div>
+          )}
+        </div>
+
+        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3 rounded-b-2xl">
+          <button onClick={onClose} className="btn btn-secondary flex-1" disabled={loading}>
+            Cancelar
+          </button>
+          <button onClick={onSave} className="btn btn-primary flex-1" disabled={loading}>
+            {loading ? 'Emitiendo...' : 'Emitir y descargar PDF'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
    TURNO MODAL
 ══════════════════════════════════════════════════════════════ */
 type Archivo = { id: string; url: string; nombreOriginal: string; tipo: string; tamanoBytes: number; mimeType: string };
@@ -1012,6 +1124,21 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
   const [reprogramando, setReprogramando] = useState(false);
   const [unreadChat, setUnreadChat] = useState(0);
   const { user: authUser } = useAuth();
+  const [certificado, setCertificado] = useState<CertificadoConDatos | null>(null);
+  const [loadingCertificado, setLoadingCertificado] = useState(true);
+  const [showEmitirCertificado, setShowEmitirCertificado] = useState(false);
+  const [certificadoForm, setCertificadoForm] = useState<{
+    tipo: TipoCertificado;
+    diagnostico: string;
+    texto: string;
+    diasReposo: number;
+  }>({
+    tipo: 'CONSULTA',
+    diagnostico: '',
+    texto: '',
+    diasReposo: 0,
+  });
+  const [savingCertificado, setSavingCertificado] = useState(false);
 
   useEffect(() => {
     if (turno.estado !== 'CANCELADO') {
@@ -1024,6 +1151,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
   useEffect(() => { loadEvolucion(); loadArchivos(); }, [turno.id]);
   useEffect(() => { loadPreconsulta(); }, [turno.id]);
   useEffect(() => { loadReceta(); }, [turno.id]);
+  useEffect(() => { loadCertificado(); }, [turno.id]);
   useEffect(() => {
     if (turno.paciente?.id) {
       loadHistoriaClinica(turno.paciente.id);
@@ -1096,6 +1224,25 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
     }
   };
 
+  const loadCertificado = async () => {
+    setLoadingCertificado(true);
+    try {
+      const data = await api.certificados.getByTurno(turno.id);
+      setCertificado(data);
+      setCertificadoForm({
+        tipo: data.tipo,
+        diagnostico: data.diagnostico,
+        texto: data.texto,
+        diasReposo: data.diasReposo || 0,
+      });
+    } catch (err) {
+      console.error(err);
+      setCertificado(null);
+    } finally {
+      setLoadingCertificado(false);
+    }
+  };
+
   const handleSaveReceta = async () => {
     if (recetaForm.diagnostico.trim().length < 5 || recetaForm.indicaciones.trim().length < 5) {
       setModalNotice({ type: 'error', text: 'Completa diagnostico e indicaciones (minimo 5 caracteres).' });
@@ -1129,6 +1276,63 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
       setTimeout(() => setSavedMessage(''), 2500);
     } catch {
       setModalNotice({ type: 'error', text: 'No se pudo copiar al portapapeles.' });
+    }
+  };
+
+  const handleSaveCertificado = async () => {
+    if (certificadoForm.diagnostico.trim().length < 5 || certificadoForm.texto.trim().length < 5) {
+      setModalNotice({ type: 'error', text: 'Completa diagnóstico y texto (mínimo 5 caracteres).' });
+      return;
+    }
+    if (certificadoForm.tipo === 'REPOSO' && certificadoForm.diasReposo <= 0) {
+      setModalNotice({ type: 'error', text: 'Indicá cantidad de días de reposo.' });
+      return;
+    }
+
+    setSavingCertificado(true);
+    try {
+      const response = await api.certificados.emitir({
+        turnoId: turno.id,
+        tipo: certificadoForm.tipo,
+        diagnostico: certificadoForm.diagnostico.trim(),
+        texto: certificadoForm.texto.trim(),
+        diasReposo: certificadoForm.tipo === 'REPOSO' ? certificadoForm.diasReposo : undefined,
+      });
+      setCertificado(response as any);
+      setShowEmitirCertificado(false);
+      setModalNotice({ type: 'success', text: 'Certificado emitido correctamente.' });
+      if (turno.profesional && turno.paciente) {
+        imprimirCertificado({
+          ...response,
+          turno: {
+            fechaHora: turno.fechaHora,
+            modalidad: turno.modalidad,
+            profesional: {
+              nombre: turno.profesional.nombre,
+              apellido: turno.profesional.apellido,
+              matricula: turno.profesional.matricula ?? null,
+              fotoUrl: turno.profesional.fotoUrl ?? null,
+              lugarAtencion: turno.profesional.lugarAtencion ?? null,
+              telefono: turno.profesional.telefono ?? '',
+              especialidad: { nombre: turno.profesional.especialidad?.nombre ?? '' },
+            },
+            paciente: turno.paciente
+              ? {
+                  nombre: turno.paciente.nombre,
+                  apellido: turno.paciente.apellido,
+                  email: turno.paciente.email,
+                  dni: turno.paciente.dni ?? null,
+                  fechaNacimiento: turno.paciente.fechaNacimiento ?? null,
+                  obraSocial: turno.paciente.obraSocial ?? null,
+                }
+              : null,
+          },
+        } as CertificadoConDatos);
+      }
+    } catch (err) {
+      setModalNotice({ type: 'error', text: err instanceof Error ? err.message : 'No se pudo emitir el certificado' });
+    } finally {
+      setSavingCertificado(false);
     }
   };
 
@@ -1783,6 +1987,86 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
             )}
           </div>
 
+          {/* Certificado médico */}
+          {turno.estado === 'COMPLETADO' && (
+            <div className="border border-slate-200 rounded-xl p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <ClipboardIcon size={15} className="text-slate-400" />
+                <h4 className="font-semibold text-slate-700 text-sm">Certificado médico</h4>
+                {certificado?.emitidaAt && (
+                  <span className="badge badge-blue ml-auto text-xs">
+                    Emitido {new Date(certificado.emitidaAt).toLocaleDateString('es-AR')}
+                  </span>
+                )}
+              </div>
+
+              {loadingCertificado ? (
+                <div className="skeleton h-24 rounded-lg" />
+              ) : certificado ? (
+                <div className="space-y-3">
+                  <div className="bg-slate-50 rounded-lg p-3">
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Tipo</p>
+                    <p className="font-semibold text-slate-700">
+                      {certificado.tipo === 'REPOSO' ? 'Reposo Médico'
+                        : certificado.tipo === 'CONSULTA' ? 'Justificación de Consulta'
+                        : certificado.tipo === 'APTITUD' ? 'Aptitud Física'
+                        : 'Certificado Médico'}
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => imprimirCertificado({
+                        ...certificado,
+                        turno: {
+                          fechaHora: turno.fechaHora,
+                          modalidad: turno.modalidad,
+                          profesional: {
+                            nombre: turno.profesional!.nombre,
+                            apellido: turno.profesional!.apellido,
+                            matricula: turno.profesional!.matricula ?? null,
+                            fotoUrl: turno.profesional!.fotoUrl ?? null,
+                            lugarAtencion: turno.profesional!.lugarAtencion ?? null,
+                            telefono: turno.profesional!.telefono ?? '',
+                            especialidad: { nombre: turno.profesional!.especialidad?.nombre ?? '' },
+                          },
+                          paciente: turno.paciente
+                            ? {
+                                nombre: turno.paciente.nombre,
+                                apellido: turno.paciente.apellido,
+                                email: turno.paciente.email,
+                                dni: turno.paciente.dni ?? null,
+                                fechaNacimiento: turno.paciente.fechaNacimiento ?? null,
+                                obraSocial: turno.paciente.obraSocial ?? null,
+                              }
+                            : null,
+                        },
+                      })}
+                      className="btn btn-primary btn-sm flex items-center gap-1.5"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                      </svg>
+                      Ver/Reimprimir PDF
+                    </button>
+                    <button
+                      onClick={() => { setShowEmitirCertificado(true); setCertificadoForm({ tipo: certificado.tipo, diagnostico: certificado.diagnostico, texto: certificado.texto, diasReposo: certificado.diasReposo || 0 }); }}
+                      className="btn btn-secondary btn-sm"
+                    >
+                      Editar
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowEmitirCertificado(true)}
+                  className="btn btn-primary btn-sm"
+                >
+                  Emitir Certificado
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Archivos */}
           <div className="border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
@@ -1937,6 +2221,16 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
         myUserId={authUser.id}
         otherName={`${turno.paciente.nombre} ${turno.paciente.apellido}`}
         onClose={() => setShowChat(false)}
+      />
+    )}
+
+    {showEmitirCertificado && (
+      <EmitirCertificadoModal
+        form={certificadoForm}
+        setForm={setCertificadoForm}
+        onSave={handleSaveCertificado}
+        loading={savingCertificado}
+        onClose={() => setShowEmitirCertificado(false)}
       />
     )}
     </>

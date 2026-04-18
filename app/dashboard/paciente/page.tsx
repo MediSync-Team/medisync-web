@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
-import { api, Turno, ListaEsperaItem, RecetaIndicacion, Resena, HistorialTurno, HistorialPaginatedResponse, PacienteStats } from '../../lib/api';
+import { api, Turno, ListaEsperaItem, RecetaIndicacion, Resena, HistorialTurno, HistorialPaginatedResponse, PacienteStats, CertificadoConDatos } from '../../lib/api';
 import ChatModal from '../../components/ChatModal';
 import ProfileModal from '../../components/ProfileModal';
 import OnboardingTour from '../../components/OnboardingTour';
@@ -16,6 +16,7 @@ import { useLang } from '../../lib/i18n/context';
 import { NotificationBell } from '../../components/NotificationBell';
 import { imprimirReceta } from '../../lib/receta-pdf';
 import { imprimirHistorial } from '../../lib/historial-pdf';
+import { imprimirCertificado } from '../../lib/certificado-pdf';
 import AgendarCalendario from '../../components/AgendarCalendario';
 
 const PACIENTE_TOUR_STEPS = [
@@ -1534,6 +1535,54 @@ function HistorialCard({ item, onCalificar }: { item: HistorialTurno; onCalifica
                 <span className="font-semibold">Próximo control:</span> {item.recetaIndicacion.proximoControl}
               </p>
             )}
+          </div>
+        )}
+
+        {/* Certificado médico */}
+        {item.certificado && (
+          <div className="border border-blue-200 rounded-lg p-3 text-sm bg-blue-50">
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Certificado médico</p>
+              <button
+                onClick={async () => {
+                  try {
+                    const certData = await api.certificados.getByTurno(item.id);
+                    imprimirCertificado({
+                      ...certData,
+                      turno: {
+                        fechaHora: item.fechaHora,
+                        modalidad: item.modalidad,
+                        profesional: {
+                          nombre: item.profesional?.nombre ?? '',
+                          apellido: item.profesional?.apellido ?? '',
+                          matricula: item.profesional?.matricula ?? undefined,
+                          fotoUrl: item.profesional?.fotoUrl ?? undefined,
+                          lugarAtencion: item.profesional?.lugarAtencion ?? undefined,
+                          telefono: item.profesional?.telefono ?? undefined,
+                          especialidad: { nombre: item.profesional?.especialidad?.nombre ?? '' },
+                        },
+                        paciente: null,
+                      },
+                    } as CertificadoConDatos);
+                  } catch (err) {
+                    console.error(err);
+                  }
+                }}
+                className="flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900 font-semibold"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Descargar PDF
+              </button>
+            </div>
+            <p className="text-slate-700 font-medium">
+              {item.certificado.tipo === 'REPOSO' ? 'Reposo Médico'
+                : item.certificado.tipo === 'CONSULTA' ? 'Justificación de Consulta'
+                : item.certificado.tipo === 'APTITUD' ? 'Aptitud Física'
+                : 'Certificado Médico'}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              Emitido el {new Date(item.certificado.emitidaAt).toLocaleDateString('es-AR')}
+            </p>
           </div>
         )}
 
