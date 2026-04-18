@@ -518,7 +518,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
             </div>
           )}
 
-          {userType === 'profesional' && (
+          {(userType === 'profesional' || userType === 'paciente') && (
             <div className="pt-4 border-t border-gray-200">
               <h3 className="text-sm font-semibold text-gray-700 mb-3">Integraciones</h3>
               <GoogleCalendarConnect />
