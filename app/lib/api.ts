@@ -289,6 +289,14 @@ export const api = {
     validar: (codigo: string, turnoId: string) =>
       fetchApi<CuponValidado>('/cupones/validar', { method: 'POST', body: JSON.stringify({ codigo, turnoId }) }),
   },
+  suscripciones: {
+    estado: () =>
+      fetchApi<SuscripcionEstado>('/suscripciones/estado'),
+    iniciar: () =>
+      fetchApi<{ initPoint: string }>('/suscripciones/iniciar', { method: 'POST' }),
+    cancelar: () =>
+      fetchApi<void>('/suscripciones/cancelar', { method: 'POST' }),
+  },
 };
 
 export type LoginData = {
@@ -896,6 +904,17 @@ export type CuponValidado = {
   montoOriginal: number;
   montoDescuento: number;
   montoFinal: number;
+};
+
+export type PlanProfesional = 'FREE' | 'PRO';
+
+export type SuscripcionEstado = {
+  plan: PlanProfesional;
+  turnosEsteMes: number;
+  limiteTurnos: number;
+  turnosRestantes: number;
+  planVenceAt: string | null;
+  mpSuscripcionId: string | null;
 };
 
 export type CertificadoConDatos = CertificadoMedico & {

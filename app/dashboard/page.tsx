@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
-import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse, Resena, ResenasStats, CertificadoConDatos, TipoCertificado, Cupon, TipoDescuento } from '../lib/api';
+import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse, Resena, ResenasStats, CertificadoConDatos, TipoCertificado, Cupon, TipoDescuento, SuscripcionEstado, PlanProfesional } from '../lib/api';
 import ChatModal from '../components/ChatModal';
 import StarRating from '../components/StarRating';
 import StatsPanel from '../components/StatsPanel';
@@ -20,7 +20,7 @@ import { imprimirCertificado } from '../lib/certificado-pdf';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, ChartIcon, TrashIcon, ClipboardIcon, PaperclipIcon,
-  XIcon, CheckIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon, ChatIcon,
+  XIcon, CheckIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon, ChatIcon, StarIcon,
 } from '../components/icons';
 import { DIAS_SEMANA, estadoBadge, clinicalRiskBadge } from '../lib/utils';
 
@@ -71,7 +71,7 @@ export default function ProfesionalDashboard() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas' | 'cupones'>('calendario');
+  const [activeTab, setActiveTab] = useState<'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas' | 'cupones' | 'plan'>('calendario');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [turnosDelDia, setTurnosDelDia] = useState<Turno[]>([]);
   const [nuevaDisp, setNuevaDisp] = useState({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL' as const, lugarAtencion: '' });
@@ -102,6 +102,9 @@ export default function ProfesionalDashboard() {
     expiresAt: '',
   });
   const [savingCupon, setSavingCupon] = useState(false);
+  const [suscripcion, setSuscripcion] = useState<SuscripcionEstado | null>(null);
+  const [loadingSuscripcion, setLoadingSuscripcion] = useState(false);
+  const [redirectingToMP, setRedirectingToMP] = useState(false);
 
   useEffect(() => { if (!selectedDate) setSelectedDate(new Date()); }, [selectedDate]);
 
@@ -295,8 +298,44 @@ export default function ProfesionalDashboard() {
     }
   };
 
+  const loadSuscripcion = async () => {
+    setLoadingSuscripcion(true);
+    try {
+      const data = await api.suscripciones.estado();
+      setSuscripcion(data);
+    } catch (err) {
+      console.error(err);
+      setInlineFeedback({ type: 'error', text: 'Error al cargar plan' });
+    } finally {
+      setLoadingSuscripcion(false);
+    }
+  };
+
+  const handleIniciarSuscripcion = async () => {
+    setRedirectingToMP(true);
+    try {
+      const { initPoint } = await api.suscripciones.iniciar();
+      window.location.href = initPoint;
+    } catch (err) {
+      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al iniciar suscripción' });
+      setRedirectingToMP(false);
+    }
+  };
+
+  const handleCancelarSuscripcion = async () => {
+    if (!confirm('¿Estás seguro de que querés cancelar tu suscripción Pro?')) return;
+    try {
+      await api.suscripciones.cancelar();
+      setInlineFeedback({ type: 'success', text: 'Suscripción cancelada' });
+      await loadSuscripcion();
+    } catch (err) {
+      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al cancelar' });
+    }
+  };
+
   useEffect(() => {
     if (activeTab === 'cupones') loadCupones();
+    if (activeTab === 'plan') loadSuscripcion();
   }, [activeTab]);
 
   return (
@@ -475,6 +514,7 @@ export default function ProfesionalDashboard() {
               { id: 'pagos', label: 'Pagos', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>, onboarding: 'tab-pagos' },
               { id: 'resenas', label: 'Reseñas', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>, onboarding: 'tab-resenas' },
               { id: 'cupones', label: 'Cupones', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.008h.01m0 0h-.01M16.5 18v.008h.01m0 0h-.01M6 12a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm12 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" /></svg>, onboarding: 'tab-cupones' },
+              { id: 'plan', label: 'Plan', icon: <StarIcon size={14} />, onboarding: 'tab-plan' },
             ] as const).map(tab => (
               <button
                 key={tab.id}
@@ -547,6 +587,18 @@ export default function ProfesionalDashboard() {
                 onToggleActivo={(id: string, activo: boolean) => handleToggleCupon(id, activo)}
                 onEliminar={(id: string) => handleEliminarCupon(id)}
               />
+            )}
+            {activeTab === 'plan' && (
+              <PlanView
+                suscripcion={suscripcion}
+                loading={loadingSuscripcion}
+                onIniciarSuscripcion={handleIniciarSuscripcion}
+                onCancelarSuscripcion={handleCancelarSuscripcion}
+                redirecting={redirectingToMP}
+              />
+            )}
+            {activeTab === 'stats' && suscripcion?.plan === 'FREE' && (
+              <UpgradePrompt feature="estadísticas" onViewPlans={() => setActiveTab('plan')} />
             )}
           </div>
         </div>
@@ -3307,6 +3359,151 @@ function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
           </div>
         )}
       </div>
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   PLAN VIEW
+══════════════════════════════════════════════════════════════ */
+function PlanView({
+  suscripcion,
+  loading,
+  onIniciarSuscripcion,
+  onCancelarSuscripcion,
+  redirecting,
+}: {
+  suscripcion: SuscripcionEstado | null;
+  loading: boolean;
+  onIniciarSuscripcion: () => void;
+  onCancelarSuscripcion: () => void;
+  redirecting: boolean;
+}) {
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="skeleton h-20 rounded-lg" />
+        ))}
+      </div>
+    );
+  }
+
+  if (!suscripcion) {
+    return <div className="text-center text-slate-600">Cargando...</div>;
+  }
+
+  const isPro = suscripcion.plan === 'PRO';
+
+  return (
+    <div className="max-w-2xl space-y-6">
+      {/* Plan Banner */}
+      <div className={`rounded-xl p-6 border-2 ${isPro ? 'bg-gradient-to-br from-blue-50 to-emerald-50 border-blue-200' : 'bg-slate-100 border-slate-300'}`}>
+        <div className="flex items-start justify-between">
+          <div>
+            <div className={`text-sm font-bold uppercase tracking-wider ${isPro ? 'text-blue-700' : 'text-slate-700'}`}>
+              Plan actual
+            </div>
+            <h2 className={`text-3xl font-bold mt-2 ${isPro ? 'text-blue-900' : 'text-slate-900'}`}>
+              {isPro ? 'Pro' : 'Free'}
+            </h2>
+            <p className={`text-sm mt-3 ${isPro ? 'text-blue-700' : 'text-slate-600'}`}>
+              {isPro ? 'Turnos ilimitados + estadísticas avanzadas' : 'Hasta 20 turnos/mes'}
+            </p>
+          </div>
+          <div className={`text-5xl font-bold opacity-20 ${isPro ? 'text-blue-500' : 'text-slate-400'}`}>
+            {isPro ? '∞' : '20'}
+          </div>
+        </div>
+      </div>
+
+      {/* Turno Counter (for FREE) */}
+      {!isPro && (
+        <div className="rounded-xl bg-white border border-slate-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <span className="text-sm font-medium text-slate-700">Turnos este mes</span>
+            <span className="text-sm text-slate-500">{suscripcion.turnosEsteMes} / {suscripcion.limiteTurnos}</span>
+          </div>
+          <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+            <div
+              className="bg-blue-600 h-full transition-all duration-300"
+              style={{ width: `${(suscripcion.turnosEsteMes / suscripcion.limiteTurnos) * 100}%` }}
+            />
+          </div>
+          <p className="text-xs text-slate-500 mt-3">
+            Te quedan {suscripcion.turnosRestantes} turno{suscripcion.turnosRestantes !== 1 ? 's' : ''} este mes
+          </p>
+        </div>
+      )}
+
+      {/* Billing Info */}
+      {isPro && suscripcion.planVenceAt && (
+        <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-6">
+          <div className="text-sm font-medium text-emerald-900">Próximo cobro</div>
+          <div className="text-2xl font-bold text-emerald-700 mt-2">
+            {new Date(suscripcion.planVenceAt).toLocaleDateString('es-AR')}
+          </div>
+          <p className="text-xs text-emerald-700 mt-2">$4.990 ARS / mes</p>
+        </div>
+      )}
+
+      {/* CTA Buttons */}
+      <div className="flex gap-3 flex-col sm:flex-row">
+        {!isPro && (
+          <button
+            onClick={onIniciarSuscripcion}
+            disabled={redirecting}
+            className="btn btn-primary flex-1"
+          >
+            {redirecting ? 'Redirigiendo...' : 'Actualizar a Pro — $4.990/mes'}
+          </button>
+        )}
+
+        {isPro && (
+          <button
+            onClick={onCancelarSuscripcion}
+            disabled={redirecting}
+            className="btn btn-secondary flex-1"
+          >
+            Cancelar suscripción
+          </button>
+        )}
+      </div>
+
+      {/* Features comparison */}
+      <div className="rounded-xl bg-white border border-slate-200 p-6">
+        <h3 className="font-bold text-slate-900 mb-4">Comparar planes</h3>
+        <div className="space-y-3">
+          {[
+            { feature: 'Turnos', free: 'Hasta 20/mes', pro: 'Ilimitados' },
+            { feature: 'Estadísticas', free: '❌', pro: '✅' },
+            { feature: 'Cupones de descuento', free: '✅', pro: '✅' },
+            { feature: 'Pagos online', free: '✅', pro: '✅' },
+            { feature: 'Historia clínica', free: '✅', pro: '✅' },
+          ].map((row, i) => (
+            <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
+              <span className="text-sm font-medium text-slate-700">{row.feature}</span>
+              <div className="flex gap-4 text-sm">
+                <span className={isPro ? 'text-slate-500' : 'font-bold text-blue-600'}>{row.free}</span>
+                <span className={isPro ? 'font-bold text-blue-600' : 'text-slate-500'}>{row.pro}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function UpgradePrompt({ feature, onViewPlans }: { feature: string; onViewPlans: () => void }) {
+  return (
+    <div className="py-16 text-center">
+      <div className="text-5xl mb-4">🔒</div>
+      <p className="text-lg font-medium text-slate-900">Las {feature} están disponibles en el plan Pro</p>
+      <p className="text-sm text-slate-600 mt-2">Suscríbete a Pro para desbloquear todas las funcionalidades</p>
+      <button onClick={onViewPlans} className="btn btn-primary mt-6">
+        Ver planes
+      </button>
     </div>
   );
 }
