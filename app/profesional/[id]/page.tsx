@@ -404,6 +404,19 @@ export default function ProfesionalPage() {
                     <span>{profesional.lugarAtencion}</span>
                   </div>
                 )}
+                {profesional.lugarAtencion && (
+                  <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 h-36">
+                    <iframe
+                      title="Ubicación"
+                      width="100%"
+                      height="100%"
+                      style={{ border: 0 }}
+                      loading="lazy"
+                      referrerPolicy="no-referrer-when-downgrade"
+                      src={`https://maps.google.com/maps?q=${encodeURIComponent(profesional.lugarAtencion)}&output=embed&z=15`}
+                    />
+                  </div>
+                )}
                 {profesional.telefono && (
                   <div className="flex items-center gap-2 text-sm text-slate-600">
                     <PhoneIcon size={14} className="text-slate-400" />
@@ -434,25 +447,9 @@ export default function ProfesionalPage() {
               )}
             </div>
 
-            {/* Weekly availability (read-only) */}
+            {/* Weekly availability visual grid */}
             {profesional.disponibilidades && profesional.disponibilidades.length > 0 && (
-              <div className="card p-5">
-                <h3 className="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                  <ClockIcon size={14} className="text-slate-400" />
-                  Horarios habituales
-                </h3>
-                <div className="space-y-1.5">
-                  {profesional.disponibilidades.map((disp: any) => (
-                    <div key={disp.id} className="flex items-center justify-between text-xs">
-                      <span className="text-slate-600 font-medium w-20">{DIAS_SEMANA[disp.diaSemana]}</span>
-                      <span className="text-slate-500">{disp.horaInicio} — {disp.horaFin}</span>
-                      <span className={`badge ${disp.modalidad === 'VIRTUAL' ? 'badge-blue' : 'badge-green'}`}>
-                        {disp.modalidad}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <HorariosGrid disponibilidades={profesional.disponibilidades} />
             )}
             {/* ── Reseñas ──────────────────────────────── */}
             {resenas && resenas.stats.total > 0 && (
@@ -468,6 +465,21 @@ export default function ProfesionalPage() {
                     <p className="text-3xl font-extrabold text-slate-800">{resenas.stats.promedio}</p>
                     <StarRating value={resenas.stats.promedio ?? 0} size={12} />
                     <p className="text-xs text-slate-400 mt-0.5">{resenas.stats.total} reseña{resenas.stats.total !== 1 ? 's' : ''}</p>
+                  </div>
+                  <div className="flex-1 space-y-1">
+                    {[5,4,3,2,1].map((star) => {
+                      const count = resenas.resenas.filter(r => r.rating === star).length;
+                      const pct = resenas.stats.total > 0 ? Math.round((count / resenas.stats.total) * 100) : 0;
+                      return (
+                        <div key={star} className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-slate-500 w-3 text-right">{star}</span>
+                          <div className="flex-1 h-1.5 bg-amber-100 dark:bg-amber-900/40 rounded-full overflow-hidden">
+                            <div className="h-full bg-amber-400 rounded-full transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                          <span className="text-[10px] text-slate-400 w-5">{count}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -796,6 +808,55 @@ export default function ProfesionalPage() {
         </>
         )}
       </main>
+    </div>
+  );
+}
+
+/* ── Weekly schedule visual grid ────────────────────────────────────────── */
+function HorariosGrid({ disponibilidades }: { disponibilidades: any[] }) {
+  const DIAS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+  type Block = { horaInicio: string; horaFin: string; modalidad: string };
+  const byDay = new Map<number, Block[]>();
+  for (const d of disponibilidades) {
+    if (!byDay.has(d.diaSemana)) byDay.set(d.diaSemana, []);
+    byDay.get(d.diaSemana)!.push(d);
+  }
+
+  const activeDays = [1,2,3,4,5,6,0].filter(d => byDay.has(d));
+
+  return (
+    <div className="card p-5">
+      <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2">
+        <ClockIcon size={14} className="text-slate-400" />
+        Horarios habituales
+      </h3>
+      <div className="space-y-2">
+        {activeDays.map((dia) => (
+          <div key={dia} className="flex items-start gap-3">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 w-8 pt-0.5 shrink-0">{DIAS_SHORT[dia]}</span>
+            <div className="flex flex-wrap gap-1.5 flex-1">
+              {byDay.get(dia)!.map((b, i) => (
+                <span
+                  key={i}
+                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-medium border ${
+                    b.modalidad === 'VIRTUAL'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-700'
+                      : b.modalidad === 'AMBOS'
+                      ? 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-700'
+                      : 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:border-emerald-700'
+                  }`}
+                >
+                  {b.horaInicio}–{b.horaFin}
+                  <span className="opacity-60 text-[10px]">
+                    {b.modalidad === 'VIRTUAL' ? '💻' : b.modalidad === 'AMBOS' ? '🔄' : '🏥'}
+                  </span>
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
