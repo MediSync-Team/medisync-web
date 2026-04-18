@@ -4,8 +4,10 @@
   "/favicon.ico/route": "/favicon.ico",
   "/api/pagos/webhook/route": "/api/pagos/webhook",
   "/dashboard/admin/page": "/dashboard/admin",
+  "/dashboard/clinica/page": "/dashboard/clinica",
   "/dashboard/paciente/page": "/dashboard/paciente",
   "/dashboard/page": "/dashboard",
+  "/invitacion/[token]/page": "/invitacion/[token]",
   "/login/page": "/login",
   "/page": "/",
   "/pago-exitoso/page": "/pago-exitoso",
@@ -13,5 +15,6 @@
   "/pago-pendiente/page": "/pago-pendiente",
   "/pago/page": "/pago",
   "/profesional/[id]/page": "/profesional/[id]",
-  "/register/page": "/register"
+  "/register/page": "/register",
+  "/widget/[profesionalId]/page": "/widget/[profesionalId]"
 }

@@ -118,6 +118,7 @@ function PagoContent() {
               onChange={(e) => {
                 setCouponCode(e.target.value.toUpperCase());
                 setCouponError('');
+                setValidatedCoupon(null);
               }}
               placeholder="ej: PROMO10"
               className="field-input flex-1"

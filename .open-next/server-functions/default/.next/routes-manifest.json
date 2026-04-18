@@ -14,7 +14,22 @@
       "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
     }
   ],
-  "headers": [],
+  "headers": [
+    {
+      "source": "/widget/:path*",
+      "headers": [
+        {
+          "key": "X-Frame-Options",
+          "value": "ALLOWALL"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors *"
+        }
+      ],
+      "regex": "^/widget(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))?(?:/)?$"
+    }
+  ],
   "onMatchHeaders": [],
   "rewrites": {
     "beforeFiles": [],
@@ -23,12 +38,28 @@
   },
   "dynamicRoutes": [
     {
+      "page": "/invitacion/[token]",
+      "regex": "^/invitacion/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPtoken": "nxtPtoken"
+      },
+      "namedRegex": "^/invitacion/(?<nxtPtoken>[^/]+?)(?:/)?$"
+    },
+    {
       "page": "/profesional/[id]",
       "regex": "^/profesional/([^/]+?)(?:/)?$",
       "routeKeys": {
         "nxtPid": "nxtPid"
       },
       "namedRegex": "^/profesional/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/widget/[profesionalId]",
+      "regex": "^/widget/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPprofesionalId": "nxtPprofesionalId"
+      },
+      "namedRegex": "^/widget/(?<nxtPprofesionalId>[^/]+?)(?:/)?$"
     }
   ],
   "staticRoutes": [
@@ -67,6 +98,12 @@
       "regex": "^/dashboard/admin(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/dashboard/admin(?:/)?$"
+    },
+    {
+      "page": "/dashboard/clinica",
+      "regex": "^/dashboard/clinica(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/clinica(?:/)?$"
     },
     {
       "page": "/dashboard/paciente",
