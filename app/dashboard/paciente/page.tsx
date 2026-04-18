@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
 import { api, Turno, ListaEsperaItem, RecetaIndicacion, Resena, HistorialTurno, HistorialPaginatedResponse } from '../../lib/api';
+import ChatModal from '../../components/ChatModal';
 import ProfileModal from '../../components/ProfileModal';
 import OnboardingTour from '../../components/OnboardingTour';
 import Pagination from '../../components/Pagination';
@@ -14,6 +15,7 @@ import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { useLang } from '../../lib/i18n/context';
 import { NotificationBell } from '../../components/NotificationBell';
 import { imprimirReceta } from '../../lib/receta-pdf';
+import { imprimirHistorial } from '../../lib/historial-pdf';
 import AgendarCalendario from '../../components/AgendarCalendario';
 
 const PACIENTE_TOUR_STEPS = [
@@ -45,7 +47,7 @@ const PACIENTE_TOUR_STEPS = [
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, VideoIcon, BuildingIcon, CreditCardIcon, RefreshIcon,
-  XIcon, SearchIcon, WaitlistIcon, CheckIcon, InfoIcon, ClipboardIcon,
+  XIcon, SearchIcon, WaitlistIcon, CheckIcon, InfoIcon, ClipboardIcon, ChatIcon,
 } from '../../components/icons';
 import { estadoBadge } from '../../lib/utils';
 
@@ -59,7 +61,7 @@ export default function PacienteDashboard() {
   const c = t('common');
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'proximos' | 'pasados' | 'listaEspera' | 'historial'>('proximos');
+  const [activeTab, setActiveTab] = useState<'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'datosMedicos'>('proximos');
   const [historial, setHistorial] = useState<HistorialTurno[]>([]);
   const [historialPagination, setHistorialPagination] = useState({ total: 0, totalPages: 1 });
   const [historialPage, setHistorialPage] = useState(1);
@@ -79,7 +81,16 @@ export default function PacienteDashboard() {
   const [turnoReceta, setTurnoReceta] = useState<Turno | null>(null);
   const [turnoCalificar, setTurnoCalificar] = useState<Turno | null>(null);
   const [turnoVideoCall, setTurnoVideoCall] = useState<Turno | null>(null);
+  const [turnoChat, setTurnoChat] = useState<Turno | null>(null);
   const [inlineNotice, setInlineNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+
+  // Datos médicos
+  const [datosMedicos, setDatosMedicos] = useState<{
+    antecedentesPersonales: string; antecedentesFamiliares: string;
+    alergias: string; medicacionActual: string; habitos: string; diagnosticosPrevios: string;
+  }>({ antecedentesPersonales: '', antecedentesFamiliares: '', alergias: '', medicacionActual: '', habitos: '', diagnosticosPrevios: '' });
+  const [savingDatos, setSavingDatos] = useState(false);
+  const [datosSaved, setDatosSaved] = useState(false);
 
   useEffect(() => {
     if (!authLoading) {
@@ -154,6 +165,53 @@ export default function PacienteDashboard() {
     } catch (err) { console.error(err); }
   };
 
+  const loadDatosMedicos = async () => {
+    if (!user?.paciente?.id) return;
+    try {
+      const paciente = await api.pacientes.getPerfil();
+      setDatosMedicos({
+        antecedentesPersonales: paciente.antecedentesPersonales ?? '',
+        antecedentesFamiliares: paciente.antecedentesFamiliares ?? '',
+        alergias: paciente.alergias ?? '',
+        medicacionActual: paciente.medicacionActual ?? '',
+        habitos: paciente.habitos ?? '',
+        diagnosticosPrevios: paciente.diagnosticosPrevios ?? '',
+      });
+    } catch (err) { console.error(err); }
+  };
+
+  const saveDatosMedicos = async () => {
+    setSavingDatos(true);
+    try {
+      await api.pacientes.updatePerfil(datosMedicos);
+      setDatosSaved(true);
+      setTimeout(() => setDatosSaved(false), 3000);
+    } catch (err) { console.error(err); }
+    finally { setSavingDatos(false); }
+  };
+
+  const downloadHistorialPDF = async () => {
+    if (!user?.paciente) return;
+    try {
+      const [data, perfil] = await Promise.all([
+        api.turnos.miHistorial({ page: 1, limit: 100 }),
+        api.pacientes.getPerfil(),
+      ]);
+      imprimirHistorial({
+        paciente: perfil,
+        turnos: data.turnos,
+        antecedentes: {
+          antecedentesPersonales: perfil.antecedentesPersonales,
+          antecedentesFamiliares: perfil.antecedentesFamiliares,
+          alergias: perfil.alergias,
+          medicacionActual: perfil.medicacionActual,
+          habitos: perfil.habitos,
+          diagnosticosPrevios: perfil.diagnosticosPrevios,
+        },
+      });
+    } catch (err) { console.error(err); }
+  };
+
   const cancelarListaEspera = async (id: string) => {
     try {
       await api.listaEspera.cancelar(id);
@@ -174,7 +232,7 @@ export default function PacienteDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' ? 'proximos' : activeTab, page);
+        loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' ? 'proximos' : activeTab, page);
         setInlineNotice({ type: 'success', text: 'Turno cancelado correctamente.' });
       }
     } catch {
@@ -196,11 +254,13 @@ export default function PacienteDashboard() {
     );
   }
 
-  const handleTabChange = (tab: 'proximos' | 'pasados' | 'listaEspera' | 'historial') => {
+  const handleTabChange = (tab: 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'datosMedicos') => {
     setActiveTab(tab);
     if (tab === 'historial') {
       setHistorialPage(1);
       loadHistorial(1);
+    } else if (tab === 'datosMedicos') {
+      loadDatosMedicos();
     } else if (tab !== 'listaEspera') {
       setPage(1);
       loadTurnos(tab, 1);
@@ -209,7 +269,7 @@ export default function PacienteDashboard() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' ? 'proximos' : activeTab, newPage);
+    loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' ? 'proximos' : activeTab, newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -348,6 +408,13 @@ export default function PacienteDashboard() {
               <ClipboardIcon size={13} />
               Historial clínico
             </button>
+            <button
+              onClick={() => handleTabChange('datosMedicos')}
+              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'datosMedicos' ? 'tab-btn-active' : ''}`}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+              Mis datos médicos
+            </button>
           </div>
 
           <div className="p-5">
@@ -370,9 +437,18 @@ export default function PacienteDashboard() {
                 </div>
               ) : (
                 <>
+                  <div className="flex justify-end mb-3">
+                    <button
+                      onClick={downloadHistorialPDF}
+                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                      Descargar historial completo
+                    </button>
+                  </div>
                   <div className="space-y-4">
                     {historial.map(item => (
-                      <HistorialCard key={item.id} item={item} />
+                      <HistorialCard key={item.id} item={item} onCalificar={(t) => setTurnoCalificar(t as any)} />
                     ))}
                   </div>
                   <Pagination
@@ -384,6 +460,92 @@ export default function PacienteDashboard() {
                   />
                 </>
               )
+            ) : activeTab === 'datosMedicos' ? (
+              /* ── Mis datos médicos ──────────────── */
+              <div className="space-y-5">
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Antecedentes personales</h3>
+                  <p className="text-xs text-slate-400 mb-2">Enfermedades previas, cirugías, hospitalizaciones.</p>
+                  <textarea
+                    value={datosMedicos.antecedentesPersonales}
+                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, antecedentesPersonales: e.target.value }))}
+                    rows={3}
+                    placeholder="Ej: Hipertensión arterial desde 2018, apendicectomía 2010..."
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Antecedentes familiares</h3>
+                  <p className="text-xs text-slate-400 mb-2">Enfermedades hereditarias o relevantes en la familia.</p>
+                  <textarea
+                    value={datosMedicos.antecedentesFamiliares}
+                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, antecedentesFamiliares: e.target.value }))}
+                    rows={3}
+                    placeholder="Ej: Padre con diabetes tipo 2, madre con cardiopatía..."
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Alergias</h3>
+                  <p className="text-xs text-slate-400 mb-2">Medicamentos, alimentos, materiales u otras sustancias.</p>
+                  <textarea
+                    value={datosMedicos.alergias}
+                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, alergias: e.target.value }))}
+                    rows={2}
+                    placeholder="Ej: Penicilina (urticaria), ibuprofeno, mariscos..."
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Medicación actual</h3>
+                  <p className="text-xs text-slate-400 mb-2">Medicamentos que tomás habitualmente con dosis y frecuencia.</p>
+                  <textarea
+                    value={datosMedicos.medicacionActual}
+                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, medicacionActual: e.target.value }))}
+                    rows={3}
+                    placeholder="Ej: Enalapril 10mg/día, Metformina 500mg c/12h..."
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Hábitos</h3>
+                  <p className="text-xs text-slate-400 mb-2">Tabaco, alcohol, actividad física, alimentación.</p>
+                  <textarea
+                    value={datosMedicos.habitos}
+                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, habitos: e.target.value }))}
+                    rows={2}
+                    placeholder="Ej: No fumador, consumo ocasional de alcohol, sedentario..."
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                  />
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Diagnósticos previos</h3>
+                  <p className="text-xs text-slate-400 mb-2">Diagnósticos confirmados por profesionales de salud.</p>
+                  <textarea
+                    value={datosMedicos.diagnosticosPrevios}
+                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, diagnosticosPrevios: e.target.value }))}
+                    rows={2}
+                    placeholder="Ej: Hipotiroidismo, ansiedad generalizada..."
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                  />
+                </div>
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    onClick={saveDatosMedicos}
+                    disabled={savingDatos}
+                    className="btn btn-primary text-sm"
+                  >
+                    {savingDatos ? 'Guardando...' : 'Guardar datos médicos'}
+                  </button>
+                  {datosSaved && (
+                    <span className="text-emerald-600 text-sm font-medium flex items-center gap-1">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                      Datos guardados
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs text-slate-400">Esta información es visible para los profesionales que te atiendan en MediSync y se incluye en tu historial clínico.</p>
+              </div>
             ) : activeTab === 'listaEspera' ? (
               /* ── Lista de espera ────────────────── */
               listaEspera.length === 0 ? (
@@ -452,6 +614,7 @@ export default function PacienteDashboard() {
                       onVerReceta={() => setTurnoReceta(turno)}
                       onCalificar={() => setTurnoCalificar(turno)}
                       onVideoCall={() => setTurnoVideoCall(turno)}
+                      onChat={() => setTurnoChat(turno)}
                     />
                   ))}
                 </div>
@@ -482,7 +645,7 @@ export default function PacienteDashboard() {
         <ReprogramarModal
           turno={turnoReprogramar}
           onClose={() => setTurnoReprogramar(null)}
-          onSuccess={() => { setTurnoReprogramar(null); loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' ? 'proximos' : activeTab, page); loadRecordatorios(); }}
+          onSuccess={() => { setTurnoReprogramar(null); loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' ? 'proximos' : activeTab, page); loadRecordatorios(); }}
         />
       )}
 
@@ -492,7 +655,7 @@ export default function PacienteDashboard() {
           onClose={() => setTurnoPreconsulta(null)}
           onSuccess={() => {
             setTurnoPreconsulta(null);
-            loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' ? 'proximos' : activeTab, page);
+            loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' ? 'proximos' : activeTab, page);
           }}
         />
       )}
@@ -508,6 +671,7 @@ export default function PacienteDashboard() {
           onSuccess={() => {
             setTurnoCalificar(null);
             setInlineNotice({ type: 'success', text: '¡Gracias por tu calificación!' });
+            if (activeTab === 'historial') loadHistorial(historialPage);
           }}
         />
       )}
@@ -518,6 +682,15 @@ export default function PacienteDashboard() {
           profesionalNombre={turnoVideoCall.profesional ? `${turnoVideoCall.profesional.nombre} ${turnoVideoCall.profesional.apellido}` : 'Profesional'}
           fechaHora={turnoVideoCall.fechaHora}
           onClose={() => setTurnoVideoCall(null)}
+        />
+      )}
+
+      {turnoChat && user.paciente && (
+        <ChatModal
+          turnoId={turnoChat.id}
+          myUserId={user.id}
+          otherName={turnoChat.profesional ? `${turnoChat.profesional.nombre} ${turnoChat.profesional.apellido}` : 'Profesional'}
+          onClose={() => setTurnoChat(null)}
         />
       )}
 
@@ -532,7 +705,7 @@ export default function PacienteDashboard() {
 
 /* ── Turno Card ──────────────────────────────────────────── */
 function TurnoCard({
-  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, onVideoCall, horasMinCancelacion,
+  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, onVideoCall, onChat, horasMinCancelacion,
 }: {
   turno: Turno;
   pagoInfo?: { necesitaPago: boolean };
@@ -545,12 +718,19 @@ function TurnoCard({
   onVerReceta: () => void;
   onCalificar: () => void;
   onVideoCall: () => void;
+  onChat: () => void;
 }) {
   const { t } = useLang();
   const p = t('paciente');
   const isActive = turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO';
   const isFuture = new Date(turno.fechaHora) >= new Date();
   const preconsultaCompletada = Boolean(turno.preconsultaCompletadaAt);
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    if (!isActive) return;
+    api.chat.getUnread(turno.id).then(d => setUnreadCount(d.count)).catch(() => {});
+  }, [turno.id, isActive]);
 
   return (
     <div className="border border-slate-200 rounded-xl overflow-hidden">
@@ -642,6 +822,20 @@ function TurnoCard({
             <Link href={`/profesional/${turno.profesional?.id}`} className="btn btn-ghost btn-sm text-slate-500">
               Ver profesional
             </Link>
+
+            {/* Chat button */}
+            <button
+              onClick={() => { onChat(); setUnreadCount(0); }}
+              className="btn btn-ghost btn-sm text-blue-600 hover:bg-blue-50 relative"
+            >
+              <ChatIcon size={13} />
+              Chat
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </button>
 
             {!preconsultaCompletada ? (
               <button onClick={onCompletarPreconsulta} className="btn btn-primary btn-sm">
@@ -1212,7 +1406,20 @@ function ReprogramarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose
 }
 
 /* ── Historial Card ──────────────────────────────────────── */
-function HistorialCard({ item }: { item: HistorialTurno }) {
+function StarDisplay({ rating, size = 13 }: { rating: number; size?: number }) {
+  return (
+    <span className="flex items-center gap-0.5">
+      {[1, 2, 3, 4, 5].map(i => (
+        <svg key={i} width={size} height={size} viewBox="0 0 24 24"
+          fill={i <= rating ? '#F59E0B' : 'none'} stroke="#F59E0B" strokeWidth="1.5">
+          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+        </svg>
+      ))}
+    </span>
+  );
+}
+
+function HistorialCard({ item, onCalificar }: { item: HistorialTurno; onCalificar: (turno: HistorialTurno) => void }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -1268,7 +1475,32 @@ function HistorialCard({ item }: { item: HistorialTurno }) {
         {/* Receta / indicaciones */}
         {item.recetaIndicacion && (
           <div className="border border-emerald-200 rounded-lg p-3 text-sm bg-emerald-50">
-            <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide mb-1.5">Receta e indicaciones</p>
+            <div className="flex items-center justify-between mb-1.5">
+              <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Receta e indicaciones</p>
+              {item.profesional && (
+                <button
+                  onClick={() => imprimirReceta({
+                    receta: item.recetaIndicacion!,
+                    profesional: {
+                      nombre: item.profesional!.nombre ?? '',
+                      apellido: item.profesional!.apellido ?? '',
+                      especialidad: item.profesional!.especialidad?.nombre ?? '',
+                      matricula: item.profesional!.matricula ?? undefined,
+                      lugarAtencion: item.profesional!.lugarAtencion ?? undefined,
+                      telefono: item.profesional!.telefono ?? undefined,
+                      fotoUrl: item.profesional!.fotoUrl ?? undefined,
+                    },
+                    paciente: null,
+                    fechaHora: item.fechaHora,
+                    modalidad: item.modalidad,
+                  })}
+                  className="flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-900 font-semibold"
+                >
+                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                  Descargar PDF
+                </button>
+              )}
+            </div>
             <p className="text-slate-700 font-medium">{item.recetaIndicacion.diagnostico}</p>
             {item.recetaIndicacion.medicamentos && (
               <p className="text-xs text-slate-600 mt-1">
@@ -1309,6 +1541,47 @@ function HistorialCard({ item }: { item: HistorialTurno }) {
         {/* Empty state */}
         {!item.evolucion && !item.recetaIndicacion && item.archivos.length === 0 && (
           <p className="text-xs text-slate-400 italic">Sin evolución clínica registrada para esta consulta.</p>
+        )}
+
+        {/* Calificación */}
+        {item.resena ? (
+          <div className="border border-amber-200 rounded-lg p-3 bg-amber-50 space-y-2">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Tu calificación</p>
+              <div className="flex items-center gap-1.5">
+                <StarDisplay rating={item.resena.rating} size={13} />
+                <span className="text-xs font-bold text-amber-700">{item.resena.rating}/5</span>
+              </div>
+            </div>
+            {item.resena.comentario && (
+              <p className="text-xs text-slate-600 italic">"{item.resena.comentario}"</p>
+            )}
+            {item.resena.respuesta && (
+              <div className="mt-2 pt-2 border-t border-amber-200">
+                <p className="text-xs font-semibold text-blue-700 mb-1">
+                  Respuesta de Dr/a. {item.profesional?.nombre} {item.profesional?.apellido}
+                  {item.resena.respondidaAt && (
+                    <span className="font-normal text-slate-400 ml-1">
+                      · {new Date(item.resena.respondidaAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+                    </span>
+                  )}
+                </p>
+                <p className="text-xs text-slate-700 leading-relaxed">{item.resena.respuesta}</p>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex justify-end">
+            <button
+              onClick={() => onCalificar(item)}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 border border-amber-200 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
+            >
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500">
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
+              </svg>
+              Calificar consulta
+            </button>
+          </div>
         )}
       </div>
     </div>

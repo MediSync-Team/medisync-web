@@ -16,7 +16,7 @@ export default function RegisterPage() {
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '',
-    rol: 'PACIENTE' as 'PROFESIONAL' | 'PACIENTE',
+    rol: 'PACIENTE' as 'PROFESIONAL' | 'PACIENTE' | 'CLINICA',
     nombre: '', apellido: '', telefono: '',
     genero: 'NO_ESPECIFICADO' as Genero,
     matricula: '', especialidadId: '', precioConsulta: '',
@@ -50,7 +50,7 @@ export default function RegisterPage() {
         bio: formData.rol === 'PROFESIONAL' ? formData.bio : undefined,
         fotoUrl: formData.rol === 'PROFESIONAL' ? formData.fotoUrl : undefined,
       });
-      router.push('/dashboard');
+      router.push(formData.rol === 'CLINICA' ? '/dashboard/clinica' : '/dashboard');
     } catch (err) {
       setError(err instanceof Error ? err.message : a.registerBtn);
     } finally {
@@ -83,28 +83,55 @@ export default function RegisterPage() {
 
             {/* Role */}
             <div>
-              <label className="field-label">{a.role}</label>
-              <div className="flex gap-6 mt-1">
-                {(['PACIENTE', 'PROFESIONAL'] as const).map(r => (
-                  <label key={r} className="flex items-center gap-2 cursor-pointer">
-                    <input type="radio" name="rol" value={r} checked={formData.rol === r} onChange={handleChange} className="accent-blue-600" />
-                    <span className="text-sm text-slate-700 dark:text-slate-300">{r === 'PACIENTE' ? a.patient : a.professional}</span>
-                  </label>
+              <label className="field-label mb-2 block">{a.role}</label>
+              <div className="grid grid-cols-3 gap-2">
+                {([
+                  { value: 'PACIENTE',     icon: '🧑‍⚕️', title: a.patient,      desc: 'Reservá turnos y accedé a tu historial' },
+                  { value: 'PROFESIONAL',  icon: '👨‍⚕️', title: a.professional,  desc: 'Gestioná tu agenda y pacientes' },
+                  { value: 'CLINICA',      icon: '🏥', title: 'Clínica',         desc: 'Administrá varios profesionales' },
+                ] as const).map(({ value, icon, title, desc }) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setFormData(f => ({ ...f, rol: value }))}
+                    className={`flex flex-col items-center text-center gap-1 p-3 rounded-xl border-2 transition-all cursor-pointer ${
+                      formData.rol === value
+                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-950'
+                        : 'border-slate-200 dark:border-slate-600 hover:border-blue-300 hover:bg-slate-50 dark:hover:bg-slate-700'
+                    }`}
+                  >
+                    <span className="text-2xl">{icon}</span>
+                    <span className={`text-xs font-semibold ${formData.rol === value ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>{title}</span>
+                    <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">{desc}</span>
+                  </button>
                 ))}
               </div>
             </div>
 
             {/* Name grid */}
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="nombre" className="field-label">{a.firstName}</label>
-                <input id="nombre" name="nombre" required value={formData.nombre} onChange={handleChange} className={inp} />
+            {formData.rol === 'CLINICA' ? (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="nombre" className="field-label">Nombre del responsable</label>
+                  <input id="nombre" name="nombre" required value={formData.nombre} onChange={handleChange} className={inp} placeholder="Juan" />
+                </div>
+                <div>
+                  <label htmlFor="apellido" className="field-label">Apellido</label>
+                  <input id="apellido" name="apellido" required value={formData.apellido} onChange={handleChange} className={inp} placeholder="García" />
+                </div>
               </div>
-              <div>
-                <label htmlFor="apellido" className="field-label">{a.lastName}</label>
-                <input id="apellido" name="apellido" required value={formData.apellido} onChange={handleChange} className={inp} />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label htmlFor="nombre" className="field-label">{a.firstName}</label>
+                  <input id="nombre" name="nombre" required value={formData.nombre} onChange={handleChange} className={inp} />
+                </div>
+                <div>
+                  <label htmlFor="apellido" className="field-label">{a.lastName}</label>
+                  <input id="apellido" name="apellido" required value={formData.apellido} onChange={handleChange} className={inp} />
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <label htmlFor="email" className="field-label">{a.email}</label>

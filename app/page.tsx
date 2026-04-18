@@ -9,6 +9,7 @@ import OnboardingTour from './components/OnboardingTour';
 import Pagination from './components/Pagination';
 import StarRating from './components/StarRating';
 import ThemeLangToggle from './components/ThemeLangToggle';
+import { OBRAS_SOCIALES } from './lib/obras-sociales';
 
 const HOME_TOUR_STEPS = [
   {
@@ -55,6 +56,7 @@ interface Filters {
   fecha: string;
   orderBy: OrderBy;
   disponibleEstaSemana: boolean;
+  obraSocial: string;
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -66,10 +68,11 @@ const EMPTY_FILTERS: Filters = {
   fecha: '',
   orderBy: '',
   disponibleEstaSemana: false,
+  obraSocial: '',
 };
 
 function activeFilterCount(f: Filters) {
-  return [f.precioMin, f.precioMax, f.modalidad, f.fecha, f.orderBy, f.disponibleEstaSemana ? 'x' : ''].filter(Boolean).length;
+  return [f.precioMin, f.precioMax, f.modalidad, f.fecha, f.orderBy, f.obraSocial, f.disponibleEstaSemana ? 'x' : ''].filter(Boolean).length;
 }
 
 export default function HomePage() {
@@ -103,6 +106,7 @@ export default function HomePage() {
       if (f.fecha) params.fecha = f.fecha;
       if (f.orderBy) params.orderBy = f.orderBy;
       if (f.disponibleEstaSemana) params.disponibleEstaSemana = 'true';
+      if (f.obraSocial) params.obraSocial = f.obraSocial.trim().toUpperCase();
 
       const data = await api.profesionales.getAll(params);
       setProfesionales(data.profesionales);
@@ -116,7 +120,19 @@ export default function HomePage() {
 
   useEffect(() => {
     api.especialidades.getAll().then(setEspecialidades).catch(() => {});
-    fetchProfesionales(EMPTY_FILTERS, 1);
+
+    // Auto-populate obra social filter if the logged-in paciente has one saved
+    const initialFilters = { ...EMPTY_FILTERS };
+    if (user?.paciente?.obraSocial) {
+      const normalised = user.paciente.obraSocial.trim().toUpperCase();
+      if (OBRAS_SOCIALES.includes(normalised)) {
+        initialFilters.obraSocial = normalised;
+      }
+    }
+
+    setFilters(initialFilters);
+    setDraft(initialFilters);
+    fetchProfesionales(initialFilters, 1);
   }, [fetchProfesionales]);
 
   const applyFilters = (f: Filters) => {
@@ -155,6 +171,7 @@ export default function HomePage() {
     ...(filters.modalidad ? [{ key: 'modalidad' as const, label: filters.modalidad === 'PRESENCIAL' ? 'Presencial' : 'Virtual' }] : []),
     ...(filters.fecha ? [{ key: 'fecha' as const, label: `Disponible el ${new Date(filters.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}` }] : []),
     ...(filters.orderBy ? [{ key: 'orderBy' as const, label: { precio_asc: 'Precio ↑', precio_desc: 'Precio ↓', nombre_asc: 'Nombre A-Z' }[filters.orderBy] }] : []),
+    ...(filters.obraSocial ? [{ key: 'obraSocial' as const, label: `🏥 ${filters.obraSocial}` }] : []),
   ];
 
   return (
@@ -372,6 +389,23 @@ export default function HomePage() {
                       <option value="nombre_asc">{h.nameAsc}</option>
                     </select>
                   </div>
+
+                  {/* Obra social */}
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+                      🏥 Obra social / prepaga
+                    </label>
+                    <select
+                      value={draft.obraSocial}
+                      onChange={(e) => setDraft({ ...draft, obraSocial: e.target.value })}
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800"
+                    >
+                      <option value="">Todas las coberturas</option>
+                      {OBRAS_SOCIALES.map((os) => (
+                        <option key={os} value={os}>{os}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 {/* Disponibilidad real esta semana */}
@@ -559,6 +593,21 @@ function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDis
         <p className="text-slate-400 dark:text-slate-500 text-xs mt-2 flex items-center gap-1 truncate">
           <span>📍</span> {prof.lugarAtencion}
         </p>
+      )}
+
+      {prof.obrasSociales && prof.obrasSociales.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {prof.obrasSociales.slice(0, 3).map((os) => (
+            <span key={os} className="inline-flex items-center px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded text-[10px] font-medium border border-emerald-100 dark:border-emerald-800">
+              {os}
+            </span>
+          ))}
+          {prof.obrasSociales.length > 3 && (
+            <span className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 rounded text-[10px]">
+              +{prof.obrasSociales.length - 3} más
+            </span>
+          )}
+        </div>
       )}
 
       {prof.bio && (

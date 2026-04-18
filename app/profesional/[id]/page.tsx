@@ -412,6 +412,20 @@ export default function ProfesionalPage() {
                 )}
               </div>
 
+              {/* Obras sociales */}
+              {profesional.obrasSociales && profesional.obrasSociales.length > 0 && (
+                <div className="mt-4 pt-4 border-t border-slate-100">
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Coberturas aceptadas</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {profesional.obrasSociales.map((os) => (
+                      <span key={os} className="inline-flex items-center px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-xs font-medium">
+                        🏥 {os}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Bio */}
               {profesional.bio && (
                 <div className="mt-4 pt-4 border-t border-slate-100">

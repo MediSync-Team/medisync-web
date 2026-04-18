@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { api, Profesional, Paciente, Genero, NotificationPreferences } from '../lib/api';
+import { OBRAS_SOCIALES } from '../lib/obras-sociales';
+import GoogleCalendarConnect from './GoogleCalendarConnect';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -35,6 +37,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const [obrasSociales, setObrasSociales] = useState<string[]>([]);
   const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences | null>(null);
   const [savingNotif, setSavingNotif] = useState(false);
   const [notifMsg, setNotifMsg] = useState('');
@@ -70,6 +73,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
           obraSocial: '',
           fotoUrl: user.profesional.fotoUrl || '',
         });
+        setObrasSociales(user.profesional.obrasSociales ?? []);
       } else if (userType === 'paciente' && user.paciente) {
         setFormData({
           nombre: user.paciente.nombre || '',
@@ -167,7 +171,8 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
           lugarAtencion: formData.lugarAtencion || undefined,
           bio: formData.bio || undefined,
           fotoUrl: formData.fotoUrl || undefined,
-        });
+          obrasSociales,
+        } as any);
       } else if (userType === 'paciente' && user.paciente) {
         await api.pacientes.updatePerfil({
           nombre: formData.nombre,
@@ -350,6 +355,40 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   placeholder="Breve descripción profesional..."
                 />
               </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Obras sociales / prepagas aceptadas
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Seleccioná las coberturas que aceptás. Los pacientes podrán filtrar por su obra social.
+                </p>
+                <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                  {OBRAS_SOCIALES.map((os) => {
+                    const checked = obrasSociales.includes(os);
+                    return (
+                      <label key={os} className="flex items-center gap-2.5 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => setObrasSociales(
+                            checked
+                              ? obrasSociales.filter((o) => o !== os)
+                              : [...obrasSociales, os]
+                          )}
+                          className="w-4 h-4 accent-blue-600 shrink-0"
+                        />
+                        <span className="text-sm text-gray-700">{os}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {obrasSociales.length > 0 && (
+                  <p className="text-xs text-blue-600 mt-1.5 font-medium">
+                    {obrasSociales.length} cobertura{obrasSociales.length > 1 ? 's' : ''} seleccionada{obrasSociales.length > 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
             </>
           )}
 
@@ -476,6 +515,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   {sendingTest ? '...' : '💬'}
                 </button>
               </div>
+            </div>
+          )}
+
+          {userType === 'profesional' && (
+            <div className="pt-4 border-t border-gray-200">
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">Integraciones</h3>
+              <GoogleCalendarConnect />
             </div>
           )}
 

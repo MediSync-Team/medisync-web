@@ -2,12 +2,12 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, AdminStats, AdminUsuario, AdminProfesional, AdminTurno, Especialidad } from '../../lib/api';
+import { api, AdminStats, AdminAnalytics, AdminUsuario, AdminProfesional, AdminTurno, Especialidad } from '../../lib/api';
 import Pagination from '../../components/Pagination';
 import StarRating from '../../components/StarRating';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 
-type Tab = 'stats' | 'usuarios' | 'profesionales' | 'turnos' | 'especialidades';
+type Tab = 'stats' | 'revenue' | 'usuarios' | 'profesionales' | 'turnos' | 'especialidades';
 
 const ESTADO_COLORS: Record<string, string> = {
   RESERVADO:   'bg-blue-100 text-blue-700',
@@ -65,6 +65,7 @@ export default function AdminPage() {
           <nav className="space-y-1">
             {([
               ['stats',          'Métricas',        'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z'],
+              ['revenue',        'Revenue',         'M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
               ['usuarios',       'Usuarios',        'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'],
               ['profesionales',  'Profesionales',   'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z'],
               ['turnos',         'Turnos',          'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z'],
@@ -89,11 +90,148 @@ export default function AdminPage() {
         {/* Main */}
         <main className="flex-1 p-6">
           {tab === 'stats'          && <StatsTab />}
+          {tab === 'revenue'        && <RevenueTab />}
           {tab === 'usuarios'       && <UsuariosTab />}
           {tab === 'profesionales'  && <ProfesionalesTab />}
           {tab === 'turnos'         && <TurnosTab />}
           {tab === 'especialidades' && <EspecialidadesTab />}
         </main>
+      </div>
+    </div>
+  );
+}
+
+// ── Revenue Tab ──────────────────────────────────────────────────────────────
+function RevenueTab() {
+  const [data, setData] = useState<AdminAnalytics | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    api.admin.getAnalytics().then(setData).finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return <div className="text-slate-400 text-sm">Cargando analytics...</div>;
+  if (!data) return <div className="text-red-500 text-sm">Error al cargar analytics.</div>;
+
+  const maxRevenue = Math.max(...data.revenueByMonth.map(d => d.revenue), 1);
+  const maxTurnos = Math.max(...data.turnosByMonth.map(d => d.count), 1);
+  const maxEsp = Math.max(...data.turnosPorEspecialidad.map(d => d.count), 1);
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-xl font-bold text-slate-800 dark:text-slate-100">Revenue & Analytics</h1>
+
+      {/* KPI cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { label: 'Revenue total', value: `$${data.revenueTotal.toLocaleString('es-AR')}`, color: 'emerald' },
+          { label: 'Comisiones (5%)', value: `$${data.comisionesTotal.toLocaleString('es-AR')}`, color: 'blue' },
+          { label: 'Tasa completado', value: `${data.tasaCompletado.toFixed(1)}%`, color: 'indigo' },
+          { label: 'Tasa cancelación', value: `${data.tasaCancelacion.toFixed(1)}%`, color: 'red' },
+        ].map(c => {
+          const colorMap: Record<string, string> = {
+            emerald: 'bg-emerald-50 border-emerald-200 text-emerald-700',
+            blue: 'bg-blue-50 border-blue-200 text-blue-700',
+            indigo: 'bg-indigo-50 border-indigo-200 text-indigo-700',
+            red: 'bg-red-50 border-red-200 text-red-700',
+          };
+          return (
+            <div key={c.label} className={`border rounded-xl p-5 ${colorMap[c.color]}`}>
+              <p className="text-xs font-medium opacity-70">{c.label}</p>
+              <p className="text-2xl font-bold mt-1">{c.value}</p>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Monthly revenue chart */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4">Revenue mensual (últimos 12 meses)</h2>
+        <div className="flex items-end gap-1 h-40">
+          {data.revenueByMonth.map(d => (
+            <div key={d.month} className="flex-1 flex flex-col items-center gap-1 group">
+              <div className="relative w-full">
+                <div
+                  className="w-full bg-emerald-500 rounded-t transition-all group-hover:bg-emerald-600"
+                  style={{ height: `${Math.max((d.revenue / maxRevenue) * 128, d.revenue > 0 ? 4 : 0)}px` }}
+                />
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 text-white text-xs rounded px-1.5 py-0.5 whitespace-nowrap z-10">
+                  ${d.revenue.toLocaleString('es-AR')}
+                </div>
+              </div>
+              <span className="text-[10px] text-slate-400 rotate-45 origin-left translate-x-2 whitespace-nowrap">{d.month}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Monthly turnos chart */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4">Turnos mensuales (últimos 12 meses)</h2>
+        <div className="flex items-end gap-1 h-32">
+          {data.turnosByMonth.map(d => (
+            <div key={d.month} className="flex-1 flex flex-col items-center gap-1 group">
+              <div className="relative w-full">
+                <div
+                  className="w-full bg-blue-400 rounded-t transition-all group-hover:bg-blue-500"
+                  style={{ height: `${Math.max((d.count / maxTurnos) * 104, d.count > 0 ? 4 : 0)}px` }}
+                />
+                <div className="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 text-white text-xs rounded px-1.5 py-0.5 whitespace-nowrap z-10">
+                  {d.count} turnos
+                </div>
+              </div>
+              <span className="text-[10px] text-slate-400 rotate-45 origin-left translate-x-2 whitespace-nowrap">{d.month}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Turnos por especialidad */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+        <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4">Turnos por especialidad</h2>
+        <div className="space-y-3">
+          {data.turnosPorEspecialidad.map(d => (
+            <div key={d.especialidad} className="flex items-center gap-3">
+              <span className="text-sm text-slate-600 dark:text-slate-300 w-40 truncate flex-shrink-0">{d.especialidad}</span>
+              <div className="flex-1 bg-slate-100 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
+                <div
+                  className="h-full bg-indigo-500 rounded-full"
+                  style={{ width: `${(d.count / maxEsp) * 100}%` }}
+                />
+              </div>
+              <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 w-10 text-right">{d.count}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Top profesionales */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+          <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">Top 10 profesionales</h2>
+        </div>
+        <table className="w-full text-sm">
+          <thead className="bg-slate-50 dark:bg-slate-700/50 text-slate-500 dark:text-slate-400 text-xs uppercase">
+            <tr>
+              <th className="text-left px-5 py-3">#</th>
+              <th className="text-left px-5 py-3">Profesional</th>
+              <th className="text-left px-5 py-3">Especialidad</th>
+              <th className="text-right px-5 py-3">Completados</th>
+              <th className="text-right px-5 py-3">Revenue generado</th>
+            </tr>
+          </thead>
+          <tbody>
+            {data.topProfesionales.map((p, i) => (
+              <tr key={p.id} className="border-t border-slate-100 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                <td className="px-5 py-3 text-slate-400 font-mono text-xs">#{i + 1}</td>
+                <td className="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{p.nombre} {p.apellido}</td>
+                <td className="px-5 py-3 text-slate-500 dark:text-slate-400">{p.especialidad}</td>
+                <td className="px-5 py-3 text-right text-slate-700 dark:text-slate-200">{p.completados}</td>
+                <td className="px-5 py-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">${p.revenue.toLocaleString('es-AR')}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

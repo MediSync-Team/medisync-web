@@ -60,6 +60,7 @@ export const api = {
       modalidad?: 'PRESENCIAL' | 'VIRTUAL';
       fecha?: string;
       disponibleEstaSemana?: string;
+      obraSocial?: string;
       orderBy?: 'precio_asc' | 'precio_desc' | 'nombre_asc';
       page?: string;
       limit?: string;
@@ -178,6 +179,7 @@ export const api = {
   },
   admin: {
     getStats: () => fetchApi<AdminStats>('/admin/stats'),
+    getAnalytics: () => fetchApi<AdminAnalytics>('/admin/analytics'),
     getUsuarios: (params?: { page?: number; limit?: number; search?: string }) => {
       const q = params ? '?' + new URLSearchParams(Object.fromEntries(Object.entries(params).filter(([,v]) => v !== undefined).map(([k,v]) => [k, String(v)]))).toString() : '';
       return fetchApi<{ usuarios: AdminUsuario[]; pagination: PaginationMeta }>(`/admin/usuarios${q}`);
@@ -237,6 +239,36 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({ canal }),
       }),
+    getVapidKey: () =>
+      fetchApi<{ publicKey: string }>('/notifications/push/vapid-key'),
+    subscribePush: (data: { endpoint: string; keys: { p256dh: string; auth: string }; userAgent?: string }) =>
+      fetchApi<{ subscribed: boolean; id: string }>('/notifications/push/subscribe', {
+        method: 'POST',
+        body: JSON.stringify(data),
+      }),
+    unsubscribePush: (data: { endpoint: string }) =>
+      fetchApi<{ unsubscribed: boolean }>('/notifications/push/subscribe', {
+        method: 'DELETE',
+        body: JSON.stringify(data),
+      }),
+    testPush: () =>
+      fetchApi<{ ok: boolean }>('/notifications/push/test', { method: 'POST' }),
+  },
+  chat: {
+    getMensajes: (turnoId: string) =>
+      fetchApi<ChatMensaje[]>(`/chat/${turnoId}`),
+    enviar: (turnoId: string, contenido: string) =>
+      fetchApi<ChatMensaje>(`/chat/${turnoId}`, {
+        method: 'POST',
+        body: JSON.stringify({ contenido }),
+      }),
+    getUnread: (turnoId: string) =>
+      fetchApi<{ count: number }>(`/chat/${turnoId}/unread`),
+  },
+  google: {
+    getStatus: () => fetchApi<{ connected: boolean }>('/google/status'),
+    getAuthUrl: () => fetchApi<{ url: string }>('/google/auth-url'),
+    disconnect: () => fetchApi<{ disconnected: boolean }>('/google/disconnect', { method: 'DELETE' }),
   },
 };
 
@@ -248,7 +280,7 @@ export type LoginData = {
 export type RegisterData = {
   email: string;
   password: string;
-  rol: 'PROFESIONAL' | 'PACIENTE';
+  rol: 'PROFESIONAL' | 'PACIENTE' | 'CLINICA';
   nombre: string;
   apellido: string;
   telefono?: string;
@@ -266,7 +298,7 @@ export type AuthResponse = {
   user: {
     id: string;
     email: string;
-    rol: 'PROFESIONAL' | 'PACIENTE' | 'ADMIN';
+    rol: 'PROFESIONAL' | 'PACIENTE' | 'ADMIN' | 'CLINICA';
     perfil?: Profesional | Paciente;
   };
 };
@@ -274,9 +306,10 @@ export type AuthResponse = {
 export type User = {
   id: string;
   email: string;
-  rol: 'PROFESIONAL' | 'PACIENTE' | 'ADMIN';
+  rol: 'PROFESIONAL' | 'PACIENTE' | 'ADMIN' | 'CLINICA';
   profesional?: Profesional;
   paciente?: Paciente;
+  clinica?: Clinica;
 };
 
 export type Especialidad = {
@@ -298,7 +331,10 @@ export type Profesional = {
   matricula?: string;
   bio?: string;
   lugarAtencion?: string;
+  obrasSociales?: string[];
   fotoUrl?: string;
+  activo?: boolean;
+  clinicaId?: string | null;
   especialidad: Especialidad;
   disponibilidades?: Disponibilidad[];
   ratingPromedio?: number | null;
@@ -452,6 +488,7 @@ export type PreconsultaTurno = {
   flags: string[] | null;
   resumen: string | null;
   completadaAt: string | null;
+  aiGenerated?: boolean;
 };
 
 export type RecetaIndicacion = {
@@ -536,6 +573,7 @@ export type HistorialTurno = Turno & {
   evolucion: Evolucion | null;
   recetaIndicacion: RecetaIndicacion | null;
   archivos: ArchivoTurno[];
+  resena: Resena | null;
 };
 
 export type HistorialPaginatedResponse = {
@@ -572,6 +610,26 @@ export type AdminStats = {
   registrosUltimos30: number;
 };
 
+export type ChatMensaje = {
+  id: string;
+  turnoId: string;
+  remitenteId: string;
+  contenido: string;
+  leidoAt: string | null;
+  createdAt: string;
+};
+
+export type AdminAnalytics = {
+  revenueByMonth: { month: string; revenue: number }[];
+  turnosByMonth: { month: string; count: number }[];
+  turnosPorEspecialidad: { especialidad: string; count: number }[];
+  topProfesionales: { id: string; nombre: string; apellido: string; especialidad: string; completados: number; revenue: number }[];
+  revenueTotal: number;
+  comisionesTotal: number;
+  tasaCompletado: number;
+  tasaCancelacion: number;
+};
+
 export type AdminUsuario = {
   id: string;
   email: string;
@@ -606,6 +664,12 @@ export type NotificationPreferences = {
   notifWhatsapp: boolean;
   notifRecordatorio24h?: boolean;
   notifRecordatorio2h?: boolean;
+  // Push per-event (all roles, stored on Usuario)
+  pushTurno?: boolean;
+  pushCancelacion?: boolean;
+  pushRecordatorio?: boolean;
+  pushReceta?: boolean;
+  pushChat?: boolean;
 };
 
 export type PagoItem = {
@@ -660,4 +724,91 @@ export const notificationsApi = {
   getInbox: () => fetchApi<{ notifs: InAppNotification[]; unread: number }>('/notifications/inbox'),
   markRead: (id: string) => fetchApi<InAppNotification>(`/notifications/${id}/read`, { method: 'PATCH' }),
   markAllRead: () => fetchApi<{ marked: number }>('/notifications/read-all', { method: 'PATCH' }),
+};
+
+// ── Clínicas ───────────────────────────────────────────────────────────────
+
+export type Clinica = {
+  id: string;
+  usuarioId: string;
+  nombre: string;
+  descripcion: string | null;
+  logoUrl: string | null;
+  direccion: string | null;
+  telefono: string | null;
+  website: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ClinicaConRelaciones = Clinica & {
+  profesionales: (Profesional & {
+    disponibilidades: { id: string; diaSemana: number; horaInicio: string; horaFin: string; modalidad: string; activo: boolean }[];
+  })[];
+  invitaciones: InvitacionClinica[];
+};
+
+export type InvitacionClinica = {
+  id: string;
+  clinicaId: string;
+  email: string;
+  token: string;
+  estado: 'PENDIENTE' | 'ACEPTADA' | 'RECHAZADA' | 'EXPIRADA';
+  expiresAt: string;
+  createdAt: string;
+};
+
+export type ClinicaStats = {
+  turnosHoy: number;
+  turnosMes: number;
+  cancelacionesMes: number;
+  ingresosMes: number;
+  profesionalesActivos: number;
+};
+
+export type ClinicaAgendaTurno = {
+  id: string;
+  fechaHora: string;
+  modalidad: 'PRESENCIAL' | 'VIRTUAL';
+  estado: string;
+  profesional: { id: string; nombre: string; apellido: string; fotoUrl: string | null; especialidad: { nombre: string } };
+  paciente: { id: string; nombre: string; apellido: string; email: string } | null;
+};
+
+export const clinicasApi = {
+  getMe: () =>
+    fetchApi<ClinicaConRelaciones>('/clinicas/me'),
+
+  updateMe: (data: Partial<Pick<Clinica, 'nombre' | 'descripcion' | 'logoUrl' | 'direccion' | 'telefono' | 'website'>>) =>
+    fetchApi<Clinica>('/clinicas/me', { method: 'PUT', body: JSON.stringify(data) }),
+
+  getStats: () =>
+    fetchApi<ClinicaStats>('/clinicas/me/stats'),
+
+  getAgenda: (fecha?: string) =>
+    fetchApi<ClinicaAgendaTurno[]>(`/clinicas/me/agenda${fecha ? `?fecha=${fecha}` : ''}`),
+
+  invitar: (email: string) =>
+    fetchApi<{ id: string; email: string; expiresAt: string }>('/clinicas/me/invitar', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  getInvitaciones: () =>
+    fetchApi<InvitacionClinica[]>('/clinicas/me/invitaciones'),
+
+  cancelarInvitacion: (id: string) =>
+    fetchApi<{ cancelled: boolean }>(`/clinicas/me/invitaciones/${id}`, { method: 'DELETE' }),
+
+  removerProfesional: (profId: string) =>
+    fetchApi<{ removed: boolean }>(`/clinicas/me/profesionales/${profId}`, { method: 'DELETE' }),
+
+  getInvitacion: (token: string) =>
+    fetchApi<InvitacionClinica & { clinica: Pick<Clinica, 'nombre' | 'descripcion' | 'logoUrl' | 'direccion'> }>(`/clinicas/invitaciones/${token}`),
+
+  aceptarInvitacion: (token: string) =>
+    fetchApi<{ accepted: boolean; clinica: string }>(`/clinicas/invitaciones/${token}/aceptar`, { method: 'POST' }),
+
+  rechazarInvitacion: (token: string) =>
+    fetchApi<{ rejected: boolean }>(`/clinicas/invitaciones/${token}/rechazar`, { method: 'POST' }),
 };

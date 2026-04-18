@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse, Resena, ResenasStats } from '../lib/api';
+import ChatModal from '../components/ChatModal';
 import StarRating from '../components/StarRating';
 import StatsPanel from '../components/StatsPanel';
 import ProfileModal from '../components/ProfileModal';
@@ -18,7 +19,7 @@ import { exportarHistoriaClinicaPDF } from '../lib/historia-clinica-pdf';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, ChartIcon, TrashIcon, ClipboardIcon, PaperclipIcon,
-  XIcon, CheckIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon,
+  XIcon, CheckIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon, ChatIcon,
 } from '../components/icons';
 import { DIAS_SEMANA, estadoBadge, clinicalRiskBadge } from '../lib/utils';
 
@@ -94,6 +95,7 @@ export default function ProfesionalDashboard() {
   useEffect(() => {
     if (!authLoading && !user) { router.push('/login'); return; }
     if (!authLoading && user?.rol === 'ADMIN') { router.push('/dashboard/admin'); return; }
+    if (!authLoading && user?.rol === 'CLINICA') { router.push('/dashboard/clinica'); return; }
     if (!authLoading && user?.paciente) { router.push('/dashboard/paciente'); return; }
     if (user?.profesional) { loadData(true); loadRecordatorios(); }
   }, [user, authLoading, router]);
@@ -426,16 +428,19 @@ export default function ProfesionalDashboard() {
               />
             )}
             {activeTab === 'disponibilidad' && (
-              <DisponibilidadView
-                disponibilidades={disponibilidades}
-                nuevaDisp={nuevaDisp}
-                setNuevaDisp={setNuevaDisp}
-                onAgregar={handleAgregarDisponibilidad}
-                onEliminar={handleEliminarDisponibilidad}
-                bloqueos={bloqueos}
-                loadingBloqueos={loadingBloqueos}
-                onReloadBloqueos={loadBloqueos}
-              />
+              <>
+                <DisponibilidadView
+                  disponibilidades={disponibilidades}
+                  nuevaDisp={nuevaDisp}
+                  setNuevaDisp={setNuevaDisp}
+                  onAgregar={handleAgregarDisponibilidad}
+                  onEliminar={handleEliminarDisponibilidad}
+                  bloqueos={bloqueos}
+                  loadingBloqueos={loadingBloqueos}
+                  onReloadBloqueos={loadBloqueos}
+                />
+                <EmbedWidgetSection profesionalId={user.profesional!.id} />
+              </>
             )}
             {activeTab === 'stats' && (
               <div>
@@ -998,12 +1003,21 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
   const [shareText, setShareText] = useState('');
   const [modalNotice, setModalNotice] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
   const [showVideoCall, setShowVideoCall] = useState(false);
+  const [showChat, setShowChat] = useState(false);
   const [showReprogramar, setShowReprogramar] = useState(false);
   const [reprogramarFecha, setReprogramarFecha] = useState('');
   const [reprogramarSlots, setReprogramarSlots] = useState<{ hora: string; disponible: boolean }[]>([]);
   const [reprogramarHora, setReprogramarHora] = useState('');
   const [cargandoSlots, setCargandoSlots] = useState(false);
   const [reprogramando, setReprogramando] = useState(false);
+  const [unreadChat, setUnreadChat] = useState(0);
+  const { user: authUser } = useAuth();
+
+  useEffect(() => {
+    if (turno.estado !== 'CANCELADO') {
+      api.chat.getUnread(turno.id).then(d => setUnreadChat(d.count)).catch(() => {});
+    }
+  }, [turno.id, turno.estado]);
 
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
@@ -1367,6 +1381,22 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
             </div>
           </div>
 
+          {/* Chat pre-turno */}
+          {turno.estado !== 'CANCELADO' && turno.paciente && (
+            <button
+              onClick={() => { setShowChat(true); setUnreadChat(0); }}
+              className="w-full flex items-center justify-center gap-2 py-2.5 border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-medium transition-colors relative"
+            >
+              <ChatIcon size={15} />
+              Chat con {turno.paciente.nombre} {turno.paciente.apellido}
+              {unreadChat > 0 && (
+                <span className="ml-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {unreadChat} nuevo{unreadChat !== 1 ? 's' : ''}
+                </span>
+              )}
+            </button>
+          )}
+
           {/* Evolución clínica */}
           <div className="border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
@@ -1379,32 +1409,74 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
               <p className="text-sm text-slate-500">El paciente aun no completo el cuestionario preconsulta.</p>
             ) : (
               <div className="space-y-2.5 text-sm">
-                <div className="flex items-center justify-between gap-2">
-                  <p className="font-medium text-slate-700">Completado {new Date(preconsulta.completadaAt).toLocaleString('es-AR')}</p>
-                  <span className={`badge ${preconsultaRiskClass(preconsulta.riesgo)}`}>Riesgo {preconsulta.riesgo}</span>
+                {/* Header row: timestamp + risk badge */}
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="font-medium text-slate-700 text-xs">
+                    Completado {new Date(preconsulta.completadaAt).toLocaleString('es-AR')}
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    {preconsulta.aiGenerated && (
+                      <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-600 border border-violet-200 font-medium">
+                        <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
+                        IA
+                      </span>
+                    )}
+                    <span className={`badge ${preconsultaRiskClass(preconsulta.riesgo)}`}>
+                      Riesgo {preconsulta.riesgo}
+                    </span>
+                  </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+
+                {/* AI-generated summary — highlighted box */}
+                {preconsulta.resumen && (
+                  <div className={`rounded-lg border p-3 ${preconsulta.aiGenerated ? 'bg-violet-50 border-violet-200' : 'bg-slate-50 border-slate-200'}`}>
+                    <p className={`text-xs font-semibold mb-1 ${preconsulta.aiGenerated ? 'text-violet-700' : 'text-slate-600'}`}>
+                      {preconsulta.aiGenerated ? '✦ Resumen generado por IA' : 'Resumen'}
+                    </p>
+                    <p className={`text-sm leading-relaxed ${preconsulta.aiGenerated ? 'text-violet-900' : 'text-slate-700'}`}>
+                      {preconsulta.resumen}
+                    </p>
+                  </div>
+                )}
+
+                {/* Scales */}
+                <div className="grid grid-cols-2 gap-2">
                   <div className="bg-slate-50 rounded-lg border border-slate-200 p-2.5">
                     <p className="text-xs text-slate-500 mb-1">Dolor</p>
-                    <p className="font-semibold text-slate-800">{preconsulta.escalaDolor}/10</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-slate-800">{preconsulta.escalaDolor}/10</p>
+                      <div className="flex-1 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div className={`h-full rounded-full ${(preconsulta.escalaDolor ?? 0) >= 8 ? 'bg-red-500' : (preconsulta.escalaDolor ?? 0) >= 5 ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                             style={{ width: `${((preconsulta.escalaDolor ?? 0) / 10) * 100}%` }} />
+                      </div>
+                    </div>
                   </div>
                   <div className="bg-slate-50 rounded-lg border border-slate-200 p-2.5">
                     <p className="text-xs text-slate-500 mb-1">Ansiedad</p>
-                    <p className="font-semibold text-slate-800">{preconsulta.escalaAnsiedad}/10</p>
+                    <div className="flex items-center gap-2">
+                      <p className="font-semibold text-slate-800">{preconsulta.escalaAnsiedad}/10</p>
+                      <div className="flex-1 bg-slate-200 rounded-full h-1.5 overflow-hidden">
+                        <div className={`h-full rounded-full ${(preconsulta.escalaAnsiedad ?? 0) >= 8 ? 'bg-red-500' : (preconsulta.escalaAnsiedad ?? 0) >= 5 ? 'bg-amber-400' : 'bg-emerald-400'}`}
+                             style={{ width: `${((preconsulta.escalaAnsiedad ?? 0) / 10) * 100}%` }} />
+                      </div>
+                    </div>
                   </div>
                 </div>
+
                 <p><span className="font-medium text-slate-700">Motivo:</span> <span className="text-slate-600">{preconsulta.motivo}</span></p>
-                <p><span className="font-medium text-slate-700">Sintomas:</span> <span className="text-slate-600">{preconsulta.sintomas}</span></p>
+                <p><span className="font-medium text-slate-700">Síntomas:</span> <span className="text-slate-600">{preconsulta.sintomas}</span></p>
                 {preconsulta.inicioSintomas && (
-                  <p><span className="font-medium text-slate-700">Inicio sintomas:</span> <span className="text-slate-600">{preconsulta.inicioSintomas}</span></p>
+                  <p><span className="font-medium text-slate-700">Inicio síntomas:</span> <span className="text-slate-600">{preconsulta.inicioSintomas}</span></p>
                 )}
                 {typeof preconsulta.temperatura === 'number' && (
-                  <p><span className="font-medium text-slate-700">Temperatura:</span> <span className="text-slate-600">{preconsulta.temperatura.toFixed(1)} C</span></p>
+                  <p><span className="font-medium text-slate-700">Temperatura:</span> <span className="text-slate-600">{preconsulta.temperatura.toFixed(1)} °C</span></p>
                 )}
                 {preconsulta.flags && preconsulta.flags.length > 0 && (
                   <div>
-                    <p className="font-medium text-slate-700">Alertas detectadas</p>
-                    <div className="flex flex-wrap gap-1.5 mt-1">
+                    <p className="font-medium text-slate-700 mb-1">
+                      {preconsulta.aiGenerated ? '✦ Alertas identificadas por IA' : 'Alertas detectadas'}
+                    </p>
+                    <div className="flex flex-wrap gap-1.5">
                       {preconsulta.flags.map((flag) => (
                         <span key={flag} className="badge badge-red">{flag}</span>
                       ))}
@@ -1858,6 +1930,15 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
         onClose={() => setShowVideoCall(false)}
       />
     )}
+
+    {showChat && authUser && turno.paciente && (
+      <ChatModal
+        turnoId={turno.id}
+        myUserId={authUser.id}
+        otherName={`${turno.paciente.nombre} ${turno.paciente.apellido}`}
+        onClose={() => setShowChat(false)}
+      />
+    )}
     </>
   );
 }
@@ -1909,6 +1990,44 @@ function PagosView() {
     const f = { desde: '', hasta: '', estado: 'TODOS' };
     setApplied(f);
     load(1, f);
+  };
+
+  const [exporting, setExporting] = useState(false);
+  const exportarCSV = async () => {
+    setExporting(true);
+    try {
+      const res = await api.profesional.getPagos({
+        desde: applied.desde || undefined,
+        hasta: applied.hasta || undefined,
+        estado: applied.estado !== 'TODOS' ? applied.estado : undefined,
+        page: 1,
+        limit: 1000,
+      });
+      const rows = [
+        ['Fecha pago', 'Fecha turno', 'Paciente', 'Email', 'Modalidad', 'Monto bruto', 'Comisión %', 'Monto neto', 'Estado', 'ID pago MP'],
+        ...res.pagos.map(p => [
+          new Date(p.createdAt).toLocaleDateString('es-AR'),
+          new Date(p.turno.fechaHora).toLocaleDateString('es-AR') + ' ' + new Date(p.turno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+          p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : 'Sin cuenta',
+          p.turno.paciente?.email ?? '',
+          p.turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial',
+          p.monto.toFixed(2),
+          p.comisionPorcentaje.toFixed(1),
+          p.montoNeto.toFixed(2),
+          p.estado,
+          p.mpPaymentId ?? '',
+        ]),
+      ];
+      const csv = rows.map(r => r.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')).join('\n');
+      const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `pagos-medisync-${applied.desde || 'todos'}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { console.error(e); }
+    finally { setExporting(false); }
   };
 
   const fmt = (n: number) =>
@@ -2005,9 +2124,17 @@ function PagosView() {
             <option value="RECHAZADO">Rechazado</option>
           </select>
         </div>
-        <div className="flex gap-2 mt-4 sm:mt-0">
+        <div className="flex gap-2 mt-4 sm:mt-0 flex-wrap">
           <button onClick={applyFilters} className="btn btn-primary text-sm">Filtrar</button>
           <button onClick={clearFilters} className="btn btn-ghost text-sm text-slate-500">Limpiar</button>
+          <button
+            onClick={exportarCSV}
+            disabled={exporting || !data || data.pagos.length === 0}
+            className="btn btn-ghost text-sm text-emerald-700 border border-emerald-200 hover:bg-emerald-50 disabled:opacity-40 flex items-center gap-1.5"
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            {exporting ? 'Exportando...' : 'Exportar CSV'}
+          </button>
         </div>
       </div>
 
@@ -2396,6 +2523,212 @@ function ResenasView() {
           >Siguientes →</button>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Embed Widget Section ────────────────────────────────── */
+type EmbedPlatform = 'html' | 'wordpress' | 'wix' | 'webflow';
+
+function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
+  const [copied, setCopied]         = useState<string | null>(null);
+  const [preview, setPreview]       = useState(false);
+  const [platform, setPlatform]     = useState<EmbedPlatform>('html');
+  const [iframeHeight, setIframeHeight] = useState(600);
+
+  const origin     = typeof window !== 'undefined' ? window.location.origin : 'https://medisync-web.medisync.workers.dev';
+  const widgetUrl  = `${origin}/widget/${profesionalId}`;
+
+  const iframeSnippet = `<iframe
+  src="${widgetUrl}"
+  width="460"
+  height="${iframeHeight}"
+  frameborder="0"
+  style="border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 4px 24px rgba(0,0,0,.08);"
+  title="Reservar turno"
+></iframe>`;
+
+  const PLATFORM_SNIPPETS: Record<EmbedPlatform, { label: string; code: string; instructions: string[] }> = {
+    html: {
+      label: 'HTML',
+      code: iframeSnippet,
+      instructions: [
+        'Pegá el código en cualquier archivo .html donde quieras mostrar el widget.',
+        'Podés cambiar width y height según el espacio disponible.',
+        'Funciona en cualquier servidor estático (GitHub Pages, Netlify, etc.).',
+      ],
+    },
+    wordpress: {
+      label: 'WordPress',
+      code: iframeSnippet,
+      instructions: [
+        'En el editor de bloques, agregá un bloque "HTML personalizado".',
+        'Pegá el código dentro del bloque y guardá.',
+        'También funciona con Elementor o Divi usando el widget de HTML.',
+      ],
+    },
+    wix: {
+      label: 'Wix',
+      code: widgetUrl,
+      instructions: [
+        'En el editor de Wix, hacé clic en "+ Agregar" → "Más" → "HTML iframe".',
+        'Hacé clic en "Ingresar código" y pegá este snippet:',
+        `<iframe src="${widgetUrl}" width="460" height="${iframeHeight}" frameborder="0" style="border-radius:16px"></iframe>`,
+        'O usá el modo "URL" y pegá la URL directa del widget.',
+      ],
+    },
+    webflow: {
+      label: 'Webflow',
+      code: iframeSnippet,
+      instructions: [
+        'En el Designer, arrastrá un componente "Embed" desde el panel izquierdo.',
+        'Pegá el código HTML y hacé clic en "Save & Close".',
+        'Publicá tu proyecto para que los cambios se vean en vivo.',
+      ],
+    },
+  };
+
+  const current = PLATFORM_SNIPPETS[platform];
+
+  const copyText = (text: string, key: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+      setCopied(key);
+      setTimeout(() => setCopied(null), 2500);
+    });
+  };
+
+  return (
+    <div className="mt-6 border border-slate-200 rounded-2xl overflow-hidden">
+      {/* Header */}
+      <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
+        <div>
+          <p className="font-semibold text-slate-800 text-sm flex items-center gap-2">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
+            </svg>
+            Agenda embebible para tu sitio web
+          </p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Tus pacientes reservan turno sin salir de tu sitio.
+          </p>
+        </div>
+        <button
+          onClick={() => setPreview(p => !p)}
+          className="btn btn-secondary btn-sm shrink-0"
+        >
+          {preview ? 'Ocultar preview' : 'Ver preview'}
+        </button>
+      </div>
+
+      <div className="p-5 space-y-5">
+        {/* Direct link + copy URL */}
+        <div className="flex items-center gap-3 p-3 bg-blue-50 rounded-xl border border-blue-100">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+            <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
+          </svg>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-semibold text-blue-800">URL del widget</p>
+            <p className="text-xs text-blue-700 truncate mt-0.5">{widgetUrl}</p>
+          </div>
+          <button
+            onClick={() => copyText(widgetUrl, 'url')}
+            className={`btn btn-sm shrink-0 transition-all ${copied === 'url' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'btn-secondary'}`}
+          >
+            {copied === 'url' ? '✓ Copiada' : 'Copiar URL'}
+          </button>
+          <a href={widgetUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm shrink-0">
+            Abrir
+          </a>
+        </div>
+
+        {/* Height customizer */}
+        <div className="flex items-center gap-3">
+          <label className="text-xs font-semibold text-slate-600 whitespace-nowrap">Alto del iframe</label>
+          <input
+            type="range" min={480} max={800} step={20}
+            value={iframeHeight}
+            onChange={e => setIframeHeight(Number(e.target.value))}
+            className="flex-1 accent-blue-600"
+          />
+          <span className="text-xs font-mono text-slate-500 w-12 text-right">{iframeHeight}px</span>
+        </div>
+
+        {/* Platform tabs */}
+        <div>
+          <div className="flex gap-1 mb-3 bg-slate-100 rounded-xl p-1">
+            {(Object.keys(PLATFORM_SNIPPETS) as EmbedPlatform[]).map(p => (
+              <button
+                key={p}
+                onClick={() => setPlatform(p)}
+                className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+                  platform === p ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                {PLATFORM_SNIPPETS[p].label}
+              </button>
+            ))}
+          </div>
+
+          {/* Code block */}
+          <div className="relative">
+            <pre className="bg-slate-900 text-emerald-400 text-xs rounded-xl p-4 overflow-x-auto leading-relaxed whitespace-pre-wrap break-all select-all">
+{current.code}
+            </pre>
+            <button
+              onClick={() => copyText(current.code, 'snippet')}
+              className={`absolute top-2.5 right-2.5 px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                copied === 'snippet'
+                  ? 'bg-emerald-500 text-white'
+                  : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
+              }`}
+            >
+              {copied === 'snippet' ? '✓ Copiado' : 'Copiar'}
+            </button>
+          </div>
+
+          {/* Platform-specific instructions */}
+          <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
+            <p className="text-xs font-semibold text-amber-800 mb-1.5">
+              Instrucciones para {current.label}
+            </p>
+            <ol className="text-xs text-amber-700 space-y-1 list-decimal list-inside">
+              {current.instructions.map((inst, i) => (
+                <li key={i}>{inst}</li>
+              ))}
+            </ol>
+          </div>
+        </div>
+
+        {/* Feature highlights */}
+        <div className="grid grid-cols-3 gap-2 text-xs text-center text-slate-500">
+          {[
+            { icon: '🔄', text: 'Sincroniza con tu agenda' },
+            { icon: '📱', text: 'Responsive en móvil' },
+            { icon: '🔒', text: 'Sin registro del paciente' },
+          ].map(({ icon, text }) => (
+            <div key={text} className="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
+              <div className="text-lg mb-1">{icon}</div>
+              <p>{text}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Inline preview */}
+        {preview && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Preview en vivo</p>
+            <div className="flex justify-center">
+              <iframe
+                src={widgetUrl}
+                width={460}
+                height={iframeHeight}
+                style={{ borderRadius: 16, border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,.08)', maxWidth: '100%' }}
+                title="Preview del widget"
+              />
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

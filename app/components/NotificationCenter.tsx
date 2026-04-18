@@ -3,6 +3,7 @@
 import { useNotifications } from '../lib/notification-context';
 import { InAppNotification } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
+import PushNotificationToggle from './PushNotificationToggle';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -77,7 +78,7 @@ export function NotificationCenter({ onClose }: { onClose: () => void }) {
       </div>
 
       {/* List */}
-      <div className="max-h-80 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
+      <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
         {notifications.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
             Sin notificaciones
@@ -87,6 +88,11 @@ export function NotificationCenter({ onClose }: { onClose: () => void }) {
             <NotifItem key={n.id} notif={n} onRead={markRead} />
           ))
         )}
+      </div>
+
+      {/* Push toggle footer */}
+      <div className="px-4 py-3 border-t border-slate-100 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60">
+        <PushNotificationToggle />
       </div>
     </div>
   );
