@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
-import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse, Resena, ResenasStats, CertificadoConDatos, TipoCertificado } from '../lib/api';
+import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse, Resena, ResenasStats, CertificadoConDatos, TipoCertificado, Cupon, TipoDescuento } from '../lib/api';
 import ChatModal from '../components/ChatModal';
 import StarRating from '../components/StarRating';
 import StatsPanel from '../components/StatsPanel';
@@ -71,7 +71,7 @@ export default function ProfesionalDashboard() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas'>('calendario');
+  const [activeTab, setActiveTab] = useState<'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas' | 'cupones'>('calendario');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [turnosDelDia, setTurnosDelDia] = useState<Turno[]>([]);
   const [nuevaDisp, setNuevaDisp] = useState({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL' as const, lugarAtencion: '' });
@@ -90,6 +90,18 @@ export default function ProfesionalDashboard() {
   const [profileCopied, setProfileCopied] = useState(false);
   const [bloqueos, setBloqueos] = useState<BloqueoDisponibilidad[]>([]);
   const [loadingBloqueos, setLoadingBloqueos] = useState(false);
+  const [cupones, setCupones] = useState<Cupon[]>([]);
+  const [loadingCupones, setLoadingCupones] = useState(false);
+  const [showNuevoCupon, setShowNuevoCupon] = useState(false);
+  const [nuevosCuponForm, setNuevosCuponForm] = useState({
+    codigo: '',
+    tipo: 'PORCENTAJE' as TipoDescuento,
+    valor: '',
+    descripcion: '',
+    maxUsos: '',
+    expiresAt: '',
+  });
+  const [savingCupon, setSavingCupon] = useState(false);
 
   useEffect(() => { if (!selectedDate) setSelectedDate(new Date()); }, [selectedDate]);
 
@@ -221,6 +233,71 @@ export default function ProfesionalDashboard() {
     const f = new Date(t.fechaHora);
     return f.getMonth() === mesActual.getMonth() && f.getFullYear() === mesActual.getFullYear() && t.estado !== 'CANCELADO';
   });
+
+  const loadCupones = async () => {
+    setLoadingCupones(true);
+    try {
+      const data = await api.cupones.listar();
+      setCupones(data);
+    } catch (err) {
+      console.error(err);
+      setInlineFeedback({ type: 'error', text: 'Error al cargar cupones' });
+    } finally {
+      setLoadingCupones(false);
+    }
+  };
+
+  const handleCrearCupon = async () => {
+    if (!nuevosCuponForm.codigo.trim() || !nuevosCuponForm.valor) {
+      setInlineFeedback({ type: 'error', text: 'Completa código y valor' });
+      return;
+    }
+
+    setSavingCupon(true);
+    try {
+      const res = await api.cupones.crear({
+        codigo: nuevosCuponForm.codigo.trim().toUpperCase(),
+        tipo: nuevosCuponForm.tipo,
+        valor: parseFloat(nuevosCuponForm.valor),
+        descripcion: nuevosCuponForm.descripcion || undefined,
+        maxUsos: nuevosCuponForm.maxUsos ? parseInt(nuevosCuponForm.maxUsos) : undefined,
+        expiresAt: nuevosCuponForm.expiresAt || undefined,
+      });
+      setCupones([res, ...cupones]);
+      setNuevosCuponForm({ codigo: '', tipo: 'PORCENTAJE', valor: '', descripcion: '', maxUsos: '', expiresAt: '' });
+      setShowNuevoCupon(false);
+      setInlineFeedback({ type: 'success', text: 'Cupón creado' });
+      setTimeout(() => setInlineFeedback(null), 3000);
+    } catch (err) {
+      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al crear cupón' });
+    } finally {
+      setSavingCupon(false);
+    }
+  };
+
+  const handleToggleCupon = async (id: string, activo: boolean) => {
+    try {
+      const res = await api.cupones.actualizar(id, { activo: !activo });
+      setCupones(cupones.map(c => c.id === id ? res : c));
+    } catch (err) {
+      setInlineFeedback({ type: 'error', text: 'Error al actualizar cupón' });
+    }
+  };
+
+  const handleEliminarCupon = async (id: string) => {
+    try {
+      await api.cupones.eliminar(id);
+      setCupones(cupones.filter(c => c.id !== id));
+      setInlineFeedback({ type: 'success', text: 'Cupón eliminado' });
+      setTimeout(() => setInlineFeedback(null), 2000);
+    } catch (err) {
+      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al eliminar cupón' });
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'cupones') loadCupones();
+  }, [activeTab]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -397,6 +474,7 @@ export default function ProfesionalDashboard() {
               { id: 'stats', label: d.stats, icon: <ChartIcon size={14} />, onboarding: 'tab-stats' },
               { id: 'pagos', label: 'Pagos', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>, onboarding: 'tab-pagos' },
               { id: 'resenas', label: 'Reseñas', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>, onboarding: 'tab-resenas' },
+              { id: 'cupones', label: 'Cupones', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.008h.01m0 0h-.01M16.5 18v.008h.01m0 0h-.01M6 12a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm12 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" /></svg>, onboarding: 'tab-cupones' },
             ] as const).map(tab => (
               <button
                 key={tab.id}
@@ -461,6 +539,15 @@ export default function ProfesionalDashboard() {
             {activeTab === 'resenas' && (
               <ResenasView />
             )}
+            {activeTab === 'cupones' && cupones && (
+              <CuponesView
+                cupones={cupones}
+                loading={loadingCupones}
+                onShowNuevo={() => setShowNuevoCupon(true)}
+                onToggleActivo={(id: string, activo: boolean) => handleToggleCupon(id, activo)}
+                onEliminar={(id: string) => handleEliminarCupon(id)}
+              />
+            )}
           </div>
         </div>
       </main>
@@ -480,11 +567,208 @@ export default function ProfesionalDashboard() {
         />
       )}
 
+      {showNuevoCupon && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+              <h3 className="font-bold text-slate-800 text-lg">Nuevo Cupón</h3>
+              <button onClick={() => setShowNuevoCupon(false)} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
+                <XIcon size={18} />
+              </button>
+            </div>
+
+            <div className="px-6 py-5 space-y-4">
+              <div>
+                <label className="field-label">Código de cupón</label>
+                <input
+                  type="text"
+                  value={nuevosCuponForm.codigo}
+                  onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, codigo: e.target.value.toUpperCase() })}
+                  placeholder="ej: PROMO10"
+                  className="field-input"
+                  disabled={savingCupon}
+                />
+              </div>
+
+              <div>
+                <label className="field-label mb-2">Tipo de descuento</label>
+                <div className="flex gap-2">
+                  {(['PORCENTAJE', 'MONTO_FIJO'] as TipoDescuento[]).map((tipo) => (
+                    <button
+                      key={tipo}
+                      onClick={() => setNuevosCuponForm({ ...nuevosCuponForm, tipo })}
+                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                        nuevosCuponForm.tipo === tipo
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-300'
+                      }`}
+                    >
+                      {tipo === 'PORCENTAJE' ? '%' : '$'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="field-label">Valor {nuevosCuponForm.tipo === 'PORCENTAJE' ? '(%)' : '($ARS)'}</label>
+                <input
+                  type="number"
+                  value={nuevosCuponForm.valor}
+                  onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, valor: e.target.value })}
+                  placeholder="ej: 10"
+                  className="field-input"
+                  disabled={savingCupon}
+                />
+              </div>
+
+              <div>
+                <label className="field-label">Descripción (opcional)</label>
+                <input
+                  type="text"
+                  value={nuevosCuponForm.descripcion}
+                  onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, descripcion: e.target.value })}
+                  placeholder="ej: 10% en primera consulta"
+                  className="field-input"
+                  disabled={savingCupon}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="field-label">Usos máximos (opcional)</label>
+                  <input
+                    type="number"
+                    value={nuevosCuponForm.maxUsos}
+                    onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, maxUsos: e.target.value })}
+                    placeholder="ilimitado"
+                    className="field-input"
+                    disabled={savingCupon}
+                  />
+                </div>
+                <div>
+                  <label className="field-label">Vence el (opcional)</label>
+                  <input
+                    type="date"
+                    value={nuevosCuponForm.expiresAt}
+                    onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, expiresAt: e.target.value })}
+                    className="field-input"
+                    disabled={savingCupon}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3 rounded-b-2xl">
+              <button onClick={() => setShowNuevoCupon(false)} className="btn btn-secondary flex-1" disabled={savingCupon}>
+                Cancelar
+              </button>
+              <button onClick={handleCrearCupon} className="btn btn-primary flex-1" disabled={savingCupon}>
+                {savingCupon ? 'Creando...' : 'Crear Cupón'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <OnboardingTour
         storageKey="medisync-prof-tour-v1"
         steps={PROF_TOUR_STEPS}
         delay={1000}
       />
+    </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════════════
+   CUPONES VIEW
+══════════════════════════════════════════════════════════════ */
+function CuponesView({
+  cupones,
+  loading,
+  onShowNuevo,
+  onToggleActivo,
+  onEliminar,
+}: {
+  cupones: Cupon[];
+  loading: boolean;
+  onShowNuevo: () => void;
+  onToggleActivo: (id: string, activo: boolean) => void;
+  onEliminar: (id: string) => void;
+}) {
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-slate-800">Cupones disponibles</h3>
+        <button onClick={onShowNuevo} className="btn btn-primary btn-sm">
+          + Nuevo Cupón
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="space-y-2">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="skeleton h-16 rounded-lg" />
+          ))}
+        </div>
+      ) : cupones.length === 0 ? (
+        <div className="py-12 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mx-auto mb-2 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.5 6v.008h.01m0 0h-.01M16.5 18v.008h.01m0 0h-.01M6 12a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm12 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
+          </svg>
+          <p className="text-sm">Sin cupones disponibles</p>
+          <button onClick={onShowNuevo} className="btn btn-primary btn-sm mt-3">
+            Crear el primero
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {cupones.map((cupon) => {
+            const isExpired = cupon.expiresAt && new Date(cupon.expiresAt) < new Date();
+            const isExhausted = cupon.maxUsos && cupon.usosActuales >= cupon.maxUsos;
+            const statusBadge = !cupon.activo ? 'Inactivo' : isExpired ? 'Vencido' : isExhausted ? 'Agotado' : 'Activo';
+            const statusColor = !cupon.activo ? 'bg-slate-100 text-slate-600' : isExpired ? 'bg-red-100 text-red-600' : isExhausted ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600';
+
+            return (
+              <div key={cupon.id} className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <p className="font-semibold text-slate-800">{cupon.codigo}</p>
+                    <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor}`}>{statusBadge}</span>
+                  </div>
+                  <p className="text-sm text-slate-600 mb-1">{cupon.descripcion || '—'}</p>
+                  <div className="text-xs text-slate-500 space-y-0.5">
+                    <p>Descuento: {cupon.tipo === 'PORCENTAJE' ? `${cupon.valor}%` : `$${cupon.valor.toLocaleString('es-AR')}`}</p>
+                    {cupon.maxUsos && (
+                      <p>Usos: {cupon.usosActuales}/{cupon.maxUsos}</p>
+                    )}
+                    {cupon.expiresAt && (
+                      <p>Vence: {new Date(cupon.expiresAt).toLocaleDateString('es-AR')}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => onToggleActivo(cupon.id, cupon.activo)}
+                    className={`px-3 py-1.5 text-xs font-medium border rounded-lg transition-all ${
+                      cupon.activo
+                        ? 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+                        : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
+                    }`}
+                  >
+                    {cupon.activo ? 'Activo' : 'Inactivo'}
+                  </button>
+                  <button
+                    onClick={() => onEliminar(cupon.id)}
+                    className="btn btn-ghost p-2 text-slate-400 hover:text-red-600"
+                  >
+                    <TrashIcon size={16} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }
