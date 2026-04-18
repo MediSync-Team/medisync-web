@@ -277,6 +277,18 @@ export const api = {
     getByTurno: (turnoId: string) =>
       fetchApi<CertificadoConDatos>(`/certificados/turno/${turnoId}`),
   },
+  cupones: {
+    listar: () =>
+      fetchApi<Cupon[]>('/cupones'),
+    crear: (data: { codigo: string; tipo: TipoDescuento; valor: number; descripcion?: string; maxUsos?: number; expiresAt?: string }) =>
+      fetchApi<Cupon>('/cupones', { method: 'POST', body: JSON.stringify(data) }),
+    actualizar: (id: string, data: { activo?: boolean; descripcion?: string; maxUsos?: number; expiresAt?: string }) =>
+      fetchApi<Cupon>(`/cupones/${id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    eliminar: (id: string) =>
+      fetchApi<void>(`/cupones/${id}`, { method: 'DELETE' }),
+    validar: (codigo: string, turnoId: string) =>
+      fetchApi<CuponValidado>('/cupones/validar', { method: 'POST', body: JSON.stringify({ codigo, turnoId }) }),
+  },
 };
 
 export type LoginData = {
@@ -858,6 +870,32 @@ export type CertificadoMedico = {
   diasReposo: number | null;
   emitidaAt: string;
   createdAt: string;
+};
+
+export type TipoDescuento = 'PORCENTAJE' | 'MONTO_FIJO';
+
+export type Cupon = {
+  id: string;
+  profesionalId: string;
+  codigo: string;
+  tipo: TipoDescuento;
+  valor: number;
+  descripcion: string | null;
+  activo: boolean;
+  maxUsos: number | null;
+  usosActuales: number;
+  expiresAt: string | null;
+  createdAt: string;
+};
+
+export type CuponValidado = {
+  cuponId: string;
+  descripcion: string | null;
+  tipo: TipoDescuento;
+  valor: number;
+  montoOriginal: number;
+  montoDescuento: number;
+  montoFinal: number;
 };
 
 export type CertificadoConDatos = CertificadoMedico & {
