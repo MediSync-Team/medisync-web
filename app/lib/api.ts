@@ -271,6 +271,12 @@ export const api = {
     getAuthUrl: () => fetchApi<{ url: string }>('/google/auth-url'),
     disconnect: () => fetchApi<{ disconnected: boolean }>('/google/disconnect', { method: 'DELETE' }),
   },
+  certificados: {
+    emitir: (data: { turnoId: string; tipo?: TipoCertificado; diagnostico: string; texto: string; diasReposo?: number }) =>
+      fetchApi<CertificadoMedico>('/certificados', { method: 'POST', body: JSON.stringify(data) }),
+    getByTurno: (turnoId: string) =>
+      fetchApi<CertificadoConDatos>(`/certificados/turno/${turnoId}`),
+  },
 };
 
 export type LoginData = {
@@ -575,6 +581,7 @@ export type HistorialTurno = Turno & {
   recetaIndicacion: RecetaIndicacion | null;
   archivos: ArchivoTurno[];
   resena: Resena | null;
+  certificado: { id: string; tipo: TipoCertificado; emitidaAt: string } | null;
 };
 
 export type HistorialPaginatedResponse = {
@@ -838,4 +845,41 @@ export type PacienteStats = {
   pagos: PacienteStatsPago[];
   topProfesionales: PacienteStatsTopProf[];
   turnosPorMes: { mes: string; total: number }[];
+};
+
+export type TipoCertificado = 'REPOSO' | 'CONSULTA' | 'APTITUD' | 'LIBRE';
+
+export type CertificadoMedico = {
+  id: string;
+  turnoId: string;
+  tipo: TipoCertificado;
+  diagnostico: string;
+  texto: string;
+  diasReposo: number | null;
+  emitidaAt: string;
+  createdAt: string;
+};
+
+export type CertificadoConDatos = CertificadoMedico & {
+  turno: {
+    fechaHora: string;
+    modalidad: string;
+    profesional: {
+      nombre: string;
+      apellido: string;
+      matricula: string | null;
+      fotoUrl: string | null;
+      lugarAtencion: string | null;
+      telefono: string;
+      especialidad: { nombre: string };
+    };
+    paciente: {
+      nombre: string;
+      apellido: string;
+      email: string;
+      dni: string | null;
+      fechaNacimiento: string | null;
+      obraSocial: string | null;
+    } | null;
+  };
 };
