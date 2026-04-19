@@ -13,17 +13,15 @@ async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
-    ...(token && { Authorization: `Bearer ${token}` }),
     ...options.headers,
   };
 
   const response = await fetch(`${API_BASE}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include',
   });
 
   const data: ApiResponse<T> = await response.json();
@@ -49,10 +47,12 @@ export const api = {
       }),
     me: () => fetchApi<User>('/auth/me'),
     exchangeCode: (code: string) =>
-      fetchApi<{ token: string; dest: string }>('/auth/exchange-code', {
+      fetchApi<{ dest: string }>('/auth/exchange-code', {
         method: 'POST',
         body: JSON.stringify({ code }),
       }),
+    logout: () =>
+      fetchApi<{ logged_out: boolean }>('/auth/logout', { method: 'POST' }),
   },
   especialidades: {
     getAll: () => fetchApi<Especialidad[]>('/especialidades'),
@@ -336,7 +336,6 @@ export type RegisterData = {
 };
 
 export type AuthResponse = {
-  token: string;
   user: {
     id: string;
     email: string;

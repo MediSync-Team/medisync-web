@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
-import { api, Turno, ListaEsperaItem, RecetaIndicacion, Resena, HistorialTurno, HistorialPaginatedResponse, PacienteStats, CertificadoConDatos } from '../../lib/api';
+import { api, Turno, ListaEsperaItem, RecetaIndicacion, Resena, HistorialTurno, HistorialPaginatedResponse, PacienteStats, CertificadoConDatos, RecetaPaciente, CertificadoPaciente } from '../../lib/api';
 import ChatModal from '../../components/ChatModal';
 import ProfileModal from '../../components/ProfileModal';
 import OnboardingTour from '../../components/OnboardingTour';
@@ -62,7 +62,7 @@ export default function PacienteDashboard() {
   const c = t('common');
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'datosMedicos' | 'estadisticas'>('proximos');
+  const [activeTab, setActiveTab] = useState<'resumen' | 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'recetas' | 'certificados' | 'datosMedicos' | 'estadisticas'>('resumen');
   const [pacienteStats, setPacienteStats] = useState<PacienteStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [historial, setHistorial] = useState<HistorialTurno[]>([]);
@@ -95,6 +95,12 @@ export default function PacienteDashboard() {
   const [savingDatos, setSavingDatos] = useState(false);
   const [datosSaved, setDatosSaved] = useState(false);
 
+  // Recetas y certificados
+  const [misRecetas, setMisRecetas] = useState<RecetaPaciente[]>([]);
+  const [loadingRecetas, setLoadingRecetas] = useState(false);
+  const [misCertificados, setMisCertificados] = useState<CertificadoPaciente[]>([]);
+  const [loadingCertificados, setLoadingCertificados] = useState(false);
+
   useEffect(() => {
     if (!authLoading) {
       if (!user) { router.push('/login'); return; }
@@ -103,6 +109,8 @@ export default function PacienteDashboard() {
         loadRecordatorios();
         loadPoliticaCancelacion();
         loadListaEspera();
+        loadMisRecetas();
+        loadMisCertificados();
       } else {
         router.push('/dashboard');
       }
@@ -166,6 +174,24 @@ export default function PacienteDashboard() {
       const data = await api.listaEspera.misSuscripciones();
       setListaEspera(data);
     } catch (err) { console.error(err); }
+  };
+
+  const loadMisRecetas = async () => {
+    setLoadingRecetas(true);
+    try {
+      const data = await api.pacientes.getMisRecetas();
+      setMisRecetas(data.recetas);
+    } catch (err) { console.error(err); }
+    finally { setLoadingRecetas(false); }
+  };
+
+  const loadMisCertificados = async () => {
+    setLoadingCertificados(true);
+    try {
+      const data = await api.pacientes.getMisCertificados();
+      setMisCertificados(data.certificados);
+    } catch (err) { console.error(err); }
+    finally { setLoadingCertificados(false); }
   };
 
   const loadDatosMedicos = async () => {
@@ -235,7 +261,7 @@ export default function PacienteDashboard() {
       });
       const data = await res.json();
       if (data.success) {
-        loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' || activeTab === 'estadisticas' ? 'proximos' : activeTab, page);
+        loadTurnos(activeTab === 'proximos' || activeTab === 'pasados' ? activeTab : 'proximos', page);
         setInlineNotice({ type: 'success', text: 'Turno cancelado correctamente.' });
       }
     } catch {
@@ -266,7 +292,7 @@ export default function PacienteDashboard() {
     finally { setLoadingStats(false); }
   };
 
-  const handleTabChange = (tab: 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'datosMedicos' | 'estadisticas') => {
+  const handleTabChange = (tab: 'resumen' | 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'recetas' | 'certificados' | 'datosMedicos' | 'estadisticas') => {
     setActiveTab(tab);
     if (tab === 'historial') {
       setHistorialPage(1);
@@ -275,6 +301,12 @@ export default function PacienteDashboard() {
       loadDatosMedicos();
     } else if (tab === 'estadisticas') {
       if (!pacienteStats) loadStats();
+    } else if (tab === 'recetas') {
+      // Already loaded on mount
+    } else if (tab === 'certificados') {
+      // Already loaded on mount
+    } else if (tab === 'resumen') {
+      // Summary tab, no special loading needed
     } else if (tab !== 'listaEspera') {
       setPage(1);
       loadTurnos(tab, 1);
@@ -283,7 +315,7 @@ export default function PacienteDashboard() {
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' || activeTab === 'estadisticas' ? 'proximos' : activeTab, newPage);
+    loadTurnos(activeTab === 'proximos' || activeTab === 'pasados' ? activeTab : 'proximos', newPage);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -378,6 +410,13 @@ export default function PacienteDashboard() {
         <div className="card overflow-hidden">
           <div className="tab-nav px-1 pt-1">
             <button
+              onClick={() => handleTabChange('resumen')}
+              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'resumen' ? 'tab-btn-active' : ''}`}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+              Resumen
+            </button>
+            <button
               data-onboarding="pac-tab-proximos"
               onClick={() => handleTabChange('proximos')}
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'proximos' ? 'tab-btn-active' : ''}`}
@@ -423,6 +462,30 @@ export default function PacienteDashboard() {
               Historial clínico
             </button>
             <button
+              onClick={() => handleTabChange('recetas')}
+              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'recetas' ? 'tab-btn-active' : ''}`}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
+              Recetas
+              {misRecetas.length > 0 && (
+                <span className="ml-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {misRecetas.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => handleTabChange('certificados')}
+              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'certificados' ? 'tab-btn-active' : ''}`}
+            >
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="19" x2="12" y2="13"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
+              Certificados
+              {misCertificados.length > 0 && (
+                <span className="ml-1 bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                  {misCertificados.length}
+                </span>
+              )}
+            </button>
+            <button
               onClick={() => handleTabChange('datosMedicos')}
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'datosMedicos' ? 'tab-btn-active' : ''}`}
             >
@@ -439,7 +502,15 @@ export default function PacienteDashboard() {
           </div>
 
           <div className="p-5">
-            {activeTab === 'estadisticas' ? (
+            {activeTab === 'resumen' ? (
+              <ResumenPacienteView
+                turnosProximos={turnos.filter(t => t.estado === 'RESERVADO' || t.estado === 'CONFIRMADO')}
+                misRecetas={misRecetas}
+                misCertificados={misCertificados}
+                pacienteStats={pacienteStats}
+                recordatorios={recordatorios}
+              />
+            ) : activeTab === 'estadisticas' ? (
               <EstadisticasPaciente stats={pacienteStats} loading={loadingStats} />
             ) : activeTab === 'historial' ? (
               /* ── Historial clínico ────────────────── */
@@ -482,6 +553,120 @@ export default function PacienteDashboard() {
                     onPageChange={(p) => { setHistorialPage(p); loadHistorial(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                   />
                 </>
+              )
+            ) : activeTab === 'recetas' ? (
+              /* ── Recetas ────────────────────────────── */
+              loadingRecetas ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="border border-slate-200 rounded-xl p-4 space-y-2">
+                      <div className="skeleton h-4 w-40 rounded" />
+                      <div className="skeleton h-3 w-56 rounded" />
+                      <div className="skeleton h-16 w-full rounded-lg mt-2" />
+                    </div>
+                  ))}
+                </div>
+              ) : misRecetas.length === 0 ? (
+                <div className="py-12 text-center">
+                  <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
+                  <p className="text-slate-500 text-sm font-medium">No tienes recetas disponibles.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {misRecetas.map((receta) => (
+                    <RecetaCard
+                      key={receta.turnoId}
+                      receta={receta}
+                      onDescargar={() => {
+                        imprimirReceta({
+                          receta: {
+                            id: receta.turnoId,
+                            turnoId: receta.turnoId,
+                            diagnostico: receta.receta.diagnostico,
+                            medicamentos: receta.receta.medicamentos,
+                            indicaciones: receta.receta.indicaciones,
+                            planTratamiento: receta.receta.planTratamiento,
+                            estudiosSolicitados: receta.receta.estudiosSolicitados,
+                            proximoControl: receta.receta.proximoControl,
+                            advertencias: receta.receta.advertencias,
+                            observaciones: receta.receta.observaciones,
+                            emitidaAt: receta.receta.emitidaAt,
+                            createdAt: receta.receta.emitidaAt,
+                            updatedAt: receta.receta.emitidaAt,
+                          },
+                          profesional: {
+                            nombre: receta.profesional.nombre,
+                            apellido: receta.profesional.apellido,
+                            especialidad: receta.profesional.especialidad,
+                            fotoUrl: receta.profesional.fotoUrl || undefined,
+                          },
+                          fechaHora: receta.fechaHora,
+                          modalidad: 'VIRTUAL',
+                        });
+                      }}
+                    />
+                  ))}
+                </div>
+              )
+            ) : activeTab === 'certificados' ? (
+              /* ── Certificados ───────────────────────── */
+              loadingCertificados ? (
+                <div className="space-y-3">
+                  {[1, 2, 3].map(i => (
+                    <div key={i} className="border border-slate-200 rounded-xl p-4 space-y-2">
+                      <div className="skeleton h-4 w-40 rounded" />
+                      <div className="skeleton h-3 w-56 rounded" />
+                      <div className="skeleton h-16 w-full rounded-lg mt-2" />
+                    </div>
+                  ))}
+                </div>
+              ) : misCertificados.length === 0 ? (
+                <div className="py-12 text-center">
+                  <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
+                  <p className="text-slate-500 text-sm font-medium">No tienes certificados disponibles.</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {misCertificados.map((cert) => (
+                    <CertificadoCard
+                      key={cert.turnoId}
+                      certificado={cert}
+                      onDescargar={() => {
+                        imprimirCertificado({
+                          id: cert.certificado.id,
+                          turnoId: cert.certificado.turnoId,
+                          tipo: cert.certificado.tipo,
+                          diagnostico: cert.certificado.diagnostico,
+                          texto: cert.certificado.texto,
+                          diasReposo: cert.certificado.diasReposo,
+                          emitidaAt: cert.certificado.emitidaAt,
+                          createdAt: cert.certificado.createdAt,
+                          turno: {
+                            fechaHora: cert.fechaHora,
+                            modalidad: 'VIRTUAL',
+                            profesional: {
+                              nombre: cert.profesional.nombre,
+                              apellido: cert.profesional.apellido,
+                              matricula: null,
+                              fotoUrl: null,
+                              lugarAtencion: null,
+                              telefono: '',
+                              especialidad: { nombre: '' },
+                            },
+                            paciente: user.paciente ? {
+                              nombre: user.paciente.nombre,
+                              apellido: user.paciente.apellido,
+                              email: user.paciente.email,
+                              dni: user.paciente.dni || null,
+                              fechaNacimiento: user.paciente.fechaNacimiento || null,
+                              obraSocial: user.paciente.obraSocial || null,
+                            } : null,
+                          },
+                        });
+                      }}
+                    />
+                  ))}
+                </div>
               )
             ) : activeTab === 'datosMedicos' ? (
               /* ── Mis datos médicos ──────────────── */
@@ -668,7 +853,7 @@ export default function PacienteDashboard() {
         <ReprogramarModal
           turno={turnoReprogramar}
           onClose={() => setTurnoReprogramar(null)}
-          onSuccess={() => { setTurnoReprogramar(null); loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' || activeTab === 'estadisticas' ? 'proximos' : activeTab, page); loadRecordatorios(); }}
+          onSuccess={() => { setTurnoReprogramar(null); loadTurnos(activeTab === 'proximos' || activeTab === 'pasados' ? activeTab : 'proximos', page); loadRecordatorios(); }}
         />
       )}
 
@@ -678,7 +863,7 @@ export default function PacienteDashboard() {
           onClose={() => setTurnoPreconsulta(null)}
           onSuccess={() => {
             setTurnoPreconsulta(null);
-            loadTurnos(activeTab === 'listaEspera' || activeTab === 'historial' || activeTab === 'datosMedicos' || activeTab === 'estadisticas' ? 'proximos' : activeTab, page);
+            loadTurnos(activeTab === 'proximos' || activeTab === 'pasados' ? activeTab : 'proximos', page);
           }}
         />
       )}
@@ -1781,6 +1966,242 @@ function PacienteStatCard({ label, value, color }: { label: string; value: strin
     <div className={`rounded-xl border p-4 text-center ${colors[color]}`}>
       <p className="text-2xl font-extrabold">{value}</p>
       <p className="text-xs font-medium mt-0.5 opacity-80">{label}</p>
+    </div>
+  );
+}
+
+function ResumenPacienteView({
+  turnosProximos,
+  misRecetas,
+  misCertificados,
+  pacienteStats,
+  recordatorios,
+}: {
+  turnosProximos: Turno[];
+  misRecetas: RecetaPaciente[];
+  misCertificados: CertificadoPaciente[];
+  pacienteStats: PacienteStats | null;
+  recordatorios: any[];
+}) {
+  const proximoTurno = turnosProximos.length > 0 ? turnosProximos[0] : null;
+  const recetasActivas = misRecetas.filter(r => {
+    if (!r.receta.proximoControl) return true;
+    const proximoControlDate = new Date(r.receta.proximoControl);
+    const hoy = new Date();
+    return proximoControlDate >= hoy;
+  });
+
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-2 gap-3">
+        <div className="border border-blue-200 bg-blue-50 rounded-xl p-4">
+          <p className="text-xs text-blue-600 font-semibold mb-1 flex items-center gap-1">
+            <CalendarIcon size={12} /> Próximo turno
+          </p>
+          {proximoTurno ? (
+            <>
+              <p className="font-bold text-slate-800 text-sm">
+                {proximoTurno.profesional?.nombre} {proximoTurno.profesional?.apellido}
+              </p>
+              <p className="text-xs text-slate-600 mt-1">
+                {new Date(proximoTurno.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })} a las{' '}
+                {new Date(proximoTurno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </>
+          ) : (
+            <p className="text-xs text-slate-500 font-medium">Sin turnos agendados</p>
+          )}
+        </div>
+
+        <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4">
+          <p className="text-xs text-emerald-600 font-semibold mb-1 flex items-center gap-1">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></svg> Recetas activas
+          </p>
+          <p className="font-bold text-slate-800 text-sm">{recetasActivas.length}</p>
+          {recetasActivas.length > 0 && (
+            <p className="text-xs text-slate-600 mt-1">Última: {recetasActivas[0].profesional.nombre}</p>
+          )}
+        </div>
+
+        <div className="border border-amber-200 bg-amber-50 rounded-xl p-4">
+          <p className="text-xs text-amber-600 font-semibold mb-1 flex items-center gap-1">
+            <CreditCardIcon size={12} /> Gasto este mes
+          </p>
+          <p className="font-bold text-slate-800 text-sm">
+            ${(pacienteStats?.totalGastado || 0).toLocaleString('es-AR')}
+          </p>
+        </div>
+
+        <div className="border border-slate-200 bg-slate-50 rounded-xl p-4">
+          <p className="text-xs text-slate-600 font-semibold mb-1 flex items-center gap-1">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Certificados
+          </p>
+          <p className="font-bold text-slate-800 text-sm">{misCertificados.length}</p>
+        </div>
+      </div>
+
+      {recordatorios.length > 0 && (
+        <div className="border border-amber-200 bg-amber-50 rounded-xl p-4">
+          <p className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-1">
+            <BellIcon size={14} /> Recordatorios activos
+          </p>
+          <div className="space-y-2">
+            {recordatorios.map(r => (
+              <p key={r.id} className="text-xs text-amber-700">
+                • Turno {new Date(r.fechaHora).toLocaleDateString('es-AR')} a las{' '}
+                {new Date(r.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} con{' '}
+                {r.turno?.profesional?.nombre || 'profesional'}
+              </p>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(pacienteStats?.topProfesionales || []).length > 0 && (
+        <div className="border border-slate-200 rounded-xl p-4">
+          <p className="text-sm font-semibold text-slate-700 mb-3">Profesionales más visitados</p>
+          <div className="flex flex-wrap gap-3">
+            {pacienteStats!.topProfesionales.map((prof) => (
+              prof.profesional && (
+                <div
+                  key={prof.profesional.id}
+                  className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2"
+                >
+                  {prof.profesional.fotoUrl ? (
+                    <img
+                      src={prof.profesional.fotoUrl}
+                      alt={prof.profesional.nombre}
+                      className="w-8 h-8 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center">
+                      <UserIcon size={12} className="text-blue-600" />
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold text-slate-700 truncate">
+                      {prof.profesional.nombre}
+                    </p>
+                    <p className="text-xs text-slate-500">{prof.totalTurnos} turno{prof.totalTurnos !== 1 ? 's' : ''}</p>
+                  </div>
+                </div>
+              )
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function RecetaCard({
+  receta,
+  onDescargar,
+}: {
+  receta: RecetaPaciente;
+  onDescargar: () => void;
+}) {
+  const isActive = !receta.receta.proximoControl || new Date(receta.receta.proximoControl) >= new Date();
+
+  return (
+    <div className="border border-slate-200 rounded-xl p-4">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex-1">
+          <p className="font-semibold text-slate-800">
+            Dr/a. {receta.profesional.nombre} {receta.profesional.apellido}
+          </p>
+          <p className="text-xs text-blue-600 font-medium">{receta.profesional.especialidad}</p>
+          <p className="text-xs text-slate-500 mt-1">
+            {new Date(receta.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
+        </div>
+        {isActive && (
+          <span className="badge bg-emerald-50 text-emerald-700 text-[10px] font-bold whitespace-nowrap">
+            Activa
+          </span>
+        )}
+      </div>
+
+      <div className="border-t border-slate-100 pt-3 mb-3 space-y-2">
+        <div>
+          <p className="text-xs font-semibold text-slate-600">Diagnóstico</p>
+          <p className="text-sm text-slate-700 line-clamp-2">{receta.receta.diagnostico}</p>
+        </div>
+        {receta.receta.medicamentos && (
+          <div>
+            <p className="text-xs font-semibold text-slate-600">Medicamentos</p>
+            <p className="text-sm text-slate-700 line-clamp-2">{receta.receta.medicamentos}</p>
+          </div>
+        )}
+      </div>
+
+      <button
+        onClick={onDescargar}
+        className="btn btn-primary btn-sm w-full"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar receta
+      </button>
+    </div>
+  );
+}
+
+function CertificadoCard({
+  certificado,
+  onDescargar,
+}: {
+  certificado: CertificadoPaciente;
+  onDescargar: () => void;
+}) {
+  const tipoLabel: Record<string, string> = {
+    REPOSO: 'Reposo',
+    CONSULTA: 'Consulta',
+    APTITUD: 'Aptitud',
+    LIBRE: 'Libre',
+  };
+
+  const tipoColor: Record<string, string> = {
+    REPOSO: 'bg-red-50 text-red-700 border-red-100',
+    CONSULTA: 'bg-blue-50 text-blue-700 border-blue-100',
+    APTITUD: 'bg-emerald-50 text-emerald-700 border-emerald-100',
+    LIBRE: 'bg-slate-50 text-slate-700 border-slate-100',
+  };
+
+  return (
+    <div className="border border-slate-200 rounded-xl p-4">
+      <div className="flex items-start justify-between gap-3 mb-3">
+        <div className="flex-1">
+          <p className="font-semibold text-slate-800">
+            Dr/a. {certificado.profesional.nombre} {certificado.profesional.apellido}
+          </p>
+          <p className="text-xs text-slate-500 mt-1">
+            {new Date(certificado.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
+        </div>
+        <span className={`badge border text-[10px] font-bold whitespace-nowrap ${tipoColor[certificado.certificado.tipo]}`}>
+          {tipoLabel[certificado.certificado.tipo]}
+        </span>
+      </div>
+
+      <div className="border-t border-slate-100 pt-3 mb-3 space-y-2">
+        <div>
+          <p className="text-xs font-semibold text-slate-600">Diagnóstico</p>
+          <p className="text-sm text-slate-700">{certificado.certificado.diagnostico}</p>
+        </div>
+        {certificado.certificado.diasReposo && (
+          <div className="bg-red-50 rounded px-2 py-1.5 border border-red-100">
+            <p className="text-xs font-semibold text-red-700">Días de reposo: {certificado.certificado.diasReposo}</p>
+          </div>
+        )}
+      </div>
+
+      <button
+        onClick={onDescargar}
+        className="btn btn-primary btn-sm w-full"
+      >
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Descargar certificado
+      </button>
     </div>
   );
 }

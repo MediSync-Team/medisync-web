@@ -30,8 +30,7 @@ function AuthCallbackContent() {
     }
 
     api.auth.exchangeCode(code)
-      .then(({ token, dest }) => {
-        localStorage.setItem('token', token);
+      .then(({ dest }) => {
         router.push(dest);
       })
       .catch(() => {
