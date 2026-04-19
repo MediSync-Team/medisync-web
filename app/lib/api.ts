@@ -48,6 +48,11 @@ export const api = {
         body: JSON.stringify(data),
       }),
     me: () => fetchApi<User>('/auth/me'),
+    exchangeCode: (code: string) =>
+      fetchApi<{ token: string; dest: string }>('/auth/exchange-code', {
+        method: 'POST',
+        body: JSON.stringify({ code }),
+      }),
   },
   especialidades: {
     getAll: () => fetchApi<Especialidad[]>('/especialidades'),

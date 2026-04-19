@@ -2,6 +2,7 @@
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { api } from '../../lib/api';
 import { MediSyncLogo } from '../../components/icons';
 
 function AuthCallbackContent() {
@@ -9,8 +10,7 @@ function AuthCallbackContent() {
   const params = useSearchParams();
 
   useEffect(() => {
-    const token = params.get('token');
-    const isNew = params.get('isNew') === 'true';
+    const code = params.get('code');
     const error = params.get('error');
     const msg = params.get('msg');
 
@@ -24,13 +24,19 @@ function AuthCallbackContent() {
       return;
     }
 
-    if (!token) {
+    if (!code) {
       router.push('/login');
       return;
     }
 
-    localStorage.setItem('token', token);
-    router.push(isNew ? '/auth/completa-perfil' : '/dashboard');
+    api.auth.exchangeCode(code)
+      .then(({ token, dest }) => {
+        localStorage.setItem('token', token);
+        router.push(dest);
+      })
+      .catch(() => {
+        router.push('/login?ssoError=' + encodeURIComponent('El enlace de inicio de sesión expiró. Intentá de nuevo.'));
+      });
   }, []);
 
   return (
