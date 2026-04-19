@@ -111,6 +111,7 @@ export default function PacienteDashboard() {
         loadListaEspera();
         loadMisRecetas();
         loadMisCertificados();
+        loadStats();
       } else {
         router.push('/dashboard');
       }
@@ -294,28 +295,20 @@ export default function PacienteDashboard() {
 
   const handleTabChange = (tab: 'resumen' | 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'recetas' | 'certificados' | 'datosMedicos' | 'estadisticas') => {
     setActiveTab(tab);
-    if (tab === 'historial') {
-      setHistorialPage(1);
-      loadHistorial(1);
-    } else if (tab === 'datosMedicos') {
-      loadDatosMedicos();
-    } else if (tab === 'estadisticas') {
-      if (!pacienteStats) loadStats();
-    } else if (tab === 'recetas') {
-      // Already loaded on mount
-    } else if (tab === 'certificados') {
-      // Already loaded on mount
-    } else if (tab === 'resumen') {
-      // Summary tab, no special loading needed
-    } else if (tab !== 'listaEspera') {
-      setPage(1);
+    if (tab === 'estadisticas' && !pacienteStats) {
+      loadStats();
+    } else if ((tab === 'proximos' || tab === 'pasados') && turnos.length === 0) {
       loadTurnos(tab, 1);
+    } else if (tab === 'historial' && historial.length === 0) {
+      loadHistorial(1);
     }
   };
 
   const handlePageChange = (newPage: number) => {
     setPage(newPage);
-    loadTurnos(activeTab === 'proximos' || activeTab === 'pasados' ? activeTab : 'proximos', newPage);
+    if (activeTab === 'proximos' || activeTab === 'pasados') {
+      loadTurnos(activeTab, newPage);
+    }
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -783,7 +776,7 @@ export default function PacienteDashboard() {
                   ))}
                 </div>
               )
-            ) : loading ? (
+            ) : (activeTab === 'proximos' || activeTab === 'pasados') && loading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map(i => (
                   <div key={i} className="border border-slate-200 rounded-xl p-4 space-y-2">
@@ -793,19 +786,23 @@ export default function PacienteDashboard() {
                   </div>
                 ))}
               </div>
-            ) : turnos.length === 0 ? (
+            ) : activeTab === 'proximos' && turnos.length === 0 ? (
               <div className="py-12 text-center">
                 <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                <p className="text-slate-500 text-sm font-medium">
-                  {activeTab === 'proximos' ? p.noUpcoming : p.noPast}
+                <p className="text-slate-500 text-sm font-medium mb-2">{p.noUpcoming}</p>
+                <p className="text-xs text-slate-400 mb-5 max-w-sm mx-auto">
+                  Buscá un profesional y reservá tu primer turno para comenzar.
                 </p>
-                {activeTab === 'proximos' && (
-                  <Link href="/" className="btn btn-primary btn-sm mt-4">
-                    <SearchIcon size={13} /> {p.searchProfessional}
-                  </Link>
-                )}
+                <Link href="/" className="btn btn-primary btn-sm">
+                  <SearchIcon size={13} /> {p.searchProfessional}
+                </Link>
               </div>
-            ) : (
+            ) : activeTab === 'pasados' && turnos.length === 0 ? (
+              <div className="py-12 text-center">
+                <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
+                <p className="text-slate-500 text-sm font-medium">{p.noPast}</p>
+              </div>
+            ) : (activeTab === 'proximos' || activeTab === 'pasados') ? (
               <>
                 <div className="space-y-3">
                   {turnos.map((turno) => (
@@ -834,7 +831,7 @@ export default function PacienteDashboard() {
                   onPageChange={handlePageChange}
                 />
               </>
-            )}
+            ) : null}
           </div>
         </div>
       </main>
