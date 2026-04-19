@@ -7,6 +7,7 @@ import { api } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
 import ThemeLangToggle from '../components/ThemeLangToggle';
 import PasswordInput from '../components/PasswordInput';
+import PasswordStrengthIndicator, { getRequirements } from '../components/PasswordStrengthIndicator';
 import { InfoIcon } from '../components/icons';
 
 function ForgotPasswordContent() {
@@ -62,8 +63,9 @@ function ForgotPasswordContent() {
       return;
     }
 
-    if (newPassword.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres');
+    const reqs = getRequirements(newPassword);
+    if (!reqs.minLength || !reqs.hasUppercase || !reqs.hasLowercase || !reqs.hasNumber) {
+      setError('La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número');
       return;
     }
 
@@ -172,7 +174,7 @@ function ForgotPasswordContent() {
                     autoComplete="new-password"
                     ariaLabel="Nueva contraseña"
                   />
-                  <p className="text-xs text-slate-400 mt-1">Mínimo 8 caracteres</p>
+                  <PasswordStrengthIndicator password={newPassword} />
                 </div>
 
                 <div>

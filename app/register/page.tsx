@@ -9,6 +9,7 @@ import { useLang } from '../lib/i18n/context';
 import { GoogleIcon, MicrosoftIcon } from '../components/icons';
 import ThemeLangToggle from '../components/ThemeLangToggle';
 import PasswordInput from '../components/PasswordInput';
+import PasswordStrengthIndicator, { getRequirements } from '../components/PasswordStrengthIndicator';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -36,7 +37,11 @@ export default function RegisterPage() {
     e.preventDefault();
     setError('');
     if (formData.password !== formData.confirmPassword) { setError('Las contraseñas no coinciden'); return; }
-    if (formData.password.length < 6) { setError('La contraseña debe tener al menos 6 caracteres'); return; }
+    const reqs = getRequirements(formData.password);
+    if (!reqs.minLength || !reqs.hasUppercase || !reqs.hasLowercase || !reqs.hasNumber) {
+      setError('La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número');
+      return;
+    }
     if (formData.nombre.length < 2 || formData.apellido.length < 2) { setError('Nombre y apellido deben tener al menos 2 caracteres'); return; }
     if (formData.telefono && !/^[\d\s\-\+\(\)]{8,20}$/.test(formData.telefono)) { setError('Teléfono inválido'); return; }
     setLoading(true);
@@ -198,6 +203,7 @@ export default function RegisterPage() {
                 required
                 autoComplete="new-password"
               />
+              <PasswordStrengthIndicator password={formData.password} />
             </div>
 
             <div>
