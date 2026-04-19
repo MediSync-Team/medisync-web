@@ -1,21 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
-import { api } from '../lib/api';
+import { api, API_BASE } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
+import { GoogleIcon, MicrosoftIcon } from '../components/icons';
 import ThemeLangToggle from '../components/ThemeLangToggle';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
+  const params = useSearchParams();
   const { login } = useAuth();
   const { t } = useLang();
   const a = t('auth');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [error, setError] = useState(params.get('ssoError') || '');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,7 +92,27 @@ export default function LoginPage() {
               {loading ? a.loggingIn : a.loginBtn}
             </button>
 
-            <p className="text-center text-sm text-slate-500 dark:text-slate-400 pt-2">
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200 dark:border-slate-600" />
+              </div>
+              <div className="relative flex justify-center text-xs text-slate-400 dark:text-slate-500">
+                <span className="bg-white dark:bg-slate-800 px-3">o continúa con</span>
+              </div>
+            </div>
+
+            <div className="flex gap-2">
+              <a href={`${API_BASE}/auth/google`} className="btn btn-secondary flex-1 justify-center gap-2">
+                <GoogleIcon size={16} />
+                Google
+              </a>
+              <a href={`${API_BASE}/auth/microsoft`} className="btn btn-secondary flex-1 justify-center gap-2">
+                <MicrosoftIcon size={16} />
+                Microsoft
+              </a>
+            </div>
+
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400 pt-4">
               {a.noAccount}{' '}
               <Link href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
                 {a.registerBtn}
@@ -100,5 +122,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
+        <div className="text-slate-500 dark:text-slate-400">Cargando...</div>
+      </div>
+    }>
+      <LoginContent />
+    </Suspense>
   );
 }

@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
-import { api, Especialidad, Genero } from '../lib/api';
+import { api, API_BASE, Especialidad, Genero } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
+import { GoogleIcon, MicrosoftIcon } from '../components/icons';
 import ThemeLangToggle from '../components/ThemeLangToggle';
 
 export default function RegisterPage() {
@@ -199,7 +200,31 @@ export default function RegisterPage() {
               {loading ? a.registering : a.registerBtn}
             </button>
 
-            <p className="text-center text-sm text-slate-500 dark:text-slate-400">
+            {formData.rol && (
+              <>
+                <div className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200 dark:border-slate-600" />
+                  </div>
+                  <div className="relative flex justify-center text-xs text-slate-400 dark:text-slate-500">
+                    <span className="bg-white dark:bg-slate-800 px-3">o continúa con</span>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <a href={`${API_BASE}/auth/google?rol=${formData.rol}`} className="btn btn-secondary flex-1 justify-center gap-2">
+                    <GoogleIcon size={16} />
+                    Google
+                  </a>
+                  <a href={`${API_BASE}/auth/microsoft?rol=${formData.rol}`} className="btn btn-secondary flex-1 justify-center gap-2">
+                    <MicrosoftIcon size={16} />
+                    Microsoft
+                  </a>
+                </div>
+              </>
+            )}
+
+            <p className="text-center text-sm text-slate-500 dark:text-slate-400 pt-2">
               {a.haveAccount}{' '}
               <Link href="/login" className="text-blue-600 hover:text-blue-500 font-medium">{a.loginBtn}</Link>
             </p>
