@@ -132,6 +132,8 @@ export const api = {
       const query = Object.keys(q).length ? '?' + new URLSearchParams(q).toString() : '';
       return fetchApi<HistorialPaginatedResponse>('/turnos/mi-historial' + query);
     },
+    getAuditoriaCancelacion: (id: string) =>
+      fetchApi<AuditoriaDisponibilidad | null>(`/turnos/${id}/auditoria-cancelacion`),
   },
   recordatorios: {
     getProfesional: () => fetchApi<any>('/recordatorios/profesional'),
@@ -164,6 +166,8 @@ export const api = {
         body: JSON.stringify(data),
       }),
     getMisStats: () => fetchApi<PacienteStats>('/pacientes/mis-stats'),
+    getMisRecetas: () => fetchApi<{ recetas: RecetaPaciente[] }>('/pacientes/mis-recetas'),
+    getMisCertificados: () => fetchApi<{ certificados: CertificadoPaciente[] }>('/pacientes/mis-certificados'),
   },
   profesional: {
     updatePerfil: (id: string, data: Partial<Profesional>) =>
@@ -176,6 +180,12 @@ export const api = {
         Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
       ).toString() : '';
       return fetchApi<PagosDashboardResponse>(`/profesional/pagos${q}`);
+    },
+    getAuditoria: (id: string, params?: { page?: number; limit?: number; tipoEvento?: string; desde?: string; hasta?: string }) => {
+      const q = params ? '?' + new URLSearchParams(
+        Object.fromEntries(Object.entries(params).filter(([, v]) => v !== undefined).map(([k, v]) => [k, String(v)]))
+      ).toString() : '';
+      return fetchApi<{ data: AuditoriaDisponibilidad[]; meta: PaginationMeta }>(`/profesionales/${id}/auditoria${q}`);
     },
   },
   admin: {
@@ -917,6 +927,47 @@ export type SuscripcionEstado = {
   mpSuscripcionId: string | null;
 };
 
+export type RecetaPaciente = {
+  turnoId: string;
+  fechaHora: string;
+  profesional: {
+    nombre: string;
+    apellido: string;
+    especialidad: string;
+    fotoUrl: string | null;
+  };
+  receta: {
+    diagnostico: string;
+    medicamentos: string | null;
+    indicaciones: string;
+    planTratamiento: string | null;
+    estudiosSolicitados: string | null;
+    proximoControl: string | null;
+    advertencias: string | null;
+    observaciones: string | null;
+    emitidaAt: string;
+  };
+};
+
+export type CertificadoPaciente = {
+  turnoId: string;
+  fechaHora: string;
+  profesional: {
+    nombre: string;
+    apellido: string;
+  };
+  certificado: {
+    id: string;
+    tipo: TipoCertificado;
+    diagnostico: string;
+    texto: string;
+    diasReposo: number | null;
+    turnoId: string;
+    emitidaAt: string;
+    createdAt: string;
+  };
+};
+
 export type CertificadoConDatos = CertificadoMedico & {
   turno: {
     fechaHora: string;
@@ -939,4 +990,23 @@ export type CertificadoConDatos = CertificadoMedico & {
       obraSocial: string | null;
     } | null;
   };
+};
+
+export type TipoEventoAuditoria =
+  | 'DISPONIBILIDAD_CREADA'
+  | 'DISPONIBILIDAD_ELIMINADA'
+  | 'BLOQUEO_CREADO'
+  | 'BLOQUEO_ELIMINADO'
+  | 'TURNO_CANCELADO_POR_BLOQUEO'
+  | 'TURNO_CANCELADO_POR_PROFESIONAL';
+
+export type AuditoriaDisponibilidad = {
+  id: string;
+  profesionalId: string;
+  tipoEvento: TipoEventoAuditoria;
+  disponibilidadId: string | null;
+  bloqueoId: string | null;
+  turnoId: string | null;
+  detalle: any; // JSON
+  creadoAt: string;
 };
