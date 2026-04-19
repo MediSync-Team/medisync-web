@@ -8,6 +8,7 @@ import { api, API_BASE, Especialidad, Genero } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
 import { GoogleIcon, MicrosoftIcon } from '../components/icons';
 import ThemeLangToggle from '../components/ThemeLangToggle';
+import PasswordInput from '../components/PasswordInput';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -188,12 +189,28 @@ export default function RegisterPage() {
 
             <div>
               <label htmlFor="password" className="field-label">{a.password}</label>
-              <input id="password" name="password" type="password" required value={formData.password} onChange={handleChange} className={inp} placeholder="••••••••" />
+              <PasswordInput
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={(value) => handleChange({ target: { name: 'password', value } } as any)}
+                placeholder="••••••••"
+                required
+                autoComplete="new-password"
+              />
             </div>
 
             <div>
               <label htmlFor="confirmPassword" className="field-label">{a.password} (confirmar)</label>
-              <input id="confirmPassword" name="confirmPassword" type="password" required value={formData.confirmPassword} onChange={handleChange} className={inp} placeholder="••••••••" />
+              <PasswordInput
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={(value) => handleChange({ target: { name: 'confirmPassword', value } } as any)}
+                placeholder="••••••••"
+                required
+                autoComplete="new-password"
+              />
             </div>
 
             <button type="submit" disabled={loading} className="btn btn-primary w-full mt-2">

@@ -8,6 +8,7 @@ import { api, API_BASE } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
 import { GoogleIcon, MicrosoftIcon } from '../components/icons';
 import ThemeLangToggle from '../components/ThemeLangToggle';
+import PasswordInput from '../components/PasswordInput';
 
 function LoginContent() {
   const router = useRouter();
@@ -77,14 +78,14 @@ function LoginContent() {
 
             <div>
               <label htmlFor="password" className="field-label">{a.password}</label>
-              <input
+              <PasswordInput
                 id="password"
-                type="password"
-                required
+                name="password"
                 value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="field-input"
+                onChange={setPassword}
                 placeholder="••••••••"
+                required
+                autoComplete="current-password"
               />
             </div>
 
