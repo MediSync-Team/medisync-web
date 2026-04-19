@@ -198,7 +198,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
         <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
 
           {error && (
-            <div className="alert alert-error text-sm">{error}</div>
+            <div className="alert alert-error text-sm" role="alert" aria-live="polite" aria-atomic="true">{error}</div>
           )}
 
           {/* ═══ Step 0: Perfil ═══════════════════════════════ */}

@@ -80,7 +80,7 @@ export default function RegisterPage() {
           <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-6">{a.createAccount}</h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <div className="alert alert-error text-sm">{error}</div>}
+            {error && <div className="alert alert-error text-sm" role="alert" aria-live="polite" aria-atomic="true">{error}</div>}
 
             {/* Role */}
             <div>
