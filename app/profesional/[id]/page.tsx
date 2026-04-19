@@ -24,6 +24,8 @@ export default function ProfesionalPage() {
   const [profesional, setProfesional] = useState<Profesional | null>(null);
   const [loading, setLoading] = useState(true);
   const [slots, setSlots] = useState<Slot[]>([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [modalidad, setModalidad] = useState<'PRESENCIAL' | 'VIRTUAL'>('PRESENCIAL');
@@ -64,6 +66,8 @@ export default function ProfesionalPage() {
   };
 
   const loadSlots = async (date: Date) => {
+    setSlotsLoading(true);
+    setSlotsError(null);
     try {
       const year = date.getFullYear();
       const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -71,7 +75,13 @@ export default function ProfesionalPage() {
       const fecha = `${year}-${month}-${day}`;
       const data = await api.profesionales.getSlots(params.id as string, fecha, modalidad);
       setSlots(data);
-    } catch (err) { console.error(err); setSlots([]); }
+    } catch (err) {
+      console.error(err);
+      setSlotsError(err instanceof Error ? err.message : 'No se pudieron cargar los horarios disponibles. Intentá más tarde.');
+      setSlots([]);
+    } finally {
+      setSlotsLoading(false);
+    }
   };
 
   const loadListaEsperaActiva = async () => {
@@ -567,7 +577,7 @@ export default function ProfesionalPage() {
                         ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                         : 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'
                     }`}>
-                      <input type="radio" name="modalidad" value={value} checked={modalidad === value} onChange={() => { setModalidad(value); setSelectedSlot(null); }} className="sr-only" />
+                      <input type="radio" name="modalidad" value={value} checked={modalidad === value} onChange={() => { setModalidad(value); setSelectedSlot(null); setSlotsError(null); }} className="sr-only" />
                       {icon}
                       {label}
                     </label>
@@ -585,7 +595,7 @@ export default function ProfesionalPage() {
                     return (
                       <button
                         key={fecha.toISOString()}
-                        onClick={() => { setSelectedDate(fecha); setSelectedSlot(null); }}
+                        onClick={() => { setSelectedDate(fecha); setSelectedSlot(null); setSlotsError(null); }}
                         className={`flex flex-col items-center justify-center rounded-xl p-2 min-w-[50px] border-2 transition-all ${
                           isSelected
                             ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
@@ -611,7 +621,26 @@ export default function ProfesionalPage() {
                     Horarios para el {selectedDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
                   </p>
 
-                  {slots.length === 0 ? (
+                  {slotsLoading ? (
+                    <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600">
+                      <svg className="animate-spin text-blue-600 dark:text-blue-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                      <span className="text-sm text-slate-600 dark:text-slate-300">Cargando horarios...</span>
+                    </div>
+                  ) : slotsError ? (
+                    <div className="alert alert-error">
+                      <InfoIcon size={16} className="shrink-0" />
+                      <div className="flex-1">
+                        <p className="font-semibold text-sm mb-2">Error al cargar horarios</p>
+                        <p className="text-xs text-red-700 dark:text-red-300 mb-3">{slotsError}</p>
+                        <button
+                          onClick={() => loadSlots(selectedDate)}
+                          className="btn btn-secondary btn-sm text-xs"
+                        >
+                          Reintentar
+                        </button>
+                      </div>
+                    </div>
+                  ) : slots.length === 0 ? (
                     // No availability configured for this day
                     <div className="alert alert-warning">
                       <InfoIcon size={16} className="shrink-0" />
