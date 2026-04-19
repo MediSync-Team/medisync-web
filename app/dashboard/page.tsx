@@ -464,45 +464,80 @@ export default function ProfesionalDashboard() {
           </div>
         )}
 
-        {/* ── Stat cards ──────────────────────────────────── */}
-        <div data-onboarding="stat-cards" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-          <div className="stat-card">
-            <div className="flex items-start justify-between">
-              <p className="stat-label">{d.appointments} — {d.today}</p>
-              <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                <CalendarIcon size={15} className="text-blue-600" />
-              </div>
+        {loading ? (
+          <>
+            {/* ── Skeleton: Stat cards ──────────────────────── */}
+            <div data-onboarding="stat-cards" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="stat-card">
+                  <div className="flex items-start justify-between mb-3">
+                    <div className="skeleton h-4 w-32 rounded" />
+                    <div className="skeleton w-8 h-8 rounded-lg" />
+                  </div>
+                  <div className="skeleton h-7 w-16 rounded mb-2" />
+                  <div className="skeleton h-3 w-24 rounded" />
+                </div>
+              ))}
             </div>
-            <p className="stat-value text-blue-600">{hoyTurnos.length}</p>
-            <p className="stat-desc">
-              {hoyTurnos.filter(t => t.estado === 'CONFIRMADO').length} confirmados
-            </p>
-          </div>
 
-          <div className="stat-card">
-            <div className="flex items-start justify-between">
-              <p className="stat-label">{d.appointments} — {d.thisMonth}</p>
-              <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                <ChartIcon size={15} className="text-emerald-600" />
+            {/* ── Skeleton: Tabs and content ────────────────── */}
+            <div className="card overflow-hidden">
+              <div className="tab-nav px-1 pt-1">
+                {[1, 2, 3, 4].map(i => (
+                  <div key={i} className="skeleton h-9 w-24 rounded mx-1" />
+                ))}
+              </div>
+              <div className="p-6 space-y-4">
+                {[1, 2, 3].map(i => (
+                  <div key={i} className="space-y-2">
+                    <div className="skeleton h-4 w-full rounded" />
+                    <div className="skeleton h-4 w-5/6 rounded" />
+                  </div>
+                ))}
               </div>
             </div>
-            <p className="stat-value text-emerald-600">{turnosMes.length}</p>
-            <p className="stat-desc">{mesActual.toLocaleString('es-AR', { month: 'long' })}</p>
-          </div>
+          </>
+        ) : (
+          <>
+            {/* ── Stat cards ──────────────────────────────────── */}
+            <div data-onboarding="stat-cards" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+              <div className="stat-card">
+                <div className="flex items-start justify-between">
+                  <p className="stat-label">{d.appointments} — {d.today}</p>
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+                    <CalendarIcon size={15} className="text-blue-600" />
+                  </div>
+                </div>
+                <p className="stat-value text-blue-600">{hoyTurnos.length}</p>
+                <p className="stat-desc">
+                  {hoyTurnos.filter(t => t.estado === 'CONFIRMADO').length} confirmados
+                </p>
+              </div>
 
-          <div className="stat-card">
-            <div className="flex items-start justify-between">
-              <p className="stat-label">{d.specialtyLabel}</p>
-              <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                <ClipboardIcon size={15} className="text-purple-600" />
+              <div className="stat-card">
+                <div className="flex items-start justify-between">
+                  <p className="stat-label">{d.appointments} — {d.thisMonth}</p>
+                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
+                    <ChartIcon size={15} className="text-emerald-600" />
+                  </div>
+                </div>
+                <p className="stat-value text-emerald-600">{turnosMes.length}</p>
+                <p className="stat-desc">{mesActual.toLocaleString('es-AR', { month: 'long' })}</p>
+              </div>
+
+              <div className="stat-card">
+                <div className="flex items-start justify-between">
+                  <p className="stat-label">{d.specialtyLabel}</p>
+                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
+                    <ClipboardIcon size={15} className="text-purple-600" />
+                  </div>
+                </div>
+                <p className="text-lg font-bold text-slate-800 mt-1 leading-tight">
+                  {user.profesional.especialidad?.nombre || '—'}
+                </p>
+                <p className="stat-desc">{d.title}</p>
               </div>
             </div>
-            <p className="text-lg font-bold text-slate-800 mt-1 leading-tight">
-              {user.profesional.especialidad?.nombre || '—'}
-            </p>
-            <p className="stat-desc">{d.title}</p>
-          </div>
-        </div>
 
         {/* ── Tabs ────────────────────────────────────────── */}
         <div className="card overflow-hidden">
@@ -606,6 +641,8 @@ export default function ProfesionalDashboard() {
             )}
           </div>
         </div>
+          </>
+        )}
       </main>
 
       {/* ── Turno modal ─────────────────────────────────── */}
