@@ -93,6 +93,12 @@ function LoginContent() {
               {loading ? a.loggingIn : a.loginBtn}
             </button>
 
+            <div className="text-center pt-3">
+              <Link href="/forgot-password" className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 underline">
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
+
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-slate-200 dark:border-slate-600" />
