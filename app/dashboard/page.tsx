@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
-import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse, Resena, ResenasStats, CertificadoConDatos, TipoCertificado, Cupon, TipoDescuento, SuscripcionEstado, PlanProfesional } from '../lib/api';
+import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Evolucion, HistoriaClinicaPaciente, HistoriaClinicaEditableFields, PreconsultaTurno, RecetaIndicacionInput, RecetaIndicacion, PagosDashboardResponse, Resena, ResenasStats, CertificadoConDatos, TipoCertificado, Cupon, TipoDescuento, SuscripcionEstado, PlanProfesional, AuditoriaDisponibilidad } from '../lib/api';
 import ChatModal from '../components/ChatModal';
 import StarRating from '../components/StarRating';
 import StatsPanel from '../components/StatsPanel';
@@ -71,7 +71,7 @@ export default function ProfesionalDashboard() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas' | 'cupones' | 'plan'>('calendario');
+  const [activeTab, setActiveTab] = useState<'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas' | 'cupones' | 'plan' | 'auditoria'>('calendario');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [turnosDelDia, setTurnosDelDia] = useState<Turno[]>([]);
   const [nuevaDisp, setNuevaDisp] = useState({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL' as const, lugarAtencion: '' });
@@ -515,6 +515,7 @@ export default function ProfesionalDashboard() {
               { id: 'resenas', label: 'Reseñas', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>, onboarding: 'tab-resenas' },
               { id: 'cupones', label: 'Cupones', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.008h.01m0 0h-.01M16.5 18v.008h.01m0 0h-.01M6 12a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm12 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" /></svg>, onboarding: 'tab-cupones' },
               { id: 'plan', label: 'Plan', icon: <StarIcon size={14} />, onboarding: 'tab-plan' },
+              { id: 'auditoria', label: 'Historial', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 1.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>, onboarding: 'tab-auditoria' },
             ] as const).map(tab => (
               <button
                 key={tab.id}
@@ -596,6 +597,9 @@ export default function ProfesionalDashboard() {
                 onCancelarSuscripcion={handleCancelarSuscripcion}
                 redirecting={redirectingToMP}
               />
+            )}
+            {activeTab === 'auditoria' && (
+              <AuditoriaView profesionalId={user.profesional!.id} />
             )}
             {activeTab === 'stats' && suscripcion?.plan === 'FREE' && (
               <UpgradePrompt feature="estadísticas" onViewPlans={() => setActiveTab('plan')} />
@@ -3491,6 +3495,139 @@ function PlanView({
           ))}
         </div>
       </div>
+    </div>
+  );
+}
+
+function AuditoriaView({ profesionalId }: { profesionalId: string }) {
+  const [auditoria, setAuditoria] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
+  const { t } = useLang();
+
+  useEffect(() => {
+    loadAuditoria();
+  }, [page]);
+
+  const loadAuditoria = async () => {
+    setLoading(true);
+    try {
+      const response = await api.profesional.getAuditoria(profesionalId, { page, limit: 20 });
+      setAuditoria(response.data);
+      setTotalPages(Math.ceil(response.meta.total / 20));
+    } catch (err) {
+      console.error('Error loading auditoria:', err);
+    }
+    setLoading(false);
+  };
+
+  const getEventoLabel = (tipo: string): string => {
+    const labels: Record<string, string> = {
+      DISPONIBILIDAD_CREADA: 'Disponibilidad agregada',
+      DISPONIBILIDAD_ELIMINADA: 'Disponibilidad eliminada',
+      BLOQUEO_CREADO: 'Bloqueo creado',
+      BLOQUEO_ELIMINADO: 'Bloqueo eliminado',
+      TURNO_CANCELADO_POR_BLOQUEO: 'Turno cancelado (bloqueo)',
+      TURNO_CANCELADO_POR_PROFESIONAL: 'Turno cancelado (profesional)',
+    };
+    return labels[tipo] || tipo;
+  };
+
+  const getEventoColor = (tipo: string): string => {
+    if (tipo.includes('CREADA') || tipo === 'BLOQUEO_CREADO') return 'bg-emerald-50 text-emerald-700';
+    if (tipo.includes('ELIMINADA') || tipo === 'BLOQUEO_ELIMINADO') return 'bg-slate-50 text-slate-700';
+    if (tipo.includes('CANCELADO')) return 'bg-red-50 text-red-700';
+    return 'bg-blue-50 text-blue-700';
+  };
+
+  if (loading && auditoria.length === 0) {
+    return (
+      <div className="py-12 flex items-center justify-center gap-2 text-slate-500">
+        <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+        {t('common').loading}
+      </div>
+    );
+  }
+
+  if (auditoria.length === 0) {
+    return (
+      <div className="py-12 text-center text-slate-500">
+        <p>No hay eventos de auditoría registrados</p>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="space-y-4">
+        {auditoria.map((event) => (
+          <div key={event.id} className={`p-4 rounded-lg border border-slate-200 ${getEventoColor(event.tipoEvento)}`}>
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="font-semibold text-sm">{getEventoLabel(event.tipoEvento)}</span>
+                  <span className="text-xs text-slate-500">
+                    {new Date(event.creadoAt).toLocaleDateString('es-AR')} {new Date(event.creadoAt).toLocaleTimeString('es-AR')}
+                  </span>
+                </div>
+                {event.detalle && (
+                  <div className="text-xs text-slate-600 mt-2">
+                    {event.tipoEvento === 'DISPONIBILIDAD_CREADA' && event.detalle.diaSemana && (
+                      <p>Día: {event.detalle.diaSemana} | {event.detalle.horaInicio || '—'} - {event.detalle.horaFin || '—'}</p>
+                    )}
+                    {event.tipoEvento === 'BLOQUEO_CREADO' && (
+                      <p>
+                        Motivo: {event.detalle.motivo || 'Sin especificar'}<br/>
+                        {event.detalle.turnosCancelados && `Turnos cancelados: ${event.detalle.turnosCancelados}`}
+                      </p>
+                    )}
+                    {event.tipoEvento === 'TURNO_CANCELADO_POR_PROFESIONAL' && event.detalle.razon && (
+                      <p>Razón: {event.detalle.razon}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+              {event.detalle && Object.keys(event.detalle).length > 0 && (
+                <button
+                  onClick={() => setSelectedEvent(selectedEvent === event.id ? null : event.id)}
+                  className="text-xs text-blue-600 hover:text-blue-700 ml-4"
+                >
+                  {selectedEvent === event.id ? 'Ocultar' : 'Ver detalles'}
+                </button>
+              )}
+            </div>
+            {selectedEvent === event.id && event.detalle && (
+              <div className="mt-3 pt-3 border-t border-current opacity-50 text-xs overflow-auto max-h-40">
+                <pre>{JSON.stringify(event.detalle, null, 2)}</pre>
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-6 pt-6 border-t border-slate-200">
+          <button
+            onClick={() => setPage(Math.max(1, page - 1))}
+            disabled={page === 1}
+            className="btn btn-secondary text-sm disabled:opacity-50"
+          >
+            Anterior
+          </button>
+          <span className="text-sm text-slate-600">
+            Página {page} de {totalPages}
+          </span>
+          <button
+            onClick={() => setPage(Math.min(totalPages, page + 1))}
+            disabled={page === totalPages}
+            className="btn btn-secondary text-sm disabled:opacity-50"
+          >
+            Siguiente
+          </button>
+        </div>
+      )}
     </div>
   );
 }
