@@ -285,7 +285,14 @@
   .section-title { font-size: 1.25rem; font-weight: 700; color: var(--color-text-primary); letter-spacing: -0.01em; }
 
   /* --- Tab navigation --- */
-  .tab-nav { display: flex; border-bottom: 1px solid var(--color-border); }
+  .tab-nav {
+    display: flex;
+    border-bottom: 1px solid var(--color-border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .tab-nav::-webkit-scrollbar { display: none; }
   .tab-btn {
     padding: 0.75rem 1.25rem;
     font-size: 0.875rem;
@@ -294,6 +301,7 @@
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
     white-space: nowrap;
+    flex-shrink: 0;
   }
   .tab-btn:hover { color: var(--color-text-primary); background-color: var(--color-surface-2); }
   .tab-btn-active { color: #2563eb; border-bottom-color: #2563eb; }
