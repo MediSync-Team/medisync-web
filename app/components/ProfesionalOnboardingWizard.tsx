@@ -3,6 +3,7 @@
 import { useState, useCallback } from 'react';
 import { api, Disponibilidad } from '../lib/api';
 import { DIAS_SEMANA } from '../lib/utils';
+import { CheckIcon, InfoIcon } from './icons';
 
 interface Props {
   profesionalId: string;
@@ -14,10 +15,10 @@ interface Props {
 type Modalidad = 'PRESENCIAL' | 'VIRTUAL';
 
 const STEPS = [
-  { label: 'Tu perfil',      icon: '👤', desc: 'Foto y presentación' },
-  { label: 'Disponibilidad', icon: '🗓️', desc: 'Días y horarios' },
-  { label: 'Precio',         icon: '💰', desc: 'Tarifa y modalidad' },
-  { label: '¡Listo!',        icon: '🚀', desc: 'Comenzá a recibir turnos' },
+  { label: 'Tu perfil',      icon: '1', desc: 'Foto y presentacion' },
+  { label: 'Disponibilidad', icon: '2', desc: 'Dias y horarios' },
+  { label: 'Precio',         icon: '3', desc: 'Tarifa y modalidad' },
+  { label: 'Listo',          icon: '4', desc: 'Comenza a recibir turnos' },
 ];
 
 export default function ProfesionalOnboardingWizard({ profesionalId, userId, nombre, onComplete }: Props) {
@@ -188,7 +189,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                     : 'text-slate-400 dark:text-slate-500 cursor-default'
                 }`}
             >
-              <span className="text-base leading-none">{i < step ? '✅' : s.icon}</span>
+              <span className="text-base leading-none">{i < step ? <CheckIcon size={14} className="text-emerald-600" /> : s.icon}</span>
               <span className="hidden sm:block">{s.label}</span>
             </button>
           ))}
@@ -307,8 +308,8 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                       value={nuevaDisp.modalidad}
                       onChange={e => setNuevaDisp(d => ({ ...d, modalidad: e.target.value as Modalidad }))}
                     >
-                      <option value="PRESENCIAL">🏥 Presencial</option>
-                      <option value="VIRTUAL">💻 Virtual</option>
+                      <option value="PRESENCIAL">Presencial</option>
+                      <option value="VIRTUAL">Virtual</option>
                     </select>
                   </div>
                 </div>
@@ -349,7 +350,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                         {d.horaInicio}–{d.horaFin}
                         <span className="text-emerald-600 dark:text-emerald-500 mx-1.5">·</span>
                         <span className="text-emerald-600 dark:text-emerald-400 text-xs">
-                          {d.modalidad === 'PRESENCIAL' ? '🏥 Presencial' : '💻 Virtual'}
+                          {d.modalidad === 'PRESENCIAL' ? 'Presencial' : 'Virtual'}
                         </span>
                       </div>
                       <button onClick={() => handleEliminarDisp(d.id)}
@@ -363,7 +364,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                 </div>
               ) : (
                 <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
-                  <span className="text-amber-500 text-base mt-0.5">⚠️</span>
+                  <InfoIcon size={14} className="text-amber-500 mt-0.5" />
                   <p className="text-xs text-amber-700 dark:text-amber-300">
                     Sin horarios los pacientes no pueden reservarte. Agregá al menos uno para continuar.
                   </p>
@@ -409,7 +410,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                         ${modalidadPerfil === m
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                           : 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-blue-300'}`}>
-                      {m === 'PRESENCIAL' ? '🏥 Presencial' : m === 'VIRTUAL' ? '💻 Virtual' : '🔀 Ambas'}
+                      {m === 'PRESENCIAL' ? 'Presencial' : m === 'VIRTUAL' ? 'Virtual' : 'Ambas'}
                     </button>
                   ))}
                 </div>
@@ -438,7 +439,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                     <div>
                       <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Dr/a. {nombre}</p>
                       <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
-                        {modalidadPerfil === 'PRESENCIAL' ? '🏥 Presencial' : modalidadPerfil === 'VIRTUAL' ? '💻 Virtual' : '🔀 Presencial y virtual'}
+                          {modalidadPerfil === 'PRESENCIAL' ? 'Presencial' : modalidadPerfil === 'VIRTUAL' ? 'Virtual' : 'Presencial y virtual'}
                       </p>
                     </div>
                     <div className="text-right">
@@ -458,7 +459,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
             <div className="text-center space-y-5 py-2">
               <div className="flex flex-col items-center gap-3">
                 <div className="w-20 h-20 rounded-full bg-emerald-100 dark:bg-emerald-900/40 flex items-center justify-center text-4xl">
-                  🎉
+                  <CheckIcon size={30} className="text-emerald-600" />
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">
@@ -477,7 +478,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                 </p>
                 {[
                   {
-                    icon: '🗓️',
+                     icon: 'Disp',
                     label: 'Disponibilidad',
                     value: disponibilidades.length > 0
                       ? `${disponibilidades.length} bloque${disponibilidades.length > 1 ? 's' : ''} configurado${disponibilidades.length > 1 ? 's' : ''}`
@@ -485,7 +486,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                     ok: disponibilidades.length > 0,
                   },
                   {
-                    icon: '💰',
+                     icon: '$',
                     label: 'Precio de consulta',
                     value: precio && Number(precio) > 0
                       ? `$${Number(precio).toLocaleString('es-AR')} ARS`
@@ -493,13 +494,13 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                     ok: !!(precio && Number(precio) > 0),
                   },
                   {
-                    icon: '📋',
+                     icon: 'Mat',
                     label: 'Matrícula',
                     value: matricula.trim() || 'No completada',
                     ok: !!matricula.trim(),
                   },
                   {
-                    icon: '📷',
+                     icon: 'Foto',
                     label: 'Foto de perfil',
                     value: fotoUrl.trim() ? 'Configurada' : 'No completada',
                     ok: !!fotoUrl.trim(),
@@ -514,7 +515,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                       <span className={`text-xs font-medium ${item.ok ? 'text-emerald-700 dark:text-emerald-400' : 'text-slate-400'}`}>
                         {item.value}
                       </span>
-                      <span className="text-sm">{item.ok ? '✅' : '⬜'}</span>
+                      <span className="text-[10px] font-semibold text-slate-500">{item.ok ? 'OK' : '--'}</span>
                     </div>
                   </div>
                 ))}
@@ -540,14 +541,14 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                   rel="noopener noreferrer"
                   className="block w-full text-center py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 border border-blue-200 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                 >
-                  👁️ Ver mi perfil como lo ven los pacientes
+                  Ver mi perfil como lo ven los pacientes
                 </a>
               </div>
 
               {/* Tips */}
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-left">
                 <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">
-                  💡 Próximos pasos recomendados
+                   Proximos pasos recomendados
                 </p>
                 <ul className="space-y-1.5 text-xs text-amber-800 dark:text-amber-300">
                   <li className="flex items-start gap-1.5">

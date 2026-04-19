@@ -442,7 +442,7 @@ export default function ProfesionalPage() {
                   <div className="flex flex-wrap gap-1.5">
                     {profesional.obrasSociales.map((os) => (
                       <span key={os} className="inline-flex items-center px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-xs font-medium">
-                        🏥 {os}
+                        {os}
                       </span>
                     ))}
                   </div>
@@ -878,7 +878,7 @@ function HorariosGrid({ disponibilidades }: { disponibilidades: any[] }) {
                 >
                   {b.horaInicio}–{b.horaFin}
                   <span className="opacity-60 text-[10px]">
-                    {b.modalidad === 'VIRTUAL' ? '💻' : b.modalidad === 'AMBOS' ? '🔄' : '🏥'}
+                    {b.modalidad === 'VIRTUAL' ? 'VIR' : b.modalidad === 'AMBOS' ? 'AMB' : 'PRE'}
                   </span>
                 </span>
               ))}
@@ -953,7 +953,7 @@ function GuestConfirmacion({
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Modalidad</span>
             <span className={`badge ${modalidad === 'VIRTUAL' ? 'badge-blue' : 'badge-gray'}`}>
-              {modalidad === 'VIRTUAL' ? '💻 Virtual' : '🏥 Presencial'}
+              {modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
             </span>
           </div>
         </div>
@@ -1057,7 +1057,7 @@ function ConfirmacionTurno({
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Modalidad</span>
             <span className={`badge ${modalidad === 'VIRTUAL' ? 'badge-blue' : 'badge-gray'}`}>
-              {modalidad === 'VIRTUAL' ? '💻 Virtual' : '🏥 Presencial'}
+              {modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
             </span>
           </div>
           {(lugarAtencion || profesional.lugarAtencion) && modalidad === 'PRESENCIAL' && (

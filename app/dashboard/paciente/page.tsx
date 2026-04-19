@@ -1122,7 +1122,7 @@ function RecetaModal({ turno, onClose }: { turno: Turno; onClose: () => void }) 
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white">
           <h3 className="font-bold text-slate-800">Receta e indicaciones</h3>
-          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
         </div>
 
         <div className="px-6 py-5">
@@ -1304,7 +1304,7 @@ function PreconsultaModal({ turno, onClose, onSuccess }: { turno: Turno; onClose
       <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white">
           <h3 className="font-bold text-slate-800">Cuestionario preconsulta</h3>
-          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
         </div>
 
         <div className="px-6 py-5 space-y-4">
@@ -1427,7 +1427,7 @@ function CalificarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: 
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="font-bold text-slate-800">{p.rateTitle}</h3>
-          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
         </div>
 
         <div className="px-6 py-5 space-y-5">
@@ -1441,7 +1441,7 @@ function CalificarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: 
             <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-lg shrink-0">
               {turno.profesional?.fotoUrl
                 ? <img src={turno.profesional.fotoUrl} className="w-full h-full rounded-full object-cover" alt="" />
-                : '👨‍⚕️'}
+                : <UserIcon size={18} className="text-blue-700" />}
             </div>
             <div>
               <p className="font-semibold text-slate-800 text-sm">Dr/a. {turno.profesional?.nombre} {turno.profesional?.apellido}</p>
@@ -1546,7 +1546,7 @@ function ReprogramarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="font-bold text-slate-800">Reprogramar turno</h3>
-          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
         </div>
 
         <div className="px-6 py-5 space-y-4">

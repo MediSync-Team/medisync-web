@@ -11,6 +11,7 @@ import {
   InvitacionClinica,
   Profesional,
 } from '../../lib/api';
+import { BuildingIcon, VideoIcon, CheckIcon } from '../../components/icons';
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 function dateKey(d: Date) {
@@ -363,7 +364,7 @@ export default function ClinicaDashboard() {
                           {t.estado}
                         </span>
                         <span className={`text-[10px] px-1.5 py-0.5 rounded-full border ${t.modalidad === 'VIRTUAL' ? 'text-purple-600 border-purple-200 bg-purple-50' : 'text-slate-500 border-slate-200 bg-slate-50'}`}>
-                          {t.modalidad === 'VIRTUAL' ? '💻' : '🏥'}
+                          {t.modalidad === 'VIRTUAL' ? <VideoIcon size={12} className="text-blue-600" /> : <BuildingIcon size={12} className="text-slate-500" />}
                         </span>
                       </div>
                     </div>
@@ -435,7 +436,7 @@ export default function ClinicaDashboard() {
             </p>
 
             {inviteError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{inviteError}</p>}
-            {inviteOk    && <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">✓ {inviteOk}</p>}
+             {inviteOk    && <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 inline-flex items-center gap-1.5"><CheckIcon size={12} /> {inviteOk}</p>}
 
             <div>
               <label className="text-xs font-semibold text-slate-600 mb-1 block">Email del profesional</label>

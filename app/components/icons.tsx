@@ -129,6 +129,23 @@ export const BuildingIcon = icon(
   </>
 );
 
+export const StethoscopeIcon = icon(
+  <>
+    <path d="M4 3v5a4 4 0 0 0 8 0V3" />
+    <path d="M8 12v2a4 4 0 0 0 8 0v-1" />
+    <circle cx="18" cy="12" r="2" />
+    <path d="M12 3v5" />
+  </>
+);
+
+export const HospitalIcon = icon(
+  <>
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M12 7v10" />
+    <path d="M8 11h8" />
+  </>
+);
+
 export const MapPinIcon = icon(
   <>
     <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
@@ -156,6 +173,13 @@ export const RefreshIcon = icon(
     <polyline points="23 4 23 10 17 10" />
     <polyline points="1 20 1 14 7 14" />
     <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+  </>
+);
+
+export const ShieldIcon = icon(
+  <>
+    <path d="M12 2l8 4v6c0 5-3.5 9.5-8 10-4.5-.5-8-5-8-10V6l8-4z" />
+    <path d="M9 12l2 2 4-4" />
   </>
 );
 

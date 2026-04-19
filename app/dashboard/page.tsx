@@ -20,7 +20,7 @@ import { imprimirCertificado } from '../lib/certificado-pdf';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, ChartIcon, TrashIcon, ClipboardIcon, PaperclipIcon,
-  XIcon, CheckIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon, ChatIcon, StarIcon,
+  XIcon, CheckIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon, ChatIcon, StarIcon, CreditCardIcon, RefreshIcon, PhoneIcon, ShieldIcon,
 } from '../components/icons';
 import { DIAS_SEMANA, estadoBadge, clinicalRiskBadge } from '../lib/utils';
 
@@ -1379,7 +1379,7 @@ function EmitirCertificadoModal({
       <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="font-bold text-slate-800 text-lg">Emitir Certificado Médico</h3>
-          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
+          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
             <XIcon size={18} />
           </button>
         </div>
@@ -1901,7 +1901,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl">
           <h3 className="font-bold text-slate-800 text-lg">{d.appointmentDetail}</h3>
-          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
+          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
             <XIcon size={18} />
           </button>
         </div>
@@ -2716,7 +2716,11 @@ function PagosView() {
     return map[e] ?? e;
   };
 
-  const modalidadIcon = (m: string) => m === 'VIRTUAL' ? '💻' : '🏥';
+  const modalidadIcon = (m: string) => (
+    m === 'VIRTUAL'
+      ? <VideoIcon size={13} className="text-blue-600" />
+      : <BuildingIcon size={13} className="text-emerald-600" />
+  );
 
   // Bar chart helpers
   const maxBruto = data ? Math.max(...data.mesesResumen.map(m => m.bruto), 1) : 1;
@@ -2817,7 +2821,7 @@ function PagosView() {
         </div>
       ) : !data || data.pagos.length === 0 ? (
         <div className="py-12 text-center">
-          <p className="text-3xl mb-2">💳</p>
+          <p className="text-3xl mb-2 text-blue-700 flex items-center justify-center"><CreditCardIcon size={26} /></p>
           <p className="text-slate-500 dark:text-slate-400 text-sm">No hay pagos en el período seleccionado.</p>
         </div>
       ) : (
@@ -2845,7 +2849,7 @@ function PagosView() {
                         : <span className="text-slate-400">Paciente sin cuenta</span>}
                     </td>
                     <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
-                      <span>{modalidadIcon(p.turno.modalidad)}</span>
+                      <span className="inline-flex items-center">{modalidadIcon(p.turno.modalidad)}</span>
                       <span className="ml-1">{p.turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}</span>
                     </td>
                     <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap text-xs">
@@ -3373,12 +3377,12 @@ function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
         {/* Feature highlights */}
         <div className="grid grid-cols-3 gap-2 text-xs text-center text-slate-500">
           {[
-            { icon: '🔄', text: 'Sincroniza con tu agenda' },
-            { icon: '📱', text: 'Responsive en móvil' },
-            { icon: '🔒', text: 'Sin registro del paciente' },
+            { icon: <RefreshIcon size={18} className="text-blue-600" />, text: 'Sincroniza con tu agenda' },
+            { icon: <PhoneIcon size={18} className="text-blue-600" />, text: 'Responsive en movil' },
+            { icon: <ShieldIcon size={18} className="text-blue-600" />, text: 'Sin registro del paciente' },
           ].map(({ icon, text }) => (
             <div key={text} className="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
-              <div className="text-lg mb-1">{icon}</div>
+              <div className="text-lg mb-1 inline-flex items-center justify-center">{icon}</div>
               <p>{text}</p>
             </div>
           ))}
@@ -3517,10 +3521,10 @@ function PlanView({
         <div className="space-y-3">
           {[
             { feature: 'Turnos', free: 'Hasta 20/mes', pro: 'Ilimitados' },
-            { feature: 'Estadísticas', free: '❌', pro: '✅' },
-            { feature: 'Cupones de descuento', free: '✅', pro: '✅' },
-            { feature: 'Pagos online', free: '✅', pro: '✅' },
-            { feature: 'Historia clínica', free: '✅', pro: '✅' },
+            { feature: 'Estadisticas', free: 'No', pro: 'Si' },
+            { feature: 'Cupones de descuento', free: 'Si', pro: 'Si' },
+            { feature: 'Pagos online', free: 'Si', pro: 'Si' },
+            { feature: 'Historia clinica', free: 'Si', pro: 'Si' },
           ].map((row, i) => (
             <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
               <span className="text-sm font-medium text-slate-700">{row.feature}</span>
@@ -3672,7 +3676,7 @@ function AuditoriaView({ profesionalId }: { profesionalId: string }) {
 function UpgradePrompt({ feature, onViewPlans }: { feature: string; onViewPlans: () => void }) {
   return (
     <div className="py-16 text-center">
-      <div className="text-5xl mb-4">🔒</div>
+      <div className="text-5xl mb-4 inline-flex items-center justify-center"><ShieldIcon size={42} className="text-slate-500" /></div>
       <p className="text-lg font-medium text-slate-900">Las {feature} están disponibles en el plan Pro</p>
       <p className="text-sm text-slate-600 mt-2">Suscríbete a Pro para desbloquear todas las funcionalidades</p>
       <button onClick={onViewPlans} className="btn btn-primary mt-6">

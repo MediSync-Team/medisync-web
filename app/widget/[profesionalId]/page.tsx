@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { api, Profesional, Slot } from '../../lib/api';
+import { BuildingIcon, VideoIcon, MapPinIcon } from '../../components/icons';
 
 const FRONTEND_URL =
   typeof window !== 'undefined'
@@ -186,7 +187,10 @@ export default function WidgetPage() {
             <p className="text-xs text-slate-500 mt-0.5">
               con {profesional.nombre} {profesional.apellido}
             </p>
-            <p className="text-xs text-slate-500">{modalidad === 'VIRTUAL' ? 'Modalidad virtual' : `📍 ${profesional.lugarAtencion ?? 'Presencial'}`}</p>
+            <p className="text-xs text-slate-500 inline-flex items-center gap-1">
+              {modalidad === 'VIRTUAL' ? <VideoIcon size={11} className="text-blue-600" /> : <MapPinIcon size={11} className="text-slate-500" />}
+              {modalidad === 'VIRTUAL' ? 'Modalidad virtual' : (profesional.lugarAtencion ?? 'Presencial')}
+            </p>
           </div>
 
           {/* Summary box */}
@@ -297,7 +301,10 @@ export default function WidgetPage() {
                 onClick={() => { setModalidad(m); setSelectedSlot(null); }}
                 className={`flex-1 py-1.5 text-xs font-semibold transition-colors ${modalidad === m ? 'bg-blue-600 text-white' : 'text-slate-500 hover:bg-slate-50'}`}
               >
-                {m === 'PRESENCIAL' ? '🏥 Presencial' : '💻 Virtual'}
+                <span className="inline-flex items-center justify-center gap-1">
+                  {m === 'PRESENCIAL' ? <BuildingIcon size={11} /> : <VideoIcon size={11} />}
+                  {m === 'PRESENCIAL' ? 'Presencial' : 'Virtual'}
+                </span>
               </button>
             ))}
           </div>

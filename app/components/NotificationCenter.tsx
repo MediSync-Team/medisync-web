@@ -4,6 +4,7 @@ import { useNotifications } from '../lib/notification-context';
 import { InAppNotification } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
 import PushNotificationToggle from './PushNotificationToggle';
+import { CalendarIcon, CheckIcon, XIcon, ClipboardIcon, BellIcon } from './icons';
 
 function timeAgo(dateStr: string): string {
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -16,15 +17,15 @@ function timeAgo(dateStr: string): string {
   return `hace ${days} d`;
 }
 
-const tipoIcon: Record<string, string> = {
-  TURNO_RESERVADO: '📅',
-  TURNO_CONFIRMADO: '✅',
-  TURNO_CANCELADO: '❌',
-  RECETA_EMITIDA: '💊',
+const tipoIcon: Record<string, React.ReactNode> = {
+  TURNO_RESERVADO: <CalendarIcon size={18} className="text-blue-600" />,
+  TURNO_CONFIRMADO: <CheckIcon size={18} className="text-emerald-600" />,
+  TURNO_CANCELADO: <XIcon size={18} className="text-red-600" />,
+  RECETA_EMITIDA: <ClipboardIcon size={18} className="text-amber-600" />,
 };
 
 function NotifItem({ notif, onRead }: { notif: InAppNotification; onRead: (id: string) => void }) {
-  const icon = tipoIcon[notif.tipo] ?? '🔔';
+  const icon = tipoIcon[notif.tipo] ?? <BellIcon size={18} className="text-slate-500" />;
   return (
     <div
       className={`flex gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!notif.leida ? 'bg-blue-50/60 dark:bg-blue-900/20' : ''}`}
@@ -33,7 +34,7 @@ function NotifItem({ notif, onRead }: { notif: InAppNotification; onRead: (id: s
         if (notif.link) window.location.href = notif.link;
       }}
     >
-      <span className="text-xl mt-0.5 shrink-0">{icon}</span>
+      <span className="text-xl mt-0.5 shrink-0 inline-flex items-center">{icon}</span>
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <p className={`text-sm font-medium text-slate-800 dark:text-slate-100 ${!notif.leida ? 'font-semibold' : ''}`}>

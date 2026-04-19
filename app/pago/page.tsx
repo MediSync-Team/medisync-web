@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api, CuponValidado } from '../lib/api';
+import { CreditCardIcon } from '../components/icons';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
@@ -99,7 +100,7 @@ function PagoContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 py-6">
       <div className="card p-8 max-w-md w-full">
-        <div className="text-4xl mb-4 text-center">💳</div>
+        <div className="text-4xl mb-4 text-center text-blue-700 flex items-center justify-center"><CreditCardIcon size={30} /></div>
         <h1 className="text-xl font-bold text-slate-900 mb-6 text-center">Pagar consulta</h1>
 
         {errorMessage && (

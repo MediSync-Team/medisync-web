@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, API_BASE, Especialidad, Genero } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
-import { GoogleIcon, MicrosoftIcon } from '../components/icons';
+import { GoogleIcon, MicrosoftIcon, UserIcon, StethoscopeIcon, HospitalIcon } from '../components/icons';
 import ThemeLangToggle from '../components/ThemeLangToggle';
 import PasswordInput from '../components/PasswordInput';
 import PasswordStrengthIndicator, { getRequirements } from '../components/PasswordStrengthIndicator';
@@ -93,9 +93,9 @@ export default function RegisterPage() {
               <label className="field-label mb-2 block">{a.role}</label>
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  { value: 'PACIENTE',     icon: '🧑‍⚕️', title: a.patient,      desc: 'Reservá turnos y accedé a tu historial' },
-                  { value: 'PROFESIONAL',  icon: '👨‍⚕️', title: a.professional,  desc: 'Gestioná tu agenda y pacientes' },
-                  { value: 'CLINICA',      icon: '🏥', title: 'Clínica',         desc: 'Administrá varios profesionales' },
+                  { value: 'PACIENTE', icon: <UserIcon size={22} className="text-blue-700" />, title: a.patient, desc: 'Reservá turnos y accedé a tu historial' },
+                  { value: 'PROFESIONAL', icon: <StethoscopeIcon size={22} className="text-blue-700" />, title: a.professional, desc: 'Gestioná tu agenda y pacientes' },
+                  { value: 'CLINICA', icon: <HospitalIcon size={22} className="text-blue-700" />, title: 'Clínica', desc: 'Administrá varios profesionales' },
                 ] as const).map(({ value, icon, title, desc }) => (
                   <button
                     key={value}
@@ -107,7 +107,7 @@ export default function RegisterPage() {
                         : 'border-slate-200 dark:border-slate-600 hover:border-blue-300 hover:bg-slate-50 dark:hover:bg-slate-700'
                     }`}
                   >
-                    <span className="text-2xl">{icon}</span>
+                    <span className="text-2xl" aria-hidden>{icon}</span>
                     <span className={`text-xs font-semibold ${formData.rol === value ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>{title}</span>
                     <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">{desc}</span>
                   </button>

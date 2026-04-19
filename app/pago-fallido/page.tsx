@@ -3,6 +3,7 @@
 import { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { XIcon } from '../components/icons';
 
 function PagoFallidoContent() {
   const searchParams = useSearchParams();
@@ -20,7 +21,7 @@ function PagoFallidoContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg text-center">
-        <div className="text-6xl mb-4">❌</div>
+        <div className="text-6xl mb-4 flex items-center justify-center"><XIcon size={48} className="text-red-600" /></div>
         <h1 className="text-2xl font-bold text-red-600 mb-4">Pago rechazado</h1>
         <p className="text-gray-600 mb-6">
           No se pudo procesar el pago. Tu turno no ha sido confirmado. Podés intentar nuevamente.

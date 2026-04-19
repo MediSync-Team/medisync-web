@@ -9,6 +9,7 @@ import OnboardingTour from './components/OnboardingTour';
 import Pagination from './components/Pagination';
 import StarRating from './components/StarRating';
 import ThemeLangToggle from './components/ThemeLangToggle';
+import { MediSyncLogo, SearchIcon, HospitalIcon, StethoscopeIcon, BuildingIcon, VideoIcon, MapPinIcon } from './components/icons';
 import { OBRAS_SOCIALES } from './lib/obras-sociales';
 
 const HOME_TOUR_STEPS = [
@@ -165,13 +166,13 @@ export default function HomePage() {
 
   // Labels for active filter pills
   const filterPills: { key: keyof Filters; label: string }[] = [
-    ...(filters.disponibleEstaSemana ? [{ key: 'disponibleEstaSemana' as const, label: '🟢 Con turno esta semana' }] : []),
+    ...(filters.disponibleEstaSemana ? [{ key: 'disponibleEstaSemana' as const, label: 'Con turno esta semana' }] : []),
     ...(filters.precioMin ? [{ key: 'precioMin' as const, label: `Precio mín: $${filters.precioMin}` }] : []),
     ...(filters.precioMax ? [{ key: 'precioMax' as const, label: `Precio máx: $${filters.precioMax}` }] : []),
     ...(filters.modalidad ? [{ key: 'modalidad' as const, label: filters.modalidad === 'PRESENCIAL' ? 'Presencial' : 'Virtual' }] : []),
     ...(filters.fecha ? [{ key: 'fecha' as const, label: `Disponible el ${new Date(filters.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}` }] : []),
     ...(filters.orderBy ? [{ key: 'orderBy' as const, label: { precio_asc: 'Precio ↑', precio_desc: 'Precio ↓', nombre_asc: 'Nombre A-Z' }[filters.orderBy] }] : []),
-    ...(filters.obraSocial ? [{ key: 'obraSocial' as const, label: `🏥 ${filters.obraSocial}` }] : []),
+    ...(filters.obraSocial ? [{ key: 'obraSocial' as const, label: `Obra social: ${filters.obraSocial}` }] : []),
   ];
 
   return (
@@ -185,11 +186,7 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center gap-2.5">
-              <svg width="28" height="28" viewBox="0 0 32 32" fill="none" aria-hidden="true">
-                <rect width="32" height="32" rx="8" fill="#2563EB" />
-                <path d="M9 16h14M16 9v14" stroke="white" strokeWidth="3" strokeLinecap="round" />
-                <circle cx="16" cy="16" r="5" stroke="white" strokeWidth="1.5" />
-              </svg>
+              <MediSyncLogo size={28} />
               <span className="text-xl font-bold text-blue-600 tracking-tight">MediSync</span>
             </div>
             <div className="flex items-center gap-3">
@@ -357,7 +354,7 @@ export default function HomePage() {
                               : 'border-slate-200 text-slate-600 hover:bg-slate-50'
                           }`}
                         >
-                          {m === '' ? h.allModalities : m === 'PRESENCIAL' ? `🏥 ${h.inPerson}` : `💻 ${h.virtual}`}
+                          {m === '' ? h.allModalities : m === 'PRESENCIAL' ? h.inPerson : h.virtual}
                         </button>
                       ))}
                     </div>
@@ -393,7 +390,7 @@ export default function HomePage() {
                   {/* Obra social */}
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                      🏥 Obra social / prepaga
+                      Obra social / prepaga
                     </label>
                     <select
                       value={draft.obraSocial}
@@ -417,7 +414,7 @@ export default function HomePage() {
                     className="w-4 h-4 accent-emerald-600"
                   />
                   <div>
-                    <p className="text-sm font-semibold text-emerald-800">🟢 Solo con turno disponible esta semana</p>
+                      <p className="text-sm font-semibold text-emerald-800">Solo con turno disponible esta semana</p>
                     <p className="text-xs text-emerald-600">Muestra únicamente profesionales con slots libres en los próximos 7 días (verificación en tiempo real).</p>
                   </div>
                 </label>
@@ -499,7 +496,7 @@ export default function HomePage() {
             </div>
           ) : profesionales.length === 0 ? (
             <div className="text-center py-16 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-100 dark:border-slate-700">
-              <div className="text-5xl mb-4">🔍</div>
+              <div className="text-5xl mb-4 text-slate-400 flex items-center justify-center"><SearchIcon size={36} /></div>
               <p className="text-slate-600 dark:text-slate-300 font-medium mb-1">
                 {advCount > 0 || filters.search || filters.especialidad
                   ? h.noResultsDesc
@@ -552,7 +549,7 @@ function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDis
         <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-2xl shrink-0 border border-blue-100 dark:border-blue-800 overflow-hidden">
           {prof.fotoUrl
             ? <img src={prof.fotoUrl} alt={prof.nombre} className="w-full h-full object-cover" />
-            : '👨‍⚕️'}
+            : <StethoscopeIcon size={22} className="text-blue-700" />}
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">Dr/a. {prof.nombre} {prof.apellido}</h3>
@@ -578,12 +575,12 @@ function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDis
         <div className="flex gap-1.5 mt-3">
           {tienePresencial && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full text-[11px] font-medium">
-              🏥 {h.inPerson}
+              <BuildingIcon size={12} /> {h.inPerson}
             </span>
           )}
           {tieneVirtual && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-[11px] font-medium">
-              💻 {h.virtual}
+              <VideoIcon size={12} /> {h.virtual}
             </span>
           )}
         </div>
@@ -591,7 +588,7 @@ function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDis
 
       {prof.lugarAtencion && (
         <p className="text-slate-400 dark:text-slate-500 text-xs mt-2 flex items-center gap-1 truncate">
-          <span>📍</span> {prof.lugarAtencion}
+          <MapPinIcon size={12} className="text-slate-400" /> {prof.lugarAtencion}
         </p>
       )}
 

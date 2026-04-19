@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { clinicasApi, InvitacionClinica, Clinica } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
+import { ClockIcon, CheckIcon, XIcon, HospitalIcon, MapPinIcon } from '../../components/icons';
 
 type InvitacionConClinica = InvitacionClinica & {
   clinica: Pick<Clinica, 'nombre' | 'descripcion' | 'logoUrl' | 'direccion'>;
@@ -80,7 +81,7 @@ export default function InvitacionPage() {
     return (
       <Shell>
         <StatusCard
-          icon="❌"
+          icon={<XIcon size={24} className="text-red-600" />}
           title="Invitación no encontrada"
           desc="El link no es válido o ya fue procesado."
           action={<Link href="/dashboard" className="btn btn-primary btn-sm">Ir al dashboard</Link>}
@@ -93,7 +94,7 @@ export default function InvitacionPage() {
     return (
       <Shell>
         <StatusCard
-          icon="⏰"
+          icon={<ClockIcon size={24} className="text-amber-600" />}
           title="Invitación expirada"
           desc="Este link ya no es válido. Pedí al administrador de la clínica que te envíe una nueva invitación."
           action={<Link href="/dashboard" className="btn btn-secondary btn-sm">Ir al dashboard</Link>}
@@ -106,7 +107,7 @@ export default function InvitacionPage() {
     return (
       <Shell>
         <StatusCard
-          icon="✅"
+          icon={<CheckIcon size={24} className="text-emerald-600" />}
           title={`Te uniste a ${inv?.clinica.nombre}`}
           desc="Ya sos parte de la clínica. Podés ver tus turnos y agenda desde tu dashboard."
           action={<Link href="/dashboard" className="btn btn-primary btn-sm">Ir al dashboard</Link>}
@@ -119,7 +120,7 @@ export default function InvitacionPage() {
     return (
       <Shell>
         <StatusCard
-          icon="🚫"
+          icon={<XIcon size={24} className="text-red-600" />}
           title="Invitación rechazada"
           desc="Rechazaste la invitación. Si cambiás de opinión, pedí que te vuelvan a invitar."
           action={<Link href="/dashboard" className="btn btn-secondary btn-sm">Ir al dashboard</Link>}
@@ -139,7 +140,7 @@ export default function InvitacionPage() {
           <div className="w-14 h-14 rounded-2xl bg-blue-100 flex items-center justify-center text-2xl shrink-0 overflow-hidden">
             {clinicaData.logoUrl
               ? <img src={clinicaData.logoUrl} alt="" className="w-full h-full object-cover" />
-              : '🏥'}
+              : <HospitalIcon size={24} className="text-blue-700" />}
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-bold text-slate-800">{clinicaData.nombre}</p>
@@ -148,7 +149,7 @@ export default function InvitacionPage() {
             )}
             {clinicaData.direccion && (
               <p className="text-xs text-slate-400 mt-1 flex items-center gap-1">
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                <MapPinIcon size={11} className="text-slate-400" />
                 {clinicaData.direccion}
               </p>
             )}
@@ -229,7 +230,7 @@ function Shell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function StatusCard({ icon, title, desc, action }: { icon: string; title: string; desc: string; action?: React.ReactNode }) {
+function StatusCard({ icon, title, desc, action }: { icon: React.ReactNode; title: string; desc: string; action?: React.ReactNode }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-8 text-center space-y-3">
       <div className="text-4xl">{icon}</div>
