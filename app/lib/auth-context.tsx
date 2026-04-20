@@ -27,19 +27,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    await api.auth.login({ email, password });
+    const result = await api.auth.login({ email, password });
+    if (result.token) localStorage.setItem('token', result.token);
     const userData = await api.auth.me();
     setUser(userData);
   };
 
   const register = async (data: Parameters<typeof api.auth.register>[0]) => {
-    await api.auth.register(data);
+    const result = await api.auth.register(data);
+    if (result.token) localStorage.setItem('token', result.token);
     const userData = await api.auth.me();
     setUser(userData);
   };
 
   const logout = async () => {
     await api.auth.logout();
+    localStorage.removeItem('token');
     setUser(null);
   };
 

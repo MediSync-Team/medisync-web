@@ -13,8 +13,10 @@ async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const headers: HeadersInit = {
     'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
     ...options.headers,
   };
 
@@ -336,6 +338,7 @@ export type RegisterData = {
 };
 
 export type AuthResponse = {
+  token?: string;
   user: {
     id: string;
     email: string;
