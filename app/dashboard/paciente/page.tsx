@@ -59,6 +59,7 @@ export default function PacienteDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   const { t } = useLang();
   const p = t('paciente');
+  const d = t('dashboard');
   const c = t('common');
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
@@ -359,7 +360,7 @@ export default function PacienteDashboard() {
               <MediSyncLogo size={28} />
               <div className="hidden sm:block">
                 <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-none">MediSync</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 leading-none mt-0.5">Mi panel</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 leading-none mt-0.5">{d.title}</p>
               </div>
             </div>
             <div className="flex items-center gap-1.5">
@@ -367,7 +368,7 @@ export default function PacienteDashboard() {
               <ThemeLangToggle compact />
               <Link href="/" data-onboarding="pac-buscar-link" className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm hidden sm:inline-flex">
                 <SearchIcon size={15} />
-                Buscar profesionales
+                {d.searchProfessionals}
               </Link>
               <button data-onboarding="pac-profile-btn" onClick={() => setShowProfileModal(true)} className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm">
                 <UserIcon size={15} />
@@ -375,7 +376,7 @@ export default function PacienteDashboard() {
               </button>
               <button onClick={() => { logout(); router.push('/'); }} className="btn btn-secondary text-sm">
                 <LogOutIcon size={15} />
-                <span className="hidden sm:inline">Salir</span>
+                <span className="hidden sm:inline">{d.logout}</span>
               </button>
             </div>
           </div>
@@ -407,7 +408,7 @@ export default function PacienteDashboard() {
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'resumen' ? 'tab-btn-active' : ''}`}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-              Resumen
+{p.summary}
             </button>
             <button
               data-onboarding="pac-tab-proximos"
@@ -451,27 +452,22 @@ export default function PacienteDashboard() {
               onClick={() => handleTabChange('historial')}
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'historial' ? 'tab-btn-active' : ''}`}
             >
-              <ClipboardIcon size={13} />
-              Historial clínico
+<ClipboardIcon size={13} />
+              {d.medicalHistory}
             </button>
             <button
               onClick={() => handleTabChange('recetas')}
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'recetas' ? 'tab-btn-active' : ''}`}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              Recetas
-              {misRecetas.length > 0 && (
-                <span className="ml-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                  {misRecetas.length}
-                </span>
-              )}
+              {d.recipes}
             </button>
             <button
               onClick={() => handleTabChange('certificados')}
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'certificados' ? 'tab-btn-active' : ''}`}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="19" x2="12" y2="13"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
-              Certificados
+              {d.certificates_}
               {misCertificados.length > 0 && (
                 <span className="ml-1 bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {misCertificados.length}
@@ -483,14 +479,14 @@ export default function PacienteDashboard() {
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'datosMedicos' ? 'tab-btn-active' : ''}`}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-              Mis datos médicos
+              {d.myMedicalData}
             </button>
             <button
               onClick={() => handleTabChange('estadisticas')}
               className={`tab-btn flex items-center gap-1.5 ${activeTab === 'estadisticas' ? 'tab-btn-active' : ''}`}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              Estadísticas
+              {d.statistics}
             </button>
           </div>
 
@@ -502,9 +498,10 @@ export default function PacienteDashboard() {
                 misCertificados={misCertificados}
                 pacienteStats={pacienteStats}
                 recordatorios={recordatorios}
+                d={d}
               />
             ) : activeTab === 'estadisticas' ? (
-              <EstadisticasPaciente stats={pacienteStats} loading={loadingStats} />
+              <EstadisticasPaciente stats={pacienteStats} loading={loadingStats} d={d} />
             ) : activeTab === 'historial' ? (
               /* ── Historial clínico ────────────────── */
               loadingHistorial ? (
@@ -927,6 +924,7 @@ function TurnoCard({
 }) {
   const { t } = useLang();
   const p = t('paciente');
+  const d = t('dashboard');
   const isActive = turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO';
   const isFuture = new Date(turno.fechaHora) >= new Date();
   const preconsultaCompletada = Boolean(turno.preconsultaCompletadaAt);
@@ -1850,7 +1848,7 @@ function HistorialCard({ item, onCalificar }: { item: HistorialTurno; onCalifica
 }
 
 /* ── Patient statistics panel ────────────────────────────────────────────── */
-function EstadisticasPaciente({ stats, loading }: { stats: PacienteStats | null; loading: boolean }) {
+function EstadisticasPaciente({ stats, loading, d }: { stats: PacienteStats | null; loading: boolean; d: any }) {
   if (loading) {
     return (
       <div className="space-y-4">
@@ -1904,7 +1902,7 @@ function EstadisticasPaciente({ stats, loading }: { stats: PacienteStats | null;
 
       {stats.topProfesionales.length > 0 && (
         <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">Profesionales más visitados</p>
+          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{d.mostVisitedProfessionals}</p>
           <div className="space-y-3">
             {stats.topProfesionales.map(({ profesional, totalTurnos }, i) => profesional && (
               <div key={profesional.id} className="flex items-center gap-3">
@@ -1981,12 +1979,14 @@ function ResumenPacienteView({
   misCertificados,
   pacienteStats,
   recordatorios,
+  d,
 }: {
   turnosProximos: Turno[];
   misRecetas: RecetaPaciente[];
   misCertificados: CertificadoPaciente[];
   pacienteStats: PacienteStats | null;
   recordatorios: any[];
+  d: any;
 }) {
   const proximoTurno = turnosProximos.length > 0 ? turnosProximos[0] : null;
   const recetasActivas = misRecetas.filter(r => {
@@ -2001,7 +2001,7 @@ function ResumenPacienteView({
       <div className="grid grid-cols-2 gap-3">
         <div className="border border-blue-200 bg-blue-50 rounded-xl p-4">
           <p className="text-xs text-blue-600 font-semibold mb-1 flex items-center gap-1">
-            <CalendarIcon size={12} /> Próximo turno
+            <CalendarIcon size={12} /> {d.nextAppointment}
           </p>
           {proximoTurno ? (
             <>
@@ -2014,13 +2014,13 @@ function ResumenPacienteView({
               </p>
             </>
           ) : (
-            <p className="text-xs text-slate-500 font-medium">Sin turnos agendados</p>
+            <p className="text-xs text-slate-500 font-medium">{d.noScheduledAppointments}</p>
           )}
         </div>
 
         <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4">
           <p className="text-xs text-emerald-600 font-semibold mb-1 flex items-center gap-1">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></svg> Recetas activas
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></svg> {d.activeRecipes}
           </p>
           <p className="font-bold text-slate-800 text-sm">{recetasActivas.length}</p>
           {recetasActivas.length > 0 && (
@@ -2030,7 +2030,7 @@ function ResumenPacienteView({
 
         <div className="border border-amber-200 bg-amber-50 rounded-xl p-4">
           <p className="text-xs text-amber-600 font-semibold mb-1 flex items-center gap-1">
-            <CreditCardIcon size={12} /> Gasto este mes
+            <CreditCardIcon size={12} /> {d.spendingThisMonth}
           </p>
           <p className="font-bold text-slate-800 text-sm">
             ${(pacienteStats?.totalGastado || 0).toLocaleString('es-AR')}
@@ -2064,7 +2064,7 @@ function ResumenPacienteView({
 
       {(pacienteStats?.topProfesionales || []).length > 0 && (
         <div className="border border-slate-200 rounded-xl p-4">
-          <p className="text-sm font-semibold text-slate-700 mb-3">Profesionales más visitados</p>
+          <p className="text-sm font-semibold text-slate-700 mb-3">{d.mostVisitedProfessionals}</p>
           <div className="flex flex-wrap gap-3">
             {pacienteStats!.topProfesionales.map((prof) => (
               prof.profesional && (
