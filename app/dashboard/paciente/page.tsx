@@ -528,9 +528,9 @@ export default function PacienteDashboard() {
                       onClick={downloadHistorialPDF}
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
                     >
-                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                      Descargar historial completo
-                    </button>
+<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                {d.rateConsultation}
+              </button>
                   </div>
                   <div className="space-y-4">
                     {historial.map(item => (
@@ -766,7 +766,7 @@ export default function PacienteDashboard() {
                           <span className="flex items-center gap-1"><CalendarIcon size={11} />{new Date(item.fecha).toLocaleDateString('es-AR')}</span>
                           <span>{item.modalidad}</span>
                         </div>
-                        <span className="badge badge-yellow mt-2">{s[item.estado] || item.estado}</span>
+                        <span className="badge badge-yellow mt-2">{(s as any)[item.estado] || item.estado}</span>
                       </div>
                       <button onClick={() => cancelarListaEspera(item.id)} className="btn btn-secondary btn-sm">
                         {p.cancel}
@@ -819,6 +819,8 @@ export default function PacienteDashboard() {
                       onCalificar={() => setTurnoCalificar(turno)}
                       onVideoCall={() => setTurnoVideoCall(turno)}
                       onChat={() => setTurnoChat(turno)}
+                      d={d}
+                      s={s}
                     />
                   ))}
                 </div>
@@ -909,7 +911,7 @@ export default function PacienteDashboard() {
 
 /* ── Turno Card ──────────────────────────────────────────── */
 function TurnoCard({
-  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, onVideoCall, onChat, horasMinCancelacion,
+  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, onVideoCall, onChat, horasMinCancelacion, d, s,
 }: {
   turno: Turno;
   pagoInfo?: { necesitaPago: boolean };
@@ -923,10 +925,11 @@ function TurnoCard({
   onCalificar: () => void;
   onVideoCall: () => void;
   onChat: () => void;
+  d: any;
+  s: any;
 }) {
   const { t } = useLang();
   const p = t('paciente');
-  const d = t('dashboard');
   const isActive = turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO';
   const isFuture = new Date(turno.fechaHora) >= new Date();
   const preconsultaCompletada = Boolean(turno.preconsultaCompletadaAt);
@@ -946,9 +949,8 @@ function TurnoCard({
         turno.estado === 'CANCELADO' ? 'bg-red-50 text-red-700' :
         'bg-blue-50 text-blue-700'
       }`}>
-        <span className="flex items-center gap-1.5">
-          {turno.estado === 'CONFIRMADO' && <CheckIcon size={11} />}
-          {turno.estado}
+<span className="flex items-center gap-1.5">
+          {(s as any)[turno.estado] || turno.estado}
         </span>
         {turno.modalidad === 'VIRTUAL' ? (
           <span className="flex items-center gap-1"><VideoIcon size={11} /> {t('home').virtual}</span>
@@ -1646,7 +1648,7 @@ function HistorialCard({ item, onCalificar, d, m, s }: { item: HistorialTurno; o
             {new Date(item.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
-        <span className="badge badge-green text-[10px]">{d.completed}</span>
+        <span className="badge badge-green text-[10px]">{(s as any)[item.estado] || item.estado}</span>
       </div>
 
       <div className="p-4 space-y-3">
@@ -1840,7 +1842,7 @@ function HistorialCard({ item, onCalificar, d, m, s }: { item: HistorialTurno; o
               <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500">
                 <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
               </svg>
-              Calificar consulta
+              {d.rateConsultation}
             </button>
           </div>
         )}
@@ -1942,7 +1944,7 @@ function EstadisticasPaciente({ stats, loading, d }: { stats: PacienteStats | nu
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-bold text-emerald-600">${pago.monto.toLocaleString('es-AR')}</p>
-                  <span className="badge badge-green text-[10px]">Aprobado</span>
+                  <span className="badge badge-green text-[10px]">{d.approved}</span>
                 </div>
               </div>
             ))}
@@ -2041,7 +2043,7 @@ function ResumenPacienteView({
 
         <div className="border border-slate-200 bg-slate-50 rounded-xl p-4">
           <p className="text-xs text-slate-600 font-semibold mb-1 flex items-center gap-1">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> Certificados
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> {d.certificates_}
           </p>
           <p className="font-bold text-slate-800 text-sm">{misCertificados.length}</p>
         </div>
@@ -2089,7 +2091,7 @@ function ResumenPacienteView({
                     <p className="text-xs font-semibold text-slate-700 truncate">
                       {prof.profesional.nombre}
                     </p>
-                    <p className="text-xs text-slate-500">{prof.totalTurnos} turno{prof.totalTurnos !== 1 ? 's' : ''}</p>
+                    <p className="text-xs text-slate-500">{prof.totalTurnos} {prof.totalTurnos === 1 ? d.appointment : d.appointments}</p>
                   </div>
                 </div>
               )
