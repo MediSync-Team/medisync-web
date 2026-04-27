@@ -14,15 +14,16 @@ import {
 } from '../../components/icons';
 import StarRating from '../../components/StarRating';
 import AgendarCalendario from '../../components/AgendarCalendario';
-import { DIAS_SEMANA, estadoBadge } from '../../lib/utils';
+import { DIAS_SEMANA, getDaysShort, estadoBadge } from '../../lib/utils';
 
 export default function ProfesionalPage() {
   const params = useParams();
   const router = useRouter();
   const { user } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const h = t('home');
   const p = t('professional');
+  const diasShort = getDaysShort(lang);
   const [profesional, setProfesional] = useState<Profesional | null>(null);
   const [loading, setLoading] = useState(true);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -440,7 +441,7 @@ export default function ProfesionalPage() {
               {/* Obras sociales */}
               {profesional.obrasSociales && profesional.obrasSociales.length > 0 && (
                 <div className="mt-4 pt-4 border-t border-slate-100">
-                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Coberturas aceptadas</p>
+                  <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{p.acceptedCoverages}</p>
                   <div className="flex flex-wrap gap-1.5">
                     {profesional.obrasSociales.map((os) => (
                       <span key={os} className="inline-flex items-center px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-xs font-medium">
@@ -589,7 +590,7 @@ export default function ProfesionalPage() {
 
               {/* Date picker strip */}
               <div className="mb-5">
-                <p className="field-label mb-2">Seleccioná un día</p>
+                <p className="field-label mb-2">{p.selectDay}</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {getProximosDias().map((fecha) => {
                     const isSelected = selectedDate?.toDateString() === fecha.toDateString();
@@ -607,7 +608,7 @@ export default function ProfesionalPage() {
                         }`}
                       >
                         <span className="text-[9px] font-semibold uppercase tracking-wide">
-                          {DIAS_SEMANA[fecha.getDay()].slice(0, 3)}
+                          {diasShort[fecha.getDay()]}
                         </span>
                         <span className="text-base font-bold leading-none mt-0.5">{fecha.getDate()}</span>
                       </button>
@@ -845,9 +846,9 @@ export default function ProfesionalPage() {
 
 /* ── Weekly schedule visual grid ────────────────────────────────────────── */
 function HorariosGrid({ disponibilidades }: { disponibilidades: any[] }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const p = t('professional');
-  const DIAS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+  const days = lang === 'es' ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'] : p.daysShort;
 
   type Block = { horaInicio: string; horaFin: string; modalidad: string };
   const byDay = new Map<number, Block[]>();
@@ -867,7 +868,7 @@ function HorariosGrid({ disponibilidades }: { disponibilidades: any[] }) {
       <div className="space-y-2">
         {activeDays.map((dia) => (
           <div key={dia} className="flex items-start gap-3">
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 w-8 pt-0.5 shrink-0">{DIAS_SHORT[dia]}</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 w-8 pt-0.5 shrink-0">{days[dia]}</span>
             <div className="flex flex-wrap gap-1.5 flex-1">
               {byDay.get(dia)!.map((b, i) => (
                 <span

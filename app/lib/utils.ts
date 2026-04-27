@@ -1,5 +1,10 @@
 export const DIAS_SEMANA = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
 
+export function getDaysShort(lang: string = 'es') {
+  if (lang === 'en') return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  return ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+}
+
 export function estadoBadge(estado: string): string {
   const map: Record<string, string> = {
     CONFIRMADO: 'badge badge-green',
