@@ -68,6 +68,8 @@ export default function ProfesionalDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   const { t } = useLang();
   const d = t('dashboard');
+  const getSpecialty = d.getSpecialty;
+  const translateSpecialty = d.translateSpecialty;
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [loading, setLoading] = useState(true);
@@ -533,7 +535,7 @@ export default function ProfesionalDashboard() {
                   </div>
                 </div>
                 <p className="text-lg font-bold text-slate-800 mt-1 leading-tight">
-                  {user.profesional.especialidad?.nombre || '—'}
+                  {translateSpecialty(user.profesional.especialidad?.nombre || '')}
                 </p>
                 <p className="stat-desc">{d.title}</p>
               </div>
@@ -1691,7 +1693,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
               fotoUrl: turno.profesional.fotoUrl ?? null,
               lugarAtencion: turno.profesional.lugarAtencion ?? null,
               telefono: turno.profesional.telefono ?? '',
-              especialidad: { nombre: turno.profesional.especialidad?.nombre ?? '' },
+              especialidad: { nombre: translateSpecialty(turno.profesional.especialidad?.nombre ?? '') },
             },
             paciente: turno.paciente
               ? {
@@ -2172,7 +2174,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
                       onClick={() => exportarHistoriaClinicaPDF(historiaClinica!, {
                         nombre: turno.profesional?.nombre ?? '',
                         apellido: turno.profesional?.apellido ?? '',
-                        especialidad: turno.profesional?.especialidad?.nombre,
+                        especialidad: translateSpecialty(turno.profesional?.especialidad?.nombre),
                         matricula: turno.profesional?.matricula,
                         lugarAtencion: turno.profesional?.lugarAtencion,
                       })}
@@ -2339,7 +2341,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
                         profesional: {
                           nombre: turno.profesional!.nombre,
                           apellido: turno.profesional!.apellido,
-                          especialidad: turno.profesional!.especialidad?.nombre ?? '',
+                          especialidad: translateSpecialty(turno.profesional!.especialidad?.nombre ?? ''),
                           matricula: turno.profesional!.matricula,
                           lugarAtencion: turno.profesional!.lugarAtencion,
                           telefono: turno.profesional!.telefono,
@@ -2404,7 +2406,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
                             fotoUrl: turno.profesional!.fotoUrl ?? null,
                             lugarAtencion: turno.profesional!.lugarAtencion ?? null,
                             telefono: turno.profesional!.telefono ?? '',
-                            especialidad: { nombre: turno.profesional!.especialidad?.nombre ?? '' },
+                            especialidad: { nombre: translateSpecialty(turno.profesional!.especialidad?.nombre ?? '') },
                           },
                           paciente: turno.paciente
                             ? {

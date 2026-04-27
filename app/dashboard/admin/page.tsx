@@ -6,6 +6,7 @@ import { api, AdminStats, AdminAnalytics, AdminUsuario, AdminProfesional, AdminT
 import Pagination from '../../components/Pagination';
 import StarRating from '../../components/StarRating';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
+import { useLang } from '../../lib/i18n/context';
 
 type Tab = 'stats' | 'revenue' | 'usuarios' | 'profesionales' | 'turnos' | 'especialidades';
 
@@ -25,6 +26,9 @@ const ROL_COLORS: Record<string, string> = {
 
 export default function AdminPage() {
   const router = useRouter();
+  const { t } = useLang();
+  const d = t('dashboard');
+  const translateSpecialty = d.translateSpecialty;
   const [tab, setTab] = useState<Tab>('stats');
 
   // Auth guard
@@ -393,7 +397,7 @@ function UsuariosTab() {
                       <td className="px-4 py-3">
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROL_COLORS[u.rol] ?? ''}`}>{u.rol}</span>
                       </td>
-                      <td className="px-4 py-3 text-slate-500">{u.profesional?.especialidad.nombre ?? '—'}</td>
+                      <td className="px-4 py-3 text-slate-500">{translateSpecialty(u.profesional?.especialidad.nombre) ?? '—'}</td>
                       <td className="px-4 py-3 text-slate-400">{new Date(u.createdAt).toLocaleDateString('es-AR')}</td>
                       <td className="px-4 py-3">
                         {u.profesional ? (
@@ -490,7 +494,7 @@ function ProfesionalesTab() {
                   <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3 font-medium text-slate-800">{p.nombre} {p.apellido}</td>
                     <td className="px-4 py-3 text-slate-500">{p.usuario.email}</td>
-                    <td className="px-4 py-3 text-slate-600">{p.especialidad.nombre}</td>
+                    <td className="px-4 py-3 text-slate-600">{translateSpecialty(p.especialidad.nombre)}</td>
                     <td className="px-4 py-3 text-right text-slate-700">${Number(p.precioConsulta).toLocaleString('es-AR')}</td>
                     <td className="px-4 py-3">
                       {p.ratingPromedio != null ? (
@@ -597,7 +601,7 @@ function TurnosTab() {
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       {t.profesional.nombre} {t.profesional.apellido}
-                      <span className="block text-xs text-slate-400">{t.profesional.especialidad.nombre}</span>
+                      <span className="block text-xs text-slate-400">{translateSpecialty(t.profesional.especialidad.nombre)}</span>
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {t.paciente ? `${t.paciente.nombre} ${t.paciente.apellido}` : '—'}

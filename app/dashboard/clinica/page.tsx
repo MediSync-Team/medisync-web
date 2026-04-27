@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth-context';
+import { useLang } from '../../lib/i18n/context';
 import {
   clinicasApi,
   ClinicaConRelaciones,
@@ -55,6 +56,9 @@ type Tab = 'overview' | 'profesionales' | 'agenda' | 'invitaciones' | 'configura
 export default function ClinicaDashboard() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
+  const { t } = useLang();
+  const d = t('dashboard');
+  const translateSpecialty = d.translateSpecialty;
 
   const [tab, setTab]               = useState<Tab>('overview');
   const [clinica, setClinica]       = useState<ClinicaConRelaciones | null>(null);
@@ -248,7 +252,7 @@ export default function ClinicaDashboard() {
                       <Avatar p={p} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-slate-800 truncate">{p.nombre} {p.apellido}</p>
-                        <p className="text-xs text-blue-600 truncate">{p.especialidad?.nombre}</p>
+                        <p className="text-xs text-blue-600 truncate">{translateSpecialty(p.especialidad?.nombre)}</p>
                         <p className="text-xs text-slate-400">
                           {p.disponibilidades.length} {p.disponibilidades.length === 1 ? 'franja' : 'franjas'} horarias
                         </p>
@@ -290,7 +294,7 @@ export default function ClinicaDashboard() {
                             {p.activo ? 'Activo' : 'Inactivo'}
                           </span>
                         </div>
-                        <p className="text-xs text-blue-600">{p.especialidad?.nombre}</p>
+                        <p className="text-xs text-blue-600">{translateSpecialty(p.especialidad?.nombre)}</p>
                         <p className="text-xs text-slate-400 mt-0.5">
                           {dias.length ? dias.map(d => DIA_LABELS[d]).join(' · ') : 'Sin disponibilidad cargada'}
                         </p>
@@ -356,7 +360,7 @@ export default function ClinicaDashboard() {
                           {t.paciente ? `${t.paciente.nombre} ${t.paciente.apellido}` : 'Sin paciente'}
                         </p>
                         <p className="text-xs text-slate-500">
-                          con {t.profesional.nombre} {t.profesional.apellido} · {t.profesional.especialidad?.nombre}
+                          con {t.profesional.nombre} {t.profesional.apellido} · {translateSpecialty(t.profesional.especialidad?.nombre)}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">

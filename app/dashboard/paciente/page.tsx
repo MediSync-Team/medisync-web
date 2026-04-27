@@ -63,6 +63,7 @@ export default function PacienteDashboard() {
   const c = t('common');
   const s = t('status');
   const m = t('modality');
+  const translateSpecialty = d.translateSpecialty;
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'resumen' | 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'recetas' | 'certificados' | 'datosMedicos' | 'estadisticas'>('resumen');
@@ -503,7 +504,7 @@ export default function PacienteDashboard() {
                 d={d}
               />
             ) : activeTab === 'estadisticas' ? (
-              <EstadisticasPaciente stats={pacienteStats} loading={loadingStats} d={d} />
+              <EstadisticasPaciente stats={pacienteStats} loading={loadingStats} d={d} translateSpecialty={translateSpecialty} />
             ) : activeTab === 'historial' ? (
               /* ── Historial clínico ────────────────── */
               loadingHistorial ? (
@@ -534,7 +535,7 @@ export default function PacienteDashboard() {
                   </div>
                   <div className="space-y-4">
                     {historial.map(item => (
-                      <HistorialCard key={item.id} item={item} onCalificar={(t) => setTurnoCalificar(t as any)} d={d} m={m} s={s} />
+                      <HistorialCard key={item.id} item={item} onCalificar={(t) => setTurnoCalificar(t as any)} d={d} m={m} s={s} translateSpecialty={translateSpecialty} />
                     ))}
                   </div>
                   <Pagination
@@ -761,7 +762,7 @@ export default function PacienteDashboard() {
                         <p className="font-semibold text-slate-800">
                           {item.profesional?.nombre} {item.profesional?.apellido}
                         </p>
-                        <p className="text-sm text-blue-600 font-medium">{item.profesional?.especialidad?.nombre}</p>
+                        <p className="text-sm text-blue-600 font-medium">{translateSpecialty(item.profesional?.especialidad?.nombre)}</p>
                         <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
                           <span className="flex items-center gap-1"><CalendarIcon size={11} />{new Date(item.fecha).toLocaleDateString('es-AR')}</span>
                           <span>{item.modalidad}</span>
@@ -821,6 +822,7 @@ export default function PacienteDashboard() {
                       onChat={() => setTurnoChat(turno)}
                       d={d}
                       s={s}
+                      translateSpecialty={translateSpecialty}
                     />
                   ))}
                 </div>
@@ -911,7 +913,7 @@ export default function PacienteDashboard() {
 
 /* ── Turno Card ──────────────────────────────────────────── */
 function TurnoCard({
-  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, onVideoCall, onChat, horasMinCancelacion, d, s,
+  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, onVideoCall, onChat, horasMinCancelacion, d, s, translateSpecialty,
 }: {
   turno: Turno;
   pagoInfo?: { necesitaPago: boolean };
@@ -927,6 +929,7 @@ function TurnoCard({
   onChat: () => void;
   d: any;
   s: any;
+  translateSpecialty: (name: string) => string;
 }) {
   const { t } = useLang();
   const p = t('paciente');
@@ -966,7 +969,7 @@ function TurnoCard({
             <p className="font-semibold text-slate-800">
               {turno.profesional?.nombre} {turno.profesional?.apellido}
             </p>
-            <p className="text-xs text-blue-600 font-medium mt-0.5">{turno.profesional?.especialidad?.nombre}</p>
+            <p className="text-xs text-blue-600 font-medium mt-0.5">{translateSpecialty(turno.profesional?.especialidad?.nombre)}</p>
           </div>
           {/* Date/time */}
           <div className="text-right shrink-0">
@@ -1087,7 +1090,7 @@ function TurnoCard({
                 modalidad: turno.modalidad,
                 profesionalNombre: turno.profesional.nombre,
                 profesionalApellido: turno.profesional.apellido,
-                especialidad: turno.profesional.especialidad?.nombre ?? '',
+                especialidad: translateSpecialty(turno.profesional.especialidad?.nombre ?? ''),
                 lugarAtencion: turno.profesional.lugarAtencion,
               }}
             />
@@ -1197,7 +1200,7 @@ function RecetaModal({ turno, onClose }: { turno: Turno; onClose: () => void }) 
                 profesional: {
                   nombre: turno.profesional!.nombre,
                   apellido: turno.profesional!.apellido,
-                  especialidad: turno.profesional!.especialidad?.nombre ?? '',
+                  especialidad: translateSpecialty(turno.profesional!.especialidad?.nombre ?? ''),
                   matricula: turno.profesional!.matricula,
                   lugarAtencion: turno.profesional!.lugarAtencion,
                   telefono: turno.profesional!.telefono,
@@ -1447,7 +1450,7 @@ function CalificarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: 
             </div>
             <div>
               <p className="font-semibold text-slate-800 text-sm">Dr/a. {turno.profesional?.nombre} {turno.profesional?.apellido}</p>
-              <p className="text-xs text-blue-600">{turno.profesional?.especialidad?.nombre}</p>
+              <p className="text-xs text-blue-600">{translateSpecialty(turno.profesional?.especialidad?.nombre)}</p>
               <p className="text-xs text-slate-400 mt-0.5">
                 {new Date(turno.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
@@ -1634,7 +1637,7 @@ function StarDisplay({ rating, size = 13 }: { rating: number; size?: number }) {
   );
 }
 
-function HistorialCard({ item, onCalificar, d, m, s }: { item: HistorialTurno; onCalificar: (turno: HistorialTurno) => void; d: any; m: any; s: any }) {
+function HistorialCard({ item, onCalificar, d, m, s, translateSpecialty }: { item: HistorialTurno; onCalificar: (turno: HistorialTurno) => void; d: any; m: any; s: any; translateSpecialty: (name: string) => string }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -1663,7 +1666,7 @@ function HistorialCard({ item, onCalificar, d, m, s }: { item: HistorialTurno; o
             <p className="font-semibold text-slate-800 text-sm">
               Dr/a. {item.profesional?.nombre} {item.profesional?.apellido}
             </p>
-            <p className="text-xs text-blue-600">{item.profesional?.especialidad?.nombre}</p>
+            <p className="text-xs text-blue-600">{translateSpecialty(item.profesional?.especialidad?.nombre)}</p>
           </div>
           <span className="ml-auto text-xs text-slate-400 flex items-center gap-1">
             {item.modalidad === 'VIRTUAL'
@@ -1699,7 +1702,7 @@ function HistorialCard({ item, onCalificar, d, m, s }: { item: HistorialTurno; o
                     profesional: {
                       nombre: item.profesional!.nombre ?? '',
                       apellido: item.profesional!.apellido ?? '',
-                      especialidad: item.profesional!.especialidad?.nombre ?? '',
+                      especialidad: translateSpecialty(item.profesional!.especialidad?.nombre ?? ''),
                       matricula: item.profesional!.matricula ?? undefined,
                       lugarAtencion: item.profesional!.lugarAtencion ?? undefined,
                       telefono: item.profesional!.telefono ?? undefined,
@@ -1751,7 +1754,7 @@ function HistorialCard({ item, onCalificar, d, m, s }: { item: HistorialTurno; o
                           fotoUrl: item.profesional?.fotoUrl ?? undefined,
                           lugarAtencion: item.profesional?.lugarAtencion ?? undefined,
                           telefono: item.profesional?.telefono ?? undefined,
-                          especialidad: { nombre: item.profesional?.especialidad?.nombre ?? '' },
+                          especialidad: { nombre: translateSpecialty(item.profesional?.especialidad?.nombre ?? '') },
                         },
                         paciente: null,
                       },
@@ -1852,7 +1855,7 @@ function HistorialCard({ item, onCalificar, d, m, s }: { item: HistorialTurno; o
 }
 
 /* ── Patient statistics panel ────────────────────────────────────────────── */
-function EstadisticasPaciente({ stats, loading, d }: { stats: PacienteStats | null; loading: boolean; d: any }) {
+function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats: PacienteStats | null; loading: boolean; d: any; translateSpecialty: (name: string) => string }) {
   if (loading) {
     return (
       <div className="space-y-4">
@@ -1920,7 +1923,7 @@ function EstadisticasPaciente({ stats, loading, d }: { stats: PacienteStats | nu
                 )}
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">Dr/a. {profesional.nombre} {profesional.apellido}</p>
-                  <p className="text-xs text-slate-500 truncate">{profesional.especialidad.nombre}</p>
+                  <p className="text-xs text-slate-500 truncate">{translateSpecialty(profesional.especialidad.nombre)}</p>
                 </div>
                 <span className="text-xs font-semibold text-blue-600 shrink-0">{totalTurnos} {totalTurnos === 1 ? d.appointment : d.appointments}</span>
               </div>
@@ -1940,7 +1943,7 @@ function EstadisticasPaciente({ stats, loading, d }: { stats: PacienteStats | nu
               <div key={pago.id} className="flex items-center justify-between gap-3 py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">Dr/a. {pago.profesional}</p>
-                  <p className="text-xs text-slate-500 truncate">{pago.especialidad} · {new Date(pago.fecha).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  <p className="text-xs text-slate-500 truncate">{translateSpecialty(pago.especialidad)} · {new Date(pago.fecha).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                 </div>
                 <div className="text-right shrink-0">
                   <p className="text-sm font-bold text-emerald-600">${pago.monto.toLocaleString('es-AR')}</p>
