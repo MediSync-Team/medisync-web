@@ -82,6 +82,12 @@ export default function HomePage() {
   const h = t('home');
   const nav = t('nav');
   const a = t('auth');
+
+  const getSpecialtyName = (nombre: string) => {
+    const key = nombre.toUpperCase().replace(/[ÁÉÍÓÚ]/g, (c) => ({Á:'A',É:'E',Í:'I',Ó:'O',Ú:'U'}[c] || c));
+    const specialties = h.specialties as Record<string, string>;
+    return specialties[key] || nombre;
+  };
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(true);
@@ -257,7 +263,7 @@ export default function HomePage() {
               >
                 <option value="">{h.allSpecialties}</option>
                 {especialidades.map((esp) => (
-                  <option key={esp.id} value={esp.nombre}>{esp.nombre}</option>
+                  <option key={esp.id} value={esp.nombre}>{getSpecialtyName(esp.nombre)}</option>
                 ))}
               </select>
               <button
@@ -532,11 +538,18 @@ export default function HomePage() {
 }
 
 function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDisponible?: boolean }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const h = t('home');
   const modalidades = [...new Set(prof.disponibilidades?.map((d) => d.modalidad) ?? [])];
   const tienePresencial = modalidades.some((m) => m === 'PRESENCIAL' || m === 'AMBOS');
   const tieneVirtual = modalidades.some((m) => m === 'VIRTUAL' || m === 'AMBOS');
+
+  const getSpecialtyName = (nombre: string) => {
+    if (!nombre) return '';
+    const key = nombre.toUpperCase().replace(/[ÁÉÍÓÚ]/g, (c) => ({Á:'A',É:'E',Í:'I',Ó:'O',Ú:'U'}[c] || c));
+    const specialties = (h.specialties as Record<string, string>) || {};
+    return specialties[key] || nombre;
+  };
 
   return (
     <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border p-6 hover:shadow-md transition-all flex flex-col ${showDisponible ? 'border-emerald-200 dark:border-emerald-700 hover:border-emerald-300' : 'border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-600'}`}>
@@ -554,7 +567,7 @@ function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDis
         </div>
         <div className="flex-1 min-w-0">
           <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">Dr/a. {prof.nombre} {prof.apellido}</h3>
-          <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mt-0.5">{prof.especialidad?.nombre}</p>
+          <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mt-0.5">{getSpecialtyName(prof.especialidad?.nombre || '')}</p>
           {prof.precioConsulta > 0 ? (
             <p className="text-emerald-600 dark:text-emerald-400 font-semibold text-sm mt-1">
               ${Number(prof.precioConsulta).toLocaleString('es-AR')}
