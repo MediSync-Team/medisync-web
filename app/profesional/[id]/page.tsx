@@ -553,7 +553,7 @@ export default function ProfesionalPage() {
               <div className="mb-5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl p-3">
                 <div className="flex items-center gap-2 text-xs sm:text-sm">
                   {[
-                    { n: 1, label: p.selectDay },
+                    { n: 1, label: p.chooseDay },
                     { n: 2, label: p.selectHour },
                     { n: 3, label: p.confirmBooking },
                   ].map((step) => (
@@ -590,7 +590,7 @@ export default function ProfesionalPage() {
 
               {/* Date picker strip */}
               <div className="mb-5">
-                <p className="field-label mb-2">{p.selectDay}</p>
+                <p className="field-label mb-2">{p.chooseDay}</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {getProximosDias().map((fecha) => {
                     const isSelected = selectedDate?.toDateString() === fecha.toDateString();

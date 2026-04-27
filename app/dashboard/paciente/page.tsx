@@ -61,6 +61,8 @@ export default function PacienteDashboard() {
   const p = t('paciente');
   const d = t('dashboard');
   const c = t('common');
+  const s = t('status');
+  const m = t('modality');
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'resumen' | 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'recetas' | 'certificados' | 'datosMedicos' | 'estadisticas'>('resumen');
@@ -396,7 +398,7 @@ export default function PacienteDashboard() {
         <div className="alert alert-info mb-4 text-xs">
           <InfoIcon size={15} className="shrink-0" />
           <span>
-            Política de cancelación: cancelá con al menos <strong>{horasMinCancelacion} horas</strong> de anticipación para evitar penalidades.
+            {d.cancellationPolicy}: {d.cancellationPolicyText.replace('{horas}', String(horasMinCancelacion))}
           </span>
         </div>
 
@@ -532,7 +534,7 @@ export default function PacienteDashboard() {
                   </div>
                   <div className="space-y-4">
                     {historial.map(item => (
-                      <HistorialCard key={item.id} item={item} onCalificar={(t) => setTurnoCalificar(t as any)} />
+                      <HistorialCard key={item.id} item={item} onCalificar={(t) => setTurnoCalificar(t as any)} d={d} m={m} s={s} />
                     ))}
                   </div>
                   <Pagination
@@ -559,7 +561,7 @@ export default function PacienteDashboard() {
               ) : misRecetas.length === 0 ? (
                 <div className="py-12 text-center">
                   <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                  <p className="text-slate-500 text-sm font-medium">No tienes recetas disponibles.</p>
+                  <p className="text-slate-500 text-sm font-medium">{d.noRecipes}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -613,7 +615,7 @@ export default function PacienteDashboard() {
               ) : misCertificados.length === 0 ? (
                 <div className="py-12 text-center">
                   <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                  <p className="text-slate-500 text-sm font-medium">No tienes certificados disponibles.</p>
+                  <p className="text-slate-500 text-sm font-medium">{d.noCertificates}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -662,8 +664,8 @@ export default function PacienteDashboard() {
               /* ── Mis datos médicos ──────────────── */
               <div className="space-y-5">
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Antecedentes personales</h3>
-                  <p className="text-xs text-slate-400 mb-2">Enfermedades previas, cirugías, hospitalizaciones.</p>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.personalHistory}</h3>
+                  <p className="text-xs text-slate-400 mb-2">{d.personalHistoryDesc}</p>
                   <textarea
                     value={datosMedicos.antecedentesPersonales}
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, antecedentesPersonales: e.target.value }))}
@@ -673,8 +675,8 @@ export default function PacienteDashboard() {
                   />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Antecedentes familiares</h3>
-                  <p className="text-xs text-slate-400 mb-2">Enfermedades hereditarias o relevantes en la familia.</p>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.familyHistory}</h3>
+                  <p className="text-xs text-slate-400 mb-2">{d.familyHistoryDesc}</p>
                   <textarea
                     value={datosMedicos.antecedentesFamiliares}
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, antecedentesFamiliares: e.target.value }))}
@@ -684,7 +686,7 @@ export default function PacienteDashboard() {
                   />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Alergias</h3>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.allergies}</h3>
                   <p className="text-xs text-slate-400 mb-2">Medicamentos, alimentos, materiales u otras sustancias.</p>
                   <textarea
                     value={datosMedicos.alergias}
@@ -695,7 +697,7 @@ export default function PacienteDashboard() {
                   />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Medicación actual</h3>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.currentMedication}</h3>
                   <p className="text-xs text-slate-400 mb-2">Medicamentos que tomás habitualmente con dosis y frecuencia.</p>
                   <textarea
                     value={datosMedicos.medicacionActual}
@@ -706,7 +708,7 @@ export default function PacienteDashboard() {
                   />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Hábitos</h3>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.habits}</h3>
                   <p className="text-xs text-slate-400 mb-2">Tabaco, alcohol, actividad física, alimentación.</p>
                   <textarea
                     value={datosMedicos.habitos}
@@ -717,8 +719,8 @@ export default function PacienteDashboard() {
                   />
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">Diagnósticos previos</h3>
-                  <p className="text-xs text-slate-400 mb-2">Diagnósticos confirmados por profesionales de salud.</p>
+                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.previousDiagnoses}</h3>
+                  <p className="text-xs text-slate-400 mb-2">{d.previousDiagnosesDesc}</p>
                   <textarea
                     value={datosMedicos.diagnosticosPrevios}
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, diagnosticosPrevios: e.target.value }))}
@@ -764,7 +766,7 @@ export default function PacienteDashboard() {
                           <span className="flex items-center gap-1"><CalendarIcon size={11} />{new Date(item.fecha).toLocaleDateString('es-AR')}</span>
                           <span>{item.modalidad}</span>
                         </div>
-                        <span className="badge badge-yellow mt-2">{item.estado}</span>
+                        <span className="badge badge-yellow mt-2">{s[item.estado] || item.estado}</span>
                       </div>
                       <button onClick={() => cancelarListaEspera(item.id)} className="btn btn-secondary btn-sm">
                         {p.cancel}
@@ -788,7 +790,7 @@ export default function PacienteDashboard() {
                 <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
                 <p className="text-slate-500 text-sm font-medium mb-2">{p.noUpcoming}</p>
                 <p className="text-xs text-slate-400 mb-5 max-w-sm mx-auto">
-                  Buscá un profesional y reservá tu primer turno para comenzar.
+                  {d.firstAppointment}
                 </p>
                 <Link href="/" className="btn btn-primary btn-sm">
                   <SearchIcon size={13} /> {p.searchProfessional}
@@ -1630,7 +1632,7 @@ function StarDisplay({ rating, size = 13 }: { rating: number; size?: number }) {
   );
 }
 
-function HistorialCard({ item, onCalificar }: { item: HistorialTurno; onCalificar: (turno: HistorialTurno) => void }) {
+function HistorialCard({ item, onCalificar, d, m, s }: { item: HistorialTurno; onCalificar: (turno: HistorialTurno) => void; d: any; m: any; s: any }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -1644,7 +1646,7 @@ function HistorialCard({ item, onCalificar }: { item: HistorialTurno; onCalifica
             {new Date(item.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
-        <span className="badge badge-green text-[10px]">Completado</span>
+        <span className="badge badge-green text-[10px]">{d.completed}</span>
       </div>
 
       <div className="p-4 space-y-3">
@@ -1663,15 +1665,15 @@ function HistorialCard({ item, onCalificar }: { item: HistorialTurno; onCalifica
           </div>
           <span className="ml-auto text-xs text-slate-400 flex items-center gap-1">
             {item.modalidad === 'VIRTUAL'
-              ? <><VideoIcon size={11} /> Virtual</>
-              : <><BuildingIcon size={11} /> Presencial</>}
+              ? <><VideoIcon size={11} /> {m.VIRTUAL}</>
+              : <><BuildingIcon size={11} /> {m.PRESENCIAL}</>}
           </span>
         </div>
 
-        {/* Evolución clínica */}
+        {/* {d.clinicalEvolution} */}
         {item.evolucion?.contenido && (
           <div className="bg-slate-50 rounded-lg p-3 text-sm">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Evolución clínica</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{d.clinicalEvolution}</p>
             <p className={`text-slate-700 leading-relaxed whitespace-pre-wrap ${!expanded && 'line-clamp-3'}`}>
               {item.evolucion.contenido}
             </p>
@@ -1799,7 +1801,7 @@ function HistorialCard({ item, onCalificar }: { item: HistorialTurno; onCalifica
 
         {/* Empty state */}
         {!item.evolucion && !item.recetaIndicacion && item.archivos.length === 0 && (
-          <p className="text-xs text-slate-400 italic">Sin evolución clínica registrada para esta consulta.</p>
+          <p className="text-xs text-slate-400 italic">{d.noClinicalEvolution}</p>
         )}
 
         {/* Calificación */}
@@ -1872,17 +1874,17 @@ function EstadisticasPaciente({ stats, loading, d }: { stats: PacienteStats | nu
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <PacienteStatCard label="Total turnos" value={stats.totalTurnos} color="blue" />
-        <PacienteStatCard label="Completados" value={stats.completados} color="emerald" />
-        <PacienteStatCard label="Cancelados" value={stats.cancelados} color="red" />
-        <PacienteStatCard label="Total gastado" value={`$${stats.totalGastado.toLocaleString('es-AR')}`} color="amber" />
+        <PacienteStatCard label={d.totalAppointments} value={stats.totalTurnos} color="blue" />
+        <PacienteStatCard label={d.completed} value={stats.completados} color="emerald" />
+        <PacienteStatCard label={d.cancelled} value={stats.cancelados} color="red" />
+        <PacienteStatCard label={d.totalSpent} value={`$${stats.totalGastado.toLocaleString('es-AR')}`} color="amber" />
       </div>
 
       {stats.turnosPorMes.length > 0 && (
         <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            Turnos por mes (últimos 12 meses)
+            {d.appointmentsPerMonth}
           </p>
           <div className="flex items-end gap-1.5 h-28">
             {stats.turnosPorMes.map(({ mes, total }) => {
@@ -1918,7 +1920,7 @@ function EstadisticasPaciente({ stats, loading, d }: { stats: PacienteStats | nu
                   <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">Dr/a. {profesional.nombre} {profesional.apellido}</p>
                   <p className="text-xs text-slate-500 truncate">{profesional.especialidad.nombre}</p>
                 </div>
-                <span className="text-xs font-semibold text-blue-600 shrink-0">{totalTurnos} turno{totalTurnos !== 1 ? 's' : ''}</span>
+                <span className="text-xs font-semibold text-blue-600 shrink-0">{totalTurnos} {totalTurnos === 1 ? d.appointment : d.appointments}</span>
               </div>
             ))}
           </div>
@@ -1928,8 +1930,8 @@ function EstadisticasPaciente({ stats, loading, d }: { stats: PacienteStats | nu
       {stats.pagos.length > 0 && (
         <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center justify-between">
-            <span>Historial de pagos</span>
-            <span className="text-xs font-normal text-slate-400">{stats.pagos.length} pago{stats.pagos.length !== 1 ? 's' : ''}</span>
+            <span>{d.paymentHistory}</span>
+            <span className="text-xs font-normal text-slate-400">{stats.pagos.length} {d.payment}{stats.pagos.length !== 1 ? 's' : ''}</span>
           </p>
           <div className="space-y-2">
             {stats.pagos.map((pago) => (
