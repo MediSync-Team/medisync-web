@@ -442,10 +442,10 @@ export default function HomePage() {
         {/* ── Feature pills ────────────────────────────────── */}
         <section className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
           <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap justify-center gap-6 text-sm text-slate-500 dark:text-slate-400">
-            <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> Turnos online 24/7</span>
-            <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> Pago seguro con Mercado Pago</span>
-            <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> Historia clínica digital</span>
-            <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> Consultas presenciales y virtuales</span>
+            <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> {h.featurePills.onlineAppointments}</span>
+            <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> {h.featurePills.securePayment}</span>
+            <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> {h.featurePills.medicalHistory}</span>
+            <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> {h.featurePills.inPersonVirtual}</span>
           </div>
         </section>
 
@@ -473,9 +473,9 @@ export default function HomePage() {
         {/* ── Professionals grid ───────────────────────────── */}
         <section id="prof-section" className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Profesionales Disponibles</h2>
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{h.professionalsAvailable}</h2>
             {!loading && pagination.total > 0 && (
-              <span className="text-sm text-slate-500 dark:text-slate-400">{pagination.total} encontrados</span>
+              <span className="text-sm text-slate-500 dark:text-slate-400">{pagination.total} {h.found}</span>
             )}
           </div>
 
