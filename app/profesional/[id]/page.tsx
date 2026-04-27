@@ -21,6 +21,8 @@ export default function ProfesionalPage() {
   const router = useRouter();
   const { user } = useAuth();
   const { t } = useLang();
+  const h = t('home');
+  const p = t('professional');
   const [profesional, setProfesional] = useState<Profesional | null>(null);
   const [loading, setLoading] = useState(true);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -394,7 +396,7 @@ export default function ProfesionalPage() {
                     <span className="text-xs text-slate-400">({resenas.stats.total} reseña{resenas.stats.total !== 1 ? 's' : ''})</span>
                   </div>
                 ) : (
-                  <p className="text-xs text-slate-400 mt-2">Sin calificaciones aún</p>
+                  <p className="text-xs text-slate-400 mt-2">{p.noRatingsYet}</p>
                 )}
               </div>
 
@@ -402,7 +404,7 @@ export default function ProfesionalPage() {
               <div className="mt-4 pt-4 border-t border-slate-100 space-y-2.5">
                 {profesional.precioConsulta > 0 && (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-slate-500">Consulta desde</span>
+                    <span className="text-sm text-slate-500">{p.consultationFrom}</span>
                     <span className="font-bold text-emerald-600">
                       ${Number(profesional.precioConsulta).toLocaleString('es-AR')}
                     </span>
@@ -545,14 +547,14 @@ export default function ProfesionalPage() {
           {/* ── Right: Booking ────────────────────────── */}
           <div className="lg:col-span-3">
             <div className="card p-5">
-              <h2 className="text-lg font-bold text-slate-800 mb-4">Reservar turno</h2>
+              <h2 className="text-lg font-bold text-slate-800 mb-4">{p.bookAppointment}</h2>
 
               <div className="mb-5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl p-3">
                 <div className="flex items-center gap-2 text-xs sm:text-sm">
                   {[
-                    { n: 1, label: 'Elegir dia' },
-                    { n: 2, label: 'Elegir horario' },
-                    { n: 3, label: 'Confirmar reserva' },
+                    { n: 1, label: p.selectDay },
+                    { n: 2, label: p.selectHour },
+                    { n: 3, label: p.confirmBooking },
                   ].map((step) => (
                     <div key={step.n} className="flex items-center gap-2">
                       <span className={`w-6 h-6 rounded-full inline-flex items-center justify-center font-bold ${bookingStep >= step.n ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
@@ -566,11 +568,11 @@ export default function ProfesionalPage() {
 
               {/* Modalidad toggle */}
               <div className="mb-5">
-                <p className="field-label mb-2">Modalidad de atención</p>
+                <p className="field-label mb-2">{p.appointmentType}</p>
                 <div className="flex gap-3">
                   {[
-                    { value: 'PRESENCIAL' as const, icon: <BuildingIcon size={14} />, label: 'Presencial' },
-                    { value: 'VIRTUAL' as const, icon: <VideoIcon size={14} />, label: 'Virtual' },
+                    { value: 'PRESENCIAL' as const, icon: <BuildingIcon size={14} />, label: h.status.presencial },
+                    { value: 'VIRTUAL' as const, icon: <VideoIcon size={14} />, label: h.status.virtual },
                   ].map(({ value, icon, label }) => (
                     <label key={value} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 cursor-pointer flex-1 justify-center font-medium text-sm transition-all ${
                       modalidad === value
@@ -811,7 +813,7 @@ export default function ProfesionalPage() {
                       {reservando ? (
                         <><svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Reservando...</>
                       ) : (
-                        <><CheckIcon size={16} />Confirmar reserva</>
+                        <><CheckIcon size={16} />{p.confirmBooking}</>
                       )}
                     </button>
                   )}
@@ -843,6 +845,8 @@ export default function ProfesionalPage() {
 
 /* ── Weekly schedule visual grid ────────────────────────────────────────── */
 function HorariosGrid({ disponibilidades }: { disponibilidades: any[] }) {
+  const { t } = useLang();
+  const p = t('professional');
   const DIAS_SHORT = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
   type Block = { horaInicio: string; horaFin: string; modalidad: string };
@@ -858,7 +862,7 @@ function HorariosGrid({ disponibilidades }: { disponibilidades: any[] }) {
     <div className="card p-5">
       <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center gap-2">
         <ClockIcon size={14} className="text-slate-400" />
-        Horarios habituales
+        {p.regularSchedule}
       </h3>
       <div className="space-y-2">
         {activeDays.map((dia) => (

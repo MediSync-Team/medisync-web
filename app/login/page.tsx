@@ -95,7 +95,7 @@ function LoginContent() {
 
             <div className="text-center pt-3">
               <Link href="/forgot-password" className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 underline">
-                ¿Olvidaste tu contraseña?
+                {a.forgotPassword}
               </Link>
             </div>
 
@@ -104,7 +104,7 @@ function LoginContent() {
                 <div className="w-full border-t border-slate-200 dark:border-slate-600" />
               </div>
               <div className="relative flex justify-center text-xs text-slate-400 dark:text-slate-500">
-                <span className="bg-white dark:bg-slate-800 px-3">o continúa con</span>
+                <span className="bg-white dark:bg-slate-800 px-3">{a.orContinueWith}</span>
               </div>
             </div>
 
