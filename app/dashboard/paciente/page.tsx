@@ -671,7 +671,7 @@ export default function PacienteDashboard() {
                     value={datosMedicos.antecedentesPersonales}
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, antecedentesPersonales: e.target.value }))}
                     rows={3}
-                    placeholder="Ej: Hipertensión arterial desde 2018, apendicectomía 2010..."
+                    placeholder={d.placeholder.personalHistory}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
@@ -682,40 +682,40 @@ export default function PacienteDashboard() {
                     value={datosMedicos.antecedentesFamiliares}
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, antecedentesFamiliares: e.target.value }))}
                     rows={3}
-                    placeholder="Ej: Padre con diabetes tipo 2, madre con cardiopatía..."
+                    placeholder={d.placeholder.familyHistory}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.allergies}</h3>
-                  <p className="text-xs text-slate-400 mb-2">Medicamentos, alimentos, materiales u otras sustancias.</p>
+                  <p className="text-xs text-slate-400 mb-2">{d.allergiesDesc}</p>
                   <textarea
                     value={datosMedicos.alergias}
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, alergias: e.target.value }))}
                     rows={2}
-                    placeholder="Ej: Penicilina (urticaria), ibuprofeno, mariscos..."
+                    placeholder={d.placeholder.allergies}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.currentMedication}</h3>
-                  <p className="text-xs text-slate-400 mb-2">Medicamentos que tomás habitualmente con dosis y frecuencia.</p>
+                  <p className="text-xs text-slate-400 mb-2">{d.currentMedicationDesc}</p>
                   <textarea
                     value={datosMedicos.medicacionActual}
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, medicacionActual: e.target.value }))}
                     rows={3}
-                    placeholder="Ej: Enalapril 10mg/día, Metformina 500mg c/12h..."
+                    placeholder={d.placeholder.currentMedication}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.habits}</h3>
-                  <p className="text-xs text-slate-400 mb-2">Tabaco, alcohol, actividad física, alimentación.</p>
+                  <p className="text-xs text-slate-400 mb-2">{d.habitsDesc}</p>
                   <textarea
                     value={datosMedicos.habitos}
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, habitos: e.target.value }))}
                     rows={2}
-                    placeholder="Ej: No fumador, consumo ocasional de alcohol, sedentario..."
+                    placeholder={d.placeholder.habits}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
@@ -726,7 +726,7 @@ export default function PacienteDashboard() {
                     value={datosMedicos.diagnosticosPrevios}
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, diagnosticosPrevios: e.target.value }))}
                     rows={2}
-                    placeholder="Ej: Hipotiroidismo, ansiedad generalizada..."
+                    placeholder={d.placeholder.previousDiagnoses}
                     className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
@@ -736,7 +736,7 @@ export default function PacienteDashboard() {
                     disabled={savingDatos}
                     className="btn btn-primary text-sm"
                   >
-                    {savingDatos ? 'Guardando...' : 'Guardar datos médicos'}
+                    {savingDatos ? d.saving : d.saveMedicalData}
                   </button>
                   {datosSaved && (
                     <span className="text-emerald-600 text-sm font-medium flex items-center gap-1">
@@ -745,7 +745,7 @@ export default function PacienteDashboard() {
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-slate-400">Esta información es visible para los profesionales que te atiendan en MediSync y se incluye en tu historial clínico.</p>
+                <p className="text-xs text-slate-400">{d.medicalDataVisibility}</p>
               </div>
             ) : activeTab === 'listaEspera' ? (
               /* ── Lista de espera ────────────────── */
