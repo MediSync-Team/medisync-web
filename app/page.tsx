@@ -78,9 +78,10 @@ function activeFilterCount(f: Filters) {
 
 export default function HomePage() {
   const { user, logout } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const h = t('home');
   const nav = t('nav');
+  const a = t('auth');
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,13 +167,13 @@ export default function HomePage() {
 
   // Labels for active filter pills
   const filterPills: { key: keyof Filters; label: string }[] = [
-    ...(filters.disponibleEstaSemana ? [{ key: 'disponibleEstaSemana' as const, label: 'Con turno esta semana' }] : []),
-    ...(filters.precioMin ? [{ key: 'precioMin' as const, label: `Precio mín: $${filters.precioMin}` }] : []),
-    ...(filters.precioMax ? [{ key: 'precioMax' as const, label: `Precio máx: $${filters.precioMax}` }] : []),
-    ...(filters.modalidad ? [{ key: 'modalidad' as const, label: filters.modalidad === 'PRESENCIAL' ? 'Presencial' : 'Virtual' }] : []),
-    ...(filters.fecha ? [{ key: 'fecha' as const, label: `Disponible el ${new Date(filters.fecha + 'T12:00:00').toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}` }] : []),
-    ...(filters.orderBy ? [{ key: 'orderBy' as const, label: { precio_asc: 'Precio ↑', precio_desc: 'Precio ↓', nombre_asc: 'Nombre A-Z' }[filters.orderBy] }] : []),
-    ...(filters.obraSocial ? [{ key: 'obraSocial' as const, label: `Obra social: ${filters.obraSocial}` }] : []),
+    ...(filters.disponibleEstaSemana ? [{ key: 'disponibleEstaSemana' as const, label: h.activeFilters }] : []),
+    ...(filters.precioMin ? [{ key: 'precioMin' as const, label: `${h.priceMin}: $${filters.precioMin}` }] : []),
+    ...(filters.precioMax ? [{ key: 'precioMax' as const, label: `${h.priceMax}: $${filters.precioMax}` }] : []),
+    ...(filters.modalidad ? [{ key: 'modalidad' as const, label: filters.modalidad === 'PRESENCIAL' ? h.inPerson : h.virtual }] : []),
+    ...(filters.fecha ? [{ key: 'fecha' as const, label: `${h.date} ${new Date(filters.fecha + 'T12:00:00').toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US', { day: 'numeric', month: 'short' })}` }] : []),
+    ...(filters.orderBy ? [{ key: 'orderBy' as const, label: { precio_asc: h.priceAsc, precio_desc: h.priceDesc, nombre_asc: h.nameAsc }[filters.orderBy] }] : []),
+    ...(filters.obraSocial ? [{ key: 'obraSocial' as const, label: `${h.obraSocial || 'Obra social'}: ${filters.obraSocial}` }] : []),
   ];
 
   return (
@@ -227,13 +228,13 @@ export default function HomePage() {
           <div className="relative max-w-4xl mx-auto px-4 text-center">
             <div className="inline-flex items-center gap-2 bg-white/15 text-blue-50 text-sm font-medium px-4 py-1.5 rounded-full mb-6 backdrop-blur-sm border border-white/20">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-              Plataforma médica argentina
+              {h.platform}
             </div>
             <h1 className="text-4xl md:text-5xl font-extrabold mb-4 leading-tight tracking-tight">
-              Encontrá tu especialista<br className="hidden sm:block" /> y reservá al instante
+              {h.heroTitle}<br className="hidden sm:block" />
             </h1>
             <p className="text-lg text-blue-100 mb-10 max-w-xl mx-auto">
-              Conectá con profesionales de la salud, pagá online y gestioná toda tu historia clínica en un solo lugar.
+              {h.heroSubtitle}
             </p>
 
             {/* ── Search bar ─────────────────────────────── */}
@@ -282,7 +283,7 @@ export default function HomePage() {
                 }`}
               >
                 <span className={`w-2 h-2 rounded-full ${filters.disponibleEstaSemana ? 'bg-white' : 'bg-emerald-400'} animate-pulse`} />
-                Turno disponible esta semana
+                {h.availableThisWeek}
               </button>
 
               {/* ── Advanced filter toggle ─────────────────── */}
@@ -318,7 +319,7 @@ export default function HomePage() {
                         <input
                           type="number"
                           min="0"
-                          placeholder="Mín"
+                          placeholder={h.minPrice}
                           value={draft.precioMin}
                           onChange={(e) => setDraft({ ...draft, precioMin: e.target.value })}
                           className="w-full pl-7 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800"
@@ -330,7 +331,7 @@ export default function HomePage() {
                         <input
                           type="number"
                           min="0"
-                          placeholder="Máx"
+                          placeholder={h.maxPrice}
                           value={draft.precioMax}
                           onChange={(e) => setDraft({ ...draft, precioMax: e.target.value })}
                           className="w-full pl-7 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800"
@@ -390,7 +391,7 @@ export default function HomePage() {
                   {/* Obra social */}
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                      Obra social / prepaga
+                      {h.healthInsurance}
                     </label>
                     <select
                       value={draft.obraSocial}
@@ -413,10 +414,10 @@ export default function HomePage() {
                     onChange={(e) => setDraft({ ...draft, disponibleEstaSemana: e.target.checked })}
                     className="w-4 h-4 accent-emerald-600"
                   />
-                  <div>
-                      <p className="text-sm font-semibold text-emerald-800">Solo con turno disponible esta semana</p>
-                    <p className="text-xs text-emerald-600">Muestra únicamente profesionales con slots libres en los próximos 7 días (verificación en tiempo real).</p>
-                  </div>
+<div>
+                      <p className="text-sm font-semibold text-emerald-800">{h.availableThisWeek}</p>
+                      <p className="text-xs text-emerald-600">{h.availableThisWeekSubtext}</p>
+                    </div>
                 </label>
 
                 <div className="flex gap-3 mt-5 pt-4 border-t border-slate-100">
