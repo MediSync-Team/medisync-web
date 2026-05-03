@@ -68,8 +68,7 @@ export default function ProfesionalDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   const { t } = useLang();
   const d = t('dashboard');
-  const getSpecialty = d.getSpecialty;
-  const translateSpecialty = d.translateSpecialty;
+  const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [loading, setLoading] = useState(true);
@@ -129,6 +128,11 @@ export default function ProfesionalDashboard() {
     if (activeTab === 'disponibilidad') loadBloqueos();
   }, [activeTab]);
 
+  useEffect(() => {
+    if (activeTab === 'cupones') loadCupones();
+    if (activeTab === 'plan') loadSuscripcion();
+  }, [activeTab]);
+  
   const loadData = async (checkOnboarding = false) => {
     if (!user?.profesional) return;
     try {
@@ -334,11 +338,6 @@ export default function ProfesionalDashboard() {
       setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al cancelar' });
     }
   };
-
-  useEffect(() => {
-    if (activeTab === 'cupones') loadCupones();
-    if (activeTab === 'plan') loadSuscripcion();
-  }, [activeTab]);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -649,7 +648,7 @@ export default function ProfesionalDashboard() {
 
       {/* ── Turno modal ─────────────────────────────────── */}
       {slotActual && (
-        <TurnoModal turno={slotActual} onClose={() => setSlotActual(null)} onUpdate={loadData} />
+        <TurnoModal turno={slotActual} onClose={() => setSlotActual(null)} onUpdate={loadData} translateSpecialty={translateSpecialty} />
       )}
 
       {showProfileModal && user && (
@@ -1369,12 +1368,14 @@ function EmitirCertificadoModal({
   onSave,
   loading,
   onClose,
+  translateSpecialty,
 }: {
   form: { tipo: TipoCertificado; diagnostico: string; texto: string; diasReposo: number };
   setForm: (f: any) => void;
   onSave: () => void;
   loading: boolean;
   onClose: () => void;
+  translateSpecialty: (name?: string) => string;
 }) {
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -1469,7 +1470,7 @@ function EmitirCertificadoModal({
 ══════════════════════════════════════════════════════════════ */
 type Archivo = { id: string; url: string; nombreOriginal: string; tipo: string; tamanoBytes: number; mimeType: string };
 
-function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () => void; onUpdate: () => void }) {
+function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: Turno; onClose: () => void; onUpdate: () => void; translateSpecialty: (name?: string) => string }) {
   const [evolucion, setEvolucion] = useState<Evolucion | null>(null);
   const [notas, setNotas] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -2610,6 +2611,7 @@ function TurnoModal({ turno, onClose, onUpdate }: { turno: Turno; onClose: () =>
         onSave={handleSaveCertificado}
         loading={savingCertificado}
         onClose={() => setShowEmitirCertificado(false)}
+        translateSpecialty={translateSpecialty}
       />
     )}
     </>

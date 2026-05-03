@@ -63,7 +63,7 @@ export default function PacienteDashboard() {
   const c = t('common');
   const s = t('status');
   const m = t('modality');
-  const translateSpecialty = d.translateSpecialty;
+  const translateSpecialty = (name?: string) => { if (!name) return ''; return (d as any).translateSpecialty?.(name) || name; };
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'resumen' | 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'recetas' | 'certificados' | 'datosMedicos' | 'estadisticas'>('resumen');
@@ -929,7 +929,7 @@ function TurnoCard({
   onChat: () => void;
   d: any;
   s: any;
-  translateSpecialty: (name: string) => string;
+  translateSpecialty: (name?: string) => string;
 }) {
   const { t } = useLang();
   const p = t('paciente');
@@ -1102,6 +1102,9 @@ function TurnoCard({
 }
 
 function RecetaModal({ turno, onClose }: { turno: Turno; onClose: () => void }) {
+  const { t } = useLang();
+  const d = t("dashboard");
+  const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
   const [loading, setLoading] = useState(true);
   const [receta, setReceta] = useState<RecetaIndicacion | null>(null);
 
@@ -1399,6 +1402,8 @@ function PreconsultaModal({ turno, onClose, onSuccess }: { turno: Turno; onClose
 /* ── Calificar Modal ─────────────────────────────────────── */
 function CalificarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
   const { t } = useLang();
+  const d = t("dashboard");
+  const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
   const p = t('paciente');
   const [rating, setRating] = useState(0);
   const [comentario, setComentario] = useState('');
@@ -1637,7 +1642,7 @@ function StarDisplay({ rating, size = 13 }: { rating: number; size?: number }) {
   );
 }
 
-function HistorialCard({ item, onCalificar, d, m, s, translateSpecialty }: { item: HistorialTurno; onCalificar: (turno: HistorialTurno) => void; d: any; m: any; s: any; translateSpecialty: (name: string) => string }) {
+function HistorialCard({ item, onCalificar, d, m, s, translateSpecialty }: { item: HistorialTurno; onCalificar: (turno: HistorialTurno) => void; d: any; m: any; s: any; translateSpecialty: (name?: string) => string }) {
   const [expanded, setExpanded] = useState(false);
 
   return (
@@ -1855,7 +1860,7 @@ function HistorialCard({ item, onCalificar, d, m, s, translateSpecialty }: { ite
 }
 
 /* ── Patient statistics panel ────────────────────────────────────────────── */
-function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats: PacienteStats | null; loading: boolean; d: any; translateSpecialty: (name: string) => string }) {
+function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats: PacienteStats | null; loading: boolean; d: any; translateSpecialty: (name?: string) => string }) {
   if (loading) {
     return (
       <div className="space-y-4">

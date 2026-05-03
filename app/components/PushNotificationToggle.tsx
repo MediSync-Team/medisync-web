@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useLang } from '../lib/i18n/context';
 import {
   isPushSupported,
   getPushPermission,
@@ -44,6 +45,8 @@ function Toggle({ on, onChange, disabled }: { on: boolean; onChange: (v: boolean
 }
 
 export default function PushNotificationToggle() {
+  const { t } = useLang();
+  const p = t('profile');
   const [pushState, setPushState] = useState<PushState>('loading');
   const [working, setWorking] = useState(false);
   const [testSent, setTestSent] = useState(false);
@@ -115,7 +118,7 @@ export default function PushNotificationToggle() {
     return (
       <div className="flex items-center gap-2 text-xs text-slate-400">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-        Notificaciones push no disponibles en este navegador
+        {p.pushNotSupported}
       </div>
     );
   }
@@ -124,7 +127,7 @@ export default function PushNotificationToggle() {
     return (
       <div className="flex items-start gap-2 text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 mt-0.5"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <span>Notificaciones bloqueadas en el navegador. Habilitá el permiso manualmente desde la configuración del sitio.</span>
+        <span>{p.pushBlocked}</span>
       </div>
     );
   }
@@ -153,7 +156,7 @@ export default function PushNotificationToggle() {
           ) : (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/></svg>
           )}
-          {isSubscribed ? 'Desactivar notificaciones push' : 'Activar notificaciones push'}
+          {isSubscribed ? p.disablePush : p.enablePush}
         </button>
 
         {isSubscribed && (

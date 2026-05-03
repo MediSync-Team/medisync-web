@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api, Profesional, Paciente, Genero, NotificationPreferences } from '../lib/api';
 import { OBRAS_SOCIALES } from '../lib/obras-sociales';
+import { useLang } from '../lib/i18n/context';
 import GoogleCalendarConnect from './GoogleCalendarConnect';
 
 interface ProfileModalProps {
@@ -17,11 +18,11 @@ interface ProfileModalProps {
   onUpdate?: () => void;
 }
 
-const GENERO_OPCIONES: { value: Genero; label: string }[] = [
-  { value: 'NO_ESPECIFICADO', label: 'Prefiero no decirlo' },
-  { value: 'MASCULINO', label: 'Masculino' },
-  { value: 'FEMENINO', label: 'Femenino' },
-  { value: 'OTRO', label: 'Otro' },
+const GENERO_OPCIONES: { value: Genero; labelKey: string }[] = [
+  { value: 'NO_ESPECIFICADO', labelKey: 'genderNS' },
+  { value: 'MASCULINO', labelKey: 'genderM' },
+  { value: 'FEMENINO', labelKey: 'genderF' },
+  { value: 'OTRO', labelKey: 'genderO' },
 ];
 
 const validateTelefono = (telefono: string): boolean => {
@@ -33,6 +34,8 @@ const validateDNI = (dni: string): boolean => {
 };
 
 export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate }: ProfileModalProps) {
+  const { t } = useLang();
+  const p = t('profile');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -230,7 +233,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Nombre
+                {p.firstName}
               </label>
               <input
                 type="text"
@@ -245,7 +248,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Apellido
+                {p.lastName}
               </label>
               <input
                 type="text"
@@ -262,7 +265,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Género
+              {p.gender}
             </label>
             <select
               name="genero"
@@ -272,7 +275,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
             >
               {GENERO_OPCIONES.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {opt.label}
+                  {p[opt.labelKey as keyof typeof p]}
                 </option>
               ))}
             </select>
@@ -280,7 +283,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Teléfono
+              {p.phone}
             </label>
             <input
               type="tel"
@@ -296,7 +299,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              URL de Foto de Perfil
+              {p.photoUrl}
             </label>
             <input
               type="url"
@@ -396,7 +399,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha de Nacimiento
+                  {p.birthday}
                 </label>
                 <input
                   type="date"
@@ -410,7 +413,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  DNI
+                  {p.dni}
                 </label>
                 <input
                   type="text"
@@ -426,7 +429,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Obra Social
+                  {p.obraSocial}
                 </label>
                 <input
                   type="text"
@@ -443,24 +446,24 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
           {notifPrefs && (
             <div className="pt-4 border-t border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Notificaciones</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">{p.notifications_}</h3>
               <div className="space-y-3">
                 {(
                   [
-                    { field: 'notifEmail' as const, label: 'Notificaciones por email' },
-                    { field: 'notifWhatsapp' as const, label: 'Notificaciones por WhatsApp' },
+                    { field: 'notifEmail' as const, labelKey: 'notifEmail' },
+                    { field: 'notifWhatsapp' as const, labelKey: 'notifWhatsapp' },
                     ...(userType === 'paciente'
                       ? [
-                          { field: 'aceptaRecordatorios' as const, label: 'Aceptar recordatorios de turnos' },
-                          { field: 'notifRecordatorio24h' as const, label: 'Recordatorio 24 horas antes' },
-                          { field: 'notifRecordatorio2h' as const, label: 'Recordatorio 2 horas antes' },
+                          { field: 'aceptaRecordatorios' as const, labelKey: 'reminders' },
+                          { field: 'notifRecordatorio24h' as const, labelKey: 'reminder24h' },
+                          { field: 'notifRecordatorio2h' as const, labelKey: 'reminder2h' },
                         ]
                       : []),
-                  ] as { field: keyof NotificationPreferences; label: string }[]
-                ).map(({ field, label }) =>
+                  ] as { field: keyof NotificationPreferences; labelKey: keyof typeof p }[]
+                ).map(({ field, labelKey }) =>
                   notifPrefs[field] !== undefined ? (
                     <label key={field} className="flex items-center justify-between cursor-pointer select-none">
-                      <span className="text-sm text-gray-600">{label}</span>
+                      <span className="text-sm text-gray-600">{p[labelKey]}</span>
                       <button
                         type="button"
                         role="switch"
@@ -520,7 +523,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
           {(userType === 'profesional' || userType === 'paciente') && (
             <div className="pt-4 border-t border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">Integraciones</h3>
+              <h3 className="text-sm font-semibold text-gray-700 mb-3">{p.integrations}</h3>
               <GoogleCalendarConnect />
             </div>
           )}

@@ -54,14 +54,14 @@ function NotifItem({ notif, onRead }: { notif: InAppNotification; onRead: (id: s
 export function NotificationCenter({ onClose }: { onClose: () => void }) {
   const { notifications, unread, markRead, markAllRead } = useNotifications();
   const { t } = useLang();
-  const c = t('common');
+  const p = t('profile');
 
   return (
     <div className="absolute right-0 top-full mt-2 w-80 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-lg z-50 overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">Notificaciones</span>
+          <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">{p.notifications_}</span>
           {unread > 0 && (
             <span className="px-1.5 py-0.5 text-[10px] font-bold bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded-full">
               {unread}
@@ -73,7 +73,7 @@ export function NotificationCenter({ onClose }: { onClose: () => void }) {
             onClick={() => markAllRead()}
             className="text-xs text-blue-600 dark:text-blue-400 hover:underline"
           >
-            Marcar todas leídas
+            {p.markAllRead}
           </button>
         )}
       </div>
@@ -82,7 +82,7 @@ export function NotificationCenter({ onClose }: { onClose: () => void }) {
       <div className="max-h-72 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
         {notifications.length === 0 ? (
           <p className="px-4 py-8 text-center text-sm text-slate-400 dark:text-slate-500">
-            Sin notificaciones
+            {t('common').noResults}
           </p>
         ) : (
           notifications.map(n => (

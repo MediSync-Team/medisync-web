@@ -28,7 +28,7 @@ export default function AdminPage() {
   const router = useRouter();
   const { t } = useLang();
   const d = t('dashboard');
-  const translateSpecialty = d.translateSpecialty;
+  const translateSpecialty = (name: string) => (d as any).translateSpecialty?.(name) || name;
   const [tab, setTab] = useState<Tab>('stats');
 
   // Auth guard
@@ -318,6 +318,9 @@ function StatsTab() {
 
 // ── Usuarios Tab ─────────────────────────────────────────────────────────────
 function UsuariosTab() {
+  const { t } = useLang();
+  const d = t("dashboard");
+  const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
   const [data, setData] = useState<{ usuarios: AdminUsuario[]; pagination: any } | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -439,6 +442,9 @@ function UsuariosTab() {
 
 // ── Profesionales Tab ────────────────────────────────────────────────────────
 function ProfesionalesTab() {
+  const { t } = useLang();
+  const d = t("dashboard");
+  const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
   const [data, setData] = useState<{ profesionales: AdminProfesional[]; pagination: any } | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -534,6 +540,9 @@ function ProfesionalesTab() {
 const ESTADOS = ['', 'RESERVADO', 'CONFIRMADO', 'COMPLETADO', 'CANCELADO', 'AUSENTE'];
 
 function TurnosTab() {
+  const { t } = useLang();
+  const d = t("dashboard");
+  const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
   const [data, setData] = useState<{ turnos: AdminTurno[]; pagination: any } | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
