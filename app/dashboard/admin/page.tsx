@@ -243,6 +243,8 @@ function RevenueTab() {
 
 // ── Stats Tab ────────────────────────────────────────────────────────────────
 function StatsTab() {
+  const { t } = useLang();
+  const d = t('dashboard');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -259,7 +261,7 @@ function StatsTab() {
     { label: 'Pacientes',            value: stats.totalPacientes,     color: 'emerald' },
     { label: 'Turnos totales',       value: stats.totalTurnos,        color: 'amber' },
     { label: 'Especialidades',       value: stats.totalEspecialidades, color: 'purple' },
-    { label: 'Reseñas',              value: stats.totalResenas,        color: 'pink' },
+    { label: d.reviews,              value: stats.totalResenas,        color: 'pink' },
     { label: 'Ingresos aprobados',   value: `$${stats.ingresosAprobados.toLocaleString('es-AR')}`, color: 'green' },
     { label: 'Turnos (30 días)',      value: stats.turnosUltimos30,    color: 'cyan' },
     { label: 'Registros (30 días)',   value: stats.registrosUltimos30, color: 'teal' },

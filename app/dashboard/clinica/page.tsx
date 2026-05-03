@@ -200,7 +200,7 @@ export default function ClinicaDashboard() {
               + Invitar profesional
             </button>
             <button onClick={logout} className="btn btn-secondary btn-sm">
-              Salir
+              {d.logout}
             </button>
           </div>
         </div>
