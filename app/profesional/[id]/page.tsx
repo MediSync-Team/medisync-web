@@ -14,7 +14,7 @@ import {
 } from '../../components/icons';
 import StarRating from '../../components/StarRating';
 import AgendarCalendario from '../../components/AgendarCalendario';
-import { DIAS_SEMANA, getDaysShort, estadoBadge } from '../../lib/utils';
+import { getDaysShort, estadoBadge } from '../../lib/utils';
 
 export default function ProfesionalPage() {
   const params = useParams();

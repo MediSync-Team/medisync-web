@@ -22,7 +22,7 @@ import {
   BellIcon, ChartIcon, TrashIcon, ClipboardIcon, PaperclipIcon,
   XIcon, CheckIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon, ChatIcon, StarIcon, CreditCardIcon, RefreshIcon, PhoneIcon, ShieldIcon,
 } from '../components/icons';
-import { DIAS_SEMANA, getDaysShort, estadoBadge, clinicalRiskBadge } from '../lib/utils';
+import { DIAS_SEMANA, getDaysShort, getDaysLong, estadoBadge, clinicalRiskBadge } from '../lib/utils';
 
 // Helper to convert lang to locale string
 const getLocale = (lang: string) => lang === 'es' ? 'es-AR' : 'en-US';
@@ -929,7 +929,7 @@ function CalendarioView({
               }`}
             >
               <span className="text-[10px] font-medium uppercase tracking-wide">
-                {DIAS_SEMANA[fecha.getDay()].slice(0, 3)}
+                {getDaysShort(lang)[fecha.getDay()]}
               </span>
               <span className={`text-base font-bold mt-0.5 ${isSelected ? '' : isToday ? '' : ''}`}>
                 {fecha.getDate()}
@@ -1130,7 +1130,7 @@ function DisponibilidadView({
             {disponibilidades.map((disp) => (
               <div key={disp.id} className="flex items-center gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className="w-24 shrink-0">
-                  <p className="font-semibold text-slate-700 text-sm">{DIAS_SEMANA[disp.diaSemana]}</p>
+                  <p className="font-semibold text-slate-700 text-sm">{getDaysLong(lang)[disp.diaSemana]}</p>
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-600 text-sm">
                   <ClockIcon size={13} className="text-slate-400" />
@@ -1170,7 +1170,7 @@ function DisponibilidadView({
                 onChange={(e) => setNuevaDisp({ ...nuevaDisp, diaSemana: parseInt(e.target.value) })}
                 className="field-select"
               >
-                {DIAS_SEMANA.map((dia, i) => <option key={i} value={i}>{dia}</option>)}
+                {getDaysLong(lang).map((dia, i) => <option key={i} value={i}>{dia}</option>)}
               </select>
             </div>
             <div>
