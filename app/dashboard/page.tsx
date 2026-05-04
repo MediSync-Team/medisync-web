@@ -1137,7 +1137,7 @@ function DisponibilidadView({
                   <span>{disp.horaInicio} — {disp.horaFin}</span>
                 </div>
                 <span className={`ml-1 badge ${disp.modalidad === 'VIRTUAL' ? 'badge-blue' : disp.modalidad === 'PRESENCIAL' ? 'badge-green' : 'badge-purple'}`}>
-                  {disp.modalidad}
+                  {disp.modalidad === 'VIRTUAL' ? h.virtual : disp.modalidad === 'PRESENCIAL' ? h.inPerson : disp.modalidad}
                 </span>
                 {disp.lugarAtencion && (
                   <span className="flex items-center gap-1 text-xs text-slate-500 truncate max-w-[180px]">
@@ -1205,12 +1205,12 @@ function DisponibilidadView({
           <div className="mt-3">
             <label className="field-label flex items-center gap-1">
               <MapPinIcon size={12} className="text-slate-400" />
-              Lugar de atención (para este horario)
-              <span className="text-slate-400 font-normal ml-1">— opcional</span>
+              {d.availabilitySetup.location}
+              <span className="text-slate-400 font-normal ml-1">— {d.availabilitySetup.optional}</span>
             </label>
             <input
               type="text"
-              placeholder={nuevaDisp.modalidad === 'VIRTUAL' ? 'Videollamada' : 'Ej: Consultorio 3 — Av. Corrientes 1234, CABA'}
+              placeholder={nuevaDisp.modalidad === 'VIRTUAL' ? d.availabilitySetup.placeholderVirtual : d.availabilitySetup.placeholderInPerson}
               value={nuevaDisp.lugarAtencion}
               onChange={(e) => setNuevaDisp({ ...nuevaDisp, lugarAtencion: e.target.value })}
               className="field-input"
@@ -1229,19 +1229,19 @@ function DisponibilidadView({
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
             <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="2" y1="2" x2="22" y2="22"/>
           </svg>
-          <h3 className="section-title">Ausencias y días bloqueados</h3>
+          <h3 className="section-title">{d.availabilitySetup.blockingsTitle}</h3>
         </div>
-        <p className="text-xs text-slate-500 mb-4">Bloqueá días o rangos de fechas en los que no vas a atender. Los pacientes no podrán reservar turnos en esos períodos.</p>
+        <p className="text-xs text-slate-500 mb-4">{d.availabilitySetup.blockingsDesc}</p>
 
         {/* Lista de bloqueos activos */}
         {loadingBloqueos ? (
-          <div className="py-6 flex justify-center text-slate-400 text-sm">Cargando...</div>
+          <div className="py-6 flex justify-center text-slate-400 text-sm">{t('common').loading}</div>
         ) : bloqueos.length === 0 ? (
           <div className="py-6 text-center text-slate-400 border-2 border-dashed border-amber-100 rounded-xl mb-4">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-2 opacity-30 text-amber-400">
               <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
-            <p className="text-sm">Sin bloqueos próximos</p>
+            <p className="text-sm">{d.availabilitySetup.noBlockings}</p>
           </div>
         ) : (
           <div className="space-y-2 mb-4">
@@ -1253,14 +1253,21 @@ function DisponibilidadView({
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-700 text-sm">{formatFechaBloqueo(b)}</p>
                   <p className="text-xs text-slate-500">
-                    {b.horaInicio && b.horaFin ? `${b.horaInicio}–${b.horaFin}` : 'Día completo'}
-                    {b.motivo ? ` · ${b.motivo}` : ''}
+                    {b.horaInicio && b.horaFin ? `${b.horaInicio}–${b.horaFin}` : d.availabilitySetup.fullDay}
+                    {b.motivo ? ` · ${
+                      b.motivo === 'Vacaciones' ? d.availabilitySetup.reasons.vacations :
+                      b.motivo === 'Feriado' ? d.availabilitySetup.reasons.holiday :
+                      b.motivo === 'Capacitación' ? d.availabilitySetup.reasons.training :
+                      b.motivo === 'Personal' ? d.availabilitySetup.reasons.personal :
+                      b.motivo === 'Otro' ? d.availabilitySetup.reasons.other :
+                      b.motivo
+                    }` : ''}
                   </p>
                 </div>
                 <button
                   onClick={() => handleEliminarBloqueo(b.id)}
                   className="btn btn-ghost text-red-400 hover:text-red-600 p-1.5 shrink-0"
-                  title="Eliminar bloqueo"
+                  title={t('common').delete}
                 >
                   <TrashIcon size={15} />
                 </button>
@@ -1271,13 +1278,13 @@ function DisponibilidadView({
 
         {/* Formulario nuevo bloqueo */}
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <h4 className="text-sm font-semibold text-amber-800 mb-3">Agregar nuevo bloqueo</h4>
+          <h4 className="text-sm font-semibold text-amber-800 mb-3">{d.availabilitySetup.addBlocking}</h4>
           {bloqueoError && <p className="text-xs text-red-600 mb-2">{bloqueoError}</p>}
           {bloqueoOk && <p className="text-xs text-emerald-600 mb-2">{bloqueoOk}</p>}
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
             <div>
-              <label className="field-label">Fecha inicio</label>
+              <label className="field-label">{d.availabilitySetup.startDate}</label>
               <input
                 type="date"
                 value={nuevoBloqueo.fechaInicio}
@@ -1287,7 +1294,7 @@ function DisponibilidadView({
               />
             </div>
             <div>
-              <label className="field-label">Fecha fin</label>
+              <label className="field-label">{d.availabilitySetup.endDate}</label>
               <input
                 type="date"
                 value={nuevoBloqueo.fechaFin}
@@ -1297,14 +1304,18 @@ function DisponibilidadView({
               />
             </div>
             <div>
-              <label className="field-label">Motivo (opcional)</label>
+              <label className="field-label">{d.availabilitySetup.reason}</label>
               <select
                 value={nuevoBloqueo.motivo}
                 onChange={(e) => setNuevoBloqueo({ ...nuevoBloqueo, motivo: e.target.value })}
                 className="field-select"
               >
-                <option value="">Sin especificar</option>
-                {MOTIVOS_BLOQUEO.map(m => <option key={m} value={m}>{m}</option>)}
+                <option value="">{d.availabilitySetup.reasonUnspecified}</option>
+                <option value="Vacaciones">{d.availabilitySetup.reasons.vacations}</option>
+                <option value="Feriado">{d.availabilitySetup.reasons.holiday}</option>
+                <option value="Capacitación">{d.availabilitySetup.reasons.training}</option>
+                <option value="Personal">{d.availabilitySetup.reasons.personal}</option>
+                <option value="Otro">{d.availabilitySetup.reasons.other}</option>
               </select>
             </div>
           </div>
@@ -1317,13 +1328,13 @@ function DisponibilidadView({
               onChange={(e) => setNuevoBloqueo({ ...nuevoBloqueo, esHoraParcial: e.target.checked })}
               className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
             />
-            <span className="text-sm text-slate-600">Bloqueo parcial (solo un rango horario)</span>
+            <span className="text-sm text-slate-600">{d.availabilitySetup.partialBlock}</span>
           </label>
 
           {nuevoBloqueo.esHoraParcial && (
             <div className="grid grid-cols-2 gap-3 mb-3">
               <div>
-                <label className="field-label">Hora inicio</label>
+                <label className="field-label">{d.availabilitySetup.startTime}</label>
                 <input
                   type="time"
                   value={nuevoBloqueo.horaInicio}
@@ -1332,7 +1343,7 @@ function DisponibilidadView({
                 />
               </div>
               <div>
-                <label className="field-label">Hora fin</label>
+                <label className="field-label">{d.availabilitySetup.endTime}</label>
                 <input
                   type="time"
                   value={nuevoBloqueo.horaFin}
@@ -1348,7 +1359,7 @@ function DisponibilidadView({
             disabled={savingBloqueo}
             className="btn btn-primary bg-amber-600 hover:bg-amber-700 border-amber-600 hover:border-amber-700"
           >
-            {savingBloqueo ? 'Guardando...' : '+ Agregar bloqueo'}
+            {savingBloqueo ? d.availabilitySetup.saving : `+ ${d.availabilitySetup.addBlocking}`}
           </button>
         </div>
       </div>
@@ -3216,6 +3227,8 @@ function ResenasView() {
 type EmbedPlatform = 'html' | 'wordpress' | 'wix' | 'webflow';
 
 function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
+  const { t } = useLang();
+  const d = t('dashboard');
   const [copied, setCopied]         = useState<string | null>(null);
   const [preview, setPreview]       = useState(false);
   const [platform, setPlatform]     = useState<EmbedPlatform>('html');
@@ -3233,43 +3246,31 @@ function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
   title="Reservar turno"
 ></iframe>`;
 
-  const PLATFORM_SNIPPETS: Record<EmbedPlatform, { label: string; code: string; instructions: string[] }> = {
+  const PLATFORM_SNIPPETS: Record<EmbedPlatform, { label: string; code: string; instructions: readonly string[] }> = {
     html: {
       label: 'HTML',
       code: iframeSnippet,
-      instructions: [
-        'Pegá el código en cualquier archivo .html donde quieras mostrar el widget.',
-        'Podés cambiar width y height según el espacio disponible.',
-        'Funciona en cualquier servidor estático (GitHub Pages, Netlify, etc.).',
-      ],
+      instructions: d.embedWidget.instructions.html,
     },
     wordpress: {
       label: 'WordPress',
       code: iframeSnippet,
-      instructions: [
-        'En el editor de bloques, agregá un bloque "HTML personalizado".',
-        'Pegá el código dentro del bloque y guardá.',
-        'También funciona con Elementor o Divi usando el widget de HTML.',
-      ],
+      instructions: d.embedWidget.instructions.wordpress,
     },
     wix: {
       label: 'Wix',
       code: widgetUrl,
       instructions: [
-        'En el editor de Wix, hacé clic en "+ Agregar" → "Más" → "HTML iframe".',
-        'Hacé clic en "Ingresar código" y pegá este snippet:',
+        d.embedWidget.instructions.wix[0],
+        d.embedWidget.instructions.wix[1],
         `<iframe src="${widgetUrl}" width="460" height="${iframeHeight}" frameborder="0" style="border-radius:16px"></iframe>`,
-        'O usá el modo "URL" y pegá la URL directa del widget.',
+        d.embedWidget.instructions.wix[2],
       ],
     },
     webflow: {
       label: 'Webflow',
       code: iframeSnippet,
-      instructions: [
-        'En el Designer, arrastrá un componente "Embed" desde el panel izquierdo.',
-        'Pegá el código HTML y hacé clic en "Save & Close".',
-        'Publicá tu proyecto para que los cambios se vean en vivo.',
-      ],
+      instructions: d.embedWidget.instructions.webflow,
     },
   };
 
@@ -3291,17 +3292,17 @@ function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
             </svg>
-            Agenda embebible para tu sitio web
+            {d.embedWidget.title}
           </p>
           <p className="text-xs text-slate-500 mt-0.5">
-            Tus pacientes reservan turno sin salir de tu sitio.
+            {d.embedWidget.desc}
           </p>
         </div>
         <button
           onClick={() => setPreview(p => !p)}
           className="btn btn-secondary btn-sm shrink-0"
         >
-          {preview ? 'Ocultar preview' : 'Ver preview'}
+          {preview ? d.embedWidget.hidePreview : d.embedWidget.showPreview}
         </button>
       </div>
 
@@ -3312,23 +3313,23 @@ function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
             <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/>
           </svg>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-blue-800">URL del widget</p>
+            <p className="text-xs font-semibold text-blue-800">{d.embedWidget.widgetUrl}</p>
             <p className="text-xs text-blue-700 truncate mt-0.5">{widgetUrl}</p>
           </div>
           <button
             onClick={() => copyText(widgetUrl, 'url')}
             className={`btn btn-sm shrink-0 transition-all ${copied === 'url' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : 'btn-secondary'}`}
           >
-            {copied === 'url' ? '✓ Copiada' : 'Copiar URL'}
+            {copied === 'url' ? d.embedWidget.copied : d.embedWidget.copyUrl}
           </button>
           <a href={widgetUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary btn-sm shrink-0">
-            Abrir
+            {d.embedWidget.open}
           </a>
         </div>
 
         {/* Height customizer */}
         <div className="flex items-center gap-3">
-          <label className="text-xs font-semibold text-slate-600 whitespace-nowrap">Alto del iframe</label>
+          <label className="text-xs font-semibold text-slate-600 whitespace-nowrap">{d.embedWidget.iframeHeight}</label>
           <input
             type="range" min={480} max={800} step={20}
             value={iframeHeight}
@@ -3367,14 +3368,14 @@ function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
                   : 'bg-slate-700 text-slate-200 hover:bg-slate-600'
               }`}
             >
-              {copied === 'snippet' ? '✓ Copiado' : 'Copiar'}
+              {copied === 'snippet' ? d.embedWidget.copied : d.embedWidget.copyUrl.replace(' URL', '')}
             </button>
           </div>
 
           {/* Platform-specific instructions */}
           <div className="mt-3 bg-amber-50 border border-amber-100 rounded-xl px-4 py-3">
             <p className="text-xs font-semibold text-amber-800 mb-1.5">
-              Instrucciones para {current.label}
+              {d.embedWidget.instructionsHTMLTitle.replace('HTML', current.label)}
             </p>
             <ol className="text-xs text-amber-700 space-y-1 list-decimal list-inside">
               {current.instructions.map((inst, i) => (
@@ -3387,9 +3388,9 @@ function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
         {/* Feature highlights */}
         <div className="grid grid-cols-3 gap-2 text-xs text-center text-slate-500">
           {[
-            { icon: <RefreshIcon size={18} className="text-blue-600" />, text: 'Sincroniza con tu agenda' },
-            { icon: <PhoneIcon size={18} className="text-blue-600" />, text: 'Responsive en movil' },
-            { icon: <ShieldIcon size={18} className="text-blue-600" />, text: 'Sin registro del paciente' },
+            { icon: <RefreshIcon size={18} className="text-blue-600" />, text: d.embedWidget.syncsWithAgenda },
+            { icon: <PhoneIcon size={18} className="text-blue-600" />, text: d.embedWidget.responsive },
+            { icon: <ShieldIcon size={18} className="text-blue-600" />, text: d.embedWidget.noPatientReg },
           ].map(({ icon, text }) => (
             <div key={text} className="bg-slate-50 rounded-xl p-2.5 border border-slate-100">
               <div className="text-lg mb-1 inline-flex items-center justify-center">{icon}</div>
