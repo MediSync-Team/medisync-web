@@ -452,7 +452,7 @@ export default function ProfesionalDashboard() {
                 className="btn btn-secondary text-sm"
               >
                 <LogOutIcon size={15} />
-                <span className="hidden sm:inline">Salir</span>
+                <span className="hidden sm:inline">{d.logout}</span>
               </button>
             </div>
           </div>
@@ -947,7 +947,7 @@ function CalendarioView({
         <h3 className="font-semibold text-slate-800">
           {selectedDate.toLocaleDateString(getLocale(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
         </h3>
-        <span className="badge badge-gray">{filteredTurnos.length}/{turnosDelDia.length} turnos</span>
+        <span className="badge badge-gray">{filteredTurnos.length}/{turnosDelDia.length} {d.appointments.toLowerCase()}</span>
       </div>
 
       <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 grid grid-cols-1 sm:grid-cols-4 gap-2.5">
