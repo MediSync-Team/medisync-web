@@ -22,7 +22,10 @@ import {
   BellIcon, ChartIcon, TrashIcon, ClipboardIcon, PaperclipIcon,
   XIcon, CheckIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon, ChatIcon, StarIcon, CreditCardIcon, RefreshIcon, PhoneIcon, ShieldIcon,
 } from '../components/icons';
-import { DIAS_SEMANA, estadoBadge, clinicalRiskBadge } from '../lib/utils';
+import { DIAS_SEMANA, getDaysShort, estadoBadge, clinicalRiskBadge } from '../lib/utils';
+
+// Helper to convert lang to locale string
+const getLocale = (lang: string) => lang === 'es' ? 'es-AR' : 'en-US';
 
 const PROF_TOUR_STEPS = [
   {
@@ -66,7 +69,7 @@ interface StatsData {
 export default function ProfesionalDashboard() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const d = t('dashboard');
   const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -378,7 +381,7 @@ export default function ProfesionalDashboard() {
                   <div key={rec.id} className="flex items-center gap-3 text-sm text-blue-50">
                     <ClockIcon size={13} className="shrink-0 text-blue-300" />
                     <span>
-                      {new Date(rec.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(rec.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
                       {' — '}
                       {rec.paciente?.nombre} {rec.paciente?.apellido}
                     </span>
@@ -523,7 +526,7 @@ export default function ProfesionalDashboard() {
                   </div>
                 </div>
                 <p className="stat-value text-emerald-600">{turnosMes.length}</p>
-                <p className="stat-desc">{mesActual.toLocaleString('es-AR', { month: 'long' })}</p>
+                <p className="stat-desc">{mesActual.toLocaleString(getLocale(lang), { month: 'long' })}</p>
               </div>
 
               <div className="stat-card">
@@ -789,6 +792,7 @@ function CuponesView({
   onToggleActivo: (id: string, activo: boolean) => void;
   onEliminar: (id: string) => void;
 }) {
+  const { lang } = useLang();
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -831,12 +835,12 @@ function CuponesView({
                   </div>
                   <p className="text-sm text-slate-600 mb-1">{cupon.descripcion || '—'}</p>
                   <div className="text-xs text-slate-500 space-y-0.5">
-                    <p>Descuento: {cupon.tipo === 'PORCENTAJE' ? `${cupon.valor}%` : `$${cupon.valor.toLocaleString('es-AR')}`}</p>
+                    <p>Descuento: {cupon.tipo === 'PORCENTAJE' ? `${cupon.valor}%` : `$${cupon.valor.toLocaleString(getLocale(lang))}`}</p>
                     {cupon.maxUsos && (
                       <p>Usos: {cupon.usosActuales}/{cupon.maxUsos}</p>
                     )}
                     {cupon.expiresAt && (
-                      <p>Vence: {new Date(cupon.expiresAt).toLocaleDateString('es-AR')}</p>
+                      <p>Vence: {new Date(cupon.expiresAt).toLocaleDateString(getLocale(lang))}</p>
                     )}
                   </div>
                 </div>
@@ -888,7 +892,7 @@ function CalendarioView({
   agendaSoloRiesgo: boolean;
   setAgendaSoloRiesgo: (v: boolean) => void;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const d = t('dashboard');
   const h = t('home');
   const hoy = typeof window !== 'undefined' ? new Date().toDateString() : '';
@@ -941,7 +945,7 @@ function CalendarioView({
       {/* Day header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-slate-800">
-          {selectedDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+          {selectedDate.toLocaleDateString(getLocale(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
         </h3>
         <span className="badge badge-gray">{filteredTurnos.length}/{turnosDelDia.length} turnos</span>
       </div>
@@ -990,7 +994,7 @@ function CalendarioView({
                 {/* Time */}
                 <div className="shrink-0 text-center w-14">
                   <p className="text-lg font-bold text-slate-700 group-hover:text-blue-700 leading-none">
-                    {new Date(turno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(turno.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
 
@@ -1048,7 +1052,7 @@ function DisponibilidadView({
   loadingBloqueos: boolean;
   onReloadBloqueos: () => void;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const d = t('dashboard');
   const h = t('home');
 
@@ -1106,7 +1110,7 @@ function DisponibilidadView({
   const formatFechaBloqueo = (b: BloqueoDisponibilidad) => {
     const inicio = new Date(b.fechaInicio + 'T12:00:00');
     const fin = new Date(b.fechaFin + 'T12:00:00');
-    const fmt = (d: Date) => d.toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: 'numeric' });
+    const fmt = (d: Date) => d.toLocaleDateString(getLocale(lang), { day: '2-digit', month: 'short', year: 'numeric' });
     if (b.fechaInicio === b.fechaFin) return fmt(inicio);
     return `${fmt(inicio)} → ${fmt(fin)}`;
   };
@@ -1486,7 +1490,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
   const [historiaMessage, setHistoriaMessage] = useState('');
   const [preconsulta, setPreconsulta] = useState<PreconsultaTurno | null>(null);
   const [loadingPreconsulta, setLoadingPreconsulta] = useState(true);
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const d = t('dashboard');
   const [receta, setReceta] = useState<RecetaIndicacion | null>(null);
   const [recetaForm, setRecetaForm] = useState<RecetaIndicacionInput>({ diagnostico: '', indicaciones: '' });
@@ -1923,10 +1927,10 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             <div className="bg-slate-50 rounded-xl p-3.5">
               <p className="text-xs text-slate-500 mb-1">{d.dateTime}</p>
               <p className="font-semibold text-slate-800 text-sm">
-                {new Date(turno.fechaHora).toLocaleDateString('es-AR', { weekday: 'short', day: 'numeric', month: 'short' })}
+                {new Date(turno.fechaHora).toLocaleDateString(getLocale(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
               </p>
               <p className="text-blue-600 font-bold">
-                {new Date(turno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                {new Date(turno.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
               </p>
             </div>
 
@@ -1996,7 +2000,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 {/* Header row: timestamp + risk badge */}
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <p className="font-medium text-slate-700 text-xs">
-                    Completado {new Date(preconsulta.completadaAt).toLocaleString('es-AR')}
+                    Completado {new Date(preconsulta.completadaAt).toLocaleDateString(getLocale(lang))}
                   </p>
                   <div className="flex items-center gap-1.5">
                     {preconsulta.aiGenerated && (
@@ -2145,7 +2149,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                       <p className="text-[11px] text-slate-500 uppercase tracking-wide">Ultima consulta</p>
                       <p className="text-sm font-semibold text-slate-700">
                         {historiaClinica.resumen.ultimaConsulta
-                          ? new Date(historiaClinica.resumen.ultimaConsulta).toLocaleDateString('es-AR')
+                          ? new Date(historiaClinica.resumen.ultimaConsulta).toLocaleDateString(getLocale(lang))
                           : 'Sin registros'}
                       </p>
                     </div>
@@ -2208,9 +2212,9 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                         <div key={item.id} className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-xs font-semibold text-slate-700">
-                              {new Date(item.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}
+                              {new Date(item.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short', year: 'numeric' })}
                               {' · '}
-                              {new Date(item.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                              {new Date(item.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
                             </p>
                             <span className={estadoBadge(item.estado)}>{item.estado}</span>
                           </div>
@@ -2236,7 +2240,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
               <h4 className="font-semibold text-slate-700 text-sm">Receta e indicaciones post-consulta</h4>
               {receta?.emitidaAt && (
                 <span className="badge badge-blue ml-auto text-xs">
-                  Emitida {new Date(receta.emitidaAt).toLocaleDateString('es-AR')}
+                  Emitida {new Date(receta.emitidaAt).toLocaleDateString(getLocale(lang))}
                 </span>
               )}
             </div>
@@ -2375,7 +2379,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 <h4 className="font-semibold text-slate-700 text-sm">Certificado médico</h4>
                 {certificado?.emitidaAt && (
                   <span className="badge badge-blue ml-auto text-xs">
-                    Emitido {new Date(certificado.emitidaAt).toLocaleDateString('es-AR')}
+                    Emitido {new Date(certificado.emitidaAt).toLocaleDateString(getLocale(lang))}
                   </span>
                 )}
               </div>
@@ -2622,6 +2626,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
    PAGOS VIEW
 ══════════════════════════════════════════════════════════════ */
 function PagosView() {
+  const { lang } = useLang();
   const [data, setData] = useState<PagosDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -2681,8 +2686,8 @@ function PagosView() {
       const rows = [
         ['Fecha pago', 'Fecha turno', 'Paciente', 'Email', 'Modalidad', 'Monto bruto', 'Comisión %', 'Monto neto', 'Estado', 'ID pago MP'],
         ...res.pagos.map(p => [
-          new Date(p.createdAt).toLocaleDateString('es-AR'),
-          new Date(p.turno.fechaHora).toLocaleDateString('es-AR') + ' ' + new Date(p.turno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }),
+          new Date(p.createdAt).toLocaleDateString(getLocale(lang)),
+          new Date(p.turno.fechaHora).toLocaleDateString(getLocale(lang)) + ' ' + new Date(p.turno.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' }),
           p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : 'Sin cuenta',
           p.turno.paciente?.email ?? '',
           p.turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial',
@@ -2706,7 +2711,7 @@ function PagosView() {
   };
 
   const fmt = (n: number) =>
-    new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
+    new Intl.NumberFormat(getLocale(lang), { style: 'currency', currency: 'ARS', maximumFractionDigits: 0 }).format(n);
 
   const estadoBadgeClass = (e: string) => {
     if (e === 'APROBADO') return 'badge badge-green';
@@ -2844,7 +2849,7 @@ function PagosView() {
                 {data.pagos.map(p => (
                   <tr key={p.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/30 transition-colors">
                     <td className="px-4 py-3 text-slate-600 dark:text-slate-300 whitespace-nowrap">
-                      {new Date(p.createdAt).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                      {new Date(p.createdAt).toLocaleDateString(getLocale(lang), { day: '2-digit', month: 'short', year: '2-digit' })}
                     </td>
                     <td className="px-4 py-3">
                       {p.turno.paciente
@@ -2857,9 +2862,9 @@ function PagosView() {
                       <span className="ml-1">{p.turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}</span>
                     </td>
                     <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap text-xs">
-                      {new Date(p.turno.fechaHora).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' })}
+                      {new Date(p.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: '2-digit', month: 'short' })}
                       {' '}
-                      {new Date(p.turno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(p.turno.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
                     </td>
                     <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-100 whitespace-nowrap">
                       {fmt(p.monto)}
@@ -2886,7 +2891,7 @@ function PagosView() {
                       {p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : 'Paciente sin cuenta'}
                     </p>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {new Date(p.turno.fechaHora).toLocaleDateString('es-AR', { day: '2-digit', month: 'short', year: '2-digit' })}
+                      {new Date(p.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: '2-digit', month: 'short', year: '2-digit' })}
                       {' · '}
                       {modalidadIcon(p.turno.modalidad)} {p.turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
                     </p>
@@ -2943,6 +2948,7 @@ function PagosView() {
    RESEÑAS VIEW
 ══════════════════════════════════════════════════════════════ */
 function ResenasView() {
+  const { lang } = useLang();
   const [data, setData] = useState<{ resenas: Resena[]; stats: ResenasStats; pagination: { page: number; totalPages: number; total: number } } | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -3104,8 +3110,8 @@ function ResenasView() {
                         {resena.paciente ? `${resena.paciente.nombre} ${resena.paciente.apellido}` : 'Paciente'}
                       </p>
                       <p className="text-xs text-slate-400">
-                        {new Date(resena.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        {resena.turno && ` · ${new Date(resena.turno.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}`}
+                        {new Date(resena.createdAt).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {resena.turno && ` · ${new Date(resena.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}`}
                       </p>
                     </div>
                   </div>
@@ -3161,7 +3167,7 @@ function ResenasView() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Tu respuesta
                         {resena.respondidaAt && (
-                          <span className="text-slate-400 font-normal">· {new Date(resena.respondidaAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}</span>
+                          <span className="text-slate-400 font-normal">· {new Date(resena.respondidaAt).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}</span>
                         )}
                       </p>
                       <div className="flex gap-2">
@@ -3428,6 +3434,7 @@ function PlanView({
   onCancelarSuscripcion: () => void;
   redirecting: boolean;
 }) {
+  const { lang } = useLang();
   if (loading) {
     return (
       <div className="space-y-4">
@@ -3490,7 +3497,7 @@ function PlanView({
         <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-6">
           <div className="text-sm font-medium text-emerald-900">Próximo cobro</div>
           <div className="text-2xl font-bold text-emerald-700 mt-2">
-            {new Date(suscripcion.planVenceAt).toLocaleDateString('es-AR')}
+            {new Date(suscripcion.planVenceAt).toLocaleDateString(getLocale(lang))}
           </div>
           <p className="text-xs text-emerald-700 mt-2">$4.990 ARS / mes</p>
         </div>
@@ -3550,7 +3557,7 @@ function AuditoriaView({ profesionalId }: { profesionalId: string }) {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
-  const { t } = useLang();
+  const { t, lang } = useLang();
 
   useEffect(() => {
     loadAuditoria();
@@ -3614,7 +3621,7 @@ function AuditoriaView({ profesionalId }: { profesionalId: string }) {
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-semibold text-sm">{getEventoLabel(event.tipoEvento)}</span>
                   <span className="text-xs text-slate-500">
-                    {new Date(event.creadoAt).toLocaleDateString('es-AR')} {new Date(event.creadoAt).toLocaleTimeString('es-AR')}
+                    {new Date(event.creadoAt).toLocaleDateString(getLocale(lang))} {new Date(event.creadoAt).toLocaleTimeString(getLocale(lang))}
                   </span>
                 </div>
                 {event.detalle && (
