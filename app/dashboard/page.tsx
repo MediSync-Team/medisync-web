@@ -357,7 +357,7 @@ export default function ProfesionalDashboard() {
                     <ClockIcon size={13} className="shrink-0 text-blue-300" />
                     <span>
                       {new Date(rec.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
-                      {' â€” '}
+                      {' - '}
                       {rec.paciente?.nombre} {rec.paciente?.apellido}
                     </span>
                     {rec.modalidad === 'VIRTUAL' && (
@@ -482,7 +482,7 @@ export default function ProfesionalDashboard() {
             <div data-onboarding="stat-cards" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div className="stat-card">
                 <div className="flex items-start justify-between">
-                  <p className="stat-label">{d.appointments} â€” {d.today}</p>
+                  <p className="stat-label">{d.appointments} - {d.today}</p>
                   <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
                     <CalendarIcon size={15} className="text-blue-600" />
                   </div>
@@ -495,7 +495,7 @@ export default function ProfesionalDashboard() {
 
               <div className="stat-card">
                 <div className="flex items-start justify-between">
-                  <p className="stat-label">{d.appointments} â€” {d.thisMonth}</p>
+                  <p className="stat-label">{d.appointments} - {d.thisMonth}</p>
                   <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
                     <ChartIcon size={15} className="text-emerald-600" />
                   </div>
@@ -528,8 +528,8 @@ export default function ProfesionalDashboard() {
                { id: 'pagos', label: d.payments, icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>, onboarding: 'tab-pagos' },
               { id: 'resenas', label: d.reviews, icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l3.125 1.5a.563.563 0 010 .5L12.52 6.5a.562.562 0 01-1.04 0l-3.125-1.5a.563.563 0 010-.5L11.48 3.5z" /></svg>, onboarding: 'tab-resenas' },
               { id: 'cupones', label: d.coupons, icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.008h.01m0 0h-.01M16.5 18v.008h.01m0 0h-.01M6 12a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm12 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" /></svg>, onboarding: 'tab-cupones' },
-              { id: 'plan', label: 'Plan', icon: <StarIcon size={14} />, onboarding: 'tab-plan' },
-              { id: 'auditoria', label: 'Historial', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 1.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>, onboarding: 'tab-auditoria' },
+              { id: 'plan', label: d.planCurrent ?? 'Plan', icon: <StarIcon size={14} />, onboarding: 'tab-plan' },
+              { id: 'auditoria', label: d.history ?? (lang === 'es' ? 'Historial' : 'History'), icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 1.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>, onboarding: 'tab-auditoria' },
             ] as const).map(tab => (
               <button
                 key={tab.id}
@@ -616,7 +616,7 @@ export default function ProfesionalDashboard() {
               <AuditoriaView profesionalId={user.profesional!.id} />
             )}
             {activeTab === 'stats' && suscripcion?.plan === 'FREE' && (
-              <UpgradePrompt feature="estadÃ­sticas" onViewPlans={() => setActiveTab('plan')} />
+              <UpgradePrompt feature={d.stats} onViewPlans={() => setActiveTab('plan')} />
             )}
           </div>
         </div>
@@ -643,7 +643,7 @@ export default function ProfesionalDashboard() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-800 text-lg">Nuevo CupÃ³n</h3>
+              <h3 className="font-bold text-slate-800 text-lg">{d.couponModal.title}</h3>
               <button onClick={() => setShowNuevoCupon(false)} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
                 <XIcon size={18} />
               </button>
@@ -651,19 +651,19 @@ export default function ProfesionalDashboard() {
 
             <div className="px-6 py-5 space-y-4">
               <div>
-                <label className="field-label">CÃ³digo de cupÃ³n</label>
+                <label className="field-label">{d.couponModal.codeLabel}</label>
                 <input
                   type="text"
                   value={nuevosCuponForm.codigo}
                   onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, codigo: e.target.value.toUpperCase() })}
-                  placeholder="ej: PROMO10"
+                  placeholder={d.couponModal.codePlaceholder}
                   className="field-input"
                   disabled={savingCupon}
                 />
               </div>
 
               <div>
-                <label className="field-label mb-2">Tipo de descuento</label>
+                <label className="field-label mb-2">{d.couponModal.discountType}</label>
                 <div className="flex gap-2">
                   {(['PORCENTAJE', 'MONTO_FIJO'] as TipoDescuento[]).map((tipo) => (
                     <button
@@ -682,24 +682,26 @@ export default function ProfesionalDashboard() {
               </div>
 
               <div>
-                <label className="field-label">Valor {nuevosCuponForm.tipo === 'PORCENTAJE' ? '(%)' : '($ARS)'}</label>
+                <label className="field-label">
+                  {d.couponModal.amountLabel} {nuevosCuponForm.tipo === 'PORCENTAJE' ? '(%)' : '($ARS)'}
+                </label>
                 <input
                   type="number"
                   value={nuevosCuponForm.valor}
                   onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, valor: e.target.value })}
-                  placeholder="ej: 10"
+                  placeholder={d.couponModal.amountPlaceholder}
                   className="field-input"
                   disabled={savingCupon}
                 />
               </div>
 
               <div>
-                <label className="field-label">DescripciÃ³n (opcional)</label>
+                <label className="field-label">{d.couponModal.descriptionLabel}</label>
                 <input
                   type="text"
                   value={nuevosCuponForm.descripcion}
                   onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, descripcion: e.target.value })}
-                  placeholder="ej: 10% en primera consulta"
+                  placeholder={d.couponModal.descriptionPlaceholder}
                   className="field-input"
                   disabled={savingCupon}
                 />
@@ -707,18 +709,18 @@ export default function ProfesionalDashboard() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="field-label">Usos mÃ¡ximos (opcional)</label>
+                  <label className="field-label">{d.couponModal.maxUsesLabel}</label>
                   <input
                     type="number"
                     value={nuevosCuponForm.maxUsos}
                     onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, maxUsos: e.target.value })}
-                    placeholder="ilimitado"
+                    placeholder={d.couponModal.maxUsesPlaceholder}
                     className="field-input"
                     disabled={savingCupon}
                   />
                 </div>
                 <div>
-                  <label className="field-label">Vence el (opcional)</label>
+                  <label className="field-label">{d.couponModal.expiresLabel}</label>
                   <input
                     type="date"
                     value={nuevosCuponForm.expiresAt}
@@ -732,10 +734,10 @@ export default function ProfesionalDashboard() {
 
             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3 rounded-b-2xl">
               <button onClick={() => setShowNuevoCupon(false)} className="btn btn-secondary flex-1" disabled={savingCupon}>
-                Cancelar
+                {d.couponModal.cancel}
               </button>
               <button onClick={handleCrearCupon} className="btn btn-primary flex-1" disabled={savingCupon}>
-                {savingCupon ? 'Creando...' : 'Crear CupÃ³n'}
+                {savingCupon ? d.couponModal.creating : d.couponModal.create}
               </button>
             </div>
           </div>
@@ -796,7 +798,13 @@ function CuponesView({
           {cupones.map((cupon) => {
             const isExpired = cupon.expiresAt && new Date(cupon.expiresAt) < new Date();
             const isExhausted = cupon.maxUsos && cupon.usosActuales >= cupon.maxUsos;
-            const statusBadge = !cupon.activo ? 'Inactivo' : isExpired ? 'Vencido' : isExhausted ? 'Agotado' : 'Activo';
+            const statusBadge = !cupon.activo
+              ? (lang === 'es' ? 'Inactivo' : 'Inactive')
+              : isExpired
+                ? (lang === 'es' ? 'Vencido' : 'Expired')
+                : isExhausted
+                  ? (lang === 'es' ? 'Agotado' : 'Exhausted')
+                  : (lang === 'es' ? 'Activo' : 'Active');
             const statusColor = !cupon.activo ? 'bg-slate-100 text-slate-600' : isExpired ? 'bg-red-100 text-red-600' : isExhausted ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600';
 
             return (
@@ -806,14 +814,14 @@ function CuponesView({
                     <p className="font-semibold text-slate-800">{cupon.codigo}</p>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor}`}>{statusBadge}</span>
                   </div>
-                  <p className="text-sm text-slate-600 mb-1">{cupon.descripcion || 'â€”'}</p>
+                  <p className="text-sm text-slate-600 mb-1">{cupon.descripcion || '-'}</p>
                   <div className="text-xs text-slate-500 space-y-0.5">
-                    <p>Descuento: {cupon.tipo === 'PORCENTAJE' ? `${cupon.valor}%` : `$${cupon.valor.toLocaleString(getLocale(lang))}`}</p>
+                    <p>{lang === 'es' ? 'Descuento' : 'Discount'}: {cupon.tipo === 'PORCENTAJE' ? `${cupon.valor}%` : `$${cupon.valor.toLocaleString(getLocale(lang))}`}</p>
                     {cupon.maxUsos && (
-                      <p>Usos: {cupon.usosActuales}/{cupon.maxUsos}</p>
+                      <p>{lang === 'es' ? 'Usos' : 'Uses'}: {cupon.usosActuales}/{cupon.maxUsos}</p>
                     )}
                     {cupon.expiresAt && (
-                      <p>Vence: {new Date(cupon.expiresAt).toLocaleDateString(getLocale(lang))}</p>
+                      <p>{lang === 'es' ? 'Vence' : 'Expires'}: {new Date(cupon.expiresAt).toLocaleDateString(getLocale(lang))}</p>
                     )}
                   </div>
                 </div>
@@ -826,7 +834,7 @@ function CuponesView({
                         : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
                     }`}
                   >
-                    {cupon.activo ? 'Activo' : 'Inactivo'}
+                    {cupon.activo ? (lang === 'es' ? 'Activo' : 'Active') : (lang === 'es' ? 'Inactivo' : 'Inactive')}
                   </button>
                   <button
                     onClick={() => onEliminar(cupon.id)}
@@ -1010,7 +1018,7 @@ function CalendarioView({
 /* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    DISPONIBILIDAD VIEW
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
-const MOTIVOS_BLOQUEO = ['Vacaciones', 'Feriado', 'CapacitaciÃ³n', 'Personal', 'Otro'];
+const MOTIVOS_BLOQUEO = ['Vacaciones', 'Feriado', 'Capacitación', 'Personal', 'Otro'];
 
 function DisponibilidadView({
   disponibilidades, nuevaDisp, setNuevaDisp, onAgregar, onEliminar,
@@ -1049,7 +1057,7 @@ function DisponibilidadView({
       return;
     }
     if (nuevoBloqueo.esHoraParcial && (!nuevoBloqueo.horaInicio || !nuevoBloqueo.horaFin)) {
-      setBloqueoError('Para bloqueo parcial indicÃ¡ hora de inicio y fin.');
+      setBloqueoError('Para bloqueo parcial indicá hora de inicio y fin.');
       return;
     }
     setSavingBloqueo(true);
@@ -1107,7 +1115,7 @@ function DisponibilidadView({
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-600 text-sm">
                   <ClockIcon size={13} className="text-slate-400" />
-                  <span>{disp.horaInicio} â€” {disp.horaFin}</span>
+                  <span>{disp.horaInicio} - {disp.horaFin}</span>
                 </div>
                 <span className={`ml-1 badge ${disp.modalidad === 'VIRTUAL' ? 'badge-blue' : disp.modalidad === 'PRESENCIAL' ? 'badge-green' : 'badge-purple'}`}>
                   {disp.modalidad === 'VIRTUAL' ? h.virtual : disp.modalidad === 'PRESENCIAL' ? h.inPerson : disp.modalidad}
@@ -1179,7 +1187,7 @@ function DisponibilidadView({
             <label className="field-label flex items-center gap-1">
               <MapPinIcon size={12} className="text-slate-400" />
               {d.availabilitySetup.location}
-              <span className="text-slate-400 font-normal ml-1">â€” {d.availabilitySetup.optional}</span>
+              <span className="text-slate-400 font-normal ml-1">- {d.availabilitySetup.optional}</span>
             </label>
             <input
               type="text"
@@ -1227,10 +1235,10 @@ function DisponibilidadView({
                   <p className="font-semibold text-slate-700 text-sm">{formatFechaBloqueo(b)}</p>
                   <p className="text-xs text-slate-500">
                     {b.horaInicio && b.horaFin ? `${b.horaInicio}â€“${b.horaFin}` : d.availabilitySetup.fullDay}
-                    {b.motivo ? ` Â· ${
+                    {b.motivo ? ` · ${
                       b.motivo === 'Vacaciones' ? d.availabilitySetup.reasons.vacations :
                       b.motivo === 'Feriado' ? d.availabilitySetup.reasons.holiday :
-                      b.motivo === 'CapacitaciÃ³n' ? d.availabilitySetup.reasons.training :
+                      b.motivo === 'Capacitación' ? d.availabilitySetup.reasons.training :
                       b.motivo === 'Personal' ? d.availabilitySetup.reasons.personal :
                       b.motivo === 'Otro' ? d.availabilitySetup.reasons.other :
                       b.motivo
@@ -1286,7 +1294,7 @@ function DisponibilidadView({
                 <option value="">{d.availabilitySetup.reasonUnspecified}</option>
                 <option value="Vacaciones">{d.availabilitySetup.reasons.vacations}</option>
                 <option value="Feriado">{d.availabilitySetup.reasons.holiday}</option>
-                <option value="CapacitaciÃ³n">{d.availabilitySetup.reasons.training}</option>
+                <option value="Capacitación">{d.availabilitySetup.reasons.training}</option>
                 <option value="Personal">{d.availabilitySetup.reasons.personal}</option>
                 <option value="Otro">{d.availabilitySetup.reasons.other}</option>
               </select>
@@ -1344,7 +1352,7 @@ function DisponibilidadView({
    EMITIR CERTIFICADO MODAL
 â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const CERT_TEMPLATES: Record<TipoCertificado, string> = {
-  REPOSO: 'El/la paciente ha sido visto/a y luego del examen clÃ­nico, se prescribe reposo mÃ©dico.',
+  REPOSO: 'El/la paciente ha sido visto/a y luego del examen clínico, se prescribe reposo médico.',
   CONSULTA: 'El/la paciente ha sido visto/a por consulta especializada.',
   APTITUD: 'Por este medio se certifica que el/la paciente se encuentra apto/a para las actividades indicadas.',
   LIBRE: '',
@@ -1395,9 +1403,9 @@ function EmitirCertificadoModal({
                       : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-300'
                   }`}
                 >
-                  {tipo === 'REPOSO' ? 'Reposo MÃ©dico'
-                    : tipo === 'CONSULTA' ? 'JustificaciÃ³n de Consulta'
-                    : tipo === 'APTITUD' ? 'Aptitud FÃ­sica'
+                  {tipo === 'REPOSO' ? 'Reposo Médico'
+                    : tipo === 'CONSULTA' ? 'Justificación de Consulta'
+                    : tipo === 'APTITUD' ? 'Aptitud Física'
                     : 'Certificado Libre'}
                 </button>
               ))}
@@ -1652,11 +1660,11 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
   const handleSaveCertificado = async () => {
     if (certificadoForm.diagnostico.trim().length < 5 || certificadoForm.texto.trim().length < 5) {
-      setModalNotice({ type: 'error', text: 'Completa diagnÃ³stico y texto (mÃ­nimo 5 caracteres).' });
+      setModalNotice({ type: 'error', text: 'Completa diagnóstico y texto (mínimo 5 caracteres).' });
       return;
     }
     if (certificadoForm.tipo === 'REPOSO' && certificadoForm.diasReposo <= 0) {
-      setModalNotice({ type: 'error', text: 'IndicÃ¡ cantidad de dÃ­as de reposo.' });
+      setModalNotice({ type: 'error', text: 'Indicá cantidad de días de reposo.' });
       return;
     }
 
@@ -1856,7 +1864,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
   const handleReprogramar = async () => {
     if (!reprogramarFecha || !reprogramarHora) {
-      setModalNotice({ type: 'error', text: 'SeleccionÃ¡ una fecha y un horario.' });
+      setModalNotice({ type: 'error', text: 'Seleccioná una fecha y un horario.' });
       return;
     }
     const fechaHoraISO = `${reprogramarFecha}T${reprogramarHora}:00`;
@@ -2085,7 +2093,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 <textarea
                   value={notas}
                   onChange={(e) => setNotas(e.target.value)}
-                  placeholder="Notas de la consulta, diagnÃ³stico, tratamiento indicado..."
+                  placeholder="Notas de la consulta, diagnóstico, tratamiento indicado..."
                   className="field-input resize-none h-28 text-sm"
                 />
                 <button
@@ -2202,7 +2210,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-xs font-semibold text-slate-700">
                               {new Date(item.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short', year: 'numeric' })}
-                              {' Â· '}
+                              {' · '}
                               {new Date(item.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
                             </p>
                             <span className={estadoBadge(item.estado)}>{item.estado}</span>
@@ -2365,7 +2373,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             <div className="border border-slate-200 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <ClipboardIcon size={15} className="text-slate-400" />
-                <h4 className="font-semibold text-slate-700 text-sm">Certificado mÃ©dico</h4>
+                <h4 className="font-semibold text-slate-700 text-sm">Certificado médico</h4>
                 {certificado?.emitidaAt && (
                   <span className="badge badge-blue ml-auto text-xs">
                     Emitido {new Date(certificado.emitidaAt).toLocaleDateString(getLocale(lang))}
@@ -2380,10 +2388,10 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   <div className="bg-slate-50 rounded-lg p-3">
                     <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Tipo</p>
                     <p className="font-semibold text-slate-700">
-                      {certificado.tipo === 'REPOSO' ? 'Reposo MÃ©dico'
-                        : certificado.tipo === 'CONSULTA' ? 'JustificaciÃ³n de Consulta'
-                        : certificado.tipo === 'APTITUD' ? 'Aptitud FÃ­sica'
-                        : 'Certificado MÃ©dico'}
+                      {certificado.tipo === 'REPOSO' ? 'Reposo Médico'
+                        : certificado.tipo === 'CONSULTA' ? 'Justificación de Consulta'
+                        : certificado.tipo === 'APTITUD' ? 'Aptitud Física'
+                        : 'Certificado Médico'}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -2450,8 +2458,8 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             <div className="flex gap-2 mb-3">
               <select value={fileType} onChange={(e) => setFileType(e.target.value)} className="field-select text-xs">
                 <option value="LABORATORIO">Laboratorio</option>
-                <option value="IMAGEN">Imagen mÃ©dica</option>
-                <option value="EVOLUCION">EvoluciÃ³n</option>
+                <option value="IMAGEN">Imagen médica</option>
+                <option value="EVOLUCION">Evolución</option>
                 <option value="OTRO">Otro</option>
               </select>
               <label className="flex-1">
@@ -2471,7 +2479,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-700 truncate">{archivo.nombreOriginal}</p>
-                      <p className="text-xs text-slate-400">{archivo.tipo} Â· {formatFileSize(archivo.tamanoBytes)}</p>
+                      <p className="text-xs text-slate-400">{archivo.tipo} · {formatFileSize(archivo.tamanoBytes)}</p>
                     </div>
                     <a href={archivo.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost p-1.5 text-blue-500 hover:text-blue-700 text-xs">Ver</a>
                     <button onClick={() => handleDeleteArchivo(archivo.id)} className="btn btn-ghost p-1.5 text-red-400 hover:text-red-600">
@@ -2499,7 +2507,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
               </button>
             </div>
             <p className="text-xs text-blue-700">
-              El paciente recibirÃ¡ una notificaciÃ³n con el nuevo horario.
+              El paciente recibirá una notificación con el nuevo horario.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -2524,7 +2532,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   </div>
                 ) : reprogramarSlots.length === 0 ? (
                   <div className="field-input text-slate-400 text-sm">
-                    {reprogramarFecha ? 'Sin disponibilidad ese dÃ­a' : 'SeleccionÃ¡ una fecha'}
+                    {reprogramarFecha ? 'Sin disponibilidad ese día' : 'Seleccioná una fecha'}
                   </div>
                 ) : (
                   <select
@@ -2549,7 +2557,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 disabled={reprogramando || !reprogramarFecha || !reprogramarHora}
                 className="btn btn-primary btn-sm"
               >
-                {reprogramando ? 'Reprogramando...' : 'Confirmar reprogramaciÃ³n'}
+                {reprogramando ? 'Reprogramando...' : 'Confirmar reprogramación'}
               </button>
             </div>
           </div>
@@ -2931,7 +2939,7 @@ function PagosView() {
                       {fmt(p.monto)}
                     </td>
                     <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
-                      {p.estado === 'APROBADO' ? fmt(p.montoNeto) : 'â€”'}
+                      {p.estado === 'APROBADO' ? fmt(p.montoNeto) : '-'}
                     </td>
                     <td className="px-4 py-3">
                       <span className={estadoBadgeClass(p.estado)}>{estadoLabel(p.estado)}</span>
@@ -2953,7 +2961,7 @@ function PagosView() {
                     </p>
                     <p className="text-xs text-slate-400 mt-0.5">
                       {new Date(p.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: '2-digit', month: 'short', year: '2-digit' })}
-                      {' Â· '}
+                      {' · '}
                       {modalidadIcon(p.turno.modalidad)} {p.turno.modalidad === 'VIRTUAL' ? m.VIRTUAL : m.PRESENCIAL}
                     </p>
                   </div>
@@ -3048,17 +3056,17 @@ function ResenasView() {
 
   const handleGuardarRespuesta = async (id: string) => {
     if (respuestaText.trim().length < 5) {
-      setNotice({ type: 'error', text: 'La respuesta debe tener al menos 5 caracteres.' });
+      setNotice({ type: 'error', text: lang === 'es' ? 'La respuesta debe tener al menos 5 caracteres.' : 'Reply must be at least 5 characters long.' });
       return;
     }
     setSaving(true);
     try {
       await api.resenas.responder(id, respuestaText.trim());
-      setNotice({ type: 'success', text: 'Respuesta publicada.' });
+      setNotice({ type: 'success', text: lang === 'es' ? 'Respuesta publicada.' : 'Reply published.' });
       setEditingId(null);
       load(page, ratingFilter);
     } catch (err) {
-      setNotice({ type: 'error', text: err instanceof Error ? err.message : 'Error al guardar.' });
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : (lang === 'es' ? 'Error al guardar.' : 'Error saving.') });
     } finally { setSaving(false); }
   };
 
@@ -3066,10 +3074,10 @@ function ResenasView() {
     setSaving(true);
     try {
       await api.resenas.borrarRespuesta(id);
-      setNotice({ type: 'success', text: 'Respuesta eliminada.' });
+      setNotice({ type: 'success', text: lang === 'es' ? 'Respuesta eliminada.' : 'Reply deleted.' });
       load(page, ratingFilter);
     } catch (err) {
-      setNotice({ type: 'error', text: err instanceof Error ? err.message : 'Error.' });
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : (lang === 'es' ? 'Error.' : 'Error.') });
     } finally { setSaving(false); }
   };
 
@@ -3092,10 +3100,14 @@ function ResenasView() {
             {/* Promedio grande */}
             <div className="text-center shrink-0">
               <p className="text-5xl font-extrabold text-slate-800 dark:text-slate-100 leading-none">
-                {data.stats.promedio ?? 'â€”'}
+                {data.stats.promedio ?? '-'}
               </p>
               <StarRating value={data.stats.promedio ?? 0} size={16} />
-              <p className="text-xs text-slate-400 mt-1">{data.stats.total} reseÃ±a{data.stats.total !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-slate-400 mt-1">
+                {lang === 'es'
+                  ? `${data.stats.total} reseña${data.stats.total !== 1 ? 's' : ''}`
+                  : `${data.stats.total} review${data.stats.total !== 1 ? 's' : ''}`}
+              </p>
             </div>
 
             {/* DistribuciÃ³n barras */}
@@ -3129,9 +3141,9 @@ function ResenasView() {
           {/* Active filter badge */}
           {ratingFilter && (
             <div className="mt-3 flex items-center gap-2">
-              <span className="badge badge-yellow text-xs">Filtrando: {ratingFilter}â˜…</span>
+              <span className="badge badge-yellow text-xs">{lang === 'es' ? 'Filtrando' : 'Filtering'}: {ratingFilter}★</span>
               <button onClick={() => applyFilter(undefined)} className="text-xs text-slate-400 hover:text-red-500 underline">
-                Quitar filtro
+                {lang === 'es' ? 'Quitar filtro' : 'Clear filter'}
               </button>
             </div>
           )}
@@ -3146,8 +3158,12 @@ function ResenasView() {
       ) : !data || data.stats.total === 0 ? (
         <div className="py-16 text-center text-slate-400">
           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} className="mx-auto mb-3 opacity-30"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
-          <p className="text-sm font-medium">TodavÃ­a no tenÃ©s reseÃ±as</p>
-          <p className="text-xs mt-1">Cuando un paciente califique un turno completado, aparecerÃ¡ aquÃ­.</p>
+          <p className="text-sm font-medium">{lang === 'es' ? 'Todavía no tenés reseñas' : 'You do not have reviews yet'}</p>
+          <p className="text-xs mt-1">
+            {lang === 'es'
+              ? 'Cuando un paciente califique un turno completado, aparecerá aquí.'
+              : 'When a patient rates a completed appointment, it will appear here.'}
+          </p>
         </div>
       ) : data.resenas.length === 0 ? (
         <div className="py-10 text-center text-slate-400 text-sm">
@@ -3175,7 +3191,7 @@ function ResenasView() {
                       </p>
                       <p className="text-xs text-slate-400">
                         {new Date(resena.createdAt).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'long', year: 'numeric' })}
-                        {resena.turno && ` Â· ${new Date(resena.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}`}
+                        {resena.turno && ` · ${new Date(resena.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}`}
                       </p>
                     </div>
                   </div>
@@ -3202,24 +3218,24 @@ function ResenasView() {
               <div className="border-t border-slate-100 dark:border-slate-700 bg-blue-50/50 dark:bg-blue-900/10 px-4 py-3">
                 {editingId === resena.id ? (
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">Tu respuesta pÃºblica</p>
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">{lang === 'es' ? 'Tu respuesta pública' : 'Your public reply'}</p>
                     <textarea
                       value={respuestaText}
                       onChange={(e) => setRespuestaText(e.target.value)}
-                      placeholder="EscribÃ­ tu respuesta... (visible para todos los pacientes)"
+                      placeholder={lang === 'es' ? 'Escribí tu respuesta... (visible para todos los pacientes)' : 'Write your reply... (visible to all patients)'}
                       className="field-input resize-none min-h-[80px] text-sm"
                       maxLength={2000}
                     />
                     <div className="flex items-center justify-between gap-2">
                       <span className="text-xs text-slate-400">{respuestaText.length}/2000</span>
                       <div className="flex gap-2">
-                        <button onClick={cancelEdit} className="btn btn-secondary btn-sm">Cancelar</button>
+                        <button onClick={cancelEdit} className="btn btn-secondary btn-sm">{lang === 'es' ? 'Cancelar' : 'Cancel'}</button>
                         <button
                           onClick={() => handleGuardarRespuesta(resena.id)}
                           disabled={saving}
                           className="btn btn-primary btn-sm"
                         >
-                          {saving ? 'Guardando...' : 'Publicar respuesta'}
+                          {saving ? (lang === 'es' ? 'Guardando...' : 'Saving...') : (lang === 'es' ? 'Publicar respuesta' : 'Publish reply')}
                         </button>
                       </div>
                     </div>
@@ -3229,14 +3245,14 @@ function ResenasView() {
                     <div className="flex items-center justify-between gap-2 mb-1.5">
                       <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                        Tu respuesta
+                        {lang === 'es' ? 'Tu respuesta' : 'Your reply'}
                         {resena.respondidaAt && (
-                          <span className="text-slate-400 font-normal">Â· {new Date(resena.respondidaAt).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}</span>
+                          <span className="text-slate-400 font-normal">· {new Date(resena.respondidaAt).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}</span>
                         )}
                       </p>
                       <div className="flex gap-2">
-                        <button onClick={() => startEdit(resena)} className="text-xs text-blue-600 hover:underline">Editar</button>
-                        <button onClick={() => handleBorrarRespuesta(resena.id)} disabled={saving} className="text-xs text-red-400 hover:text-red-600 hover:underline">Eliminar</button>
+                        <button onClick={() => startEdit(resena)} className="text-xs text-blue-600 hover:underline">{lang === 'es' ? 'Editar' : 'Edit'}</button>
+                        <button onClick={() => handleBorrarRespuesta(resena.id)} disabled={saving} className="text-xs text-red-400 hover:text-red-600 hover:underline">{lang === 'es' ? 'Eliminar' : 'Delete'}</button>
                       </div>
                     </div>
                     <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{resena.respuesta}</p>
@@ -3521,7 +3537,7 @@ function PlanView({
               {isPro ? d.planPro : d.planFree}
             </h2>
             <p className={`text-sm mt-3 ${isPro ? 'text-blue-700' : 'text-slate-600'}`}>
-              {isPro ? (d.planProSubtitle ?? 'Turnos ilimitados + estadÃ­sticas avanzadas') : (d.planFreeSubtitle ?? 'Hasta 20 turnos/mes')}
+              {isPro ? (d.planProSubtitle ?? 'Turnos ilimitados + estadísticas avanzadas') : (d.planFreeSubtitle ?? 'Hasta 20 turnos/mes')}
             </p>
           </div>
           <div className={`text-5xl font-bold opacity-20 ${isPro ? 'text-blue-500' : 'text-slate-400'}`}>
@@ -3687,7 +3703,7 @@ function AuditoriaView({ profesionalId }: { profesionalId: string }) {
                 {event.detalle && (
                   <div className="text-xs text-slate-600 mt-2">
                     {event.tipoEvento === 'DISPONIBILIDAD_CREADA' && event.detalle.diaSemana && (
-                      <p>{d.audit.day}: {event.detalle.diaSemana} | {event.detalle.horaInicio || 'â€”'} - {event.detalle.horaFin || 'â€”'}</p>
+                      <p>{d.audit.day}: {event.detalle.diaSemana} | {event.detalle.horaInicio || '-'} - {event.detalle.horaFin || '-'}</p>
                     )}
                     {event.tipoEvento === 'BLOQUEO_CREADO' && (
                       <p>

@@ -34,8 +34,10 @@ const validateDNI = (dni: string): boolean => {
 };
 
 export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate }: ProfileModalProps) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const p = t('profile');
+  const c = t('common');
+  const isEs = lang === 'es';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -110,9 +112,9 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
     setNotifMsg('');
     try {
       await api.notifications.updatePreferences(notifPrefs);
-      setNotifMsg('Preferencias guardadas');
+      setNotifMsg(isEs ? 'Preferencias guardadas' : 'Preferences saved');
     } catch {
-      setNotifMsg('Error al guardar preferencias');
+      setNotifMsg(isEs ? 'Error al guardar preferencias' : 'Error saving preferences');
     } finally {
       setSavingNotif(false);
     }
@@ -123,9 +125,11 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
     setNotifMsg('');
     try {
       await api.notifications.sendTest(canal);
-      setNotifMsg(`Prueba de ${canal === 'EMAIL' ? 'email' : 'WhatsApp'} enviada`);
+      setNotifMsg(isEs
+        ? `Prueba de ${canal === 'EMAIL' ? 'email' : 'WhatsApp'} enviada`
+        : `${canal === 'EMAIL' ? 'Email' : 'WhatsApp'} test sent`);
     } catch {
-      setNotifMsg('Error al enviar notificación de prueba');
+      setNotifMsg(isEs ? 'Error al enviar notificación de prueba' : 'Error sending test notification');
     } finally {
       setSendingTest(false);
     }
@@ -189,7 +193,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
         });
       }
 
-      setSuccess('¡Perfil actualizado correctamente!');
+      setSuccess(isEs ? '¡Perfil actualizado correctamente!' : 'Profile updated successfully!');
       setTimeout(() => {
         onClose();
         if (onUpdate) onUpdate();
@@ -208,7 +212,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">Editar Perfil</h2>
+          <h2 className="text-xl font-bold text-gray-900">{p.title}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
@@ -315,7 +319,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Precio de Consulta ($)
+                  {isEs ? 'Precio de Consulta ($)' : 'Consultation Fee ($)'}
                 </label>
                 <input
                   type="number"
@@ -331,7 +335,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Lugar de Atención
+                  {isEs ? 'Lugar de Atención' : 'Practice Location'}
                 </label>
                 <input
                   type="text"
@@ -340,13 +344,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   onChange={handleChange}
                   maxLength={200}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Dirección del consultorio"
+                  placeholder={isEs ? 'Dirección del consultorio' : 'Practice address'}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Biografía
+                  {isEs ? 'Biografía' : 'Biography'}
                 </label>
                 <textarea
                   name="bio"
@@ -355,16 +359,18 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   rows={3}
                   maxLength={500}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Breve descripción profesional..."
+                  placeholder={isEs ? 'Breve descripción profesional...' : 'Short professional bio...'}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Obras sociales / prepagas aceptadas
+                  {isEs ? 'Obras sociales / prepagas aceptadas' : 'Accepted health insurance providers'}
                 </label>
                 <p className="text-xs text-gray-500 mb-2">
-                  Seleccioná las coberturas que aceptás. Los pacientes podrán filtrar por su obra social.
+                  {isEs
+                    ? 'Seleccioná las coberturas que aceptás. Los pacientes podrán filtrar por su obra social.'
+                    : 'Select accepted coverages. Patients will be able to filter by insurance.'}
                 </p>
                 <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
                   {OBRAS_SOCIALES.map((os) => {
@@ -388,7 +394,9 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                 </div>
                 {obrasSociales.length > 0 && (
                   <p className="text-xs text-blue-600 mt-1.5 font-medium">
-                    {obrasSociales.length} cobertura{obrasSociales.length > 1 ? 's' : ''} seleccionada{obrasSociales.length > 1 ? 's' : ''}
+                    {isEs
+                      ? `${obrasSociales.length} cobertura${obrasSociales.length > 1 ? 's' : ''} seleccionada${obrasSociales.length > 1 ? 's' : ''}`
+                      : `${obrasSociales.length} coverage${obrasSociales.length > 1 ? 's' : ''} selected`}
                   </p>
                 )}
               </div>
@@ -438,7 +446,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   onChange={handleChange}
                   maxLength={100}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Nombre de obra social (opcional)"
+                  placeholder={isEs ? 'Nombre de obra social (opcional)' : 'Insurance provider name (optional)'}
                 />
               </div>
             </>
@@ -497,13 +505,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   disabled={savingNotif}
                   className="flex-1 px-3 py-2 text-sm bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 disabled:opacity-50"
                 >
-                  {savingNotif ? 'Guardando...' : 'Guardar preferencias'}
+                  {savingNotif ? c.saving : (isEs ? 'Guardar preferencias' : 'Save preferences')}
                 </button>
                 <button
                   type="button"
                   onClick={() => sendTestNotif('EMAIL')}
                   disabled={sendingTest}
-                  title="Enviar email de prueba"
+                  title={isEs ? 'Enviar email de prueba' : 'Send test email'}
                   className="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50"
                 >
                   {sendingTest ? '...' : '✉️'}
@@ -512,7 +520,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   type="button"
                   onClick={() => sendTestNotif('WHATSAPP')}
                   disabled={sendingTest}
-                  title="Enviar WhatsApp de prueba"
+                  title={isEs ? 'Enviar WhatsApp de prueba' : 'Send test WhatsApp'}
                   className="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50"
                 >
                   {sendingTest ? '...' : '💬'}
@@ -534,14 +542,14 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
               onClick={onClose}
               className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
             >
-              Cancelar
-            </button>
+                {c.cancel}
+              </button>
             <button
               type="submit"
               disabled={loading}
               className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
             >
-              {loading ? 'Guardando...' : 'Guardar Cambios'}
+              {loading ? c.saving : p.save}
             </button>
           </div>
         </form>
