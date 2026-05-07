@@ -16,6 +16,7 @@ export default function RegisterPage() {
   const { register } = useAuth();
   const { t } = useLang();
   const a = t('auth');
+  const v = a.validation;
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [formData, setFormData] = useState({
     email: '', password: '', confirmPassword: '',
@@ -36,14 +37,14 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (formData.password !== formData.confirmPassword) { setError('Las contraseñas no coinciden'); return; }
+    if (formData.password !== formData.confirmPassword) { setError(v.passwordsNoMatch); return; }
     const reqs = getRequirements(formData.password);
     if (!reqs.minLength || !reqs.hasUppercase || !reqs.hasLowercase || !reqs.hasNumber) {
-      setError('La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número');
+      setError(v.passwordRequirements);
       return;
     }
-    if (formData.nombre.length < 2 || formData.apellido.length < 2) { setError('Nombre y apellido deben tener al menos 2 caracteres'); return; }
-    if (formData.telefono && !/^[\d\s\-\+\(\)]{8,20}$/.test(formData.telefono)) { setError('Teléfono inválido'); return; }
+    if (formData.nombre.length < 2 || formData.apellido.length < 2) { setError(v.nameMinLength); return; }
+    if (formData.telefono && !/^[\d\s\-\+\(\)]{8,20}$/.test(formData.telefono)) { setError(v.invalidPhone); return; }
     setLoading(true);
     try {
       await register({
@@ -93,9 +94,9 @@ export default function RegisterPage() {
               <label className="field-label mb-2 block">{a.role}</label>
               <div className="grid grid-cols-3 gap-2">
                 {([
-                  { value: 'PACIENTE', icon: <UserIcon size={22} className="text-blue-700" />, title: a.patient, desc: 'Reservá turnos y accedé a tu historial' },
-                  { value: 'PROFESIONAL', icon: <StethoscopeIcon size={22} className="text-blue-700" />, title: a.professional, desc: 'Gestioná tu agenda y pacientes' },
-                  { value: 'CLINICA', icon: <HospitalIcon size={22} className="text-blue-700" />, title: 'Clínica', desc: 'Administrá varios profesionales' },
+                  { value: 'PACIENTE', icon: <UserIcon size={22} className="text-blue-700" />, title: a.patient, desc: a.roleDescPatient },
+                  { value: 'PROFESIONAL', icon: <StethoscopeIcon size={22} className="text-blue-700" />, title: a.professional, desc: a.roleDescProfessional },
+                  { value: 'CLINICA', icon: <HospitalIcon size={22} className="text-blue-700" />, title: a.clinic, desc: a.roleDescClinic },
                 ] as const).map(({ value, icon, title, desc }) => (
                   <button
                     key={value}
@@ -119,11 +120,11 @@ export default function RegisterPage() {
             {formData.rol === 'CLINICA' ? (
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label htmlFor="nombre" className="field-label">Nombre del responsable</label>
+                  <label htmlFor="nombre" className="field-label">{a.managerFirstName}</label>
                   <input id="nombre" name="nombre" required value={formData.nombre} onChange={handleChange} className={inp} placeholder="Juan" />
                 </div>
                 <div>
-                  <label htmlFor="apellido" className="field-label">Apellido</label>
+                  <label htmlFor="apellido" className="field-label">{a.lastName}</label>
                   <input id="apellido" name="apellido" required value={formData.apellido} onChange={handleChange} className={inp} placeholder="García" />
                 </div>
               </div>
@@ -207,7 +208,7 @@ export default function RegisterPage() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="field-label">{a.password} (confirmar)</label>
+              <label htmlFor="confirmPassword" className="field-label">{a.confirmPassword}</label>
               <PasswordInput
                 id="confirmPassword"
                 name="confirmPassword"

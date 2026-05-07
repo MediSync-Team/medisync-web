@@ -1,5 +1,7 @@
 'use client';
 
+import { useLang } from '../lib/i18n/context';
+
 interface PasswordStrengthIndicatorProps {
   password: string;
 }
@@ -37,15 +39,17 @@ function getStrength(password: string): { level: 'weak' | 'fair' | 'good' | 'str
 }
 
 export default function PasswordStrengthIndicator({ password }: PasswordStrengthIndicatorProps) {
+  const { t } = useLang();
+  const ps = t('auth').passwordStrength;
   const requirements = getRequirements(password);
   const { level, score } = getStrength(password);
 
   const requirements_list = [
-    { label: 'Mínimo 8 caracteres', met: requirements.minLength },
-    { label: 'Al menos una mayúscula', met: requirements.hasUppercase },
-    { label: 'Al menos una minúscula', met: requirements.hasLowercase },
-    { label: 'Al menos un número', met: requirements.hasNumber },
-    { label: 'Al menos un carácter especial (!@#$%...)', met: requirements.hasSpecial },
+    { label: ps.minLength, met: requirements.minLength },
+    { label: ps.hasUppercase, met: requirements.hasUppercase },
+    { label: ps.hasLowercase, met: requirements.hasLowercase },
+    { label: ps.hasNumber, met: requirements.hasNumber },
+    { label: ps.hasSpecial, met: requirements.hasSpecial },
   ];
 
   const colors = {
@@ -56,10 +60,10 @@ export default function PasswordStrengthIndicator({ password }: PasswordStrength
   };
 
   const labels = {
-    weak: 'Muy débil',
-    fair: 'Aceptable',
-    good: 'Buena',
-    strong: 'Fuerte',
+    weak: ps.levels.weak,
+    fair: ps.levels.fair,
+    good: ps.levels.good,
+    strong: ps.levels.strong,
   };
 
   return (
@@ -68,7 +72,7 @@ export default function PasswordStrengthIndicator({ password }: PasswordStrength
       <div className="space-y-1">
         <div className="flex justify-between items-center">
           <label className="text-xs font-medium text-slate-600 dark:text-slate-400">
-            Fortaleza de contraseña
+            {ps.title}
           </label>
           {password && (
             <span className={`text-xs font-semibold ${
@@ -98,7 +102,7 @@ export default function PasswordStrengthIndicator({ password }: PasswordStrength
       {password && (
         <div className="space-y-1.5 pt-2 border-t border-slate-200 dark:border-slate-700">
           <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
-            Requisitos:
+            {ps.requirements}
           </p>
           <ul className="space-y-1">
             {requirements_list.map((req, i) => (

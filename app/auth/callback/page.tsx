@@ -3,11 +3,14 @@
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../lib/api';
+import { useLang } from '../../lib/i18n/context';
 import { MediSyncLogo } from '../../components/icons';
 
 function AuthCallbackContent() {
   const router = useRouter();
   const params = useSearchParams();
+  const { t } = useLang();
+  const sso = t('auth').sso;
 
   useEffect(() => {
     const code = params.get('code');
@@ -18,8 +21,8 @@ function AuthCallbackContent() {
       const errorMsg = msg
         ? decodeURIComponent(msg)
         : error === 'EMAIL_EN_USO_CON_PASSWORD'
-        ? 'Este email ya está registrado con contraseña. Iniciá sesión normalmente.'
-        : 'Error al iniciar sesión con proveedor externo.';
+        ? sso.emailInUseWithPassword
+        : sso.providerError;
       router.push(`/login?ssoError=${encodeURIComponent(errorMsg)}`);
       return;
     }
@@ -34,7 +37,7 @@ function AuthCallbackContent() {
         router.push(dest);
       })
       .catch(() => {
-        router.push('/login?ssoError=' + encodeURIComponent('El enlace de inicio de sesión expiró. Intentá de nuevo.'));
+        router.push('/login?ssoError=' + encodeURIComponent(sso.linkExpired));
       });
   }, []);
 
@@ -42,19 +45,21 @@ function AuthCallbackContent() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
       <div className="flex flex-col items-center gap-3">
         <MediSyncLogo />
-        <p className="text-slate-500 dark:text-slate-400 text-sm">Iniciando sesión...</p>
+        <p className="text-slate-500 dark:text-slate-400 text-sm">{t('auth').loginLoading}</p>
       </div>
     </div>
   );
 }
 
 export default function AuthCallback() {
+  const { t } = useLang();
+
   return (
     <Suspense fallback={
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <MediSyncLogo />
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Cargando...</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">{t('common').loading}</p>
         </div>
       </div>
     }>

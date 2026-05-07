@@ -15,6 +15,8 @@ function ForgotPasswordContent() {
   const params = useSearchParams();
   const { t } = useLang();
   const a = t('auth');
+  const fp = a.forgotPasswordFlow;
+  const v = a.validation;
 
   const token = params.get('token');
   const [step, setStep] = useState<'request' | 'reset'>(token ? 'reset' : 'request');
@@ -41,13 +43,13 @@ function ForgotPasswordContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Error al procesar solicitud');
+        throw new Error(data.message || fp.requestError);
       }
 
-      setSuccess('Te enviamos un enlace de recuperación a tu email. Revisa tu bandeja (y spam).');
+      setSuccess(fp.requestSuccess);
       setEmail('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al solicitar recuperación');
+      setError(err instanceof Error ? err.message : fp.requestError);
     } finally {
       setLoading(false);
     }
@@ -59,13 +61,13 @@ function ForgotPasswordContent() {
     setSuccess('');
 
     if (newPassword !== confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError(v.passwordsNoMatch);
       return;
     }
 
     const reqs = getRequirements(newPassword);
     if (!reqs.minLength || !reqs.hasUppercase || !reqs.hasLowercase || !reqs.hasNumber) {
-      setError('La contraseña debe tener al menos 8 caracteres, una mayúscula, una minúscula y un número');
+      setError(v.passwordRequirements);
       return;
     }
 
@@ -81,13 +83,13 @@ function ForgotPasswordContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || 'Error al restablecer contraseña');
+        throw new Error(data.message || fp.resetError);
       }
 
-      setSuccess('¡Contraseña restablecida correctamente!');
+      setSuccess(fp.resetSuccess);
       setTimeout(() => router.push('/login'), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al restablecer contraseña');
+      setError(err instanceof Error ? err.message : fp.resetError);
     } finally {
       setLoading(false);
     }
@@ -108,12 +110,12 @@ function ForgotPasswordContent() {
         <div className="w-full max-w-md">
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
             <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
-              {step === 'request' ? 'Recuperar Contraseña' : 'Restablecer Contraseña'}
+              {step === 'request' ? fp.requestTitle : fp.resetTitle}
             </h1>
             <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
               {step === 'request'
-                ? 'Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña.'
-                : 'Ingresa tu nueva contraseña'}
+                ? fp.requestSubtitle
+                : fp.resetSubtitle}
             </p>
 
             {error && (
@@ -138,7 +140,7 @@ function ForgotPasswordContent() {
             {step === 'request' ? (
               <form onSubmit={handleRequestReset} className="space-y-4">
                 <div>
-                  <label htmlFor="email" className="field-label">Email</label>
+                  <label htmlFor="email" className="field-label">{a.email}</label>
                   <input
                     id="email"
                     type="email"
@@ -151,19 +153,19 @@ function ForgotPasswordContent() {
                 </div>
 
                 <button type="submit" disabled={loading} className="btn btn-primary w-full">
-                  {loading ? 'Enviando...' : 'Enviar Enlace de Recuperación'}
+                  {loading ? fp.requestLoading : fp.requestSubmit}
                 </button>
 
                 <div className="text-center pt-4">
                   <Link href="/login" className="text-sm text-blue-600 hover:text-blue-500 font-medium">
-                    Volver a iniciar sesión
+                    {fp.backToLogin}
                   </Link>
                 </div>
               </form>
             ) : (
               <form onSubmit={handleResetPassword} className="space-y-4">
                 <div>
-                  <label htmlFor="newPassword" className="field-label">Nueva Contraseña</label>
+                  <label htmlFor="newPassword" className="field-label">{fp.newPasswordLabel}</label>
                   <PasswordInput
                     id="newPassword"
                     name="newPassword"
@@ -172,13 +174,13 @@ function ForgotPasswordContent() {
                     placeholder="••••••••"
                     required
                     autoComplete="new-password"
-                    ariaLabel="Nueva contraseña"
+                    ariaLabel={fp.newPasswordLabel}
                   />
                   <PasswordStrengthIndicator password={newPassword} />
                 </div>
 
                 <div>
-                  <label htmlFor="confirmPassword" className="field-label">Confirmar Contraseña</label>
+                  <label htmlFor="confirmPassword" className="field-label">{a.confirmPassword}</label>
                   <PasswordInput
                     id="confirmPassword"
                     name="confirmPassword"
@@ -187,17 +189,17 @@ function ForgotPasswordContent() {
                     placeholder="••••••••"
                     required
                     autoComplete="new-password"
-                    ariaLabel="Confirmar contraseña"
+                    ariaLabel={a.confirmPassword}
                   />
                 </div>
 
                 <button type="submit" disabled={loading} className="btn btn-primary w-full">
-                  {loading ? 'Restableciendo...' : 'Restablecer Contraseña'}
+                  {loading ? fp.resetLoading : fp.resetSubmit}
                 </button>
 
                 <div className="text-center pt-4">
                   <Link href="/login" className="text-sm text-blue-600 hover:text-blue-500 font-medium">
-                    Volver a iniciar sesión
+                    {fp.backToLogin}
                   </Link>
                 </div>
               </form>
@@ -205,9 +207,9 @@ function ForgotPasswordContent() {
           </div>
 
           <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-6">
-            ¿Problemas? Contactá a{' '}
+            {fp.supportPrefix}{' '}
             <a href="mailto:support@medisync.com" className="text-blue-600 hover:text-blue-500 font-medium">
-              soporte
+              {fp.supportLink}
             </a>
           </p>
         </div>
@@ -217,11 +219,13 @@ function ForgotPasswordContent() {
 }
 
 export default function ForgotPasswordPage() {
+  const { t } = useLang();
+
   return (
     <Suspense
       fallback={
         <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
-          <div className="text-slate-500 dark:text-slate-400">Cargando...</div>
+          <div className="text-slate-500 dark:text-slate-400">{t('common').loading}</div>
         </div>
       }
     >

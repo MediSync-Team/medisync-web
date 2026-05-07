@@ -57,12 +57,13 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 export default function PacienteDashboard() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const p = t('paciente');
   const d = t('dashboard');
   const c = t('common');
   const s = t('status');
   const m = t('modality');
+  const locale = lang === 'en' ? 'en-US' : 'es-AR';
   const translateSpecialty = (name?: string) => { if (!name) return ''; return (d as any).translateSpecialty?.(name) || name; };
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
@@ -342,9 +343,9 @@ export default function PacienteDashboard() {
                   <div key={rec.id} className="flex items-center gap-3 text-sm text-amber-50">
                     <CalendarIcon size={13} className="shrink-0 text-amber-200" />
                     <span>
-                      {new Date(rec.fechaHora).toLocaleDateString('es-AR')} a las{' '}
-                      {new Date(rec.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-                      {' con '}
+                      {new Date(rec.fechaHora).toLocaleDateString(locale)} {p.atTime}{' '}
+                      {new Date(rec.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+                      {' '}{p.withProfessional}{' '}
                       {rec.profesional?.nombre} {rec.profesional?.apellido}
                     </span>
                   </div>
@@ -520,7 +521,7 @@ export default function PacienteDashboard() {
               ) : historial.length === 0 ? (
                 <div className="py-12 text-center">
                   <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                  <p className="text-slate-500 text-sm font-medium">No hay consultas completadas en tu historial.</p>
+                  <p className="text-slate-500 text-sm font-medium">{d.noCompletedConsultations}</p>
                 </div>
               ) : (
                 <>
@@ -530,7 +531,7 @@ export default function PacienteDashboard() {
                       className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
                     >
 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                {d.rateConsultation}
+                {d.downloadFullHistory}
               </button>
                   </div>
                   <div className="space-y-4">
@@ -562,7 +563,7 @@ export default function PacienteDashboard() {
               ) : misRecetas.length === 0 ? (
                 <div className="py-12 text-center">
                   <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                  <p className="text-slate-500 text-sm font-medium">{d.noRecipes}</p>
+                  <p className="text-slate-500 text-sm font-medium">{p.noRecipes}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -616,7 +617,7 @@ export default function PacienteDashboard() {
               ) : misCertificados.length === 0 ? (
                 <div className="py-12 text-center">
                   <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                  <p className="text-slate-500 text-sm font-medium">{d.noCertificates}</p>
+                  <p className="text-slate-500 text-sm font-medium">{p.noCertificates}</p>
                 </div>
               ) : (
                 <div className="space-y-3">
@@ -741,7 +742,7 @@ export default function PacienteDashboard() {
                   {datosSaved && (
                     <span className="text-emerald-600 text-sm font-medium flex items-center gap-1">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      Datos guardados
+                      {d.savedMedicalData}
                     </span>
                   )}
                 </div>
@@ -764,7 +765,7 @@ export default function PacienteDashboard() {
                         </p>
                         <p className="text-sm text-blue-600 font-medium">{translateSpecialty(item.profesional?.especialidad?.nombre)}</p>
                         <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
-                          <span className="flex items-center gap-1"><CalendarIcon size={11} />{new Date(item.fecha).toLocaleDateString('es-AR')}</span>
+                          <span className="flex items-center gap-1"><CalendarIcon size={11} />{new Date(item.fecha).toLocaleDateString(locale)}</span>
                           <span>{item.modalidad}</span>
                         </div>
                         <span className="badge badge-yellow mt-2">{(s as any)[item.estado] || item.estado}</span>
@@ -931,8 +932,9 @@ function TurnoCard({
   s: any;
   translateSpecialty: (name?: string) => string;
 }) {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const p = t('paciente');
+  const locale = lang === 'en' ? 'en-US' : 'es-AR';
   const isActive = turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO';
   const isFuture = new Date(turno.fechaHora) >= new Date();
   const preconsultaCompletada = Boolean(turno.preconsultaCompletadaAt);
@@ -974,10 +976,10 @@ function TurnoCard({
           {/* Date/time */}
           <div className="text-right shrink-0">
             <p className="text-sm font-bold text-slate-700">
-              {new Date(turno.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
+              {new Date(turno.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
             </p>
             <p className="text-xs text-slate-500">
-              {new Date(turno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+              {new Date(turno.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
             </p>
           </div>
         </div>
@@ -1013,7 +1015,7 @@ function TurnoCard({
                 <CreditCardIcon size={13} />
                 {pagoInfo?.necesitaPago === false
                   ? p.paid
-                  : `${p.pay} $${Number(turno.profesional.precioConsulta).toLocaleString('es-AR')}`}
+                  : `${p.pay} $${Number(turno.profesional.precioConsulta).toLocaleString(locale)}`}
               </button>
             )}
 
@@ -1038,7 +1040,7 @@ function TurnoCard({
             </button>
 
             <Link href={`/profesional/${turno.profesional?.id}`} className="btn btn-ghost btn-sm text-slate-500">
-              Ver profesional
+              {p.viewProfessional}
             </Link>
 
             {/* Chat button */}
@@ -1047,7 +1049,7 @@ function TurnoCard({
               className="btn btn-ghost btn-sm text-blue-600 hover:bg-blue-50 relative"
             >
               <ChatIcon size={13} />
-              Chat
+              {p.chatLabel}
               {unreadCount > 0 && (
                 <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
                   {unreadCount > 9 ? '9+' : unreadCount}
@@ -1861,6 +1863,9 @@ function HistorialCard({ item, onCalificar, d, m, s, translateSpecialty }: { ite
 
 /* ── Patient statistics panel ────────────────────────────────────────────── */
 function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats: PacienteStats | null; loading: boolean; d: any; translateSpecialty: (name?: string) => string }) {
+  const { lang } = useLang();
+  const locale = lang === 'en' ? 'en-US' : 'es-AR';
+
   if (loading) {
     return (
       <div className="space-y-4">
@@ -1873,7 +1878,14 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
     );
   }
 
-  if (!stats) return null;
+  if (!stats) {
+    return (
+      <div className="py-12 text-center text-slate-400">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 opacity-40"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <p className="text-sm">{d.noStatsYet}</p>
+      </div>
+    );
+  }
 
   const maxMes = Math.max(...stats.turnosPorMes.map(m => m.total), 1);
   const MES_LABELS: Record<string, string> = {
@@ -1887,7 +1899,7 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
         <PacienteStatCard label={d.totalAppointments} value={stats.totalTurnos} color="blue" />
         <PacienteStatCard label={d.completed} value={stats.completados} color="emerald" />
         <PacienteStatCard label={d.cancelled} value={stats.cancelados} color="red" />
-        <PacienteStatCard label={d.totalSpent} value={`$${stats.totalGastado.toLocaleString('es-AR')}`} color="amber" />
+        <PacienteStatCard label={d.totalSpent} value={`$${stats.totalGastado.toLocaleString(locale)}`} color="amber" />
       </div>
 
       {stats.turnosPorMes.length > 0 && (
@@ -1948,10 +1960,10 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
               <div key={pago.id} className="flex items-center justify-between gap-3 py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
                 <div className="min-w-0">
                   <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">Dr/a. {pago.profesional}</p>
-                  <p className="text-xs text-slate-500 truncate">{translateSpecialty(pago.especialidad)} · {new Date(pago.fecha).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  <p className="text-xs text-slate-500 truncate">{translateSpecialty(pago.especialidad)} · {new Date(pago.fecha).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-bold text-emerald-600">${pago.monto.toLocaleString('es-AR')}</p>
+                  <p className="text-sm font-bold text-emerald-600">${pago.monto.toLocaleString(locale)}</p>
                   <span className="badge badge-green text-[10px]">{d.approved}</span>
                 </div>
               </div>
@@ -1963,7 +1975,7 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
       {stats.totalTurnos === 0 && (
         <div className="py-12 text-center text-slate-400">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 opacity-40"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          <p className="text-sm">Aún no tenés estadísticas. ¡Reservá tu primer turno!</p>
+          <p className="text-sm">{d.noStatsYet} {d.bookFirstAppointmentStats}</p>
         </div>
       )}
     </div>
@@ -2000,6 +2012,9 @@ function ResumenPacienteView({
   recordatorios: any[];
   d: any;
 }) {
+  const { t, lang } = useLang();
+  const p = t('paciente');
+  const locale = lang === 'en' ? 'en-US' : 'es-AR';
   const proximoTurno = turnosProximos.length > 0 ? turnosProximos[0] : null;
   const recetasActivas = misRecetas.filter(r => {
     if (!r.receta.proximoControl) return true;
@@ -2021,8 +2036,8 @@ function ResumenPacienteView({
                 {proximoTurno.profesional?.nombre} {proximoTurno.profesional?.apellido}
               </p>
               <p className="text-xs text-slate-600 mt-1">
-                {new Date(proximoTurno.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })} a las{' '}
-                {new Date(proximoTurno.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+                {new Date(proximoTurno.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short' })} {p.atTime}{' '}
+                {new Date(proximoTurno.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
               </p>
             </>
           ) : (
@@ -2036,7 +2051,7 @@ function ResumenPacienteView({
           </p>
           <p className="font-bold text-slate-800 text-sm">{recetasActivas.length}</p>
           {recetasActivas.length > 0 && (
-            <p className="text-xs text-slate-600 mt-1">Última: {recetasActivas[0].profesional.nombre}</p>
+            <p className="text-xs text-slate-600 mt-1">{d.latest}: {recetasActivas[0].profesional.nombre}</p>
           )}
         </div>
 
@@ -2045,7 +2060,7 @@ function ResumenPacienteView({
             <CreditCardIcon size={12} /> {d.spendingThisMonth}
           </p>
           <p className="font-bold text-slate-800 text-sm">
-            ${(pacienteStats?.totalGastado || 0).toLocaleString('es-AR')}
+            ${(pacienteStats?.totalGastado || 0).toLocaleString(locale)}
           </p>
         </div>
 
@@ -2060,13 +2075,13 @@ function ResumenPacienteView({
       {recordatorios.length > 0 && (
         <div className="border border-amber-200 bg-amber-50 rounded-xl p-4">
           <p className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-1">
-            <BellIcon size={14} /> Recordatorios activos
+            <BellIcon size={14} /> {d.remindersActive}
           </p>
           <div className="space-y-2">
             {recordatorios.map(r => (
               <p key={r.id} className="text-xs text-amber-700">
-                • Turno {new Date(r.fechaHora).toLocaleDateString('es-AR')} a las{' '}
-                {new Date(r.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })} con{' '}
+                • Turno {new Date(r.fechaHora).toLocaleDateString(locale)} {p.atTime}{' '}
+                {new Date(r.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} {p.withProfessional}{' '}
                 {r.turno?.profesional?.nombre || 'profesional'}
               </p>
             ))}
@@ -2118,6 +2133,10 @@ function RecetaCard({
   receta: RecetaPaciente;
   onDescargar: () => void;
 }) {
+  const { t, lang } = useLang();
+  const p = t('paciente');
+  const s = t('status');
+  const locale = lang === 'en' ? 'en-US' : 'es-AR';
   const isActive = !receta.receta.proximoControl || new Date(receta.receta.proximoControl) >= new Date();
 
   return (
@@ -2129,24 +2148,24 @@ function RecetaCard({
           </p>
           <p className="text-xs text-blue-600 font-medium">{receta.profesional.especialidad}</p>
           <p className="text-xs text-slate-500 mt-1">
-            {new Date(receta.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}
+            {new Date(receta.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
           </p>
         </div>
         {isActive && (
           <span className="badge bg-emerald-50 text-emerald-700 text-[10px] font-bold whitespace-nowrap">
-            Activa
+            {s.ACTIVA}
           </span>
         )}
       </div>
 
       <div className="border-t border-slate-100 pt-3 mb-3 space-y-2">
         <div>
-          <p className="text-xs font-semibold text-slate-600">Diagnóstico</p>
+          <p className="text-xs font-semibold text-slate-600">{p.diagnosisLabel}</p>
           <p className="text-sm text-slate-700 line-clamp-2">{receta.receta.diagnostico}</p>
         </div>
         {receta.receta.medicamentos && (
           <div>
-            <p className="text-xs font-semibold text-slate-600">Medicamentos</p>
+            <p className="text-xs font-semibold text-slate-600">{p.medicinesLabel}</p>
             <p className="text-sm text-slate-700 line-clamp-2">{receta.receta.medicamentos}</p>
           </div>
         )}
@@ -2157,7 +2176,7 @@ function RecetaCard({
         className="btn btn-primary btn-sm w-full"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Descargar receta
+        {p.downloadPrescription}
       </button>
     </div>
   );
@@ -2170,11 +2189,15 @@ function CertificadoCard({
   certificado: CertificadoPaciente;
   onDescargar: () => void;
 }) {
+  const { t, lang } = useLang();
+  const p = t('paciente');
+  const d = t('dashboard');
+  const locale = lang === 'en' ? 'en-US' : 'es-AR';
   const tipoLabel: Record<string, string> = {
-    REPOSO: 'Reposo',
-    CONSULTA: 'Consulta',
-    APTITUD: 'Aptitud',
-    LIBRE: 'Libre',
+    REPOSO: lang === 'en' ? 'Rest' : 'Reposo',
+    CONSULTA: lang === 'en' ? 'Consultation' : 'Consulta',
+    APTITUD: lang === 'en' ? 'Fitness' : 'Aptitud',
+    LIBRE: lang === 'en' ? 'Free form' : 'Libre',
   };
 
   const tipoColor: Record<string, string> = {
@@ -2192,7 +2215,7 @@ function CertificadoCard({
             Dr/a. {certificado.profesional.nombre} {certificado.profesional.apellido}
           </p>
           <p className="text-xs text-slate-500 mt-1">
-            {new Date(certificado.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'short', year: 'numeric' })}
+            {new Date(certificado.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
           </p>
         </div>
         <span className={`badge border text-[10px] font-bold whitespace-nowrap ${tipoColor[certificado.certificado.tipo]}`}>
@@ -2202,12 +2225,12 @@ function CertificadoCard({
 
       <div className="border-t border-slate-100 pt-3 mb-3 space-y-2">
         <div>
-          <p className="text-xs font-semibold text-slate-600">Diagnóstico</p>
+          <p className="text-xs font-semibold text-slate-600">{d.certificate.diagnosisLabel}</p>
           <p className="text-sm text-slate-700">{certificado.certificado.diagnostico}</p>
         </div>
         {certificado.certificado.diasReposo && (
           <div className="bg-red-50 rounded px-2 py-1.5 border border-red-100">
-            <p className="text-xs font-semibold text-red-700">Días de reposo: {certificado.certificado.diasReposo}</p>
+            <p className="text-xs font-semibold text-red-700">{d.certificate.restLabel}: {certificado.certificado.diasReposo}</p>
           </div>
         )}
       </div>
@@ -2217,7 +2240,7 @@ function CertificadoCard({
         className="btn btn-primary btn-sm w-full"
       >
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        Descargar certificado
+        {p.downloadCertificate}
       </button>
     </div>
   );

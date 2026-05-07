@@ -3,6 +3,7 @@
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api, CuponValidado } from '../lib/api';
+import { useLang } from '../lib/i18n/context';
 import { CreditCardIcon } from '../components/icons';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
@@ -10,6 +11,9 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 function PagoContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { t } = useLang();
+  const p = t('auth').payment;
+  const c = t('common');
   const turnoId = searchParams.get('turno');
 
   const [loading, setLoading] = useState(true);
@@ -30,7 +34,7 @@ function PagoContent() {
 
   const handleValidateCoupon = async () => {
     if (!turnoId || !couponCode.trim()) {
-      setCouponError('Ingresa un código de cupón');
+      setCouponError(p.couponRequired);
       return;
     }
 
@@ -40,7 +44,7 @@ function PagoContent() {
       const result = await api.cupones.validar(couponCode.trim(), turnoId);
       setValidatedCoupon(result);
     } catch (err) {
-      setCouponError(err instanceof Error ? err.message : 'Cupón inválido');
+      setCouponError(err instanceof Error ? err.message : p.couponInvalid);
       setValidatedCoupon(null);
     } finally {
       setValidatingCoupon(false);
@@ -79,12 +83,12 @@ function PagoContent() {
       if (data.success && data.data?.initPoint) {
         window.location.href = data.data.initPoint;
       } else {
-        setErrorMessage(data.error?.message || 'No se pudo crear la preferencia de pago');
+        setErrorMessage(data.error?.message || p.couponCreateError);
         setRedirecting(false);
       }
     } catch (err) {
       console.error('Error:', err);
-      setErrorMessage('Error al procesar el pago');
+      setErrorMessage(p.paymentProcessingError);
       setRedirecting(false);
     }
   };
@@ -92,7 +96,7 @@ function PagoContent() {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="card p-8">Cargando...</div>
+        <div className="card p-8">{p.loading}</div>
       </div>
     );
   }
@@ -101,7 +105,7 @@ function PagoContent() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 py-6">
       <div className="card p-8 max-w-md w-full">
         <div className="text-4xl mb-4 text-center text-blue-700 flex items-center justify-center"><CreditCardIcon size={30} /></div>
-        <h1 className="text-xl font-bold text-slate-900 mb-6 text-center">Pagar consulta</h1>
+        <h1 className="text-xl font-bold text-slate-900 mb-6 text-center">{p.checkoutTitle}</h1>
 
         {errorMessage && (
           <div className="alert alert-error text-left mb-4" role="status" aria-live="polite">
@@ -111,7 +115,7 @@ function PagoContent() {
 
         {/* Coupon section */}
         <div className="mb-6 pb-6 border-b border-slate-200">
-          <label className="field-label mb-2">¿Tienes un código de descuento?</label>
+          <label className="field-label mb-2">{p.couponPrompt}</label>
           <div className="flex gap-2 mb-3">
             <input
               type="text"
@@ -121,7 +125,7 @@ function PagoContent() {
                 setCouponError('');
                 setValidatedCoupon(null);
               }}
-              placeholder="ej: PROMO10"
+              placeholder={p.couponPlaceholder}
               className="field-input flex-1"
               disabled={validatingCoupon || redirecting}
             />
@@ -130,7 +134,7 @@ function PagoContent() {
               disabled={validatingCoupon || redirecting || !couponCode.trim()}
               className="btn btn-secondary btn-sm"
             >
-              {validatingCoupon ? 'Validando...' : 'Aplicar'}
+              {validatingCoupon ? p.couponValidating : p.couponApply}
             </button>
           </div>
 
@@ -142,14 +146,14 @@ function PagoContent() {
             <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
-                  <p className="text-xs text-emerald-700 font-semibold">✓ Cupón aplicado</p>
+                  <p className="text-xs text-emerald-700 font-semibold">{p.couponApplied}</p>
                   {validatedCoupon.descripcion && (
                     <p className="text-sm text-emerald-800 font-medium mt-1">{validatedCoupon.descripcion}</p>
                   )}
                   <div className="text-xs text-emerald-600 mt-2 space-y-1">
-                    <p>Precio original: ${validatedCoupon.montoOriginal.toLocaleString('es-AR')}</p>
-                    <p className="font-semibold">Ahorro: -${validatedCoupon.montoDescuento.toLocaleString('es-AR')}</p>
-                    <p className="font-bold text-emerald-700">Total: ${validatedCoupon.montoFinal.toLocaleString('es-AR')}</p>
+                    <p>{p.originalPrice}: ${validatedCoupon.montoOriginal.toLocaleString('es-AR')}</p>
+                    <p className="font-semibold">{p.savings}: -${validatedCoupon.montoDescuento.toLocaleString('es-AR')}</p>
+                    <p className="font-bold text-emerald-700">{p.total}: ${validatedCoupon.montoFinal.toLocaleString('es-AR')}</p>
                   </div>
                 </div>
                 <button
@@ -170,7 +174,7 @@ function PagoContent() {
           disabled={redirecting}
           className="btn btn-primary w-full"
         >
-          {redirecting ? 'Procesando...' : 'Continuar al pago'}
+          {redirecting ? p.processing : p.continueToPayment}
         </button>
 
         <button
@@ -178,7 +182,7 @@ function PagoContent() {
           disabled={redirecting}
           className="btn btn-secondary w-full mt-3"
         >
-          Cancelar
+          {c.cancel}
         </button>
       </div>
     </div>
@@ -186,8 +190,10 @@ function PagoContent() {
 }
 
 export default function PagoPage() {
+  const { t } = useLang();
+
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+    <Suspense fallback={<div className="min-h-screen bg-gray-50">{t('common').loading}</div>}>
       <PagoContent />
     </Suspense>
   );

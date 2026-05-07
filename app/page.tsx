@@ -12,37 +12,6 @@ import ThemeLangToggle from './components/ThemeLangToggle';
 import { MediSyncLogo, SearchIcon, HospitalIcon, StethoscopeIcon, BuildingIcon, VideoIcon, MapPinIcon } from './components/icons';
 import { OBRAS_SOCIALES } from './lib/obras-sociales';
 
-const HOME_TOUR_STEPS = [
-  {
-    selector: '[data-onboarding="hero"]',
-    title: '¡Bienvenido a MediSync!',
-    description:
-      'La plataforma para conectar pacientes con profesionales de la salud. Reservá turnos al instante, pagá online y gestioná tu historial clínico.',
-    position: 'bottom' as const,
-  },
-  {
-    selector: '[data-onboarding="search-bar"]',
-    title: 'Buscá tu especialista',
-    description:
-      'Escribí la especialidad que necesitás o elegí del menú desplegable. Luego hacé clic en "Buscar" para ver los profesionales disponibles.',
-    position: 'bottom' as const,
-  },
-  {
-    selector: '[data-onboarding="prof-list"]',
-    title: 'Profesionales disponibles',
-    description:
-      'Aquí aparecen los profesionales de la salud registrados. Hacé clic en "Ver perfil y reservar" para ver sus horarios disponibles y reservar un turno.',
-    position: 'top' as const,
-  },
-  {
-    selector: '[data-onboarding="nav-register"]',
-    title: '¡Registrate gratis!',
-    description:
-      'Como paciente podés reservar turnos, recibir recordatorios y acceder a tus recetas. Como profesional podés gestionar tu agenda y facturar consultas.',
-    position: 'bottom' as const,
-  },
-];
-
 const LIMIT = 9;
 
 type Modalidad = 'PRESENCIAL' | 'VIRTUAL' | '';
@@ -82,6 +51,12 @@ export default function HomePage() {
   const h = t('home');
   const nav = t('nav');
   const a = t('auth');
+  const homeTourSteps = [
+    { selector: '[data-onboarding="hero"]', title: h.tour.welcomeTitle, description: h.tour.welcomeDesc, position: 'bottom' as const },
+    { selector: '[data-onboarding="search-bar"]', title: h.tour.searchTitle, description: h.tour.searchDesc, position: 'bottom' as const },
+    { selector: '[data-onboarding="prof-list"]', title: h.tour.listTitle, description: h.tour.listDesc, position: 'top' as const },
+    { selector: '[data-onboarding="nav-register"]', title: h.tour.registerTitle, description: h.tour.registerDesc, position: 'bottom' as const },
+  ];
 
   const getSpecialtyName = (nombre: string) => {
     const key = nombre.toUpperCase().replace(/[ÁÉÍÓÚ]/g, (c) => ({Á:'A',É:'E',Í:'I',Ó:'O',Ú:'U'}[c] || c));
@@ -185,7 +160,7 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {!user && (
-        <OnboardingTour storageKey="medisync-home-tour-v1" steps={HOME_TOUR_STEPS} delay={1200} />
+        <OnboardingTour storageKey="medisync-home-tour-v1" steps={homeTourSteps} delay={1200} />
       )}
 
       {/* ── Navbar ───────────────────────────────────────── */}
@@ -404,7 +379,7 @@ export default function HomePage() {
                       onChange={(e) => setDraft({ ...draft, obraSocial: e.target.value })}
                       className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800"
                     >
-                      <option value="">Todas las coberturas</option>
+                      <option value="">{h.allCoverages}</option>
                       {OBRAS_SOCIALES.map((os) => (
                         <option key={os} value={os}>{os}</option>
                       ))}
@@ -556,7 +531,7 @@ function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDis
       {showDisponible && (
         <div className="flex items-center gap-1.5 mb-3 -mt-1">
           <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Turnos disponibles esta semana</span>
+          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{h.availableThisWeek}</span>
         </div>
       )}
       <div className="flex items-start gap-4">
@@ -573,7 +548,7 @@ function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDis
               ${Number(prof.precioConsulta).toLocaleString('es-AR')}
             </p>
           ) : (
-            <p className="text-slate-400 text-xs mt-1">Consultar precio</p>
+              <p className="text-slate-400 text-xs mt-1">{h.consultPrice}</p>
           )}
           {prof.ratingPromedio != null && (
             <div className="flex items-center gap-1.5 mt-1">
@@ -614,8 +589,8 @@ function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDis
             </span>
           ))}
           {prof.obrasSociales.length > 3 && (
-            <span className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 rounded text-[10px]">
-              +{prof.obrasSociales.length - 3} más
+              <span className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 rounded text-[10px]">
+              {h.moreCount.replace('{{count}}', String(prof.obrasSociales.length - 3))}
             </span>
           )}
         </div>

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
@@ -27,39 +27,6 @@ import { DIAS_SEMANA, getDaysShort, getDaysLong, estadoBadge, clinicalRiskBadge 
 // Helper to convert lang to locale string
 const getLocale = (lang: string) => lang === 'es' ? 'es-AR' : 'en-US';
 
-const PROF_TOUR_STEPS = [
-  {
-    selector: '[data-onboarding="stat-cards"]',
-    title: 'Tu resumen de actividad',
-    description: 'Mirá de un vistazo cuántos turnos tenés hoy, cuántos tuviste este mes y tu especialidad.',
-    position: 'bottom' as const,
-  },
-  {
-    selector: '[data-onboarding="tab-calendario"]',
-    title: 'Tu agenda diaria',
-    description: 'En la pestaña "Agenda" encontrás todos los turnos del día seleccionado. Hacé clic en cualquier turno para ver la evolución clínica, historia del paciente y emitir recetas.',
-    position: 'bottom' as const,
-  },
-  {
-    selector: '[data-onboarding="tab-disponibilidad"]',
-    title: 'Configurá tus horarios',
-    description: 'En "Disponibilidad" agregás los días y rangos horarios en los que atendés. Los pacientes solo podrán reservar en esos bloques.',
-    position: 'bottom' as const,
-  },
-  {
-    selector: '[data-onboarding="tab-stats"]',
-    title: 'Estadísticas y facturación',
-    description: 'Revisá la evolución de tus turnos e ingresos mes a mes en el panel de estadísticas.',
-    position: 'bottom' as const,
-  },
-  {
-    selector: '[data-onboarding="profile-btn"]',
-    title: 'Tu perfil profesional',
-    description: 'Actualizá tu foto, precio de consulta, lugar de atención y biografía para que los pacientes te encuentren más fácilmente.',
-    position: 'bottom' as const,
-  },
-];
-
 interface StatsData {
   turnosPorMes: any[];
   ingresosPorMes: any[];
@@ -71,6 +38,14 @@ export default function ProfesionalDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   const { t, lang } = useLang();
   const d = t('dashboard');
+  const m = t('modality');
+  const profTourSteps = [
+    { selector: '[data-onboarding="stat-cards"]', title: d.tour.activitySummaryTitle, description: d.tour.activitySummaryDesc, position: 'bottom' as const },
+    { selector: '[data-onboarding="tab-calendario"]', title: d.tour.dailyAgendaTitle, description: d.tour.dailyAgendaDesc, position: 'bottom' as const },
+    { selector: '[data-onboarding="tab-disponibilidad"]', title: d.tour.scheduleTitle, description: d.tour.scheduleDesc, position: 'bottom' as const },
+    { selector: '[data-onboarding="tab-stats"]', title: d.tour.statsTitle, description: d.tour.statsDesc, position: 'bottom' as const },
+    { selector: '[data-onboarding="profile-btn"]', title: d.tour.profileTitle, description: d.tour.profileDesc, position: 'bottom' as const },
+  ];
   const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
@@ -196,9 +171,9 @@ export default function ProfesionalDashboard() {
       });
       loadData();
       setNuevaDisp({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL', lugarAtencion: '' });
-      setInlineFeedback({ type: 'success', text: 'Horario agregado correctamente.' });
+      setInlineFeedback({ type: 'success', text: d.addScheduleSuccess });
     } catch (err) {
-      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al agregar horario' });
+      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : d.addScheduleError });
     }
   };
 
@@ -207,9 +182,9 @@ export default function ProfesionalDashboard() {
     try {
       await api.profesionales.eliminarDisponibilidad(user.profesional.id, id);
       loadData();
-      setInlineFeedback({ type: 'success', text: 'Horario eliminado.' });
+      setInlineFeedback({ type: 'success', text: d.deleteScheduleSuccess });
     } catch (err) {
-      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al eliminar horario' });
+      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : d.deleteScheduleError });
     }
   };
 
@@ -229,7 +204,7 @@ export default function ProfesionalDashboard() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <svg className="animate-spin text-blue-600" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-          <p className="text-slate-500 text-sm">Cargando panel...</p>
+          <p className="text-slate-500 text-sm">{d.loadingPanel}</p>
         </div>
       </div>
     );
@@ -253,7 +228,7 @@ export default function ProfesionalDashboard() {
       setCupones(data);
     } catch (err) {
       console.error(err);
-      setInlineFeedback({ type: 'error', text: 'Error al cargar cupones' });
+      setInlineFeedback({ type: 'error', text: d.loadCouponsError });
     } finally {
       setLoadingCupones(false);
     }
@@ -261,7 +236,7 @@ export default function ProfesionalDashboard() {
 
   const handleCrearCupon = async () => {
     if (!nuevosCuponForm.codigo.trim() || !nuevosCuponForm.valor) {
-      setInlineFeedback({ type: 'error', text: 'Completa código y valor' });
+      setInlineFeedback({ type: 'error', text: d.couponCodeRequired });
       return;
     }
 
@@ -278,10 +253,10 @@ export default function ProfesionalDashboard() {
       setCupones([res, ...cupones]);
       setNuevosCuponForm({ codigo: '', tipo: 'PORCENTAJE', valor: '', descripcion: '', maxUsos: '', expiresAt: '' });
       setShowNuevoCupon(false);
-      setInlineFeedback({ type: 'success', text: 'Cupón creado' });
+      setInlineFeedback({ type: 'success', text: d.couponCreated });
       setTimeout(() => setInlineFeedback(null), 3000);
     } catch (err) {
-      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al crear cupón' });
+      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : d.couponCreateError });
     } finally {
       setSavingCupon(false);
     }
@@ -292,7 +267,7 @@ export default function ProfesionalDashboard() {
       const res = await api.cupones.actualizar(id, { activo: !activo });
       setCupones(cupones.map(c => c.id === id ? res : c));
     } catch (err) {
-      setInlineFeedback({ type: 'error', text: 'Error al actualizar cupón' });
+      setInlineFeedback({ type: 'error', text: d.couponUpdateError });
     }
   };
 
@@ -300,10 +275,10 @@ export default function ProfesionalDashboard() {
     try {
       await api.cupones.eliminar(id);
       setCupones(cupones.filter(c => c.id !== id));
-      setInlineFeedback({ type: 'success', text: 'Cupón eliminado' });
+      setInlineFeedback({ type: 'success', text: d.couponDeleted });
       setTimeout(() => setInlineFeedback(null), 2000);
     } catch (err) {
-      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al eliminar cupón' });
+      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : d.couponDeleteError });
     }
   };
 
@@ -314,7 +289,7 @@ export default function ProfesionalDashboard() {
       setSuscripcion(data);
     } catch (err) {
       console.error(err);
-      setInlineFeedback({ type: 'error', text: 'Error al cargar plan' });
+      setInlineFeedback({ type: 'error', text: d.loadPlanError });
     } finally {
       setLoadingSuscripcion(false);
     }
@@ -326,25 +301,25 @@ export default function ProfesionalDashboard() {
       const { initPoint } = await api.suscripciones.iniciar();
       window.location.href = initPoint;
     } catch (err) {
-      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al iniciar suscripción' });
+      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : d.startPlanError });
       setRedirectingToMP(false);
     }
   };
 
   const handleCancelarSuscripcion = async () => {
-    if (!confirm('¿Estás seguro de que querés cancelar tu suscripción Pro?')) return;
+    if (!confirm(d.cancelPlanConfirm)) return;
     try {
       await api.suscripciones.cancelar();
-      setInlineFeedback({ type: 'success', text: 'Suscripción cancelada' });
+      setInlineFeedback({ type: 'success', text: d.cancelPlanSuccess });
       await loadSuscripcion();
     } catch (err) {
-      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : 'Error al cancelar' });
+      setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : d.cancelPlanError });
     }
   };
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      {/* ── Onboarding wizard ───────────────────────────── */}
+      {/* â”€â”€ Onboarding wizard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {showOnboarding && (
         <ProfesionalOnboardingWizard
           profesionalId={user.profesional.id}
@@ -354,20 +329,20 @@ export default function ProfesionalDashboard() {
         />
       )}
 
-      {/* ── Reminder banner ─────────────────────────────── */}
+      {/* â”€â”€ Reminder banner â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {recordatorios.length > 0 && (
         <div className="bg-blue-600 text-white">
           <div className="page-container py-2.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-sm">
               <BellIcon size={15} className="shrink-0" />
               <span className="font-medium">
-                {recordatorios.length} turno{recordatorios.length > 1 ? 's' : ''} en las próximas 24 h
+                {recordatorios.length} {recordatorios.length > 1 ? d.reminder.upcomingPlural : d.reminder.upcoming} {d.reminder.next24h}
               </span>
               <button
                 onClick={() => setShowRecordatorios(!showRecordatorios)}
                 className="underline underline-offset-2 text-blue-100 hover:text-white text-xs"
               >
-                {showRecordatorios ? 'Ocultar' : 'Ver detalle'}
+                {showRecordatorios ? d.reminder.hide : d.reminder.detail}
               </button>
             </div>
             <button onClick={() => setRecordatorios([])} className="text-blue-200 hover:text-white">
@@ -382,11 +357,11 @@ export default function ProfesionalDashboard() {
                     <ClockIcon size={13} className="shrink-0 text-blue-300" />
                     <span>
                       {new Date(rec.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
-                      {' — '}
+                      {' â€” '}
                       {rec.paciente?.nombre} {rec.paciente?.apellido}
                     </span>
                     {rec.modalidad === 'VIRTUAL' && (
-                      <span className="badge badge-blue text-[10px]">Virtual</span>
+                      <span className="badge badge-blue text-[10px]">{d.virtual}</span>
                     )}
                   </div>
                 ))}
@@ -396,7 +371,7 @@ export default function ProfesionalDashboard() {
         </div>
       )}
 
-      {/* ── Navbar ──────────────────────────────────────── */}
+      {/* â”€â”€ Navbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
@@ -418,13 +393,13 @@ export default function ProfesionalDashboard() {
                     setTimeout(() => setProfileCopied(false), 2500);
                   });
                 }}
-                title="Copiar link de mi perfil"
+                title={d.shareProfileTitle}
                 className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm relative"
               >
                 {profileCopied ? (
                   <>
                     <CheckIcon size={15} className="text-emerald-500" />
-                    <span className="hidden sm:inline text-emerald-600 text-xs">¡Copiado!</span>
+                    <span className="hidden sm:inline text-emerald-600 text-xs">{d.copied}</span>
                   </>
                 ) : (
                   <>
@@ -464,13 +439,13 @@ export default function ProfesionalDashboard() {
           <div className={`alert mb-4 ${inlineFeedback.type === 'success' ? 'alert-success' : inlineFeedback.type === 'error' ? 'alert-error' : 'alert-info'}`} role="status" aria-live="polite">
             <InfoIcon size={14} className="shrink-0" />
             <span>{inlineFeedback.text}</span>
-            <button className="ml-auto text-xs underline" onClick={() => setInlineFeedback(null)}>Ocultar</button>
+            <button className="ml-auto text-xs underline" onClick={() => setInlineFeedback(null)}>{d.hide}</button>
           </div>
         )}
 
         {loading ? (
           <>
-            {/* ── Skeleton: Stat cards ──────────────────────── */}
+            {/* â”€â”€ Skeleton: Stat cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div data-onboarding="stat-cards" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               {[1, 2, 3].map(i => (
                 <div key={i} className="stat-card">
@@ -484,7 +459,7 @@ export default function ProfesionalDashboard() {
               ))}
             </div>
 
-            {/* ── Skeleton: Tabs and content ────────────────── */}
+            {/* â”€â”€ Skeleton: Tabs and content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div className="card overflow-hidden">
               <div className="tab-nav px-1 pt-1">
                 {[1, 2, 3, 4].map(i => (
@@ -503,24 +478,24 @@ export default function ProfesionalDashboard() {
           </>
         ) : (
           <>
-            {/* ── Stat cards ──────────────────────────────────── */}
+            {/* â”€â”€ Stat cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
             <div data-onboarding="stat-cards" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               <div className="stat-card">
                 <div className="flex items-start justify-between">
-                  <p className="stat-label">{d.appointments} — {d.today}</p>
+                  <p className="stat-label">{d.appointments} â€” {d.today}</p>
                   <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
                     <CalendarIcon size={15} className="text-blue-600" />
                   </div>
                 </div>
                 <p className="stat-value text-blue-600">{hoyTurnos.length}</p>
                 <p className="stat-desc">
-                  {hoyTurnos.filter(t => t.estado === 'CONFIRMADO').length} confirmados
+                  {hoyTurnos.filter(t => t.estado === 'CONFIRMADO').length} {d.confirmed}
                 </p>
               </div>
 
               <div className="stat-card">
                 <div className="flex items-start justify-between">
-                  <p className="stat-label">{d.appointments} — {d.thisMonth}</p>
+                  <p className="stat-label">{d.appointments} â€” {d.thisMonth}</p>
                   <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
                     <ChartIcon size={15} className="text-emerald-600" />
                   </div>
@@ -543,7 +518,7 @@ export default function ProfesionalDashboard() {
               </div>
             </div>
 
-        {/* ── Tabs ────────────────────────────────────────── */}
+        {/* â”€â”€ Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
         <div className="card overflow-hidden">
           <div className="tab-nav px-1 pt-1">
             {([
@@ -641,7 +616,7 @@ export default function ProfesionalDashboard() {
               <AuditoriaView profesionalId={user.profesional!.id} />
             )}
             {activeTab === 'stats' && suscripcion?.plan === 'FREE' && (
-              <UpgradePrompt feature="estadísticas" onViewPlans={() => setActiveTab('plan')} />
+              <UpgradePrompt feature="estadÃ­sticas" onViewPlans={() => setActiveTab('plan')} />
             )}
           </div>
         </div>
@@ -649,7 +624,7 @@ export default function ProfesionalDashboard() {
         )}
       </main>
 
-      {/* ── Turno modal ─────────────────────────────────── */}
+      {/* â”€â”€ Turno modal â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {slotActual && (
         <TurnoModal turno={slotActual} onClose={() => setSlotActual(null)} onUpdate={loadData} translateSpecialty={translateSpecialty} />
       )}
@@ -668,7 +643,7 @@ export default function ProfesionalDashboard() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-800 text-lg">Nuevo Cupón</h3>
+              <h3 className="font-bold text-slate-800 text-lg">Nuevo CupÃ³n</h3>
               <button onClick={() => setShowNuevoCupon(false)} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
                 <XIcon size={18} />
               </button>
@@ -676,7 +651,7 @@ export default function ProfesionalDashboard() {
 
             <div className="px-6 py-5 space-y-4">
               <div>
-                <label className="field-label">Código de cupón</label>
+                <label className="field-label">CÃ³digo de cupÃ³n</label>
                 <input
                   type="text"
                   value={nuevosCuponForm.codigo}
@@ -719,7 +694,7 @@ export default function ProfesionalDashboard() {
               </div>
 
               <div>
-                <label className="field-label">Descripción (opcional)</label>
+                <label className="field-label">DescripciÃ³n (opcional)</label>
                 <input
                   type="text"
                   value={nuevosCuponForm.descripcion}
@@ -732,7 +707,7 @@ export default function ProfesionalDashboard() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="field-label">Usos máximos (opcional)</label>
+                  <label className="field-label">Usos mÃ¡ximos (opcional)</label>
                   <input
                     type="number"
                     value={nuevosCuponForm.maxUsos}
@@ -760,25 +735,21 @@ export default function ProfesionalDashboard() {
                 Cancelar
               </button>
               <button onClick={handleCrearCupon} className="btn btn-primary flex-1" disabled={savingCupon}>
-                {savingCupon ? 'Creando...' : 'Crear Cupón'}
+                {savingCupon ? 'Creando...' : 'Crear CupÃ³n'}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <OnboardingTour
-        storageKey="medisync-prof-tour-v1"
-        steps={PROF_TOUR_STEPS}
-        delay={1000}
-      />
+        <OnboardingTour storageKey="medisync-prof-tour-v1" steps={profTourSteps} delay={1000} />
     </div>
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    CUPONES VIEW
-══════════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function CuponesView({
   cupones,
   loading,
@@ -792,13 +763,15 @@ function CuponesView({
   onToggleActivo: (id: string, activo: boolean) => void;
   onEliminar: (id: string) => void;
 }) {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
+  const c = t('common');
+  const d = t('dashboard');
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-800">Cupones disponibles</h3>
+        <h3 className="text-lg font-semibold text-slate-800">{d.couponsView.title}</h3>
         <button onClick={onShowNuevo} className="btn btn-primary btn-sm">
-          + Nuevo Cupón
+          + {d.couponsView.newCoupon}
         </button>
       </div>
 
@@ -813,9 +786,9 @@ function CuponesView({
           <svg xmlns="http://www.w3.org/2000/svg" className="w-8 h-8 mx-auto mb-2 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16.5 6v.008h.01m0 0h-.01M16.5 18v.008h.01m0 0h-.01M6 12a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm12 0a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
           </svg>
-          <p className="text-sm">Sin cupones disponibles</p>
+          <p className="text-sm">{d.couponsView.empty}</p>
           <button onClick={onShowNuevo} className="btn btn-primary btn-sm mt-3">
-            Crear el primero
+            {d.couponsView.createFirst}
           </button>
         </div>
       ) : (
@@ -833,7 +806,7 @@ function CuponesView({
                     <p className="font-semibold text-slate-800">{cupon.codigo}</p>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor}`}>{statusBadge}</span>
                   </div>
-                  <p className="text-sm text-slate-600 mb-1">{cupon.descripcion || '—'}</p>
+                  <p className="text-sm text-slate-600 mb-1">{cupon.descripcion || 'â€”'}</p>
                   <div className="text-xs text-slate-500 space-y-0.5">
                     <p>Descuento: {cupon.tipo === 'PORCENTAJE' ? `${cupon.valor}%` : `$${cupon.valor.toLocaleString(getLocale(lang))}`}</p>
                     {cupon.maxUsos && (
@@ -871,9 +844,9 @@ function CuponesView({
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    CALENDARIO VIEW
-══════════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function CalendarioView({
   selectedDate, setSelectedDate, getSemanaActual, turnosDelDia, onSelectTurno,
   agendaSearch, setAgendaSearch, agendaEstado, setAgendaEstado, agendaModalidad, setAgendaModalidad, agendaSoloRiesgo, setAgendaSoloRiesgo,
@@ -1003,7 +976,7 @@ function CalendarioView({
                 {/* Patient */}
                 <div className="flex-1 min-w-0">
                   <p className="font-medium text-slate-800 group-hover:text-blue-700 truncate">
-                    {turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : 'Paciente sin cuenta'}
+                    {turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : d.noAccount}
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {turno.modalidad === 'VIRTUAL' ? (
@@ -1012,7 +985,7 @@ function CalendarioView({
                       <BuildingIcon size={12} className="text-slate-400" />
                     )}
                     <span className="text-xs text-slate-500">
-                      {turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
+                      {turno.modalidad === 'VIRTUAL' ? h.virtual : h.inPerson}
                     </span>
                     {turno.preconsultaRiesgo && (
                       <span className={clinicalRiskBadge(turno.preconsultaRiesgo)}>
@@ -1034,10 +1007,10 @@ function CalendarioView({
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    DISPONIBILIDAD VIEW
-══════════════════════════════════════════════════════════════ */
-const MOTIVOS_BLOQUEO = ['Vacaciones', 'Feriado', 'Capacitación', 'Personal', 'Otro'];
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+const MOTIVOS_BLOQUEO = ['Vacaciones', 'Feriado', 'CapacitaciÃ³n', 'Personal', 'Otro'];
 
 function DisponibilidadView({
   disponibilidades, nuevaDisp, setNuevaDisp, onAgregar, onEliminar,
@@ -1076,7 +1049,7 @@ function DisponibilidadView({
       return;
     }
     if (nuevoBloqueo.esHoraParcial && (!nuevoBloqueo.horaInicio || !nuevoBloqueo.horaFin)) {
-      setBloqueoError('Para bloqueo parcial indicá hora de inicio y fin.');
+      setBloqueoError('Para bloqueo parcial indicÃ¡ hora de inicio y fin.');
       return;
     }
     setSavingBloqueo(true);
@@ -1112,12 +1085,12 @@ function DisponibilidadView({
     const fin = new Date(b.fechaFin + 'T12:00:00');
     const fmt = (d: Date) => d.toLocaleDateString(getLocale(lang), { day: '2-digit', month: 'short', year: 'numeric' });
     if (b.fechaInicio === b.fechaFin) return fmt(inicio);
-    return `${fmt(inicio)} → ${fmt(fin)}`;
+    return `${fmt(inicio)} â†’ ${fmt(fin)}`;
   };
 
   return (
     <div className="space-y-8">
-      {/* ── Horarios recurrentes ── */}
+      {/* â”€â”€ Horarios recurrentes â”€â”€ */}
       <div>
         <h3 className="section-title mb-3">{d.availability}</h3>
         {disponibilidades.length === 0 ? (
@@ -1134,7 +1107,7 @@ function DisponibilidadView({
                 </div>
                 <div className="flex items-center gap-1.5 text-slate-600 text-sm">
                   <ClockIcon size={13} className="text-slate-400" />
-                  <span>{disp.horaInicio} — {disp.horaFin}</span>
+                  <span>{disp.horaInicio} â€” {disp.horaFin}</span>
                 </div>
                 <span className={`ml-1 badge ${disp.modalidad === 'VIRTUAL' ? 'badge-blue' : disp.modalidad === 'PRESENCIAL' ? 'badge-green' : 'badge-purple'}`}>
                   {disp.modalidad === 'VIRTUAL' ? h.virtual : disp.modalidad === 'PRESENCIAL' ? h.inPerson : disp.modalidad}
@@ -1158,7 +1131,7 @@ function DisponibilidadView({
         )}
       </div>
 
-      {/* ── Agregar horario ── */}
+      {/* â”€â”€ Agregar horario â”€â”€ */}
       <div>
         <h3 className="section-title mb-3">{d.addAvailability}</h3>
         <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
@@ -1201,12 +1174,12 @@ function DisponibilidadView({
               </select>
             </div>
           </div>
-          {/* Lugar de atención por horario */}
+          {/* Lugar de atenciÃ³n por horario */}
           <div className="mt-3">
             <label className="field-label flex items-center gap-1">
               <MapPinIcon size={12} className="text-slate-400" />
               {d.availabilitySetup.location}
-              <span className="text-slate-400 font-normal ml-1">— {d.availabilitySetup.optional}</span>
+              <span className="text-slate-400 font-normal ml-1">â€” {d.availabilitySetup.optional}</span>
             </label>
             <input
               type="text"
@@ -1222,7 +1195,7 @@ function DisponibilidadView({
         </div>
       </div>
 
-      {/* ══ Bloqueos de días ══ */}
+      {/* â•â• Bloqueos de dÃ­as â•â• */}
       <div className="border-t border-slate-200 pt-6">
         <div className="flex items-center gap-2 mb-1">
           {/* Calendar-off icon */}
@@ -1253,11 +1226,11 @@ function DisponibilidadView({
                 <div className="flex-1 min-w-0">
                   <p className="font-semibold text-slate-700 text-sm">{formatFechaBloqueo(b)}</p>
                   <p className="text-xs text-slate-500">
-                    {b.horaInicio && b.horaFin ? `${b.horaInicio}–${b.horaFin}` : d.availabilitySetup.fullDay}
-                    {b.motivo ? ` · ${
+                    {b.horaInicio && b.horaFin ? `${b.horaInicio}â€“${b.horaFin}` : d.availabilitySetup.fullDay}
+                    {b.motivo ? ` Â· ${
                       b.motivo === 'Vacaciones' ? d.availabilitySetup.reasons.vacations :
                       b.motivo === 'Feriado' ? d.availabilitySetup.reasons.holiday :
-                      b.motivo === 'Capacitación' ? d.availabilitySetup.reasons.training :
+                      b.motivo === 'CapacitaciÃ³n' ? d.availabilitySetup.reasons.training :
                       b.motivo === 'Personal' ? d.availabilitySetup.reasons.personal :
                       b.motivo === 'Otro' ? d.availabilitySetup.reasons.other :
                       b.motivo
@@ -1313,7 +1286,7 @@ function DisponibilidadView({
                 <option value="">{d.availabilitySetup.reasonUnspecified}</option>
                 <option value="Vacaciones">{d.availabilitySetup.reasons.vacations}</option>
                 <option value="Feriado">{d.availabilitySetup.reasons.holiday}</option>
-                <option value="Capacitación">{d.availabilitySetup.reasons.training}</option>
+                <option value="CapacitaciÃ³n">{d.availabilitySetup.reasons.training}</option>
                 <option value="Personal">{d.availabilitySetup.reasons.personal}</option>
                 <option value="Otro">{d.availabilitySetup.reasons.other}</option>
               </select>
@@ -1367,11 +1340,11 @@ function DisponibilidadView({
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    EMITIR CERTIFICADO MODAL
-══════════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 const CERT_TEMPLATES: Record<TipoCertificado, string> = {
-  REPOSO: 'El/la paciente ha sido visto/a y luego del examen clínico, se prescribe reposo médico.',
+  REPOSO: 'El/la paciente ha sido visto/a y luego del examen clÃ­nico, se prescribe reposo mÃ©dico.',
   CONSULTA: 'El/la paciente ha sido visto/a por consulta especializada.',
   APTITUD: 'Por este medio se certifica que el/la paciente se encuentra apto/a para las actividades indicadas.',
   LIBRE: '',
@@ -1392,11 +1365,14 @@ function EmitirCertificadoModal({
   onClose: () => void;
   translateSpecialty: (name?: string) => string;
 }) {
+  const { t } = useLang();
+  const d = t('dashboard');
+
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800 text-lg">Emitir Certificado Médico</h3>
+          <h3 className="font-bold text-slate-800 text-lg">{d.certificate.title}</h3>
           <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
             <XIcon size={18} />
           </button>
@@ -1405,7 +1381,7 @@ function EmitirCertificadoModal({
         <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Tipo de certificado */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">Tipo de certificado</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-2">{d.certificate.typeLabel}</label>
             <div className="flex flex-wrap gap-2">
               {(['CONSULTA', 'REPOSO', 'APTITUD', 'LIBRE'] as TipoCertificado[]).map((tipo) => (
                 <button
@@ -1419,41 +1395,41 @@ function EmitirCertificadoModal({
                       : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-300'
                   }`}
                 >
-                  {tipo === 'REPOSO' ? 'Reposo Médico'
-                    : tipo === 'CONSULTA' ? 'Justificación de Consulta'
-                    : tipo === 'APTITUD' ? 'Aptitud Física'
+                  {tipo === 'REPOSO' ? 'Reposo MÃ©dico'
+                    : tipo === 'CONSULTA' ? 'JustificaciÃ³n de Consulta'
+                    : tipo === 'APTITUD' ? 'Aptitud FÃ­sica'
                     : 'Certificado Libre'}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Diagnóstico */}
+          {/* DiagnÃ³stico */}
           <div>
-            <label className="field-label">Diagnóstico (obligatorio)</label>
+            <label className="field-label">{d.certificate.diagnosisLabel}</label>
             <textarea
               value={form.diagnostico}
               onChange={(e) => setForm({ ...form, diagnostico: e.target.value })}
-              placeholder="Diagnóstico principal de la consulta..."
+              placeholder={d.certificate.diagnosisPlaceholder}
               className="field-input resize-none min-h-[64px] text-sm"
             />
           </div>
 
           {/* Texto del certificado */}
           <div>
-            <label className="field-label">Texto del certificado (obligatorio)</label>
+            <label className="field-label">{d.certificate.textLabel}</label>
             <textarea
               value={form.texto}
               onChange={(e) => setForm({ ...form, texto: e.target.value })}
-              placeholder="Contenido del certificado médico..."
+              placeholder={d.certificate.textPlaceholder}
               className="field-input resize-none min-h-[80px] text-sm"
             />
           </div>
 
-          {/* Días de reposo (solo si REPOSO) */}
+          {/* DÃ­as de reposo (solo si REPOSO) */}
           {form.tipo === 'REPOSO' && (
             <div>
-              <label className="field-label">Días de reposo (obligatorio)</label>
+              <label className="field-label">{d.certificate.restLabel}</label>
               <input
                 type="number"
                 min="1"
@@ -1461,7 +1437,7 @@ function EmitirCertificadoModal({
                 value={form.diasReposo}
                 onChange={(e) => setForm({ ...form, diasReposo: parseInt(e.target.value) || 0 })}
                 className="field-input"
-                placeholder="Ej: 3"
+                placeholder={d.certificate.restPlaceholder}
               />
             </div>
           )}
@@ -1472,7 +1448,7 @@ function EmitirCertificadoModal({
             Cancelar
           </button>
           <button onClick={onSave} className="btn btn-primary flex-1" disabled={loading}>
-            {loading ? 'Emitiendo...' : 'Emitir y descargar PDF'}
+            {loading ? d.certificate.saving : d.certificate.save}
           </button>
         </div>
       </div>
@@ -1480,9 +1456,9 @@ function EmitirCertificadoModal({
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    TURNO MODAL
-══════════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 type Archivo = { id: string; url: string; nombreOriginal: string; tipo: string; tamanoBytes: number; mimeType: string };
 
 function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: Turno; onClose: () => void; onUpdate: () => void; translateSpecialty: (name?: string) => string }) {
@@ -1676,11 +1652,11 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
   const handleSaveCertificado = async () => {
     if (certificadoForm.diagnostico.trim().length < 5 || certificadoForm.texto.trim().length < 5) {
-      setModalNotice({ type: 'error', text: 'Completa diagnóstico y texto (mínimo 5 caracteres).' });
+      setModalNotice({ type: 'error', text: 'Completa diagnÃ³stico y texto (mÃ­nimo 5 caracteres).' });
       return;
     }
     if (certificadoForm.tipo === 'REPOSO' && certificadoForm.diasReposo <= 0) {
-      setModalNotice({ type: 'error', text: 'Indicá cantidad de días de reposo.' });
+      setModalNotice({ type: 'error', text: 'IndicÃ¡ cantidad de dÃ­as de reposo.' });
       return;
     }
 
@@ -1880,7 +1856,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
   const handleReprogramar = async () => {
     if (!reprogramarFecha || !reprogramarHora) {
-      setModalNotice({ type: 'error', text: 'Seleccioná una fecha y un horario.' });
+      setModalNotice({ type: 'error', text: 'SeleccionÃ¡ una fecha y un horario.' });
       return;
     }
     const fechaHoraISO = `${reprogramarFecha}T${reprogramarHora}:00`;
@@ -1929,7 +1905,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             <div className={`alert ${modalNotice.type === 'error' ? 'alert-error' : modalNotice.type === 'success' ? 'alert-success' : 'alert-info'}`} role="status" aria-live="polite">
               <InfoIcon size={14} className="shrink-0" />
               <span>{modalNotice.text}</span>
-              <button className="ml-auto text-xs underline" onClick={() => setModalNotice(null)}>Ocultar</button>
+              <button className="ml-auto text-xs underline" onClick={() => setModalNotice(null)}>{d.hide}</button>
             </div>
           )}
 
@@ -1996,7 +1972,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             </button>
           )}
 
-          {/* Evolución clínica */}
+          {/* EvoluciÃ³n clÃ­nica */}
           <div className="border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <InfoIcon size={15} className="text-slate-400" />
@@ -2026,11 +2002,11 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   </div>
                 </div>
 
-                {/* AI-generated summary — highlighted box */}
+                {/* AI-generated summary â€” highlighted box */}
                 {preconsulta.resumen && (
                   <div className={`rounded-lg border p-3 ${preconsulta.aiGenerated ? 'bg-violet-50 border-violet-200' : 'bg-slate-50 border-slate-200'}`}>
                     <p className={`text-xs font-semibold mb-1 ${preconsulta.aiGenerated ? 'text-violet-700' : 'text-slate-600'}`}>
-                      {preconsulta.aiGenerated ? '✦ Resumen generado por IA' : 'Resumen'}
+                      {preconsulta.aiGenerated ? 'âœ¦ Resumen generado por IA' : 'Resumen'}
                     </p>
                     <p className={`text-sm leading-relaxed ${preconsulta.aiGenerated ? 'text-violet-900' : 'text-slate-700'}`}>
                       {preconsulta.resumen}
@@ -2062,19 +2038,21 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   </div>
                 </div>
 
-                <p><span className="font-medium text-slate-700">Motivo:</span> <span className="text-slate-600">{preconsulta.motivo}</span></p>
-                <p><span className="font-medium text-slate-700">Síntomas:</span> <span className="text-slate-600">{preconsulta.sintomas}</span></p>
-                {preconsulta.inicioSintomas && (
-                  <p><span className="font-medium text-slate-700">Inicio síntomas:</span> <span className="text-slate-600">{preconsulta.inicioSintomas}</span></p>
-                )}
-                {typeof preconsulta.temperatura === 'number' && (
-                  <p><span className="font-medium text-slate-700">Temperatura:</span> <span className="text-slate-600">{preconsulta.temperatura.toFixed(1)} °C</span></p>
-                )}
-                {preconsulta.flags && preconsulta.flags.length > 0 && (
-                  <div>
-                    <p className="font-medium text-slate-700 mb-1">
-                      {preconsulta.aiGenerated ? '✦ Alertas identificadas por IA' : 'Alertas detectadas'}
-                    </p>
+	                <p><span className="font-medium text-slate-700">{lang === 'es' ? 'Motivo:' : 'Reason:'}</span> <span className="text-slate-600">{preconsulta.motivo}</span></p>
+	                <p><span className="font-medium text-slate-700">{lang === 'es' ? 'Sintomas:' : 'Symptoms:'}</span> <span className="text-slate-600">{preconsulta.sintomas}</span></p>
+	                {preconsulta.inicioSintomas && (
+	                  <p><span className="font-medium text-slate-700">{lang === 'es' ? 'Inicio sintomas:' : 'Symptoms onset:'}</span> <span className="text-slate-600">{preconsulta.inicioSintomas}</span></p>
+	                )}
+	                {typeof preconsulta.temperatura === 'number' && (
+	                  <p><span className="font-medium text-slate-700">{lang === 'es' ? 'Temperatura:' : 'Temperature:'}</span> <span className="text-slate-600">{preconsulta.temperatura.toFixed(1)} Â°C</span></p>
+	                )}
+	                {preconsulta.flags && preconsulta.flags.length > 0 && (
+	                  <div>
+	                    <p className="font-medium text-slate-700 mb-1">
+	                      {preconsulta.aiGenerated
+	                        ? (lang === 'es' ? 'Alertas identificadas por IA' : 'AI-identified alerts')
+	                        : (lang === 'es' ? 'Alertas detectadas' : 'Detected alerts')}
+	                    </p>
                     <div className="flex flex-wrap gap-1.5">
                       {preconsulta.flags.map((flag) => (
                         <span key={flag} className="badge badge-red">{flag}</span>
@@ -2089,7 +2067,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             )}
           </div>
 
-          {/* Evolución clínica */}
+          {/* EvoluciÃ³n clÃ­nica */}
           <div className="border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <ClipboardIcon size={15} className="text-slate-400" />
@@ -2107,7 +2085,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 <textarea
                   value={notas}
                   onChange={(e) => setNotas(e.target.value)}
-                  placeholder="Notas de la consulta, diagnóstico, tratamiento indicado..."
+                  placeholder="Notas de la consulta, diagnÃ³stico, tratamiento indicado..."
                   className="field-input resize-none h-28 text-sm"
                 />
                 <button
@@ -2224,7 +2202,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-xs font-semibold text-slate-700">
                               {new Date(item.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short', year: 'numeric' })}
-                              {' · '}
+                              {' Â· '}
                               {new Date(item.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
                             </p>
                             <span className={estadoBadge(item.estado)}>{item.estado}</span>
@@ -2382,12 +2360,12 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             )}
           </div>
 
-          {/* Certificado médico */}
+          {/* Certificado mÃ©dico */}
           {turno.estado === 'COMPLETADO' && (
             <div className="border border-slate-200 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <ClipboardIcon size={15} className="text-slate-400" />
-                <h4 className="font-semibold text-slate-700 text-sm">Certificado médico</h4>
+                <h4 className="font-semibold text-slate-700 text-sm">Certificado mÃ©dico</h4>
                 {certificado?.emitidaAt && (
                   <span className="badge badge-blue ml-auto text-xs">
                     Emitido {new Date(certificado.emitidaAt).toLocaleDateString(getLocale(lang))}
@@ -2402,10 +2380,10 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   <div className="bg-slate-50 rounded-lg p-3">
                     <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Tipo</p>
                     <p className="font-semibold text-slate-700">
-                      {certificado.tipo === 'REPOSO' ? 'Reposo Médico'
-                        : certificado.tipo === 'CONSULTA' ? 'Justificación de Consulta'
-                        : certificado.tipo === 'APTITUD' ? 'Aptitud Física'
-                        : 'Certificado Médico'}
+                      {certificado.tipo === 'REPOSO' ? 'Reposo MÃ©dico'
+                        : certificado.tipo === 'CONSULTA' ? 'JustificaciÃ³n de Consulta'
+                        : certificado.tipo === 'APTITUD' ? 'Aptitud FÃ­sica'
+                        : 'Certificado MÃ©dico'}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -2472,8 +2450,8 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             <div className="flex gap-2 mb-3">
               <select value={fileType} onChange={(e) => setFileType(e.target.value)} className="field-select text-xs">
                 <option value="LABORATORIO">Laboratorio</option>
-                <option value="IMAGEN">Imagen médica</option>
-                <option value="EVOLUCION">Evolución</option>
+                <option value="IMAGEN">Imagen mÃ©dica</option>
+                <option value="EVOLUCION">EvoluciÃ³n</option>
                 <option value="OTRO">Otro</option>
               </select>
               <label className="flex-1">
@@ -2489,11 +2467,11 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 {archivos.map((archivo) => (
                   <div key={archivo.id} className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-lg border border-slate-100">
                     <span className="text-2xl shrink-0">
-                      {archivo.mimeType.includes('pdf') ? '📄' : '🖼️'}
+                      {archivo.mimeType.includes('pdf') ? 'ðŸ“„' : 'ðŸ–¼ï¸'}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-700 truncate">{archivo.nombreOriginal}</p>
-                      <p className="text-xs text-slate-400">{archivo.tipo} · {formatFileSize(archivo.tamanoBytes)}</p>
+                      <p className="text-xs text-slate-400">{archivo.tipo} Â· {formatFileSize(archivo.tamanoBytes)}</p>
                     </div>
                     <a href={archivo.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost p-1.5 text-blue-500 hover:text-blue-700 text-xs">Ver</a>
                     <button onClick={() => handleDeleteArchivo(archivo.id)} className="btn btn-ghost p-1.5 text-red-400 hover:text-red-600">
@@ -2521,7 +2499,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
               </button>
             </div>
             <p className="text-xs text-blue-700">
-              El paciente recibirá una notificación con el nuevo horario.
+              El paciente recibirÃ¡ una notificaciÃ³n con el nuevo horario.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -2546,7 +2524,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   </div>
                 ) : reprogramarSlots.length === 0 ? (
                   <div className="field-input text-slate-400 text-sm">
-                    {reprogramarFecha ? 'Sin disponibilidad ese día' : 'Seleccioná una fecha'}
+                    {reprogramarFecha ? 'Sin disponibilidad ese dÃ­a' : 'SeleccionÃ¡ una fecha'}
                   </div>
                 ) : (
                   <select
@@ -2571,7 +2549,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 disabled={reprogramando || !reprogramarFecha || !reprogramarHora}
                 className="btn btn-primary btn-sm"
               >
-                {reprogramando ? 'Reprogramando...' : 'Confirmar reprogramación'}
+                {reprogramando ? 'Reprogramando...' : 'Confirmar reprogramaciÃ³n'}
               </button>
             </div>
           </div>
@@ -2633,11 +2611,14 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PAGOS VIEW
-══════════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function PagosView() {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
+  const d = t('dashboard');
+  const pg = t('pagination');
+  const m = t('modality');
   const [data, setData] = useState<PagosDashboardResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -2695,13 +2676,13 @@ function PagosView() {
         limit: 1000,
       });
       const rows = [
-        ['Fecha pago', 'Fecha turno', 'Paciente', 'Email', 'Modalidad', 'Monto bruto', 'Comisión %', 'Monto neto', 'Estado', 'ID pago MP'],
+        tx.csvHeaders,
         ...res.pagos.map(p => [
           new Date(p.createdAt).toLocaleDateString(getLocale(lang)),
           new Date(p.turno.fechaHora).toLocaleDateString(getLocale(lang)) + ' ' + new Date(p.turno.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' }),
-          p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : 'Sin cuenta',
+          p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : tx.noAccount,
           p.turno.paciente?.email ?? '',
-          p.turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial',
+          p.turno.modalidad === 'VIRTUAL' ? m.VIRTUAL : m.PRESENCIAL,
           p.monto.toFixed(2),
           p.comisionPorcentaje.toFixed(1),
           p.montoNeto.toFixed(2),
@@ -2732,7 +2713,12 @@ function PagosView() {
   };
 
   const estadoLabel = (e: string) => {
-    const map: Record<string, string> = { APROBADO: 'Aprobado', PENDIENTE: 'Pendiente', RECHAZADO: 'Rechazado', REEMBOLSADO: 'Reembolsado' };
+    const map: Record<string, string> = {
+      APROBADO: d.approved,
+      PENDIENTE: lang === 'es' ? 'Pendiente' : 'Pending',
+      RECHAZADO: lang === 'es' ? 'Rechazado' : 'Rejected',
+      REEMBOLSADO: lang === 'es' ? 'Reembolsado' : 'Refunded',
+    };
     return map[e] ?? e;
   };
 
@@ -2742,20 +2728,84 @@ function PagosView() {
       : <BuildingIcon size={13} className="text-emerald-600" />
   );
 
+  const tx = lang === 'es'
+    ? {
+        csvHeaders: ['Fecha pago', 'Fecha turno', 'Paciente', 'Email', 'Modalidad', 'Monto bruto', 'Comision %', 'Monto neto', 'Estado', 'ID pago MP'],
+        noAccount: 'Sin cuenta',
+        billedGross: 'Facturado (bruto)',
+        approvedPayments: 'pagos aprobados',
+        netReceived: 'Neto recibido',
+        commission: '-10% comision',
+        pendingCollection: 'Pendiente de cobro',
+        payment: 'pago',
+        payments: 'pagos',
+        transactions: 'Transacciones',
+        approvedShort: 'aprob.',
+        monthlyBilling: 'Facturacion mensual - ultimos 12 meses',
+        from: 'Desde',
+        to: 'Hasta',
+        status: 'Estado',
+        all: 'Todos',
+        filter: 'Filtrar',
+        clear: 'Limpiar',
+        exporting: 'Exportando...',
+        exportCsv: 'Exportar CSV',
+        loadingPayments: 'Cargando pagos...',
+        noPayments: 'No hay pagos en el periodo seleccionado.',
+        date: 'Fecha',
+        patient: 'Paciente',
+        modality: 'Modalidad',
+        appointment: 'Turno',
+        grossAmount: 'Monto bruto',
+        gross: 'Bruto',
+        net: 'Neto',
+      }
+    : {
+        csvHeaders: ['Payment date', 'Appointment date', 'Patient', 'Email', 'Modality', 'Gross amount', 'Commission %', 'Net amount', 'Status', 'Payment ID MP'],
+        noAccount: 'No account',
+        billedGross: 'Billed (gross)',
+        approvedPayments: 'approved payments',
+        netReceived: 'Net received',
+        commission: '-10% commission',
+        pendingCollection: 'Pending collection',
+        payment: 'payment',
+        payments: 'payments',
+        transactions: 'Transactions',
+        approvedShort: 'approved',
+        monthlyBilling: 'Monthly billing - last 12 months',
+        from: 'From',
+        to: 'To',
+        status: 'Status',
+        all: 'All',
+        filter: 'Filter',
+        clear: 'Clear',
+        exporting: 'Exporting...',
+        exportCsv: 'Export CSV',
+        loadingPayments: 'Loading payments...',
+        noPayments: 'No payments in the selected period.',
+        date: 'Date',
+        patient: 'Patient',
+        modality: 'Modality',
+        appointment: 'Appointment',
+        grossAmount: 'Gross amount',
+        gross: 'Gross',
+        net: 'Net',
+      };
+
   // Bar chart helpers
   const maxBruto = data ? Math.max(...data.mesesResumen.map(m => m.bruto), 1) : 1;
 
   return (
     <div className="space-y-6">
 
-      {/* ── Summary cards ──────────────────────────────── */}
+      {/* â”€â”€ Summary cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {data && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: 'Facturado (bruto)', value: fmt(data.totales.bruto), sub: 'pagos aprobados', color: 'emerald' },
-            { label: 'Neto recibido', value: fmt(data.totales.neto), sub: '-10% comisión', color: 'blue' },
-            { label: 'Pendiente de cobro', value: fmt(data.totales.pendiente), sub: `${data.totales.pendientes} pago${data.totales.pendientes !== 1 ? 's' : ''}`, color: 'amber' },
-            { label: 'Transacciones', value: String(data.totales.aprobados + data.totales.pendientes), sub: `${data.totales.aprobados} aprob.`, color: 'purple' },
+            { label: tx.billedGross, value: fmt(data.totales.bruto), sub: tx.approvedPayments, color: 'emerald' },
+            { label: tx.netReceived, value: fmt(data.totales.neto), sub: tx.commission, color: 'blue' },
+            { label: tx.pendingCollection, value: fmt(data.totales.pendiente), sub: `${data.totales.pendientes} ${data.totales.pendientes !== 1 ? tx.payments : tx.payment}`, color: 'amber' },
+            { label: tx.transactions, value: String(data.totales.aprobados + data.totales.pendientes), sub: `${data.totales.aprobados} ${tx.approvedShort}`, color: 'purple' },
           ].map(card => (
             <div key={card.label} className="stat-card">
               <p className="stat-label">{card.label}</p>
@@ -2766,11 +2816,11 @@ function PagosView() {
         </div>
       )}
 
-      {/* ── Monthly bar chart ───────────────────────────── */}
+      {/* â”€â”€ Monthly bar chart â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {data && data.mesesResumen.some(m => m.bruto > 0) && (
         <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4">
           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">
-            Facturación mensual — últimos 12 meses
+            {tx.monthlyBilling}
           </p>
           <div className="flex items-end gap-1.5 h-28">
             {data.mesesResumen.map((m, i) => (
@@ -2800,49 +2850,49 @@ function PagosView() {
         </div>
       )}
 
-      {/* ── Filters ─────────────────────────────────────── */}
+      {/* â”€â”€ Filters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       <div className="flex flex-wrap items-end gap-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4">
         <div>
-          <label className="field-label text-xs">Desde</label>
+          <label className="field-label text-xs">{tx.from}</label>
           <input type="date" className="field-input mt-1 text-sm" value={desde} onChange={e => setDesde(e.target.value)} />
         </div>
         <div>
-          <label className="field-label text-xs">Hasta</label>
+          <label className="field-label text-xs">{tx.to}</label>
           <input type="date" className="field-input mt-1 text-sm" value={hasta} onChange={e => setHasta(e.target.value)} />
         </div>
         <div>
-          <label className="field-label text-xs">Estado</label>
+          <label className="field-label text-xs">{tx.status}</label>
           <select className="field-select mt-1 text-sm" value={estado} onChange={e => setEstado(e.target.value)}>
-            <option value="TODOS">Todos</option>
-            <option value="APROBADO">Aprobado</option>
-            <option value="PENDIENTE">Pendiente</option>
-            <option value="RECHAZADO">Rechazado</option>
+            <option value="TODOS">{tx.all}</option>
+            <option value="APROBADO">{estadoLabel('APROBADO')}</option>
+            <option value="PENDIENTE">{estadoLabel('PENDIENTE')}</option>
+            <option value="RECHAZADO">{estadoLabel('RECHAZADO')}</option>
           </select>
         </div>
         <div className="flex gap-2 mt-4 sm:mt-0 flex-wrap">
-          <button onClick={applyFilters} className="btn btn-primary text-sm">Filtrar</button>
-          <button onClick={clearFilters} className="btn btn-ghost text-sm text-slate-500">Limpiar</button>
+          <button onClick={applyFilters} className="btn btn-primary text-sm">{tx.filter}</button>
+          <button onClick={clearFilters} className="btn btn-ghost text-sm text-slate-500">{tx.clear}</button>
           <button
             onClick={exportarCSV}
             disabled={exporting || !data || data.pagos.length === 0}
             className="btn btn-ghost text-sm text-emerald-700 border border-emerald-200 hover:bg-emerald-50 disabled:opacity-40 flex items-center gap-1.5"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            {exporting ? 'Exportando...' : 'Exportar CSV'}
+            {exporting ? tx.exporting : tx.exportCsv}
           </button>
         </div>
       </div>
 
-      {/* ── Table ────────────────────────────────────────── */}
+      {/* â”€â”€ Table â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {loading ? (
         <div className="py-12 flex items-center justify-center gap-2 text-slate-400">
           <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-          Cargando pagos...
+          {tx.loadingPayments}
         </div>
       ) : !data || data.pagos.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-3xl mb-2 text-blue-700 flex items-center justify-center"><CreditCardIcon size={26} /></p>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">No hay pagos en el período seleccionado.</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">{tx.noPayments}</p>
         </div>
       ) : (
         <>
@@ -2851,7 +2901,7 @@ function PagosView() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                  {['Fecha', 'Paciente', 'Modalidad', 'Turno', 'Monto bruto', 'Neto', 'Estado'].map(h => (
+                  {[tx.date, tx.patient, tx.modality, tx.appointment, tx.grossAmount, tx.net, tx.status].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
@@ -2866,11 +2916,11 @@ function PagosView() {
                       {p.turno.paciente
                         ? <><p className="font-medium text-slate-800 dark:text-slate-100">{p.turno.paciente.nombre} {p.turno.paciente.apellido}</p>
                             <p className="text-xs text-slate-400 dark:text-slate-500">{p.turno.paciente.email}</p></>
-                        : <span className="text-slate-400">Paciente sin cuenta</span>}
+                        : <span className="text-slate-400">{d.noAccount}</span>}
                     </td>
                     <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                       <span className="inline-flex items-center">{modalidadIcon(p.turno.modalidad)}</span>
-                      <span className="ml-1">{p.turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}</span>
+                      <span className="ml-1">{p.turno.modalidad === 'VIRTUAL' ? m.VIRTUAL : m.PRESENCIAL}</span>
                     </td>
                     <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap text-xs">
                       {new Date(p.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: '2-digit', month: 'short' })}
@@ -2881,7 +2931,7 @@ function PagosView() {
                       {fmt(p.monto)}
                     </td>
                     <td className="px-4 py-3 text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
-                      {p.estado === 'APROBADO' ? fmt(p.montoNeto) : '—'}
+                      {p.estado === 'APROBADO' ? fmt(p.montoNeto) : 'â€”'}
                     </td>
                     <td className="px-4 py-3">
                       <span className={estadoBadgeClass(p.estado)}>{estadoLabel(p.estado)}</span>
@@ -2899,24 +2949,24 @@ function PagosView() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-medium text-slate-800 dark:text-slate-100 text-sm">
-                      {p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : 'Paciente sin cuenta'}
+                      {p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : d.noAccount}
                     </p>
                     <p className="text-xs text-slate-400 mt-0.5">
                       {new Date(p.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: '2-digit', month: 'short', year: '2-digit' })}
-                      {' · '}
-                      {modalidadIcon(p.turno.modalidad)} {p.turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
+                      {' Â· '}
+                      {modalidadIcon(p.turno.modalidad)} {p.turno.modalidad === 'VIRTUAL' ? m.VIRTUAL : m.PRESENCIAL}
                     </p>
                   </div>
                   <span className={estadoBadgeClass(p.estado)}>{estadoLabel(p.estado)}</span>
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-700">
                   <div>
-                    <p className="text-xs text-slate-400">Bruto</p>
+                    <p className="text-xs text-slate-400">{tx.gross}</p>
                     <p className="font-semibold text-slate-800 dark:text-slate-100">{fmt(p.monto)}</p>
                   </div>
                   {p.estado === 'APROBADO' && (
                     <div className="text-right">
-                      <p className="text-xs text-slate-400">Neto</p>
+                      <p className="text-xs text-slate-400">{tx.net}</p>
                       <p className="font-semibold text-emerald-600 dark:text-emerald-400">{fmt(p.montoNeto)}</p>
                     </div>
                   )}
@@ -2929,7 +2979,7 @@ function PagosView() {
           {data.pagination.pages > 1 && (
             <div className="flex items-center justify-between pt-2">
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Mostrando {((page - 1) * 15) + 1}–{Math.min(page * 15, data.pagination.total)} de {data.pagination.total}
+                {pg.showing} {((page - 1) * 15) + 1}–{Math.min(page * 15, data.pagination.total)} {pg.of} {data.pagination.total}
               </p>
               <div className="flex gap-2">
                 <button
@@ -2937,14 +2987,14 @@ function PagosView() {
                   onClick={() => load(page - 1)}
                   className="btn btn-ghost text-sm disabled:opacity-40"
                 >
-                  ← Anterior
+                  {d.previous}
                 </button>
                 <button
                   disabled={page >= data.pagination.pages}
                   onClick={() => load(page + 1)}
                   className="btn btn-ghost text-sm disabled:opacity-40"
                 >
-                  Siguiente →
+                  {d.next}
                 </button>
               </div>
             </div>
@@ -2955,11 +3005,12 @@ function PagosView() {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
-   RESEÑAS VIEW
-══════════════════════════════════════════════════════════════ */
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   RESEÃ‘AS VIEW
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function ResenasView() {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
+  const d = t('dashboard');
   const [data, setData] = useState<{ resenas: Resena[]; stats: ResenasStats; pagination: { page: number; totalPages: number; total: number } } | null>(null);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -3030,24 +3081,24 @@ function ResenasView() {
         <div className={`alert ${notice.type === 'success' ? 'alert-success' : 'alert-error'}`} role="status">
           <InfoIcon size={14} className="shrink-0" />
           <span>{notice.text}</span>
-          <button className="ml-auto text-xs underline" onClick={() => setNotice(null)}>Ocultar</button>
+          <button className="ml-auto text-xs underline" onClick={() => setNotice(null)}>{d.hide}</button>
         </div>
       )}
 
-      {/* ── Stats header ────────────────────────────────── */}
+      {/* â”€â”€ Stats header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {data?.stats && data.stats.total > 0 && (
         <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {/* Promedio grande */}
             <div className="text-center shrink-0">
               <p className="text-5xl font-extrabold text-slate-800 dark:text-slate-100 leading-none">
-                {data.stats.promedio ?? '—'}
+                {data.stats.promedio ?? 'â€”'}
               </p>
               <StarRating value={data.stats.promedio ?? 0} size={16} />
-              <p className="text-xs text-slate-400 mt-1">{data.stats.total} reseña{data.stats.total !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-slate-400 mt-1">{data.stats.total} reseÃ±a{data.stats.total !== 1 ? 's' : ''}</p>
             </div>
 
-            {/* Distribución barras */}
+            {/* DistribuciÃ³n barras */}
             {data.stats.distribucion && (
               <div className="flex-1 space-y-1.5 w-full">
                 {[5, 4, 3, 2, 1].map((star) => {
@@ -3078,7 +3129,7 @@ function ResenasView() {
           {/* Active filter badge */}
           {ratingFilter && (
             <div className="mt-3 flex items-center gap-2">
-              <span className="badge badge-yellow text-xs">Filtrando: {ratingFilter}★</span>
+              <span className="badge badge-yellow text-xs">Filtrando: {ratingFilter}â˜…</span>
               <button onClick={() => applyFilter(undefined)} className="text-xs text-slate-400 hover:text-red-500 underline">
                 Quitar filtro
               </button>
@@ -3087,7 +3138,7 @@ function ResenasView() {
         </div>
       )}
 
-      {/* ── Review list ─────────────────────────────────── */}
+      {/* â”€â”€ Review list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {loading ? (
         <div className="space-y-3">
           {[1,2,3].map(i => <div key={i} className="skeleton h-32 rounded-xl" />)}
@@ -3095,12 +3146,14 @@ function ResenasView() {
       ) : !data || data.stats.total === 0 ? (
         <div className="py-16 text-center text-slate-400">
           <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} className="mx-auto mb-3 opacity-30"><path strokeLinecap="round" strokeLinejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.562.562 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z" /></svg>
-          <p className="text-sm font-medium">Todavía no tenés reseñas</p>
-          <p className="text-xs mt-1">Cuando un paciente califique un turno completado, aparecerá aquí.</p>
+          <p className="text-sm font-medium">TodavÃ­a no tenÃ©s reseÃ±as</p>
+          <p className="text-xs mt-1">Cuando un paciente califique un turno completado, aparecerÃ¡ aquÃ­.</p>
         </div>
       ) : data.resenas.length === 0 ? (
         <div className="py-10 text-center text-slate-400 text-sm">
-          No hay reseñas de {ratingFilter}★ para mostrar.
+          {lang === 'es'
+            ? `No hay reseñas de ${ratingFilter}★ para mostrar.`
+            : `No ${ratingFilter}★ reviews to show.`}
         </div>
       ) : (
         <div className="space-y-4">
@@ -3122,7 +3175,7 @@ function ResenasView() {
                       </p>
                       <p className="text-xs text-slate-400">
                         {new Date(resena.createdAt).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'long', year: 'numeric' })}
-                        {resena.turno && ` · ${new Date(resena.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}`}
+                        {resena.turno && ` Â· ${new Date(resena.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}`}
                       </p>
                     </div>
                   </div>
@@ -3149,11 +3202,11 @@ function ResenasView() {
               <div className="border-t border-slate-100 dark:border-slate-700 bg-blue-50/50 dark:bg-blue-900/10 px-4 py-3">
                 {editingId === resena.id ? (
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">Tu respuesta pública</p>
+                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">Tu respuesta pÃºblica</p>
                     <textarea
                       value={respuestaText}
                       onChange={(e) => setRespuestaText(e.target.value)}
-                      placeholder="Escribí tu respuesta... (visible para todos los pacientes)"
+                      placeholder="EscribÃ­ tu respuesta... (visible para todos los pacientes)"
                       className="field-input resize-none min-h-[80px] text-sm"
                       maxLength={2000}
                     />
@@ -3178,7 +3231,7 @@ function ResenasView() {
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         Tu respuesta
                         {resena.respondidaAt && (
-                          <span className="text-slate-400 font-normal">· {new Date(resena.respondidaAt).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}</span>
+                          <span className="text-slate-400 font-normal">Â· {new Date(resena.respondidaAt).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}</span>
                         )}
                       </p>
                       <div className="flex gap-2">
@@ -3194,7 +3247,7 @@ function ResenasView() {
                     className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium flex items-center gap-1.5"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
-                    Responder esta reseña
+                    {lang === 'es' ? 'Responder esta reseña' : 'Reply to this review'}
                   </button>
                 )}
               </div>
@@ -3203,27 +3256,27 @@ function ResenasView() {
         </div>
       )}
 
-      {/* ── Pagination ──────────────────────────────────── */}
+      {/* â”€â”€ Pagination â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
       {data && data.pagination.totalPages > 1 && (
         <div className="flex justify-between items-center pt-2">
           <button
             disabled={page === 1}
             onClick={() => { const p = page - 1; setPage(p); load(p, ratingFilter); }}
             className="btn btn-secondary btn-sm disabled:opacity-40"
-          >← Anteriores</button>
+          >{d.previous}</button>
           <span className="text-sm text-slate-500">{page} / {data.pagination.totalPages}</span>
           <button
             disabled={page === data.pagination.totalPages}
             onClick={() => { const p = page + 1; setPage(p); load(p, ratingFilter); }}
             className="btn btn-secondary btn-sm disabled:opacity-40"
-          >Siguientes →</button>
+          >{d.next}</button>
         </div>
       )}
     </div>
   );
 }
 
-/* ── Embed Widget Section ────────────────────────────────── */
+/* â”€â”€ Embed Widget Section â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
 type EmbedPlatform = 'html' | 'wordpress' | 'wix' | 'webflow';
 
 function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
@@ -3402,14 +3455,14 @@ function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
         {/* Inline preview */}
         {preview && (
           <div className="space-y-2">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Preview en vivo</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{d.embedWidget.livePreview}</p>
             <div className="flex justify-center">
               <iframe
                 src={widgetUrl}
                 width={460}
                 height={iframeHeight}
                 style={{ borderRadius: 16, border: '1px solid #e2e8f0', boxShadow: '0 4px 24px rgba(0,0,0,.08)', maxWidth: '100%' }}
-                title="Preview del widget"
+                title={d.embedWidget.previewTitle}
               />
             </div>
           </div>
@@ -3419,9 +3472,9 @@ function EmbedWidgetSection({ profesionalId }: { profesionalId: string }) {
   );
 }
 
-/* ══════════════════════════════════════════════════════════════
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
    PLAN VIEW
-══════════════════════════════════════════════════════════════ */
+â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
 function PlanView({
   suscripcion,
   loading,
@@ -3435,7 +3488,9 @@ function PlanView({
   onCancelarSuscripcion: () => void;
   redirecting: boolean;
 }) {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
+  const c = t('common');
+  const d = t('dashboard');
   if (loading) {
     return (
       <div className="space-y-4">
@@ -3447,10 +3502,11 @@ function PlanView({
   }
 
   if (!suscripcion) {
-    return <div className="text-center text-slate-600">Cargando...</div>;
+    return <div className="text-center text-slate-600">{t('common').loading}</div>;
   }
 
   const isPro = suscripcion.plan === 'PRO';
+  const turnosRemainingTemplate = d.turnosRemaining ?? 'You have {{count}} appointment{{plural}} left this month';
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -3459,17 +3515,17 @@ function PlanView({
         <div className="flex items-start justify-between">
           <div>
             <div className={`text-sm font-bold uppercase tracking-wider ${isPro ? 'text-blue-700' : 'text-slate-700'}`}>
-              Plan actual
+              {d.planCurrent}
             </div>
             <h2 className={`text-3xl font-bold mt-2 ${isPro ? 'text-blue-900' : 'text-slate-900'}`}>
-              {isPro ? 'Pro' : 'Free'}
+              {isPro ? d.planPro : d.planFree}
             </h2>
             <p className={`text-sm mt-3 ${isPro ? 'text-blue-700' : 'text-slate-600'}`}>
-              {isPro ? 'Turnos ilimitados + estadísticas avanzadas' : 'Hasta 20 turnos/mes'}
+              {isPro ? (d.planProSubtitle ?? 'Turnos ilimitados + estadÃ­sticas avanzadas') : (d.planFreeSubtitle ?? 'Hasta 20 turnos/mes')}
             </p>
           </div>
           <div className={`text-5xl font-bold opacity-20 ${isPro ? 'text-blue-500' : 'text-slate-400'}`}>
-            {isPro ? '∞' : '20'}
+            {isPro ? 'âˆž' : '20'}
           </div>
         </div>
       </div>
@@ -3478,7 +3534,7 @@ function PlanView({
       {!isPro && (
         <div className="rounded-xl bg-white border border-slate-200 p-6">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-700">Turnos este mes</span>
+            <span className="text-sm font-medium text-slate-700">{d.turnosThisMonth}</span>
             <span className="text-sm text-slate-500">{suscripcion.turnosEsteMes} / {suscripcion.limiteTurnos}</span>
           </div>
           <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
@@ -3488,7 +3544,9 @@ function PlanView({
             />
           </div>
           <p className="text-xs text-slate-500 mt-3">
-            Te quedan {suscripcion.turnosRestantes} turno{suscripcion.turnosRestantes !== 1 ? 's' : ''} este mes
+            {turnosRemainingTemplate
+              .replace('{{count}}', String(suscripcion.turnosRestantes))
+              .replace('{{plural}}', suscripcion.turnosRestantes !== 1 ? 's' : '')}
           </p>
         </div>
       )}
@@ -3496,7 +3554,7 @@ function PlanView({
       {/* Billing Info */}
       {isPro && suscripcion.planVenceAt && (
         <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-6">
-          <div className="text-sm font-medium text-emerald-900">Próximo cobro</div>
+          <div className="text-sm font-medium text-emerald-900">{d.nextCollection}</div>
           <div className="text-2xl font-bold text-emerald-700 mt-2">
             {new Date(suscripcion.planVenceAt).toLocaleDateString(getLocale(lang))}
           </div>
@@ -3512,7 +3570,7 @@ function PlanView({
             disabled={redirecting}
             className="btn btn-primary flex-1"
           >
-            {redirecting ? 'Redirigiendo...' : 'Actualizar a Pro — $4.990/mes'}
+            {redirecting ? d.redirecting : d.updateToPro}
           </button>
         )}
 
@@ -3522,21 +3580,21 @@ function PlanView({
             disabled={redirecting}
             className="btn btn-secondary flex-1"
           >
-            Cancelar suscripción
+            {d.cancelSubscription}
           </button>
         )}
       </div>
 
       {/* Features comparison */}
       <div className="rounded-xl bg-white border border-slate-200 p-6">
-        <h3 className="font-bold text-slate-900 mb-4">Comparar planes</h3>
+        <h3 className="font-bold text-slate-900 mb-4">{d.planCompare}</h3>
         <div className="space-y-3">
           {[
-            { feature: 'Turnos', free: 'Hasta 20/mes', pro: 'Ilimitados' },
-            { feature: 'Estadisticas', free: 'No', pro: 'Si' },
-            { feature: 'Cupones de descuento', free: 'Si', pro: 'Si' },
-            { feature: 'Pagos online', free: 'Si', pro: 'Si' },
-            { feature: 'Historia clinica', free: 'Si', pro: 'Si' },
+            { feature: d.features.appointments, free: d.planFreeLimit, pro: d.planUnlimited },
+            { feature: d.features.statistics, free: c.no, pro: c.yes },
+            { feature: d.features.coupons, free: c.yes, pro: c.yes },
+            { feature: d.features.onlinePayments, free: c.yes, pro: c.yes },
+            { feature: d.features.medicalHistory, free: c.yes, pro: c.yes },
           ].map((row, i) => (
             <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
               <span className="text-sm font-medium text-slate-700">{row.feature}</span>
@@ -3559,6 +3617,7 @@ function AuditoriaView({ profesionalId }: { profesionalId: string }) {
   const [totalPages, setTotalPages] = useState(1);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const { t, lang } = useLang();
+  const d = t('dashboard');
 
   useEffect(() => {
     loadAuditoria();
@@ -3578,12 +3637,12 @@ function AuditoriaView({ profesionalId }: { profesionalId: string }) {
 
   const getEventoLabel = (tipo: string): string => {
     const labels: Record<string, string> = {
-      DISPONIBILIDAD_CREADA: 'Disponibilidad agregada',
-      DISPONIBILIDAD_ELIMINADA: 'Disponibilidad eliminada',
-      BLOQUEO_CREADO: 'Bloqueo creado',
-      BLOQUEO_ELIMINADO: 'Bloqueo eliminado',
-      TURNO_CANCELADO_POR_BLOQUEO: 'Turno cancelado (bloqueo)',
-      TURNO_CANCELADO_POR_PROFESIONAL: 'Turno cancelado (profesional)',
+      DISPONIBILIDAD_CREADA: d.audit.createdAvailability,
+      DISPONIBILIDAD_ELIMINADA: d.audit.removedAvailability,
+      BLOQUEO_CREADO: d.audit.createdBlocking,
+      BLOQUEO_ELIMINADO: d.audit.removedBlocking,
+      TURNO_CANCELADO_POR_BLOQUEO: d.audit.appointmentCanceledByBlocking,
+      TURNO_CANCELADO_POR_PROFESIONAL: d.audit.appointmentCanceledByProfessional,
     };
     return labels[tipo] || tipo;
   };
@@ -3607,7 +3666,7 @@ function AuditoriaView({ profesionalId }: { profesionalId: string }) {
   if (auditoria.length === 0) {
     return (
       <div className="py-12 text-center text-slate-500">
-        <p>No hay eventos de auditoría registrados</p>
+        <p>{d.audit.empty}</p>
       </div>
     );
   }
@@ -3628,16 +3687,16 @@ function AuditoriaView({ profesionalId }: { profesionalId: string }) {
                 {event.detalle && (
                   <div className="text-xs text-slate-600 mt-2">
                     {event.tipoEvento === 'DISPONIBILIDAD_CREADA' && event.detalle.diaSemana && (
-                      <p>Día: {event.detalle.diaSemana} | {event.detalle.horaInicio || '—'} - {event.detalle.horaFin || '—'}</p>
+                      <p>{d.audit.day}: {event.detalle.diaSemana} | {event.detalle.horaInicio || 'â€”'} - {event.detalle.horaFin || 'â€”'}</p>
                     )}
                     {event.tipoEvento === 'BLOQUEO_CREADO' && (
                       <p>
-                        Motivo: {event.detalle.motivo || 'Sin especificar'}<br/>
-                        {event.detalle.turnosCancelados && `Turnos cancelados: ${event.detalle.turnosCancelados}`}
+                        {d.audit.reason}: {event.detalle.motivo || d.audit.unspecified}<br/>
+                        {event.detalle.turnosCancelados && `${d.audit.canceledAppointments}: ${event.detalle.turnosCancelados}`}
                       </p>
                     )}
                     {event.tipoEvento === 'TURNO_CANCELADO_POR_PROFESIONAL' && event.detalle.razon && (
-                      <p>Razón: {event.detalle.razon}</p>
+                      <p>{d.audit.professionalReason}: {event.detalle.razon}</p>
                     )}
                   </div>
                 )}
@@ -3647,7 +3706,7 @@ function AuditoriaView({ profesionalId }: { profesionalId: string }) {
                   onClick={() => setSelectedEvent(selectedEvent === event.id ? null : event.id)}
                   className="text-xs text-blue-600 hover:text-blue-700 ml-4"
                 >
-                  {selectedEvent === event.id ? 'Ocultar' : 'Ver detalles'}
+                  {selectedEvent === event.id ? d.audit.hide : d.audit.viewDetails}
                 </button>
               )}
             </div>
@@ -3667,17 +3726,17 @@ function AuditoriaView({ profesionalId }: { profesionalId: string }) {
             disabled={page === 1}
             className="btn btn-secondary text-sm disabled:opacity-50"
           >
-            Anterior
+            {d.previous}
           </button>
           <span className="text-sm text-slate-600">
-            Página {page} de {totalPages}
+            {d.page} {page} {d.of} {totalPages}
           </span>
           <button
             onClick={() => setPage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
             className="btn btn-secondary text-sm disabled:opacity-50"
           >
-            Siguiente
+            {d.next}
           </button>
         </div>
       )}
@@ -3686,14 +3745,21 @@ function AuditoriaView({ profesionalId }: { profesionalId: string }) {
 }
 
 function UpgradePrompt({ feature, onViewPlans }: { feature: string; onViewPlans: () => void }) {
+  const { t } = useLang();
+  const d = t('dashboard');
   return (
     <div className="py-16 text-center">
       <div className="text-5xl mb-4 inline-flex items-center justify-center"><ShieldIcon size={42} className="text-slate-500" /></div>
-      <p className="text-lg font-medium text-slate-900">Las {feature} están disponibles en el plan Pro</p>
-      <p className="text-sm text-slate-600 mt-2">Suscríbete a Pro para desbloquear todas las funcionalidades</p>
+      <p className="text-lg font-medium text-slate-900">{d.upgradeFeaturePrefix}{feature}{d.upgradeFeatureSuffix}</p>
+      <p className="text-sm text-slate-600 mt-2">{d.upgradeDesc}</p>
       <button onClick={onViewPlans} className="btn btn-primary mt-6">
-        Ver planes
+        {d.viewPlans}
       </button>
     </div>
   );
 }
+
+
+
+
+

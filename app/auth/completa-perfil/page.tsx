@@ -11,6 +11,7 @@ export default function CompletaPerfilPage() {
   const router = useRouter();
   const { t } = useLang();
   const a = t('auth');
+  const cp = a.completeProfile;
   const [user, setUser] = useState<any>(null);
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [loading, setLoading] = useState(true);
@@ -62,7 +63,7 @@ export default function CompletaPerfilPage() {
     try {
       if (user.rol === 'PROFESIONAL') {
         if (!formData.matricula || !formData.especialidadId) {
-          setError('Matrícula y especialidad son requeridas');
+          setError(cp.licenseAndSpecialtyRequired);
           return;
         }
         await api.profesional.updatePerfil(user.profesional.id, {
@@ -80,7 +81,7 @@ export default function CompletaPerfilPage() {
       }
       router.push('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al actualizar perfil');
+      setError(err instanceof Error ? err.message : cp.updateProfileError);
     } finally {
       setSubmitting(false);
     }
@@ -91,7 +92,7 @@ export default function CompletaPerfilPage() {
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <MediSyncLogo />
-          <p className="text-slate-500 dark:text-slate-400 text-sm">Cargando...</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">{t('common').loading}</p>
         </div>
       </div>
     );
@@ -109,16 +110,16 @@ export default function CompletaPerfilPage() {
             <MediSyncLogo size={28} />
           </div>
           <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">MediSync</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">Completa tu perfil</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{cp.title}</p>
         </div>
 
         <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
           <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-6">
             {user?.rol === 'PROFESIONAL'
-              ? 'Información Profesional'
+              ? cp.professionalInfo
               : user?.rol === 'PACIENTE'
-              ? 'Información Personal'
-              : 'Información de la Clínica'}
+              ? cp.personalInfo
+              : cp.clinicInfo}
           </h2>
 
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -127,7 +128,7 @@ export default function CompletaPerfilPage() {
             {user?.rol === 'PROFESIONAL' && (
               <>
                 <div>
-                  <label htmlFor="matricula" className="field-label">Matrícula Profesional *</label>
+                  <label htmlFor="matricula" className="field-label">{cp.licenseLabel}</label>
                   <input
                     id="matricula"
                     name="matricula"
@@ -140,7 +141,7 @@ export default function CompletaPerfilPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="especialidadId" className="field-label">Especialidad *</label>
+                  <label htmlFor="especialidadId" className="field-label">{cp.specialtyLabel}</label>
                   <select
                     id="especialidadId"
                     name="especialidadId"
@@ -149,7 +150,7 @@ export default function CompletaPerfilPage() {
                     onChange={handleChange}
                     className="field-select mt-1"
                   >
-                    <option value="">— Seleccionar —</option>
+                    <option value="">{cp.specialtyPlaceholder}</option>
                     {especialidades.map(e => (
                       <option key={e.id} value={e.id}>{e.nombre}</option>
                     ))}
@@ -157,7 +158,7 @@ export default function CompletaPerfilPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="precioConsulta" className="field-label">Precio de Consulta (ARS)</label>
+                  <label htmlFor="precioConsulta" className="field-label">{cp.priceLabel}</label>
                   <input
                     id="precioConsulta"
                     name="precioConsulta"
@@ -171,19 +172,19 @@ export default function CompletaPerfilPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="lugarAtencion" className="field-label">Lugar de Atención</label>
+                  <label htmlFor="lugarAtencion" className="field-label">{cp.locationLabel}</label>
                   <input
                     id="lugarAtencion"
                     name="lugarAtencion"
                     value={formData.lugarAtencion}
                     onChange={handleChange}
                     className={inp}
-                    placeholder="Ej: Consultorio en CABA"
+                    placeholder={cp.locationPlaceholder}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="fotoUrl" className="field-label">Foto de Perfil (URL)</label>
+                  <label htmlFor="fotoUrl" className="field-label">{cp.photoLabel}</label>
                   <input
                     id="fotoUrl"
                     name="fotoUrl"
@@ -196,7 +197,7 @@ export default function CompletaPerfilPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="bio" className="field-label">Biografía / Descripción</label>
+                  <label htmlFor="bio" className="field-label">{cp.bioLabel}</label>
                   <textarea
                     id="bio"
                     name="bio"
@@ -204,7 +205,7 @@ export default function CompletaPerfilPage() {
                     onChange={handleChange}
                     rows={3}
                     className="field-input mt-1 resize-none"
-                    placeholder="Breve descripción sobre ti..."
+                    placeholder={cp.bioPlaceholder}
                   />
                 </div>
               </>
@@ -213,7 +214,7 @@ export default function CompletaPerfilPage() {
             {user?.rol === 'PACIENTE' && (
               <>
                 <div>
-                  <label htmlFor="telefono" className="field-label">Teléfono</label>
+                  <label htmlFor="telefono" className="field-label">{a.phone}</label>
                   <input
                     id="telefono"
                     name="telefono"
@@ -221,12 +222,12 @@ export default function CompletaPerfilPage() {
                     value={formData.telefono}
                     onChange={handleChange}
                     className={inp}
-                    placeholder="+54 11 1234 5678"
+                    placeholder={cp.phonePlaceholder}
                   />
                 </div>
 
                 <div>
-                  <label htmlFor="genero" className="field-label">Género</label>
+                  <label htmlFor="genero" className="field-label">{a.gender}</label>
                   <select
                     id="genero"
                     name="genero"
@@ -234,10 +235,10 @@ export default function CompletaPerfilPage() {
                     onChange={handleChange}
                     className="field-select mt-1"
                   >
-                    <option value="NO_ESPECIFICADO">No especificado</option>
-                    <option value="MASCULINO">Masculino</option>
-                    <option value="FEMENINO">Femenino</option>
-                    <option value="OTRO">Otro</option>
+                    <option value="NO_ESPECIFICADO">{a.genderNS}</option>
+                    <option value="MASCULINO">{a.genderM}</option>
+                    <option value="FEMENINO">{a.genderF}</option>
+                    <option value="OTRO">{a.genderO}</option>
                   </select>
                 </div>
               </>
@@ -245,7 +246,7 @@ export default function CompletaPerfilPage() {
 
             {user?.rol === 'CLINICA' && (
               <div>
-                <label htmlFor="telefono" className="field-label">Teléfono</label>
+                <label htmlFor="telefono" className="field-label">{a.phone}</label>
                 <input
                   id="telefono"
                   name="telefono"
@@ -253,7 +254,7 @@ export default function CompletaPerfilPage() {
                   value={formData.telefono}
                   onChange={handleChange}
                   className={inp}
-                  placeholder="+54 11 1234 5678"
+                  placeholder={cp.phonePlaceholder}
                 />
               </div>
             )}
@@ -264,10 +265,10 @@ export default function CompletaPerfilPage() {
                 onClick={() => router.push('/dashboard')}
                 className="btn btn-secondary flex-1"
               >
-                Completar más tarde
+                {cp.completeLater}
               </button>
               <button type="submit" disabled={submitting} className="btn btn-primary flex-1">
-                {submitting ? 'Guardando...' : 'Continuar'}
+                {submitting ? cp.saving : cp.continue}
               </button>
             </div>
           </form>

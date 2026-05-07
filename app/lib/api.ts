@@ -1,4 +1,4 @@
-export const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace(/\/+$/, '');
 
 interface ApiResponse<T> {
   success: boolean;
@@ -14,25 +14,40 @@ async function fetchApi<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
-  };
+  const hasBody = options.body !== undefined && options.body !== null;
+  const headers = new Headers(options.headers);
 
-  const response = await fetch(`${API_BASE}${endpoint}`, {
-    ...options,
-    headers,
-    credentials: 'include',
-  });
+  if (token) headers.set('Authorization', `Bearer ${token}`);
+  // Avoid triggering unnecessary CORS preflights on GET/HEAD requests.
+  if (hasBody && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
 
-  const data: ApiResponse<T> = await response.json();
+  const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
-  if (!data.success) {
-    throw new Error(data.error?.message || 'Error desconocido');
+  try {
+    const response = await fetch(`${API_BASE}${path}`, {
+      ...options,
+      headers,
+      credentials: options.credentials ?? 'include',
+    });
+
+    const isJson = response.headers.get('content-type')?.includes('application/json');
+    const data: ApiResponse<T> | null = isJson ? await response.json() : null;
+
+    if (!response.ok) {
+      throw new Error(data?.error?.message || `Error HTTP ${response.status}`);
+    }
+
+    if (!data?.success) {
+      throw new Error(data?.error?.message || 'Error desconocido');
+    }
+
+    return data.data as T;
+  } catch (error) {
+    if (error instanceof TypeError) {
+      throw new Error('No se pudo conectar con el servidor. Verificá la URL del API y CORS.');
+    }
+    throw error;
   }
-
-  return data.data as T;
 }
 
 export const api = {

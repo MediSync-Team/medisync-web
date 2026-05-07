@@ -133,10 +133,13 @@ function LoginContent() {
 }
 
 export default function LoginPage() {
+  const { t } = useLang();
+  const a = t('auth');
+
   return (
     <Suspense fallback={
       <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="text-slate-500 dark:text-slate-400">Cargando...</div>
+        <div className="text-slate-500 dark:text-slate-400">{a.loginLoading}</div>
       </div>
     }>
       <LoginContent />
