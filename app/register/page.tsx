@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, API_BASE, Especialidad, Genero } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
-import { GoogleIcon, MicrosoftIcon, UserIcon, StethoscopeIcon, HospitalIcon } from '../components/icons';
+import { GoogleIcon, UserIcon, StethoscopeIcon, HospitalIcon } from '../components/icons';
 import ThemeLangToggle from '../components/ThemeLangToggle';
 import PasswordInput from '../components/PasswordInput';
 import PasswordStrengthIndicator, { getRequirements } from '../components/PasswordStrengthIndicator';
@@ -239,10 +239,6 @@ export default function RegisterPage() {
                   <a href={`${API_BASE}/auth/google?rol=${formData.rol}`} className="btn btn-secondary flex-1 justify-center gap-2">
                     <GoogleIcon size={16} />
                     Google
-                  </a>
-                  <a href={`${API_BASE}/auth/microsoft?rol=${formData.rol}`} className="btn btn-secondary flex-1 justify-center gap-2">
-                    <MicrosoftIcon size={16} />
-                    Microsoft
                   </a>
                 </div>
               </>

@@ -6,7 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, API_BASE } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
-import { GoogleIcon, MicrosoftIcon } from '../components/icons';
+import { GoogleIcon } from '../components/icons';
 import ThemeLangToggle from '../components/ThemeLangToggle';
 import PasswordInput from '../components/PasswordInput';
 
@@ -112,10 +112,6 @@ function LoginContent() {
               <a href={`${API_BASE}/auth/google`} className="btn btn-secondary flex-1 justify-center gap-2">
                 <GoogleIcon size={16} />
                 Google
-              </a>
-              <a href={`${API_BASE}/auth/microsoft`} className="btn btn-secondary flex-1 justify-center gap-2">
-                <MicrosoftIcon size={16} />
-                Microsoft
               </a>
             </div>
 

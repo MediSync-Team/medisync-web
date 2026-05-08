@@ -253,14 +253,3 @@ export function GoogleIcon({ size = 16, className = '' }: IconProps) {
     </svg>
   );
 }
-
-export function MicrosoftIcon({ size = 16, className = '' }: IconProps) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" className={className} aria-hidden="true">
-      <rect x="1" y="1" width="9" height="9" fill="#F25022"/>
-      <rect x="14" y="1" width="9" height="9" fill="#7FBA00"/>
-      <rect x="1" y="14" width="9" height="9" fill="#00A4EF"/>
-      <rect x="14" y="14" width="9" height="9" fill="#FFB900"/>
-    </svg>
-  );
-}
