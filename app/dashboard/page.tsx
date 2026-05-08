@@ -201,13 +201,17 @@ export default function ProfesionalDashboard() {
     }
   };
 
+  const [eliminandoId, setEliminandoId] = useState<string | null>(null);
+
   const handleEliminarDisponibilidad = async (id: string) => {
-    if (!user?.profesional) return;
+    if (!user?.profesional || eliminandoId === id) return;
+    setEliminandoId(id);
     try {
       await api.profesionales.eliminarDisponibilidad(user.profesional.id, id);
       loadData();
       setInlineFeedback({ type: 'success', text: d.deleteScheduleSuccess });
     } catch (err) {
+      setEliminandoId(null);
       setInlineFeedback({ type: 'error', text: err instanceof Error ? err.message : d.deleteScheduleError });
     }
   };
@@ -583,6 +587,7 @@ export default function ProfesionalDashboard() {
                   setNuevaDisp={setNuevaDisp}
                   onAgregar={handleAgregarDisponibilidad}
                   onEliminar={handleEliminarDisponibilidad}
+                  eliminandoId={eliminandoId}
                   bloqueos={bloqueos}
                   loadingBloqueos={loadingBloqueos}
                   onReloadBloqueos={loadBloqueos}
@@ -1150,7 +1155,7 @@ function CalendarioView({
 const MOTIVOS_BLOQUEO = ['Vacaciones', 'Feriado', 'Capacitación', 'Personal', 'Otro'];
 
 function DisponibilidadView({
-  disponibilidades, nuevaDisp, setNuevaDisp, onAgregar, onEliminar,
+  disponibilidades, nuevaDisp, setNuevaDisp, onAgregar, onEliminar, eliminandoId,
   bloqueos, loadingBloqueos, onReloadBloqueos,
 }: {
   disponibilidades: Disponibilidad[];
@@ -1158,6 +1163,7 @@ function DisponibilidadView({
   setNuevaDisp: (d: any) => void;
   onAgregar: () => void;
   onEliminar: (id: string) => void;
+  eliminandoId: string | null;
   bloqueos: BloqueoDisponibilidad[];
   loadingBloqueos: boolean;
   onReloadBloqueos: () => void;
@@ -1257,7 +1263,8 @@ function DisponibilidadView({
                 )}
                 <button
                   onClick={() => onEliminar(disp.id)}
-                  className="ml-auto btn btn-ghost text-red-400 hover:text-red-600 p-1.5"
+                  disabled={eliminandoId === disp.id}
+                  className={`ml-auto btn btn-ghost p-1.5 ${eliminandoId === disp.id ? 'text-slate-300 cursor-not-allowed' : 'text-red-400 hover:text-red-600'}`}
                   title="Eliminar horario"
                 >
                   <TrashIcon size={15} />
