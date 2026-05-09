@@ -171,10 +171,10 @@ function PagoContent() {
         {/* Payment button */}
         <button
           onClick={crearPreferenciaYRedirigir}
-          disabled={redirecting}
-          className="btn btn-primary w-full"
+          disabled={redirecting || (validatedCoupon !== null && validatedCoupon.montoFinal <= 0)}
+          className={`btn w-full ${validatedCoupon !== null && validatedCoupon.montoFinal <= 0 ? 'btn-secondary opacity-60 cursor-not-allowed' : 'btn-primary'}`}
         >
-          {redirecting ? p.processing : p.continueToPayment}
+          {redirecting ? p.processing : validatedCoupon !== null && validatedCoupon.montoFinal <= 0 ? 'Sin saldo a pagar' : p.continueToPayment}
         </button>
 
         <button
