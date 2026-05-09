@@ -128,9 +128,13 @@ export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props
     ty = vh / 2 - 90;
   }
 
-  // Clamp to viewport
+  // Clamp tooltip within viewport
   tx = Math.max(8, Math.min(tx, vw - TOOLTIP_W - 8));
-  ty = Math.max(8, Math.min(ty, vh - 220));
+  const maxTooltipH = Math.min(320, vh - 32);
+  if (ty + maxTooltipH > vh - 8) {
+    ty = Math.max(8, vh - maxTooltipH - 8);
+  }
+  ty = Math.max(8, ty);
 
   const isLast = stepIndex === steps.length - 1;
 
@@ -189,11 +193,12 @@ export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props
       {/* Tooltip card */}
       <div
         role="document"
-        className="fixed bg-white rounded-2xl shadow-2xl"
+        className="fixed bg-white rounded-2xl shadow-2xl overflow-y-auto"
         style={{
           left: tx,
           top: ty,
           width: TOOLTIP_W,
+          maxHeight: Math.min(320, vh - 32),
           zIndex: 1,
         }}
       >
