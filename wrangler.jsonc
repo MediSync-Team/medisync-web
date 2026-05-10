@@ -2,6 +2,7 @@
   "$schema": "node_modules/wrangler/config-schema.json",
   "main": ".open-next/worker.js",
   "name": "medisync-web",
+  "account_id": "968cb6356c1348bea65abd3dd26d3d58",
   "workers_dev": true,
   "compatibility_date": "2026-04-10",
   "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
