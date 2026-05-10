@@ -519,6 +519,7 @@ export type Turno = {
   modalidad: 'PRESENCIAL' | 'VIRTUAL';
   estado: 'RESERVADO' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO' | 'AUSENTE';
   linkVideollamada?: string;
+  lugarAtencion?: string | null;
   notasCancelacion?: string | null;
   profesional?: Profesional;
   paciente?: Paciente;

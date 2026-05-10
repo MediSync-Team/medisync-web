@@ -48,7 +48,7 @@ const PACIENTE_TOUR_STEPS = [
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, VideoIcon, BuildingIcon, CreditCardIcon, RefreshIcon,
-  XIcon, SearchIcon, WaitlistIcon, CheckIcon, InfoIcon, ClipboardIcon, ChatIcon,
+  XIcon, SearchIcon, WaitlistIcon, CheckIcon, InfoIcon, ClipboardIcon, ChatIcon, MapPinIcon,
 } from '../../components/icons';
 import { estadoBadge } from '../../lib/utils';
 
@@ -984,6 +984,14 @@ function TurnoCard({
           </div>
         </div>
 
+        {/* Location (PRESENCIAL only) */}
+        {turno.modalidad === 'PRESENCIAL' && (turno.lugarAtencion || turno.profesional?.lugarAtencion) && (
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500">
+            <MapPinIcon size={11} className="shrink-0" />
+            <span className="truncate">{turno.lugarAtencion ?? turno.profesional?.lugarAtencion}</span>
+          </div>
+        )}
+
         {/* Video call */}
         {turno.modalidad === 'VIRTUAL' && (turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO') && (
           <button
@@ -1093,7 +1101,7 @@ function TurnoCard({
                 profesionalNombre: turno.profesional.nombre,
                 profesionalApellido: turno.profesional.apellido,
                 especialidad: translateSpecialty(turno.profesional.especialidad?.nombre ?? ''),
-                lugarAtencion: turno.profesional.lugarAtencion,
+                lugarAtencion: turno.lugarAtencion ?? turno.profesional.lugarAtencion,
               }}
             />
           </div>
@@ -1207,7 +1215,7 @@ function RecetaModal({ turno, onClose }: { turno: Turno; onClose: () => void }) 
                   apellido: turno.profesional!.apellido,
                   especialidad: translateSpecialty(turno.profesional!.especialidad?.nombre ?? ''),
                   matricula: turno.profesional!.matricula,
-                  lugarAtencion: turno.profesional!.lugarAtencion,
+                  lugarAtencion: turno.lugarAtencion ?? turno.profesional!.lugarAtencion,
                   telefono: turno.profesional!.telefono,
                   fotoUrl: turno.profesional!.fotoUrl,
                 },
@@ -1711,7 +1719,7 @@ function HistorialCard({ item, onCalificar, d, m, s, translateSpecialty }: { ite
                       apellido: item.profesional!.apellido ?? '',
                       especialidad: translateSpecialty(item.profesional!.especialidad?.nombre ?? ''),
                       matricula: item.profesional!.matricula ?? undefined,
-                      lugarAtencion: item.profesional!.lugarAtencion ?? undefined,
+                      lugarAtencion: item.lugarAtencion ?? item.profesional!.lugarAtencion ?? undefined,
                       telefono: item.profesional!.telefono ?? undefined,
                       fotoUrl: item.profesional!.fotoUrl ?? undefined,
                     },
@@ -1759,7 +1767,7 @@ function HistorialCard({ item, onCalificar, d, m, s, translateSpecialty }: { ite
                           apellido: item.profesional?.apellido ?? '',
                           matricula: item.profesional?.matricula ?? undefined,
                           fotoUrl: item.profesional?.fotoUrl ?? undefined,
-                          lugarAtencion: item.profesional?.lugarAtencion ?? undefined,
+                          lugarAtencion: item.lugarAtencion ?? item.profesional?.lugarAtencion ?? undefined,
                           telefono: item.profesional?.telefono ?? undefined,
                           especialidad: { nombre: translateSpecialty(item.profesional?.especialidad?.nombre ?? '') },
                         },

@@ -1130,6 +1130,12 @@ function CalendarioView({
                     <span className="text-xs text-slate-500">
                       {turno.modalidad === 'VIRTUAL' ? h.virtual : h.inPerson}
                     </span>
+                    {turno.modalidad === 'PRESENCIAL' && turno.lugarAtencion && (
+                      <span className="flex items-center gap-0.5 text-xs text-slate-400 truncate max-w-[160px]">
+                        <MapPinIcon size={10} className="shrink-0" />
+                        {turno.lugarAtencion}
+                      </span>
+                    )}
                     {turno.preconsultaRiesgo && (
                       <span className={clinicalRiskBadge(turno.preconsultaRiesgo)}>
                         {turno.preconsultaRiesgo}
@@ -1242,38 +1248,69 @@ function DisponibilidadView({
             <ClockIcon size={28} className="mx-auto mb-2 opacity-30" />
             <p className="text-sm">{t('common').noResults}</p>
           </div>
-        ) : (
-          <div className="space-y-2">
-            {disponibilidades.map((disp) => (
-              <div key={disp.id} className="flex items-center gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-                <div className="w-24 shrink-0">
-                  <p className="font-semibold text-slate-700 text-sm">{getDaysLong(lang)[disp.diaSemana]}</p>
-                </div>
-                <div className="flex items-center gap-1.5 text-slate-600 text-sm">
-                  <ClockIcon size={13} className="text-slate-400" />
-                  <span>{disp.horaInicio} - {disp.horaFin}</span>
-                </div>
-                <span className={`ml-1 badge ${disp.modalidad === 'VIRTUAL' ? 'badge-blue' : disp.modalidad === 'PRESENCIAL' ? 'badge-green' : 'badge-purple'}`}>
-                  {disp.modalidad === 'VIRTUAL' ? h.virtual : disp.modalidad === 'PRESENCIAL' ? h.inPerson : disp.modalidad}
-                </span>
-                {disp.lugarAtencion && (
-                  <span className="flex items-center gap-1 text-xs text-slate-500 truncate max-w-[180px]">
-                    <MapPinIcon size={11} className="shrink-0 text-slate-400" />
-                    {disp.lugarAtencion}
-                  </span>
-                )}
-                <button
-                  onClick={() => onEliminar(disp.id)}
-                  disabled={eliminandoId === disp.id}
-                  className={`ml-auto btn btn-ghost p-1.5 ${eliminandoId === disp.id ? 'text-slate-300 cursor-not-allowed' : 'text-red-400 hover:text-red-600'}`}
-                  title="Eliminar horario"
-                >
-                  <TrashIcon size={15} />
-                </button>
+        ) : (() => {
+          // Build location groups: null key = no location assigned
+          const locKeys: (string | null)[] = [];
+          const locMap: Record<string, Disponibilidad[]> = {};
+          const NULL_KEY = '__sin_lugar__';
+          for (const disp of disponibilidades) {
+            const k = disp.lugarAtencion ?? null;
+            const mapK = k ?? NULL_KEY;
+            if (!locMap[mapK]) { locMap[mapK] = []; locKeys.push(k); }
+            locMap[mapK].push(disp);
+          }
+          const uniqueKeys = [...new Set(locKeys.map(k => k ?? NULL_KEY))];
+          const multipleLocations = uniqueKeys.filter(k => k !== NULL_KEY).length >= 2;
+
+          const DispRow = ({ disp }: { disp: Disponibilidad }) => (
+            <div key={disp.id} className="flex items-center gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+              <div className="w-24 shrink-0">
+                <p className="font-semibold text-slate-700 text-sm">{getDaysLong(lang)[disp.diaSemana]}</p>
               </div>
-            ))}
-          </div>
-        )}
+              <div className="flex items-center gap-1.5 text-slate-600 text-sm">
+                <ClockIcon size={13} className="text-slate-400" />
+                <span>{disp.horaInicio} - {disp.horaFin}</span>
+              </div>
+              <span className={`ml-1 badge ${disp.modalidad === 'VIRTUAL' ? 'badge-blue' : disp.modalidad === 'PRESENCIAL' ? 'badge-green' : 'badge-purple'}`}>
+                {disp.modalidad === 'VIRTUAL' ? h.virtual : disp.modalidad === 'PRESENCIAL' ? h.inPerson : disp.modalidad}
+              </span>
+              {!multipleLocations && disp.lugarAtencion && (
+                <span className="flex items-center gap-1 text-xs text-slate-500 truncate max-w-[180px]">
+                  <MapPinIcon size={11} className="shrink-0 text-slate-400" />
+                  {disp.lugarAtencion}
+                </span>
+              )}
+              <button
+                onClick={() => onEliminar(disp.id)}
+                disabled={eliminandoId === disp.id}
+                className={`ml-auto btn btn-ghost p-1.5 ${eliminandoId === disp.id ? 'text-slate-300 cursor-not-allowed' : 'text-red-400 hover:text-red-600'}`}
+                title="Eliminar horario"
+              >
+                <TrashIcon size={15} />
+              </button>
+            </div>
+          );
+
+          return (
+            <div className="space-y-4">
+              {uniqueKeys.map((mapK) => (
+                <div key={mapK}>
+                  {multipleLocations && (
+                    <div className="flex items-center gap-2 mb-2">
+                      <MapPinIcon size={13} className="text-slate-400 shrink-0" />
+                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                        {mapK === NULL_KEY ? 'Sin lugar asignado' : mapK}
+                      </p>
+                    </div>
+                  )}
+                  <div className="space-y-2">
+                    {locMap[mapK].map((disp) => <DispRow key={disp.id} disp={disp} />)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </div>
 
       {/* â”€â”€ Agregar horario â”€â”€ */}
@@ -1752,7 +1789,10 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
         diasReposo: data.diasReposo || 0,
       });
     } catch (err) {
-      console.error(err);
+      const msg = err instanceof Error ? err.message : '';
+      if (!msg.toLowerCase().includes('no encontrado') && !msg.toLowerCase().includes('not found')) {
+        console.error(err);
+      }
       setCertificado(null);
     } finally {
       setLoadingCertificado(false);
@@ -1828,7 +1868,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
               apellido: turno.profesional.apellido,
               matricula: turno.profesional.matricula ?? null,
               fotoUrl: turno.profesional.fotoUrl ?? null,
-              lugarAtencion: turno.profesional.lugarAtencion ?? null,
+              lugarAtencion: turno.lugarAtencion ?? turno.profesional.lugarAtencion ?? null,
               telefono: turno.profesional.telefono ?? '',
               especialidad: { nombre: translateSpecialty(turno.profesional.especialidad?.nombre ?? '') },
             },

@@ -411,25 +411,69 @@ export default function ProfesionalPage() {
                     </span>
                   </div>
                 )}
-                {profesional.lugarAtencion && (
-                  <div className="flex items-start gap-2 text-sm text-slate-600">
-                    <MapPinIcon size={14} className="text-slate-400 shrink-0 mt-0.5" />
-                    <span>{profesional.lugarAtencion}</span>
-                  </div>
-                )}
-                {profesional.lugarAtencion && (
-                  <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 h-36">
-                    <iframe
-                      title="Ubicación"
-                      width="100%"
-                      height="100%"
-                      style={{ border: 0 }}
-                      loading="lazy"
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src={`https://maps.google.com/maps?q=${encodeURIComponent(profesional.lugarAtencion)}&output=embed&z=15`}
-                    />
-                  </div>
-                )}
+                {(() => {
+                  const dayNames = lang === 'es'
+                    ? ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
+                    : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+                  // Build map: location → sorted unique days
+                  const locationGroups: Record<string, number[]> = {};
+                  for (const d of (profesional.disponibilidades ?? [])) {
+                    if (d.lugarAtencion && d.modalidad !== 'VIRTUAL') {
+                      if (!locationGroups[d.lugarAtencion]) locationGroups[d.lugarAtencion] = [];
+                      if (!locationGroups[d.lugarAtencion].includes(d.diaSemana)) {
+                        locationGroups[d.lugarAtencion].push(d.diaSemana);
+                      }
+                    }
+                  }
+                  const locations = Object.entries(locationGroups);
+
+                  if (locations.length >= 2) {
+                    // Multi-location: one row per distinct address with day badges
+                    return (
+                      <div className="space-y-2">
+                        {locations.map(([loc, days]) => (
+                          <div key={loc} className="flex items-start gap-2 text-sm text-slate-600">
+                            <MapPinIcon size={14} className="text-slate-400 shrink-0 mt-0.5" />
+                            <div>
+                              <span>{loc}</span>
+                              <div className="flex flex-wrap gap-1 mt-1">
+                                {[...days].sort((a, b) => a - b).map(d => (
+                                  <span key={d} className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-xs">
+                                    {dayNames[d]}
+                                  </span>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  }
+
+                  // Single location fallback — original behaviour
+                  const singleLoc = locations[0]?.[0] ?? profesional.lugarAtencion;
+                  if (!singleLoc) return null;
+                  return (
+                    <>
+                      <div className="flex items-start gap-2 text-sm text-slate-600">
+                        <MapPinIcon size={14} className="text-slate-400 shrink-0 mt-0.5" />
+                        <span>{singleLoc}</span>
+                      </div>
+                      <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 h-36">
+                        <iframe
+                          title="Ubicación"
+                          width="100%"
+                          height="100%"
+                          style={{ border: 0 }}
+                          loading="lazy"
+                          referrerPolicy="no-referrer-when-downgrade"
+                          src={`https://maps.google.com/maps?q=${encodeURIComponent(singleLoc)}&output=embed&z=15`}
+                        />
+                      </div>
+                    </>
+                  );
+                })()}
                 {profesional.telefono && (
                   <div className="flex items-center gap-2 text-sm text-slate-600">
                     <PhoneIcon size={14} className="text-slate-400" />
