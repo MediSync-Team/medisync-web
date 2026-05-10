@@ -3,7 +3,7 @@
 import { useState, useCallback } from 'react';
 import { api, Disponibilidad } from '../lib/api';
 import { DIAS_SEMANA } from '../lib/utils';
-import { CheckIcon, InfoIcon } from './icons';
+import { CalendarIcon, CheckIcon, ClipboardIcon, CreditCardIcon, InfoIcon, UserIcon } from './icons';
 
 interface Props {
   profesionalId: string;
@@ -478,7 +478,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                 </p>
                 {[
                   {
-                     icon: 'Disp',
+                    icon: <CalendarIcon size={15} />,
                     label: 'Disponibilidad',
                     value: disponibilidades.length > 0
                       ? `${disponibilidades.length} bloque${disponibilidades.length > 1 ? 's' : ''} configurado${disponibilidades.length > 1 ? 's' : ''}`
@@ -486,7 +486,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                     ok: disponibilidades.length > 0,
                   },
                   {
-                     icon: '$',
+                    icon: <CreditCardIcon size={15} />,
                     label: 'Precio de consulta',
                     value: precio && Number(precio) > 0
                       ? `$${Number(precio).toLocaleString('es-AR')} ARS`
@@ -494,13 +494,13 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                     ok: !!(precio && Number(precio) > 0),
                   },
                   {
-                     icon: 'Mat',
+                    icon: <ClipboardIcon size={15} />,
                     label: 'Matrícula',
                     value: matricula.trim() || 'No completada',
                     ok: !!matricula.trim(),
                   },
                   {
-                     icon: 'Foto',
+                    icon: <UserIcon size={15} />,
                     label: 'Foto de perfil',
                     value: fotoUrl.trim() ? 'Configurada' : 'No completada',
                     ok: !!fotoUrl.trim(),
@@ -508,7 +508,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                 ].map(item => (
                   <div key={item.label} className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
-                      <span className="text-base w-6 text-center">{item.icon}</span>
+                      <span className="w-6 text-slate-500 dark:text-slate-400 flex justify-center">{item.icon}</span>
                       <span className="text-sm text-slate-600 dark:text-slate-300">{item.label}</span>
                     </div>
                     <div className="flex items-center gap-1.5">
