@@ -23,7 +23,14 @@ export default function ProfesionalPage() {
   const { t, lang } = useLang();
   const h = t('home');
   const p = t('professional');
+  const dateLocale = lang === 'en' ? 'en-US' : 'es-AR';
   const diasShort = getDaysShort(lang);
+  const formatBookingDate = (date: Date, options: Intl.DateTimeFormatOptions) =>
+    date.toLocaleDateString(dateLocale, options);
+  const formatPrice = (value: number) =>
+    Number(value).toLocaleString(dateLocale);
+  const modalityText = (value: 'PRESENCIAL' | 'VIRTUAL') =>
+    value === 'VIRTUAL' ? h.status.virtual : h.status.presencial;
   const [profesional, setProfesional] = useState<Profesional | null>(null);
   const [loading, setLoading] = useState(true);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -80,7 +87,7 @@ export default function ProfesionalPage() {
       setSlots(data);
     } catch (err) {
       console.error(err);
-      setSlotsError(err instanceof Error ? err.message : 'No se pudieron cargar los horarios disponibles. Intentá más tarde.');
+      setSlotsError(err instanceof Error ? err.message : p.loadSlotsError);
       setSlots([]);
     } finally {
       setSlotsLoading(false);
@@ -108,11 +115,16 @@ export default function ProfesionalPage() {
   const handleUnirseListaEspera = async () => {
     if (!user) { router.push('/login'); return; }
     if (!selectedDate) {
-      setInlineNotice({ type: 'warning', text: 'Primero selecciona un dia para sumarte a la lista de espera.' });
+      setInlineNotice({ type: 'warning', text: p.waitlistSelectDayNotice });
       return;
     }
     if (selectedWaitlistItem) {
-      setInlineNotice({ type: 'info', text: `Ya estas en lista de espera para ${selectedDate.toLocaleDateString('es-AR')} (${modalidad.toLowerCase()}).` });
+      setInlineNotice({
+        type: 'info',
+        text: p.waitlistAlreadyNotice
+          .replace('{{date}}', formatBookingDate(selectedDate, { day: 'numeric', month: 'long', year: 'numeric' }))
+          .replace('{{modality}}', modalityText(modalidad).toLowerCase()),
+      });
       return;
     }
 
@@ -123,14 +135,19 @@ export default function ProfesionalPage() {
       const day = String(selectedDate.getDate()).padStart(2, '0');
       const fecha = `${year}-${month}-${day}`;
       await api.listaEspera.suscribirme({ profesionalId: params.id as string, fecha, modalidad });
-      setSuccessMessage('Te anotamos en lista de espera. Te avisamos si se libera un turno.');
+      setSuccessMessage(p.waitlistJoinedMessage);
       setTimeout(() => setSuccessMessage(''), 4000);
-      setInlineNotice({ type: 'success', text: 'Quedaste anotado en lista de espera.' });
+      setInlineNotice({ type: 'success', text: p.waitlistJoinedNotice });
       await loadListaEsperaActiva();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'No se pudo registrar en lista de espera';
+      const msg = err instanceof Error ? err.message : p.waitlistRegisterError;
       if (msg.toLowerCase().includes('ya estas en la lista')) {
-        setInlineNotice({ type: 'info', text: `Ya estabas anotado para ${selectedDate?.toLocaleDateString('es-AR')} en modalidad ${modalidad.toLowerCase()}.` });
+        setInlineNotice({
+          type: 'info',
+          text: p.waitlistAlreadyNotice
+            .replace('{{date}}', selectedDate ? formatBookingDate(selectedDate, { day: 'numeric', month: 'long', year: 'numeric' }) : '')
+            .replace('{{modality}}', modalityText(modalidad).toLowerCase()),
+        });
       } else {
         setInlineNotice({ type: 'error', text: msg });
       }
@@ -143,9 +160,9 @@ export default function ProfesionalPage() {
     try {
       await api.listaEspera.cancelar(selectedWaitlistItem.id);
       await loadListaEsperaActiva();
-      setInlineNotice({ type: 'success', text: 'Salida de lista de espera confirmada.' });
+      setInlineNotice({ type: 'success', text: p.waitlistLeftNotice });
     } catch (err) {
-      setInlineNotice({ type: 'error', text: err instanceof Error ? err.message : 'No se pudo cancelar la suscripcion' });
+      setInlineNotice({ type: 'error', text: err instanceof Error ? err.message : p.waitlistCancelError });
     }
     finally { setSuscribiendoLista(false); }
   };
@@ -223,9 +240,9 @@ export default function ProfesionalPage() {
       } else {
         setGuestTurnoReservado({ id: reserva.turno.id, fechaHora: reserva.turno.fechaHora, duracionMin: reserva.turno.duracionMin, needsPago: false });
       }
-      setSuccessMessage('¡Turno reservado con éxito!');
+      setSuccessMessage(p.bookingSuccessNotice);
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'Error al reservar';
+      const msg = err instanceof Error ? err.message : p.bookingError;
       setError(msg);
       setGuestFormError(msg);
       setInlineNotice({ type: 'error', text: msg });
@@ -253,11 +270,11 @@ export default function ProfesionalPage() {
   const handleReservarInvitado = async () => {
     const { nombre, apellido, email, telefono } = guestForm;
     if (!nombre.trim() || !apellido.trim() || !email.trim()) {
-      setGuestFormError('Completá nombre, apellido y email.');
+      setGuestFormError(p.requiredGuestFields);
       return;
     }
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setGuestFormError('El email no es válido.');
+      setGuestFormError(p.invalidEmail);
       return;
     }
     await doReservar({ nombre: nombre.trim(), apellido: apellido.trim(), email: email.trim().toLowerCase(), telefono: telefono.trim() || undefined });
@@ -665,25 +682,25 @@ export default function ProfesionalPage() {
               {selectedDate && (
                 <div className="mb-5">
                   <p className="field-label mb-2">
-                    Horarios para el {selectedDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                    {p.slotsFor.replace('{{date}}', formatBookingDate(selectedDate, { weekday: 'long', day: 'numeric', month: 'long' }))}
                   </p>
 
                   {slotsLoading ? (
                     <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600">
                       <svg className="animate-spin text-blue-600 dark:text-blue-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                      <span className="text-sm text-slate-600 dark:text-slate-300">Cargando horarios...</span>
+                      <span className="text-sm text-slate-600 dark:text-slate-300">{p.loadingSlots}</span>
                     </div>
                   ) : slotsError ? (
                     <div className="alert alert-error">
                       <InfoIcon size={16} className="shrink-0" />
                       <div className="flex-1">
-                        <p className="font-semibold text-sm mb-2">Error al cargar horarios</p>
+                        <p className="font-semibold text-sm mb-2">{p.loadSlotsError}</p>
                         <p className="text-xs text-red-700 dark:text-red-300 mb-3">{slotsError}</p>
                         <button
                           onClick={() => loadSlots(selectedDate)}
                           className="btn btn-secondary btn-sm text-xs"
                         >
-                          Reintentar
+                          {p.retry}
                         </button>
                       </div>
                     </div>
@@ -692,16 +709,16 @@ export default function ProfesionalPage() {
                     <div className="alert alert-warning">
                       <InfoIcon size={16} className="shrink-0" />
                       <div className="flex-1">
-                        <p className="font-semibold text-sm">Sin disponibilidad para este día</p>
+                        <p className="font-semibold text-sm">{p.noAvailabilityForDay}</p>
                         {selectedWaitlistItem ? (
                           <div className="flex items-center justify-between mt-2 flex-wrap gap-2">
-                            <span className="text-xs">Ya estás en lista de espera ({selectedWaitlistItem.estado})</span>
+                            <span className="text-xs">{p.waitlistAlready.replace('{{status}}', selectedWaitlistItem.estado)}</span>
                             <button
                               onClick={handleSalirListaEspera}
                               disabled={suscribiendoLista}
                               className="btn btn-secondary btn-sm text-xs"
                             >
-                              {suscribiendoLista ? 'Procesando...' : 'Salir de lista'}
+                              {suscribiendoLista ? p.waitlistProcessing : p.waitlistLeave}
                             </button>
                           </div>
                         ) : (
@@ -710,7 +727,7 @@ export default function ProfesionalPage() {
                              disabled={suscribiendoLista}
                              className="btn btn-sm mt-2 bg-amber-600 hover:bg-amber-700 text-white border-amber-600"
                            >
-                            {suscribiendoLista ? 'Guardando...' : 'Anotarme en lista de espera'}
+                            {suscribiendoLista ? p.waitlistSaving : p.joinWaitlist}
                           </button>
                         )}
                       </div>
@@ -750,7 +767,7 @@ export default function ProfesionalPage() {
               {selectedSlot && selectedDate && (
                 <div className="border-2 border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mt-2" aria-live="polite">
                   <p className="text-sm text-blue-800 dark:text-blue-300 mb-3 font-medium">
-                    Reservando turno con <strong>{profesional.nombre} {profesional.apellido}</strong>
+                    {p.bookingWith} <strong>{profesional.nombre} {profesional.apellido}</strong>
                   </p>
                   {(() => {
                     const slotInfo = slots.find(s => s.hora === selectedSlot);
@@ -759,7 +776,7 @@ export default function ProfesionalPage() {
                       <div className="flex flex-wrap gap-3 text-sm text-blue-700 dark:text-blue-300 mb-4">
                         <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
                           <CalendarIcon size={13} />
-                          {selectedDate.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' })}
+                          {formatBookingDate(selectedDate, { weekday: 'long', day: 'numeric', month: 'long' })}
                         </span>
                         <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
                           <ClockIcon size={13} />
@@ -767,7 +784,7 @@ export default function ProfesionalPage() {
                         </span>
                         <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
                           {modalidad === 'VIRTUAL' ? <VideoIcon size={13} /> : <BuildingIcon size={13} />}
-                          {modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
+                          {modalityText(modalidad)}
                         </span>
                         {lugarSlot && modalidad === 'PRESENCIAL' && (
                           <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
@@ -781,17 +798,17 @@ export default function ProfesionalPage() {
 
                   {profesional.precioConsulta > 0 && (
                     <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                      Se te pedirá el pago de <strong>${Number(profesional.precioConsulta).toLocaleString('es-AR')}</strong> via Mercado Pago al confirmar.
+                      {p.paymentNoticeStart}<strong>${formatPrice(profesional.precioConsulta)}</strong>{p.paymentNoticeEnd}
                     </p>
                   )}
 
                   {/* Guest form — shown when not logged in and user clicked "Confirmar" */}
                   {!user && showGuestForm ? (
                     <div className="space-y-3 mb-4 border-t border-blue-200 dark:border-blue-700 pt-4">
-                      <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">Tus datos para la reserva</p>
+                      <p className="text-sm font-semibold text-blue-800 dark:text-blue-200">{p.guestDetailsTitle}</p>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="field-label">Nombre *</label>
+                          <label className="field-label">{p.yourName} *</label>
                           <input
                             value={guestForm.nombre}
                             onChange={(e) => setGuestForm((p) => ({ ...p, nombre: e.target.value }))}
@@ -800,7 +817,7 @@ export default function ProfesionalPage() {
                           />
                         </div>
                         <div>
-                          <label className="field-label">Apellido *</label>
+                          <label className="field-label">{p.yourLastName} *</label>
                           <input
                             value={guestForm.apellido}
                             onChange={(e) => setGuestForm((p) => ({ ...p, apellido: e.target.value }))}
@@ -810,7 +827,7 @@ export default function ProfesionalPage() {
                         </div>
                       </div>
                       <div>
-                        <label className="field-label">Email * <span className="text-slate-400 font-normal">(recibirás la confirmación aquí)</span></label>
+                        <label className="field-label">Email * <span className="text-slate-400 font-normal">({p.emailConfirmationHint})</span></label>
                         <input
                           type="email"
                           value={guestForm.email}
@@ -820,7 +837,7 @@ export default function ProfesionalPage() {
                         />
                       </div>
                       <div>
-                        <label className="field-label">Teléfono <span className="text-slate-400 font-normal">(opcional)</span></label>
+                        <label className="field-label">{p.yourPhone} <span className="text-slate-400 font-normal">({p.optional})</span></label>
                         <input
                           type="tel"
                           value={guestForm.telefono}
@@ -838,15 +855,15 @@ export default function ProfesionalPage() {
                         className="btn btn-success btn-lg w-full"
                       >
                         {reservando ? (
-                          <><svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Reservando...</>
+                          <><svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>{p.reserving}</>
                         ) : (
-                          <><CheckIcon size={16} />Confirmar como invitado</>
+                          <><CheckIcon size={16} />{p.confirmAsGuest}</>
                         )}
                       </button>
                       <p className="text-xs text-center text-blue-600 dark:text-blue-400">
-                        ¿Tenés cuenta?{' '}
-                        <Link href="/login" className="font-semibold underline">Iniciá sesión</Link>
-                        {' '}para acceder a tu historial.
+                        {p.haveAccount}{' '}
+                        <Link href="/login" className="font-semibold underline">{p.loginAction}</Link>
+                        {' '}{p.historyAccessSuffix}
                       </p>
                     </div>
                   ) : (
@@ -856,7 +873,7 @@ export default function ProfesionalPage() {
                       className="btn btn-success btn-lg w-full"
                     >
                       {reservando ? (
-                        <><svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>Reservando...</>
+                        <><svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>{p.reserving}</>
                       ) : (
                         <><CheckIcon size={16} />{p.confirmBooking}</>
                       )}
@@ -865,8 +882,8 @@ export default function ProfesionalPage() {
 
                   {!user && !showGuestForm && (
                     <p className="text-xs text-blue-600 dark:text-blue-400 mt-2.5 text-center">
-                      ¿Ya tenés cuenta?{' '}
-                      <Link href="/login" className="font-semibold underline">Iniciá sesión</Link>
+                      {p.alreadyHaveAccount}{' '}
+                      <Link href="/login" className="font-semibold underline">{p.loginAction}</Link>
                     </p>
                   )}
                 </div>
@@ -949,9 +966,13 @@ function GuestConfirmacion({
   email: string;
   lugarAtencion?: string | null;
 }) {
+  const { t, lang } = useLang();
+  const p = t('professional');
+  const h = t('home');
+  const dateLocale = lang === 'en' ? 'en-US' : 'es-AR';
   const fecha = new Date(turno.fechaHora);
-  const fechaStr = fecha.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const horaStr  = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  const fechaStr = fecha.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const horaStr  = fecha.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit', hour12: false });
 
   return (
     <div className="max-w-lg mx-auto">
@@ -972,37 +993,37 @@ function GuestConfirmacion({
 
         <div>
           <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">
-            {turno.needsPago ? 'Turno reservado — pendiente de pago' : '¡Turno reservado!'}
+            {turno.needsPago ? p.guestPendingPaymentTitle : p.guestBookedTitle}
           </h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
             {turno.needsPago
-              ? 'Tu lugar está guardado. Para confirmarlo, completá el pago iniciando sesión.'
-              : `Enviamos la confirmación a ${email}.`}
+              ? p.guestPendingPaymentDesc
+              : p.guestBookedDesc.replace('{{email}}', email)}
           </p>
         </div>
 
         {/* Turno details */}
         <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-4 text-left space-y-2">
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Profesional</span>
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.professionalLabel}</span>
             <span className="font-medium text-slate-800 dark:text-slate-100">Dr/a. {profesional.nombre} {profesional.apellido}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Especialidad</span>
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.specialtyLabel}</span>
             <span className="text-slate-700 dark:text-slate-300">{profesional.especialidad?.nombre}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Fecha</span>
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.dateLabel}</span>
             <span className="text-slate-700 dark:text-slate-300 capitalize">{fechaStr}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Horario</span>
-            <span className="text-slate-700 dark:text-slate-300">{horaStr} h</span>
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.timeLabel}</span>
+            <span className="text-slate-700 dark:text-slate-300">{horaStr}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Modalidad</span>
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.modalityLabel}</span>
             <span className={`badge ${modalidad === 'VIRTUAL' ? 'badge-blue' : 'badge-gray'}`}>
-              {modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
+              {modalidad === 'VIRTUAL' ? h.status.virtual : h.status.presencial}
             </span>
           </div>
         </div>
@@ -1026,24 +1047,24 @@ function GuestConfirmacion({
         {turno.needsPago ? (
           <div className="space-y-2">
             <Link href="/login" className="btn btn-primary w-full">
-              Iniciar sesión para pagar
+              {p.loginToPay}
             </Link>
             <Link href="/register" className="btn btn-secondary w-full">
-              Crear cuenta en MediSync
+              {p.createAccount}
             </Link>
           </div>
         ) : (
           <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-700 rounded-xl p-3 text-sm text-blue-700 dark:text-blue-300">
-            <p className="font-medium mb-1">¿Querés acceder a tu historial de turnos?</p>
-            <p className="text-xs mb-2">Creá una cuenta gratis con el mismo email para gestionar tus consultas.</p>
+            <p className="font-medium mb-1">{p.historyPromptTitle}</p>
+            <p className="text-xs mb-2">{p.historyPromptDesc}</p>
             <Link href="/register" className="btn btn-primary btn-sm w-full">
-              Crear cuenta en MediSync
+              {p.createAccount}
             </Link>
           </div>
         )}
 
         <Link href="/" className="text-xs text-slate-400 hover:text-slate-600 block">
-          Volver al inicio
+          {p.backHome}
         </Link>
       </div>
     </div>
@@ -1060,9 +1081,13 @@ function ConfirmacionTurno({
   lugarAtencion?: string | null;
   onContinuar: () => void;
 }) {
+  const { t, lang } = useLang();
+  const p = t('professional');
+  const h = t('home');
+  const dateLocale = lang === 'en' ? 'en-US' : 'es-AR';
   const fecha = new Date(turno.fechaHora);
-  const fechaStr = fecha.toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const horaStr  = fecha.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  const fechaStr = fecha.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const horaStr  = fecha.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit', hour12: false });
 
   return (
     <div className="max-w-lg mx-auto">
@@ -1077,41 +1102,41 @@ function ConfirmacionTurno({
         </div>
 
         <div>
-          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">¡Turno confirmado!</h2>
+          <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">{p.confirmedTitle}</h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">
-            Tu consulta fue reservada exitosamente.
+            {p.confirmedDesc}
           </p>
         </div>
 
         {/* Turno details */}
         <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-4 text-left space-y-2">
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Profesional</span>
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.professionalLabel}</span>
             <span className="font-medium text-slate-800 dark:text-slate-100">
               Dr/a. {profesional.nombre} {profesional.apellido}
             </span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Especialidad</span>
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.specialtyLabel}</span>
             <span className="text-slate-700 dark:text-slate-300">{profesional.especialidad?.nombre}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Fecha</span>
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.dateLabel}</span>
             <span className="text-slate-700 dark:text-slate-300 capitalize">{fechaStr}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Horario</span>
-            <span className="text-slate-700 dark:text-slate-300">{horaStr} h</span>
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.timeLabel}</span>
+            <span className="text-slate-700 dark:text-slate-300">{horaStr}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
-            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Modalidad</span>
+            <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.modalityLabel}</span>
             <span className={`badge ${modalidad === 'VIRTUAL' ? 'badge-blue' : 'badge-gray'}`}>
-              {modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}
+              {modalidad === 'VIRTUAL' ? h.status.virtual : h.status.presencial}
             </span>
           </div>
           {(lugarAtencion || profesional.lugarAtencion) && modalidad === 'PRESENCIAL' && (
             <div className="flex items-center gap-2 text-sm">
-              <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">Lugar</span>
+              <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.placeLabel}</span>
               <span className="text-slate-700 dark:text-slate-300">{lugarAtencion || profesional.lugarAtencion}</span>
             </div>
           )}
@@ -1132,7 +1157,7 @@ function ConfirmacionTurno({
         />
 
         <button onClick={onContinuar} className="btn btn-primary w-full">
-          Ir a mis turnos
+          {p.goToAppointments}
         </button>
       </div>
     </div>
