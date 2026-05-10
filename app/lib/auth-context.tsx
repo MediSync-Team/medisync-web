@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api, User } from './api';
+import { setAutoCoverageDisabled } from './home-filters';
 
 interface AuthContextType {
   user: User | null;
@@ -30,6 +31,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await api.auth.login({ email, password });
     if (result.token) localStorage.setItem('token', result.token);
     const userData = await api.auth.me();
+    setAutoCoverageDisabled(userData.id, false);
     setUser(userData);
   };
 
@@ -37,6 +39,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const result = await api.auth.register(data);
     if (result.token) localStorage.setItem('token', result.token);
     const userData = await api.auth.me();
+    setAutoCoverageDisabled(userData.id, false);
     setUser(userData);
   };
 

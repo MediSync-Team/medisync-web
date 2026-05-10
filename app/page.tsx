@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { api, Especialidad, Profesional } from './lib/api';
 import { useAuth } from './lib/auth-context';
+import { getSavedCoverageFilter, isAutoCoverageDisabled, setAutoCoverageDisabled, shouldDisableAutoCoverage } from './lib/home-filters';
 import { useLang } from './lib/i18n/context';
 import OnboardingTour from './components/OnboardingTour';
 import Pagination from './components/Pagination';
@@ -46,7 +47,7 @@ function activeFilterCount(f: Filters) {
 }
 
 export default function HomePage() {
-  const { user, logout } = useAuth();
+  const { user, logout, loading: authLoading } = useAuth();
   const { t, lang } = useLang();
   const h = t('home');
   const nav = t('nav');
@@ -73,6 +74,7 @@ export default function HomePage() {
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   // Draft state while panel is open
   const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
+  const initialisedSearch = useRef(false);
 
   const fetchProfesionales = useCallback(async (f: Filters, p: number) => {
     setLoading(true);
@@ -103,22 +105,31 @@ export default function HomePage() {
 
   useEffect(() => {
     api.especialidades.getAll().then(setEspecialidades).catch(() => {});
+  }, []);
 
+  useEffect(() => {
+    if (authLoading || initialisedSearch.current) return;
+    initialisedSearch.current = true;
     // Auto-populate obra social filter if the logged-in paciente has one saved
     const initialFilters = { ...EMPTY_FILTERS };
-    if (user?.paciente?.obraSocial) {
-      const normalised = user.paciente.obraSocial.trim().toUpperCase();
-      if (OBRAS_SOCIALES.includes(normalised)) {
-        initialFilters.obraSocial = normalised;
-      }
+    const savedCoverage = getSavedCoverageFilter(user?.paciente?.obraSocial);
+    if (savedCoverage && !isAutoCoverageDisabled(user?.id)) {
+      initialFilters.obraSocial = savedCoverage;
     }
 
     setFilters(initialFilters);
     setDraft(initialFilters);
     fetchProfesionales(initialFilters, 1);
-  }, [fetchProfesionales]);
+  }, [authLoading, fetchProfesionales, user?.id, user?.paciente?.obraSocial]);
 
   const applyFilters = (f: Filters) => {
+    const savedCoverage = getSavedCoverageFilter(user?.paciente?.obraSocial);
+    if (shouldDisableAutoCoverage(f.obraSocial, savedCoverage)) {
+      setAutoCoverageDisabled(user?.id, true);
+    } else if (f.obraSocial) {
+      setAutoCoverageDisabled(user?.id, false);
+    }
+
     setFilters(f);
     setPage(1);
     setShowAdvanced(false);
