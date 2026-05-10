@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, API_BASE, Especialidad, Genero } from '../lib/api';
+import { getDashboardPath } from '../lib/auth-redirects';
 import { useLang } from '../lib/i18n/context';
 import { GoogleIcon, UserIcon, StethoscopeIcon, HospitalIcon } from '../components/icons';
 import ThemeLangToggle from '../components/ThemeLangToggle';
@@ -58,7 +59,7 @@ export default function RegisterPage() {
         bio: formData.rol === 'PROFESIONAL' ? formData.bio : undefined,
         fotoUrl: formData.rol === 'PROFESIONAL' ? formData.fotoUrl : undefined,
       });
-      router.push(formData.rol === 'CLINICA' ? '/dashboard/clinica' : '/dashboard');
+      router.push(getDashboardPath({ rol: formData.rol }));
     } catch (err) {
       setError(err instanceof Error ? err.message : a.registerBtn);
     } finally {

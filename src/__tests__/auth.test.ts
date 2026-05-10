@@ -1,6 +1,40 @@
 import { describe, it, expect } from 'vitest';
+import { getDashboardPath, getPostAuthRedirect, getSafeRedirectPath } from '../../app/lib/auth-redirects';
 
 describe('Auth Context', () => {
+  describe('Post-auth redirects', () => {
+    it('should route users to the correct dashboard by role', () => {
+      expect(getDashboardPath({ rol: 'ADMIN' })).toBe('/dashboard/admin');
+      expect(getDashboardPath({ rol: 'CLINICA' })).toBe('/dashboard/clinica');
+      expect(getDashboardPath({ rol: 'PACIENTE' })).toBe('/dashboard/paciente');
+      expect(getDashboardPath({ rol: 'PROFESIONAL' })).toBe('/dashboard');
+    });
+
+    it('should route profile-shaped patients to the patient dashboard', () => {
+      expect(getDashboardPath({ rol: 'PROFESIONAL', paciente: { id: 'pac-1' } })).toBe('/dashboard/paciente');
+    });
+
+    it('should accept only internal redirect paths', () => {
+      expect(getSafeRedirectPath('/invitacion/token-123')).toBe('/invitacion/token-123');
+      expect(getSafeRedirectPath('/dashboard/paciente')).toBe('/dashboard/paciente');
+      expect(getSafeRedirectPath('https://example.com')).toBeNull();
+      expect(getSafeRedirectPath('http://example.com')).toBeNull();
+      expect(getSafeRedirectPath('//example.com')).toBeNull();
+      expect(getSafeRedirectPath(null)).toBeNull();
+    });
+
+    it('should honor invitation return redirects after login', () => {
+      const patient = { rol: 'PACIENTE' as const };
+      expect(getPostAuthRedirect(patient, '/invitacion/abc')).toBe('/invitacion/abc');
+    });
+
+    it('should fall back to role dashboards when redirect is unsafe', () => {
+      const patient = { rol: 'PACIENTE' as const };
+      expect(getPostAuthRedirect(patient, '//example.com')).toBe('/dashboard/paciente');
+      expect(getPostAuthRedirect({ rol: 'PROFESIONAL' }, 'https://example.com')).toBe('/dashboard');
+    });
+  });
+
   describe('User type checking', () => {
     it('should correctly identify user roles', () => {
       const isProfesional = (user: any) => !!user?.profesional;

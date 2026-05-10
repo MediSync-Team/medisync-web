@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, API_BASE } from '../lib/api';
+import { getPostAuthRedirect } from '../lib/auth-redirects';
 import { useLang } from '../lib/i18n/context';
 import { GoogleIcon } from '../components/icons';
 import ThemeLangToggle from '../components/ThemeLangToggle';
@@ -20,6 +21,7 @@ function LoginContent() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState(params.get('ssoError') || '');
   const [loading, setLoading] = useState(false);
+  const redirect = params.get('redirect');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +30,7 @@ function LoginContent() {
     try {
       await login(email, password);
       const me = await api.auth.me();
-      router.push(me.rol === 'ADMIN' ? '/dashboard/admin' : '/dashboard');
+      router.push(getPostAuthRedirect(me, redirect));
     } catch (err) {
       setError(err instanceof Error ? err.message : a.loginBtn);
     } finally {
