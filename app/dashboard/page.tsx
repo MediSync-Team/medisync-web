@@ -3751,7 +3751,7 @@ function PlanView({
           <div className="text-2xl font-bold text-emerald-700 mt-2">
             {new Date(suscripcion.planVenceAt).toLocaleDateString(getLocale(lang))}
           </div>
-          <p className="text-xs text-emerald-700 mt-2">$4.990 ARS / mes</p>
+          <p className="text-xs text-emerald-700 mt-2">$20.000 ARS / mes</p>
         </div>
       )}
 

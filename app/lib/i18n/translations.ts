@@ -533,7 +533,7 @@ const translations = {
       turnosThisMonth: 'Turnos este mes',
       turnosRemaining: 'Te quedan {{count}} turno{{plural}} este mes',
       redirecting: 'Redirigiendo...',
-      updateToPro: 'Actualizar a Pro - $4.990/mes',
+      updateToPro: 'Actualizar a Pro - $20.000/mes',
       cancelSubscription: 'Cancelar suscripción',
       features: {
         appointments: 'Turnos',
