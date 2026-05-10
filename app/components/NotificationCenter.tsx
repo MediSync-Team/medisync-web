@@ -3,19 +3,10 @@
 import { useNotifications } from '../lib/notification-context';
 import { InAppNotification } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
+import type { Lang } from '../lib/i18n/translations';
+import { formatNotificationTime, localizeNotification } from '../lib/notification-i18n';
 import PushNotificationToggle from './PushNotificationToggle';
 import { CalendarIcon, CheckIcon, XIcon, ClipboardIcon, BellIcon } from './icons';
-
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return 'ahora';
-  if (mins < 60) return `hace ${mins} min`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `hace ${hours} h`;
-  const days = Math.floor(hours / 24);
-  return `hace ${days} d`;
-}
 
 const tipoIcon: Record<string, React.ReactNode> = {
   TURNO_RESERVADO: <CalendarIcon size={18} className="text-blue-600" />,
@@ -24,8 +15,10 @@ const tipoIcon: Record<string, React.ReactNode> = {
   RECETA_EMITIDA: <ClipboardIcon size={18} className="text-amber-600" />,
 };
 
-function NotifItem({ notif, onRead }: { notif: InAppNotification; onRead: (id: string) => void }) {
+function NotifItem({ notif, lang, onRead }: { notif: InAppNotification; lang: Lang; onRead: (id: string) => void }) {
   const icon = tipoIcon[notif.tipo] ?? <BellIcon size={18} className="text-slate-500" />;
+  const localized = localizeNotification(notif, lang);
+
   return (
     <div
       className={`flex gap-3 px-4 py-3 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors ${!notif.leida ? 'bg-blue-50/60 dark:bg-blue-900/20' : ''}`}
@@ -38,11 +31,11 @@ function NotifItem({ notif, onRead }: { notif: InAppNotification; onRead: (id: s
       <div className="flex-1 min-w-0">
         <div className="flex items-start justify-between gap-2">
           <p className={`text-sm font-medium text-slate-800 dark:text-slate-100 ${!notif.leida ? 'font-semibold' : ''}`}>
-            {notif.titulo}
+            {localized.titulo}
           </p>
-          <span className="text-[11px] text-slate-400 dark:text-slate-500 shrink-0">{timeAgo(notif.createdAt)}</span>
+          <span className="text-[11px] text-slate-400 dark:text-slate-500 shrink-0">{formatNotificationTime(notif.createdAt, lang)}</span>
         </div>
-        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">{notif.cuerpo}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 line-clamp-2">{localized.cuerpo}</p>
       </div>
       {!notif.leida && (
         <span className="w-2 h-2 rounded-full bg-blue-500 mt-2 shrink-0" />
@@ -53,7 +46,7 @@ function NotifItem({ notif, onRead }: { notif: InAppNotification; onRead: (id: s
 
 export function NotificationCenter({ onClose }: { onClose: () => void }) {
   const { notifications, unread, markRead, markAllRead } = useNotifications();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const p = t('profile');
 
   return (
@@ -86,7 +79,7 @@ export function NotificationCenter({ onClose }: { onClose: () => void }) {
           </p>
         ) : (
           notifications.map(n => (
-            <NotifItem key={n.id} notif={n} onRead={markRead} />
+            <NotifItem key={n.id} notif={n} lang={lang} onRead={markRead} />
           ))
         )}
       </div>
