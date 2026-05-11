@@ -22,7 +22,7 @@ import {
   BellIcon, ChartIcon, TrashIcon, ClipboardIcon, PaperclipIcon,
   XIcon, CheckIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon, ChatIcon, StarIcon, CreditCardIcon, RefreshIcon, PhoneIcon, ShieldIcon,
 } from '../components/icons';
-import { DIAS_SEMANA, getDaysShort, getDaysLong, estadoBadge, clinicalRiskBadge } from '../lib/utils';
+import { DIAS_SEMANA, getDaysShort, getDaysLong, estadoBadge, estadoCanceladoAusenteLabel, estadoLabel, clinicalRiskBadge } from '../lib/utils';
 
 // Helper to convert lang to locale string
 const getLocale = (lang: string) => lang === 'es' ? 'es-AR' : 'en-US';
@@ -897,6 +897,7 @@ function CalendarioView({
   const { t, lang } = useLang();
   const d = t('dashboard');
   const h = t('home');
+  const status = t('status');
   const hoy = typeof window !== 'undefined' ? new Date().toDateString() : '';
 
   const [calendarMonth, setCalendarMonth] = useState<Date>(() =>
@@ -1049,7 +1050,12 @@ function CalendarioView({
 
         {/* Dot legend */}
         <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 flex-wrap">
-          {([['RESERVADO', 'bg-amber-400'], ['CONFIRMADO', 'bg-blue-500'], ['COMPLETADO', 'bg-emerald-500'], ['CANCELADO/AUSENTE', 'bg-slate-400']] as [string, string][]).map(([label, color]) => (
+          {([
+            [estadoLabel('RESERVADO', status), 'bg-amber-400'],
+            [estadoLabel('CONFIRMADO', status), 'bg-blue-500'],
+            [estadoLabel('COMPLETADO', status), 'bg-emerald-500'],
+            [estadoCanceladoAusenteLabel(status), 'bg-slate-400'],
+          ] as [string, string][]).map(([label, color]) => (
             <div key={label} className="flex items-center gap-1.5">
               <span className={`w-2 h-2 rounded-full ${color}`} />
               <span className="text-[10px] text-slate-500 dark:text-slate-400">{label}</span>
@@ -1146,7 +1152,7 @@ function CalendarioView({
 
                 {/* Status */}
                 <span className={estadoBadge(turno.estado)}>
-                  {turno.estado}
+                  {estadoLabel(turno.estado, status)}
                 </span>
               </button>
             ))}
@@ -1661,6 +1667,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
   const [loadingPreconsulta, setLoadingPreconsulta] = useState(true);
   const { t, lang } = useLang();
   const d = t('dashboard');
+  const status = t('status');
   const [receta, setReceta] = useState<RecetaIndicacion | null>(null);
   const [recetaForm, setRecetaForm] = useState<RecetaIndicacionInput>({ diagnostico: '', indicaciones: '' });
   const [loadingReceta, setLoadingReceta] = useState(true);
@@ -2108,7 +2115,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
             <div className="bg-slate-50 rounded-xl p-3.5">
               <p className="text-xs text-slate-500 mb-1">{d.status}</p>
-              <span className={estadoBadge(turno.estado)}>{turno.estado}</span>
+              <span className={estadoBadge(turno.estado)}>{estadoLabel(turno.estado, status)}</span>
             </div>
 
             <div className="bg-slate-50 rounded-xl p-3.5">
@@ -2390,7 +2397,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                               {' · '}
                               {new Date(item.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
                             </p>
-                            <span className={estadoBadge(item.estado)}>{item.estado}</span>
+                            <span className={estadoBadge(item.estado)}>{estadoLabel(item.estado, status)}</span>
                           </div>
                           {item.evolucion?.contenido && (
                             <p className="text-xs text-slate-600 mt-1 line-clamp-2">{item.evolucion.contenido}</p>
@@ -3951,8 +3958,3 @@ function UpgradePrompt({ feature, onViewPlans }: { feature: string; onViewPlans:
     </div>
   );
 }
-
-
-
-
-

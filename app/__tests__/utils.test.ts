@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { estadoBadge, clinicalRiskBadge } from '../lib/utils';
+import { estadoBadge, estadoCanceladoAusenteLabel, estadoLabel, clinicalRiskBadge } from '../lib/utils';
 
 describe('UI utility badges', () => {
   it('maps appointment states to expected badge classes', () => {
@@ -9,6 +9,38 @@ describe('UI utility badges', () => {
     expect(estadoBadge('CANCELADO')).toBe('badge badge-red');
     expect(estadoBadge('AUSENTE')).toBe('badge badge-gray');
     expect(estadoBadge('UNKNOWN')).toBe('badge badge-gray');
+  });
+
+  it('maps appointment states to translated labels', () => {
+    const es = {
+      RESERVADO: 'Reservado',
+      CONFIRMADO: 'Confirmado',
+      COMPLETADO: 'Completado',
+      CANCELADO: 'Cancelado',
+      AUSENTE: 'Ausente',
+    };
+    const en = {
+      RESERVADO: 'Reserved',
+      CONFIRMADO: 'Confirmed',
+      COMPLETADO: 'Completed',
+      CANCELADO: 'Cancelled',
+      AUSENTE: 'Absent',
+    };
+
+    expect(estadoLabel('RESERVADO', en)).toBe('Reserved');
+    expect(estadoLabel('CONFIRMADO', en)).toBe('Confirmed');
+    expect(estadoLabel('COMPLETADO', en)).toBe('Completed');
+    expect(estadoLabel('CANCELADO', en)).toBe('Cancelled');
+    expect(estadoLabel('AUSENTE', en)).toBe('Absent');
+    expect(estadoCanceladoAusenteLabel(en)).toBe('Cancelled/Absent');
+
+    expect(estadoLabel('RESERVADO', es)).toBe('Reservado');
+    expect(estadoLabel('CONFIRMADO', es)).toBe('Confirmado');
+    expect(estadoLabel('COMPLETADO', es)).toBe('Completado');
+    expect(estadoLabel('CANCELADO', es)).toBe('Cancelado');
+    expect(estadoLabel('AUSENTE', es)).toBe('Ausente');
+    expect(estadoCanceladoAusenteLabel(es)).toBe('Cancelado/Ausente');
+    expect(estadoLabel('UNKNOWN', en)).toBe('UNKNOWN');
   });
 
   it('maps clinical risk levels to visual classes', () => {

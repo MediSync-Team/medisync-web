@@ -21,6 +21,16 @@ export function estadoBadge(estado: string): string {
   return map[estado] || 'badge badge-gray';
 }
 
+type StatusTranslations = Partial<Record<string, string>>;
+
+export function estadoLabel(estado: string, statusTranslations: StatusTranslations = {}): string {
+  return statusTranslations[estado] || estado;
+}
+
+export function estadoCanceladoAusenteLabel(statusTranslations: StatusTranslations = {}): string {
+  return `${estadoLabel('CANCELADO', statusTranslations)}/${estadoLabel('AUSENTE', statusTranslations)}`;
+}
+
 export function clinicalRiskBadge(riesgo: string | null | undefined): string {
   const map: Record<string, string> = {
     BAJO: 'badge badge-green',
