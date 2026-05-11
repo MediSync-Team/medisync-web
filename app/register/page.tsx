@@ -40,7 +40,7 @@ export default function RegisterPage() {
     setError('');
     if (formData.password !== formData.confirmPassword) { setError(v.passwordsNoMatch); return; }
     const reqs = getRequirements(formData.password);
-    if (!reqs.minLength || !reqs.hasUppercase || !reqs.hasLowercase || !reqs.hasNumber) {
+    if (!reqs.minLength || !reqs.hasUppercase || !reqs.hasLowercase || !reqs.hasNumber || !reqs.hasSpecial) {
       setError(v.passwordRequirements);
       return;
     }

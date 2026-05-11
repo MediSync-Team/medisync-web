@@ -34,7 +34,7 @@ function getStrength(password: string): { level: 'weak' | 'fair' | 'good' | 'str
 
   if (metRequirements <= 1) return { level: 'weak', score: 1 };
   if (metRequirements === 2) return { level: 'fair', score: 2 };
-  if (metRequirements === 3) return { level: 'good', score: 3 };
+  if (metRequirements < 5) return { level: 'good', score: 3 };
   return { level: 'strong', score: 4 };
 }
 
