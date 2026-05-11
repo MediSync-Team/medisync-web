@@ -1895,11 +1895,19 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
     );
   }
 
-  const maxMes = Math.max(...stats.turnosPorMes.map(m => m.total), 1);
-  const MES_LABELS: Record<string, string> = {
-    '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr', '05': 'May', '06': 'Jun',
-    '07': 'Jul', '08': 'Ago', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic',
-  };
+  const turnosPorMes = Array.isArray(stats.turnosPorMes)
+    ? stats.turnosPorMes.map((item) => ({ ...item, total: Number(item.total) || 0 }))
+    : [];
+  const maxMes = Math.max(...turnosPorMes.map(m => m.total), 1);
+  const MES_LABELS: Record<string, string> = lang === 'en'
+    ? {
+        '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr', '05': 'May', '06': 'Jun',
+        '07': 'Jul', '08': 'Aug', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dec',
+      }
+    : {
+        '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr', '05': 'May', '06': 'Jun',
+        '07': 'Jul', '08': 'Ago', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic',
+      };
 
   return (
     <div className="space-y-5">
@@ -1910,21 +1918,27 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
         <PacienteStatCard label={d.totalSpent} value={`$${stats.totalGastado.toLocaleString(locale)}`} color="amber" />
       </div>
 
-      {stats.turnosPorMes.length > 0 && (
+      {turnosPorMes.length > 0 && (
         <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
           <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             {d.appointmentsPerMonth}
           </p>
-          <div className="flex items-end gap-1.5 h-28">
-            {stats.turnosPorMes.map(({ mes, total }) => {
+          <div className="flex gap-1.5 h-36">
+            {turnosPorMes.map(({ mes, total }) => {
               const [, mm] = mes.split('-');
               const pct = Math.round((total / maxMes) * 100);
               return (
-                <div key={mes} className="flex-1 flex flex-col items-center gap-1 group">
+                <div key={mes} className="flex-1 min-w-0 flex flex-col items-center gap-1 group">
                   <span className="text-[10px] text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">{total}</span>
-                  <div className="w-full bg-blue-500 dark:bg-blue-600 rounded-t-sm transition-all" style={{ height: `${Math.max(pct, 4)}%` }} title={`${MES_LABELS[mm] ?? mm}: ${total}`} />
-                  <span className="text-[9px] text-slate-400">{MES_LABELS[mm] ?? mm}</span>
+                  <div className="w-full flex-1 flex items-end">
+                    <div
+                      className="w-full bg-blue-500 dark:bg-blue-600 rounded-t-sm transition-all min-h-1"
+                      style={{ height: `${Math.max(pct, 4)}%` }}
+                      title={`${MES_LABELS[mm] ?? mm}: ${total}`}
+                    />
+                  </div>
+                  <span className="text-[9px] text-slate-400 truncate max-w-full">{MES_LABELS[mm] ?? mm}</span>
                 </div>
               );
             })}
