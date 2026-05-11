@@ -280,7 +280,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
             >
               {GENERO_OPCIONES.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {p[opt.labelKey as keyof typeof p]}
+                  {p[opt.labelKey as keyof typeof p] || opt.value}
                 </option>
               ))}
             </select>
@@ -312,7 +312,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
               value={formData.fotoUrl}
               onChange={handleChange}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-              placeholder="https://ejemplo.com/foto.jpg"
+              placeholder={p.photoUrlPlaceholder}
             />
           </div>
 
