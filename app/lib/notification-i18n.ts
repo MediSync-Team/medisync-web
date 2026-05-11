@@ -19,6 +19,16 @@ function matchOne(text: string, patterns: Array<[RegExp, (...parts: string[]) =>
   return text;
 }
 
+function translateReminderLabel(label: string): string {
+  return label
+    .replace(/\b24 horas\b/i, '24 hours')
+    .replace(/\b2 horas\b/i, '2 hours');
+}
+
+function translateActor(actor: string): string {
+  return actor.toLowerCase() === 'vos' ? 'You' : actor;
+}
+
 function translateTitleToEnglish(notification: InAppNotification): string {
   if (notification.tipo === 'CHAT_MENSAJE') {
     return matchOne(notification.titulo, [
@@ -28,7 +38,7 @@ function translateTitleToEnglish(notification: InAppNotification): string {
 
   if (notification.tipo.startsWith('RECORDATORIO')) {
     return matchOne(notification.titulo, [
-      [/^Turno en (.+)$/i, label => `Appointment in ${label}`],
+      [/^Turno en (.+)$/i, label => `Appointment in ${translateReminderLabel(label)}`],
     ]);
   }
 
@@ -42,6 +52,7 @@ function translateBodyToEnglish(notification: InAppNotification): string {
     case 'TURNO_RESERVADO':
       return matchOne(body, [
         [/^Tu turno con Dr\/a\. (.+) fue reservado para el (.+)\.$/i, (doctor, date) => `Your appointment with Dr/a. ${doctor} was booked for ${date}.`],
+        [/^(.+) reserv[oó] un turno para el (.+)\.$/i, (patient, date) => `${patient} booked an appointment for ${date}.`],
       ]);
 
     case 'TURNO_CONFIRMADO':
@@ -53,11 +64,13 @@ function translateBodyToEnglish(notification: InAppNotification): string {
       return matchOne(body, [
         [/^Tu turno del (.+) fue cancelado\. Raz[oó]n: (.+)\.$/i, (date, reason) => `Your appointment on ${date} was canceled. Reason: ${reason}.`],
         [/^Tu turno del (.+) fue cancelado\.$/i, date => `Your appointment on ${date} was canceled.`],
+        [/^(.+) cancel[oó] su turno del (.+)\.$/i, (patient, date) => `${patient} canceled their appointment on ${date}.`],
       ]);
 
     case 'TURNO_REPROGRAMADO':
       return matchOne(body, [
-        [/^(.+) reprogram[oó] tu turno con Dr\/a\. (.+) para el (.+)\.$/i, (actor, doctor, date) => `${actor} rescheduled your appointment with Dr/a. ${doctor} for ${date}.`],
+        [/^(.+) reprogram[oó] tu turno con Dr\/a\. (.+) para el (.+)\.$/i, (actor, doctor, date) => `${translateActor(actor)} rescheduled your appointment with Dr/a. ${doctor} for ${date}.`],
+        [/^(.+) reprogram[oó] su turno para el (.+)\.$/i, (patient, date) => `${patient} rescheduled their appointment for ${date}.`],
       ]);
 
     case 'RECETA_EMITIDA':
@@ -73,7 +86,7 @@ function translateBodyToEnglish(notification: InAppNotification): string {
     case 'RECORDATORIO_24H':
     case 'RECORDATORIO_2H':
       return matchOne(body, [
-        [/^Tu turno con (.+) es en (.+)\.$/i, (doctor, label) => `Your appointment with ${doctor} is in ${label}.`],
+        [/^Tu turno con (.+) es en (.+)\.$/i, (person, label) => `Your appointment with ${person} is in ${translateReminderLabel(label)}.`],
       ]);
 
     default:
