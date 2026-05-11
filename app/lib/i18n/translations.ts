@@ -138,7 +138,7 @@ const normalizeSpecialty = (value: string): string =>
     .replace(/[^A-Z0-9]+/g, '_')
     .replace(/^_+|_+$/g, '');
 
-const translateSpecialtyName = (name: string, lang: SupportedLang): string => {
+export const translateSpecialtyName = (name: string, lang: SupportedLang): string => {
   if (!name) return '';
   const normalized = normalizeSpecialty(name);
   const key = SPECIALTY_ALIASES[normalized] || normalized;
@@ -406,6 +406,7 @@ const translations = {
         ANESTESIOLOGIA: 'Anestesiología',
         CIRUGIA: 'Cirugía',
         MEDICINA_INTERNA: 'Medicina Interna',
+        CLINICA_MEDICA: 'Clínica médica',
         GENERAL: 'Medicina General',
       },
       buttons: {
@@ -1434,6 +1435,7 @@ perConsultation: '/ consultation',
         ANESTESIOLOGIA: 'Anesthesiology',
         CIRUGIA: 'Surgery',
         MEDICINA_INTERNA: 'Internal medicine',
+        CLINICA_MEDICA: 'Clinical Medicine',
         GENERAL: 'General medicine',
       },
       buttons: {

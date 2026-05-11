@@ -12,6 +12,7 @@ import StarRating from './components/StarRating';
 import ThemeLangToggle from './components/ThemeLangToggle';
 import { MediSyncLogo, SearchIcon, HospitalIcon, StethoscopeIcon, BuildingIcon, VideoIcon, MapPinIcon } from './components/icons';
 import { OBRAS_SOCIALES } from './lib/obras-sociales';
+import { translateSpecialtyName } from './lib/i18n/translations';
 
 const LIMIT = 9;
 
@@ -60,7 +61,15 @@ export default function HomePage() {
   ];
 
   const getSpecialtyName = (nombre: string) => {
-    const key = nombre.toUpperCase().replace(/[ÁÉÍÓÚ]/g, (c) => ({Á:'A',É:'E',Í:'I',Ó:'O',Ú:'U'}[c] || c));
+    const translated = translateSpecialtyName(nombre, lang);
+    if (translated !== nombre) return translated;
+    const key = nombre
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
     const specialties = h.specialties as Record<string, string>;
     return specialties[key] || nombre;
   };
@@ -532,7 +541,15 @@ function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDis
 
   const getSpecialtyName = (nombre: string) => {
     if (!nombre) return '';
-    const key = nombre.toUpperCase().replace(/[ÁÉÍÓÚ]/g, (c) => ({Á:'A',É:'E',Í:'I',Ó:'O',Ú:'U'}[c] || c));
+    const translated = translateSpecialtyName(nombre, lang);
+    if (translated !== nombre) return translated;
+    const key = nombre
+      .trim()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toUpperCase()
+      .replace(/[^A-Z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
     const specialties = (h.specialties as Record<string, string>) || {};
     return specialties[key] || nombre;
   };

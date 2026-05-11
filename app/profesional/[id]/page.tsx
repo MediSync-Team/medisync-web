@@ -15,6 +15,7 @@ import {
 import StarRating from '../../components/StarRating';
 import AgendarCalendario from '../../components/AgendarCalendario';
 import { getDaysShort, estadoBadge } from '../../lib/utils';
+import { translateSpecialtyName } from '../../lib/i18n/translations';
 
 export default function ProfesionalPage() {
   const params = useParams();
@@ -31,6 +32,7 @@ export default function ProfesionalPage() {
     Number(value).toLocaleString(dateLocale);
   const modalityText = (value: 'PRESENCIAL' | 'VIRTUAL') =>
     value === 'VIRTUAL' ? h.status.virtual : h.status.presencial;
+  const specialtyName = (name?: string | null) => translateSpecialtyName(name ?? '', lang);
   const [profesional, setProfesional] = useState<Profesional | null>(null);
   const [loading, setLoading] = useState(true);
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -216,7 +218,7 @@ export default function ProfesionalPage() {
         modalidad,
         profesionalNombre: profesional.nombre,
         profesionalApellido: profesional.apellido,
-        especialidad: profesional.especialidad?.nombre ?? '',
+        especialidad: specialtyName(profesional.especialidad?.nombre),
         lugarAtencion: lugarResuelto,
       };
       localStorage.setItem('medisync_last_turno_cal', JSON.stringify(calInfo));
@@ -403,7 +405,7 @@ export default function ProfesionalPage() {
                   {profesional.nombre} {profesional.apellido}
                 </h1>
                 {profesional.especialidad?.nombre && (
-                  <span className="badge badge-blue mt-1.5">{profesional.especialidad.nombre}</span>
+                  <span className="badge badge-blue mt-1.5">{specialtyName(profesional.especialidad.nombre)}</span>
                 )}
 
                 {/* Rating */}
@@ -970,6 +972,7 @@ function GuestConfirmacion({
   const p = t('professional');
   const h = t('home');
   const dateLocale = lang === 'en' ? 'en-US' : 'es-AR';
+  const specialtyName = (name?: string | null) => translateSpecialtyName(name ?? '', lang);
   const fecha = new Date(turno.fechaHora);
   const fechaStr = fecha.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const horaStr  = fecha.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -1010,7 +1013,7 @@ function GuestConfirmacion({
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.specialtyLabel}</span>
-            <span className="text-slate-700 dark:text-slate-300">{profesional.especialidad?.nombre}</span>
+            <span className="text-slate-700 dark:text-slate-300">{specialtyName(profesional.especialidad?.nombre)}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.dateLabel}</span>
@@ -1038,7 +1041,7 @@ function GuestConfirmacion({
               modalidad,
               profesionalNombre: profesional.nombre,
               profesionalApellido: profesional.apellido,
-              especialidad: profesional.especialidad?.nombre ?? '',
+              especialidad: specialtyName(profesional.especialidad?.nombre),
               lugarAtencion: lugarAtencion || profesional.lugarAtencion,
             }}
           />
@@ -1085,6 +1088,7 @@ function ConfirmacionTurno({
   const p = t('professional');
   const h = t('home');
   const dateLocale = lang === 'en' ? 'en-US' : 'es-AR';
+  const specialtyName = (name?: string | null) => translateSpecialtyName(name ?? '', lang);
   const fecha = new Date(turno.fechaHora);
   const fechaStr = fecha.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
   const horaStr  = fecha.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit', hour12: false });
@@ -1118,7 +1122,7 @@ function ConfirmacionTurno({
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.specialtyLabel}</span>
-            <span className="text-slate-700 dark:text-slate-300">{profesional.especialidad?.nombre}</span>
+            <span className="text-slate-700 dark:text-slate-300">{specialtyName(profesional.especialidad?.nombre)}</span>
           </div>
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.dateLabel}</span>
@@ -1151,7 +1155,7 @@ function ConfirmacionTurno({
             modalidad,
             profesionalNombre: profesional.nombre,
             profesionalApellido: profesional.apellido,
-            especialidad: profesional.especialidad?.nombre ?? '',
+            especialidad: specialtyName(profesional.especialidad?.nombre),
             lugarAtencion: profesional.lugarAtencion,
           }}
         />
