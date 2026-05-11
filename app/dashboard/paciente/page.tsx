@@ -18,6 +18,7 @@ import { imprimirReceta } from '../../lib/receta-pdf';
 import { imprimirHistorial } from '../../lib/historial-pdf';
 import { imprimirCertificado } from '../../lib/certificado-pdf';
 import AgendarCalendario from '../../components/AgendarCalendario';
+import { getTurnosTabRequest, PacienteDashboardTab } from '../../lib/paciente-dashboard-tabs';
 
 const PACIENTE_TOUR_STEPS = [
   {
@@ -67,7 +68,7 @@ export default function PacienteDashboard() {
   const translateSpecialty = (name?: string) => { if (!name) return ''; return (d as any).translateSpecialty?.(name) || name; };
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'resumen' | 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'recetas' | 'certificados' | 'datosMedicos' | 'estadisticas'>('resumen');
+  const [activeTab, setActiveTab] = useState<PacienteDashboardTab>('resumen');
   const [pacienteStats, setPacienteStats] = useState<PacienteStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [historial, setHistorial] = useState<HistorialTurno[]>([]);
@@ -298,12 +299,14 @@ export default function PacienteDashboard() {
     finally { setLoadingStats(false); }
   };
 
-  const handleTabChange = (tab: 'resumen' | 'proximos' | 'pasados' | 'listaEspera' | 'historial' | 'recetas' | 'certificados' | 'datosMedicos' | 'estadisticas') => {
+  const handleTabChange = (tab: PacienteDashboardTab) => {
     setActiveTab(tab);
-    if (tab === 'estadisticas' && !pacienteStats) {
+    const turnosRequest = getTurnosTabRequest(tab);
+    if (turnosRequest) {
+      setPage(turnosRequest.page);
+      loadTurnos(turnosRequest.tipo, turnosRequest.page);
+    } else if (tab === 'estadisticas' && !pacienteStats) {
       loadStats();
-    } else if ((tab === 'proximos' || tab === 'pasados') && turnos.length === 0) {
-      loadTurnos(tab, 1);
     } else if (tab === 'historial' && historial.length === 0) {
       loadHistorial(1);
     }
