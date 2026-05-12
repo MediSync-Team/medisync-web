@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
 import { API_BASE, InAppNotification, notificationsApi } from './api';
+import { useAuth } from './auth-context';
 
 interface NotificationContextValue {
   notifications: InAppNotification[];
@@ -17,34 +18,54 @@ const NotificationContext = createContext<NotificationContextValue>({
   markAllRead: async () => {},
 });
 
+export function isActiveNotificationSession(sessionId: number, currentSessionId: number, closed: boolean) {
+  return !closed && sessionId === currentSessionId;
+}
+
+export function getNotificationStreamUrl(token: string) {
+  return `${API_BASE}/notifications/stream?token=${encodeURIComponent(token)}`;
+}
+
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
+  const { user, loading: authLoading } = useAuth();
   const [notifications, setNotifications] = useState<InAppNotification[]>([]);
   const [unread, setUnread] = useState(0);
   const esRef = useRef<EventSource | null>(null);
-
-  const loadInbox = useCallback(async () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    if (!token) return;
-    try {
-      const data = await notificationsApi.getInbox();
-      setNotifications(data.notifs);
-      setUnread(data.unread);
-    } catch {
-      // not authenticated or network error — silently ignore
-    }
-  }, []);
+  const sessionRef = useRef(0);
 
   useEffect(() => {
-    loadInbox();
+    sessionRef.current += 1;
+    const sessionId = sessionRef.current;
+    let closed = false;
 
+    if (esRef.current) {
+      esRef.current.close();
+      esRef.current = null;
+    }
+
+    setNotifications([]);
+    setUnread(0);
+
+    if (authLoading || !user) return;
     const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
     if (!token) return;
 
+    notificationsApi.getInbox()
+      .then((data) => {
+        if (!isActiveNotificationSession(sessionId, sessionRef.current, closed)) return;
+        setNotifications(data.notifs);
+        setUnread(data.unread);
+      })
+      .catch(() => {
+        // not authenticated or network error — silently ignore
+      });
+
     // Open SSE stream
-    const es = new EventSource(`${API_BASE}/notifications/stream?token=${encodeURIComponent(token)}`);
+    const es = new EventSource(getNotificationStreamUrl(token));
     esRef.current = es;
 
     es.onmessage = (event) => {
+      if (!isActiveNotificationSession(sessionId, sessionRef.current, closed)) return;
       try {
         const notif: InAppNotification = JSON.parse(event.data);
         setNotifications(prev => [notif, ...prev]);
@@ -59,10 +80,11 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     };
 
     return () => {
+      closed = true;
       es.close();
-      esRef.current = null;
+      if (esRef.current === es) esRef.current = null;
     };
-  }, [loadInbox]);
+  }, [authLoading, user?.id]);
 
   const markRead = useCallback(async (id: string) => {
     await notificationsApi.markRead(id);
