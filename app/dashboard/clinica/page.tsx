@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -15,8 +15,9 @@ import {
 import { BuildingIcon, VideoIcon, CheckIcon } from '../../components/icons';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { estadoLabel } from '../../lib/utils';
+import { getLocale } from '../../lib/date';
 
-// ── helpers ──────────────────────────────────────────────────────────────────
+// -- helpers ------------------------------------------------------------------
 function dateKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -34,7 +35,7 @@ function interpolate(template: string, values: Record<string, string | number>) 
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => String(values[key] ?? ''));
 }
 
-// ── sub-components ───────────────────────────────────────────────────────────
+// -- sub-components -----------------------------------------------------------
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-5">
@@ -54,7 +55,7 @@ function Avatar({ p }: { p: Pick<Profesional, 'nombre' | 'apellido' | 'fotoUrl'>
   );
 }
 
-// ── Page ─────────────────────────────────────────────────────────────────────
+// -- Page ---------------------------------------------------------------------
 type Tab = 'overview' | 'profesionales' | 'agenda' | 'invitaciones' | 'configuracion';
 
 export default function ClinicaDashboard() {
@@ -66,7 +67,7 @@ export default function ClinicaDashboard() {
   const status = t('status');
   const modality = t('modality');
   const translateSpecialty = d.translateSpecialty;
-  const locale = lang === 'en' ? 'en-US' : 'es-AR';
+  const locale = getLocale(lang);
   const dayLabel = (day: number) => {
     const base = new Date(2026, 4, 10 + day);
     return base.toLocaleDateString(locale, { weekday: 'short' }).replace(/\.$/, '');
@@ -240,7 +241,7 @@ export default function ClinicaDashboard() {
 
       <main className="max-w-6xl mx-auto px-4 py-6">
 
-        {/* ── OVERVIEW ── */}
+        {/* -- OVERVIEW -- */}
         {tab === 'overview' && stats && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -281,7 +282,7 @@ export default function ClinicaDashboard() {
           </div>
         )}
 
-        {/* ── PROFESIONALES ── */}
+        {/* -- PROFESIONALES -- */}
         {tab === 'profesionales' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -335,7 +336,7 @@ export default function ClinicaDashboard() {
           </div>
         )}
 
-        {/* ── AGENDA ── */}
+        {/* -- AGENDA -- */}
         {tab === 'agenda' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-3">
@@ -394,7 +395,7 @@ export default function ClinicaDashboard() {
           </div>
         )}
 
-        {/* ── INVITACIONES ── */}
+        {/* -- INVITACIONES -- */}
         {tab === 'invitaciones' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
@@ -418,7 +419,7 @@ export default function ClinicaDashboard() {
           </div>
         )}
 
-        {/* ── CONFIGURACIÓN ── */}
+        {/* -- CONFIGURACIÓN -- */}
         {tab === 'configuracion' && (
           <div className="max-w-lg space-y-5">
             <h2 className="font-semibold text-slate-800">{c.config.title}</h2>
@@ -439,7 +440,7 @@ export default function ClinicaDashboard() {
         )}
       </main>
 
-      {/* ── Invite modal ── */}
+      {/* -- Invite modal -- */}
       {showInvite && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
@@ -485,7 +486,7 @@ export default function ClinicaDashboard() {
         </div>
       )}
 
-      {/* ── Remove confirmation ── */}
+      {/* -- Remove confirmation -- */}
       {removeTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4 text-center">
@@ -511,7 +512,7 @@ export default function ClinicaDashboard() {
   );
 }
 
-// ── Helpers components ────────────────────────────────────────────────────────
+// -- Helpers components --------------------------------------------------------
 type InvitacionLabels = {
   expires: string;
   expired: string;

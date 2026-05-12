@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { api, CuponValidado } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
+import { getLocale } from '../lib/date';
 import { CreditCardIcon } from '../components/icons';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
@@ -11,7 +12,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 function PagoContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const p = t('auth').payment;
   const c = t('common');
   const turnoId = searchParams.get('turno');
@@ -151,9 +152,9 @@ function PagoContent() {
                     <p className="text-sm text-emerald-800 font-medium mt-1">{validatedCoupon.descripcion}</p>
                   )}
                   <div className="text-xs text-emerald-600 mt-2 space-y-1">
-                    <p>{p.originalPrice}: ${validatedCoupon.montoOriginal.toLocaleString('es-AR')}</p>
-                    <p className="font-semibold">{p.savings}: -${validatedCoupon.montoDescuento.toLocaleString('es-AR')}</p>
-                    <p className="font-bold text-emerald-700">{p.total}: ${validatedCoupon.montoFinal.toLocaleString('es-AR')}</p>
+                    <p>{p.originalPrice}: ${validatedCoupon.montoOriginal.toLocaleString(getLocale(lang))}</p>
+                    <p className="font-semibold">{p.savings}: -${validatedCoupon.montoDescuento.toLocaleString(getLocale(lang))}</p>
+                    <p className="font-bold text-emerald-700">{p.total}: ${validatedCoupon.montoFinal.toLocaleString(getLocale(lang))}</p>
                   </div>
                 </div>
                 <button

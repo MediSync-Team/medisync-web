@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -13,10 +13,12 @@ import {
   SearchIcon,
 } from '../../components/icons';
 import StarRating from '../../components/StarRating';
+import Spinner from '../../components/Spinner';
 import AgendarCalendario from '../../components/AgendarCalendario';
 import { getDaysShort, estadoBadge } from '../../lib/utils';
 import { translateSpecialtyName } from '../../lib/i18n/translations';
 import { getDashboardPath } from '../../lib/auth-redirects';
+import { getLocale } from '../../lib/date';
 
 export default function ProfesionalPage() {
   const params = useParams();
@@ -25,7 +27,7 @@ export default function ProfesionalPage() {
   const { t, lang } = useLang();
   const h = t('home');
   const p = t('professional');
-  const dateLocale = lang === 'en' ? 'en-US' : 'es-AR';
+  const dateLocale = getLocale(lang);
   const diasShort = getDaysShort(lang);
   const formatBookingDate = (date: Date, options: Intl.DateTimeFormatOptions) =>
     date.toLocaleDateString(dateLocale, options);
@@ -326,7 +328,7 @@ export default function ProfesionalPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      {/* ── Navbar ──────────────────────────────────────── */}
+      {/* -- Navbar ---------------------------------------- */}
       <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
@@ -353,7 +355,7 @@ export default function ProfesionalPage() {
       </header>
 
       <main className="page-container py-6 max-w-4xl mx-auto">
-        {/* ── Guest confirmation (no account) ────────────── */}
+        {/* -- Guest confirmation (no account) -------------- */}
         {guestTurnoReservado && profesional ? (
           <GuestConfirmacion
             turno={guestTurnoReservado}
@@ -363,7 +365,7 @@ export default function ProfesionalPage() {
             lugarAtencion={lugarTurnoReservado}
           />
         ) : turnoReservado && profesional ? (
-          /* ── Confirmation card (logged in, free turno) ── */
+          /* -- Confirmation card (logged in, free turno) -- */
           <ConfirmacionTurno
             turno={turnoReservado}
             profesional={profesional}
@@ -385,7 +387,7 @@ export default function ProfesionalPage() {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
-          {/* ── Left: Professional profile ────────────── */}
+          {/* -- Left: Professional profile -------------- */}
           <div className="lg:col-span-2 space-y-4">
             <div className="card p-5">
               {/* Avatar + name */}
@@ -427,7 +429,7 @@ export default function ProfesionalPage() {
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-slate-500">{p.consultationFrom}</span>
                     <span className="font-bold text-emerald-600">
-                      ${Number(profesional.precioConsulta).toLocaleString('es-AR')}
+                      ${Number(profesional.precioConsulta).toLocaleString(dateLocale)}
                     </span>
                   </div>
                 )}
@@ -528,7 +530,7 @@ export default function ProfesionalPage() {
             {profesional.disponibilidades && profesional.disponibilidades.length > 0 && (
               <HorariosGrid disponibilidades={profesional.disponibilidades} />
             )}
-            {/* ── Reseñas ──────────────────────────────── */}
+            {/* -- Reseñas -------------------------------- */}
             {resenas && resenas.stats.total > 0 && (
               <div className="card p-5">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
@@ -609,7 +611,7 @@ export default function ProfesionalPage() {
             )}
           </div>
 
-          {/* ── Right: Booking ────────────────────────── */}
+          {/* -- Right: Booking -------------------------- */}
           <div className="lg:col-span-3">
             <div className="card p-5">
               <h2 className="text-lg font-bold text-slate-800 mb-4">{p.bookAppointment}</h2>
@@ -690,7 +692,7 @@ export default function ProfesionalPage() {
 
                   {slotsLoading ? (
                     <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600">
-                      <svg className="animate-spin text-blue-600 dark:text-blue-400" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                      <Spinner size={18} className="text-blue-600 dark:text-blue-400" />
                       <span className="text-sm text-slate-600 dark:text-slate-300">{p.loadingSlots}</span>
                     </div>
                   ) : slotsError ? (
@@ -858,7 +860,7 @@ export default function ProfesionalPage() {
                         className="btn btn-success btn-lg w-full"
                       >
                         {reservando ? (
-                          <><svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>{p.reserving}</>
+                          <><Spinner size={16} />{p.reserving}</>
                         ) : (
                           <><CheckIcon size={16} />{p.confirmAsGuest}</>
                         )}
@@ -908,7 +910,7 @@ export default function ProfesionalPage() {
   );
 }
 
-/* ── Weekly schedule visual grid ────────────────────────────────────────── */
+/* -- Weekly schedule visual grid ------------------------------------------ */
 function HorariosGrid({ disponibilidades }: { disponibilidades: any[] }) {
   const { t, lang } = useLang();
   const p = t('professional');
@@ -959,7 +961,7 @@ function HorariosGrid({ disponibilidades }: { disponibilidades: any[] }) {
   );
 }
 
-/* ── Guest confirmation screen ───────────────────────────────────────────── */
+/* -- Guest confirmation screen --------------------------------------------- */
 function GuestConfirmacion({
   turno, profesional, modalidad, email, lugarAtencion,
 }: {
@@ -972,7 +974,7 @@ function GuestConfirmacion({
   const { t, lang } = useLang();
   const p = t('professional');
   const h = t('home');
-  const dateLocale = lang === 'en' ? 'en-US' : 'es-AR';
+  const dateLocale = getLocale(lang);
   const specialtyName = (name?: string | null) => translateSpecialtyName(name ?? '', lang);
   const fecha = new Date(turno.fechaHora);
   const fechaStr = fecha.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -1075,7 +1077,7 @@ function GuestConfirmacion({
   );
 }
 
-/* ── Confirmation screen after free booking ─────────────────────────────── */
+/* -- Confirmation screen after free booking ------------------------------- */
 function ConfirmacionTurno({
   turno, profesional, modalidad, lugarAtencion, onContinuar,
 }: {
@@ -1088,7 +1090,7 @@ function ConfirmacionTurno({
   const { t, lang } = useLang();
   const p = t('professional');
   const h = t('home');
-  const dateLocale = lang === 'en' ? 'en-US' : 'es-AR';
+  const dateLocale = getLocale(lang);
   const specialtyName = (name?: string | null) => translateSpecialtyName(name ?? '', lang);
   const fecha = new Date(turno.fechaHora);
   const fechaStr = fecha.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });

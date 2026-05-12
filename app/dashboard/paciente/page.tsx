@@ -1,15 +1,14 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
-import { api, Turno, ListaEsperaItem, RecetaIndicacion, Resena, HistorialTurno, HistorialPaginatedResponse, PacienteStats, CertificadoConDatos, RecetaPaciente, CertificadoPaciente } from '../../lib/api';
+import { api, Turno, ListaEsperaItem, HistorialTurno, PacienteStats, RecetaPaciente, CertificadoPaciente } from '../../lib/api';
 import ChatModal from '../../components/ChatModal';
 import ProfileModal from '../../components/ProfileModal';
 import OnboardingTour from '../../components/OnboardingTour';
 import Pagination from '../../components/Pagination';
-import StarRating from '../../components/StarRating';
 import VideoCallModal from '../../components/VideoCallModal';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { useLang } from '../../lib/i18n/context';
@@ -17,8 +16,20 @@ import { NotificationBell } from '../../components/NotificationBell';
 import { imprimirReceta } from '../../lib/receta-pdf';
 import { imprimirHistorial } from '../../lib/historial-pdf';
 import { imprimirCertificado } from '../../lib/certificado-pdf';
-import AgendarCalendario from '../../components/AgendarCalendario';
 import { getTurnosTabRequest, PacienteDashboardTab } from '../../lib/paciente-dashboard-tabs';
+import Spinner from '../../components/Spinner';
+import { getLocale } from '../../lib/date';
+import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
+import TurnoCard from './components/TurnoCard';
+import HistorialCard from './components/HistorialCard';
+import RecetaCard from './components/RecetaCard';
+import CertificadoCard from './components/CertificadoCard';
+import RecetaModal from './components/RecetaModal';
+import PreconsultaModal from './components/PreconsultaModal';
+import CalificarModal from './components/CalificarModal';
+import ReprogramarModal from './components/ReprogramarModal';
+import ResumenPacienteView from './components/ResumenPacienteView';
+import EstadisticasPaciente from './components/EstadisticasPaciente';
 
 const PACIENTE_TOUR_STEPS = [
   {
@@ -48,10 +59,8 @@ const PACIENTE_TOUR_STEPS = [
 ];
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
-  BellIcon, VideoIcon, BuildingIcon, CreditCardIcon, RefreshIcon,
-  XIcon, SearchIcon, WaitlistIcon, CheckIcon, InfoIcon, ClipboardIcon, ChatIcon, MapPinIcon,
+  BellIcon, XIcon, SearchIcon, WaitlistIcon, InfoIcon, ClipboardIcon,
 } from '../../components/icons';
-import { estadoBadge } from '../../lib/utils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
@@ -64,8 +73,8 @@ export default function PacienteDashboard() {
   const c = t('common');
   const s = t('status');
   const m = t('modality');
-  const locale = lang === 'en' ? 'en-US' : 'es-AR';
-  const translateSpecialty = (name?: string) => { if (!name) return ''; return (d as any).translateSpecialty?.(name) || name; };
+  const locale = getLocale(lang);
+  const translateSpecialty = useTranslateSpecialty();
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<PacienteDashboardTab>('resumen');
@@ -127,7 +136,7 @@ export default function PacienteDashboard() {
   const loadTurnos = useCallback(async (tab: 'proximos' | 'pasados' = 'proximos', p: number = 1) => {
     setLoading(true);
     try {
-      const data = await api.turnos.misTurnos({ tipo: tab, page: p, limit: TURNOS_LIMIT });
+      const data = await api.turnos.getMisTurnos({ tipo: tab, page: p, limit: TURNOS_LIMIT });
       setTurnos(data.turnos);
       setPaginationMeta({ total: data.pagination.total, totalPages: data.pagination.totalPages });
       loadPagosInfo(data.turnos);
@@ -244,7 +253,7 @@ export default function PacienteDashboard() {
           habitos: perfil.habitos,
           diagnosticosPrevios: perfil.diagnosticosPrevios,
         },
-      });
+      }, getLocale(lang));
     } catch (err) { console.error(err); }
   };
 
@@ -283,7 +292,7 @@ export default function PacienteDashboard() {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <svg className="animate-spin text-blue-600" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+          <Spinner size={32} className="text-blue-600" />
           <p className="text-slate-500 text-sm">Cargando...</p>
         </div>
       </div>
@@ -322,7 +331,7 @@ export default function PacienteDashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
-      {/* ── Reminder banner ─────────────────────────────── */}
+      {/* -- Reminder banner ------------------------------- */}
       {recordatorios.length > 0 && (
         <div className="bg-amber-500 text-white">
           <div className="page-container py-2.5 flex items-center justify-between gap-3">
@@ -359,7 +368,7 @@ export default function PacienteDashboard() {
         </div>
       )}
 
-      {/* ── Navbar ──────────────────────────────────────── */}
+      {/* -- Navbar ---------------------------------------- */}
       <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
@@ -399,7 +408,7 @@ export default function PacienteDashboard() {
           </div>
         )}
 
-        {/* ── Cancellation policy notice ───────────────── */}
+        {/* -- Cancellation policy notice ----------------- */}
         <div className="alert alert-info mb-4 text-xs">
           <InfoIcon size={15} className="shrink-0" />
           <span>
@@ -407,7 +416,7 @@ export default function PacienteDashboard() {
           </span>
         </div>
 
-        {/* ── Tabs ────────────────────────────────────── */}
+        {/* -- Tabs -------------------------------------- */}
         <div className="card overflow-hidden">
           <div className="tab-nav px-1 pt-1">
             <button
@@ -510,7 +519,7 @@ export default function PacienteDashboard() {
             ) : activeTab === 'estadisticas' ? (
               <EstadisticasPaciente stats={pacienteStats} loading={loadingStats} d={d} translateSpecialty={translateSpecialty} />
             ) : activeTab === 'historial' ? (
-              /* ── Historial clínico ────────────────── */
+              /* -- Historial clínico ------------------ */
               loadingHistorial ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map(i => (
@@ -552,7 +561,7 @@ export default function PacienteDashboard() {
                 </>
               )
             ) : activeTab === 'recetas' ? (
-              /* ── Recetas ────────────────────────────── */
+              /* -- Recetas ------------------------------ */
               loadingRecetas ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map(i => (
@@ -606,7 +615,7 @@ export default function PacienteDashboard() {
                 </div>
               )
             ) : activeTab === 'certificados' ? (
-              /* ── Certificados ───────────────────────── */
+              /* -- Certificados ------------------------- */
               loadingCertificados ? (
                 <div className="space-y-3">
                   {[1, 2, 3].map(i => (
@@ -666,7 +675,7 @@ export default function PacienteDashboard() {
                 </div>
               )
             ) : activeTab === 'datosMedicos' ? (
-              /* ── Mis datos médicos ──────────────── */
+              /* -- Mis datos médicos ---------------- */
               <div className="space-y-5">
                 <div>
                   <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.personalHistory}</h3>
@@ -752,7 +761,7 @@ export default function PacienteDashboard() {
                 <p className="text-xs text-slate-400">{d.medicalDataVisibility}</p>
               </div>
             ) : activeTab === 'listaEspera' ? (
-              /* ── Lista de espera ────────────────── */
+              /* -- Lista de espera ------------------ */
               listaEspera.length === 0 ? (
                 <div className="py-12 text-center">
                   <WaitlistIcon size={32} className="mx-auto mb-3 text-slate-300" />
@@ -911,1362 +920,6 @@ export default function PacienteDashboard() {
         steps={PACIENTE_TOUR_STEPS}
         delay={1000}
       />
-    </div>
-  );
-}
-
-/* ── Turno Card ──────────────────────────────────────────── */
-function TurnoCard({
-  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, onVideoCall, onChat, horasMinCancelacion, d, s, translateSpecialty,
-}: {
-  turno: Turno;
-  pagoInfo?: { necesitaPago: boolean };
-  canCancel: boolean;
-  horasMinCancelacion: number;
-  onPagar: () => void;
-  onCancelar: () => void;
-  onReprogramar: () => void;
-  onCompletarPreconsulta: () => void;
-  onVerReceta: () => void;
-  onCalificar: () => void;
-  onVideoCall: () => void;
-  onChat: () => void;
-  d: any;
-  s: any;
-  translateSpecialty: (name?: string) => string;
-}) {
-  const { t, lang } = useLang();
-  const p = t('paciente');
-  const locale = lang === 'en' ? 'en-US' : 'es-AR';
-  const isActive = turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO';
-  const isFuture = new Date(turno.fechaHora) >= new Date();
-  const preconsultaCompletada = Boolean(turno.preconsultaCompletadaAt);
-  const [unreadCount, setUnreadCount] = useState(0);
-
-  useEffect(() => {
-    if (!isActive) return;
-    api.chat.getUnread(turno.id).then(d => setUnreadCount(d.count)).catch(() => {});
-  }, [turno.id, isActive]);
-
-  return (
-    <div className="border border-slate-200 rounded-xl overflow-hidden">
-      {/* Status bar */}
-      <div className={`px-4 py-1.5 text-xs font-semibold flex items-center justify-between ${
-        turno.estado === 'CONFIRMADO' ? 'bg-emerald-50 text-emerald-700' :
-        turno.estado === 'RESERVADO' ? 'bg-amber-50 text-amber-700' :
-        turno.estado === 'CANCELADO' ? 'bg-red-50 text-red-700' :
-        'bg-blue-50 text-blue-700'
-      }`}>
-<span className="flex items-center gap-1.5">
-          {(s as any)[turno.estado] || turno.estado}
-        </span>
-        {turno.modalidad === 'VIRTUAL' ? (
-          <span className="flex items-center gap-1"><VideoIcon size={11} /> {t('home').virtual}</span>
-        ) : (
-          <span className="flex items-center gap-1"><BuildingIcon size={11} /> {t('home').inPerson}</span>
-        )}
-      </div>
-
-      <div className="p-4">
-        <div className="flex items-start justify-between gap-3">
-          {/* Professional info */}
-          <div className="flex-1">
-            <p className="font-semibold text-slate-800">
-              {turno.profesional?.nombre} {turno.profesional?.apellido}
-            </p>
-            <p className="text-xs text-blue-600 font-medium mt-0.5">{translateSpecialty(turno.profesional?.especialidad?.nombre)}</p>
-          </div>
-          {/* Date/time */}
-          <div className="text-right shrink-0">
-            <p className="text-sm font-bold text-slate-700">
-              {new Date(turno.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
-            </p>
-            <p className="text-xs text-slate-500">
-              {new Date(turno.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
-            </p>
-          </div>
-        </div>
-
-        {/* Location (PRESENCIAL only) */}
-        {turno.modalidad === 'PRESENCIAL' && (turno.lugarAtencion || turno.profesional?.lugarAtencion) && (
-          <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500">
-            <MapPinIcon size={11} className="shrink-0" />
-            <span className="truncate">{turno.lugarAtencion ?? turno.profesional?.lugarAtencion}</span>
-          </div>
-        )}
-
-        {/* Video call */}
-        {turno.modalidad === 'VIRTUAL' && (turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO') && (
-          <button
-            onClick={onVideoCall}
-            className="btn btn-success btn-sm mt-3 w-full"
-          >
-            <VideoIcon size={13} /> {p.joinVideoCall}
-          </button>
-        )}
-
-        {/* Cancellation reason */}
-        {turno.estado === 'CANCELADO' && turno.notasCancelacion && (
-          <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-100">
-            <p className="text-xs font-semibold text-red-700 mb-1">Motivo de cancelación</p>
-            <p className="text-sm text-red-600">{turno.notasCancelacion}</p>
-          </div>
-        )}
-
-        {/* Actions */}
-        {isActive && isFuture && (
-          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
-            {/* Pay button */}
-            {turno.profesional?.precioConsulta && Number(turno.profesional.precioConsulta) > 0 && (
-              <button
-                onClick={onPagar}
-                disabled={pagoInfo?.necesitaPago === false}
-                className={`btn btn-sm flex-1 ${pagoInfo?.necesitaPago === false ? 'btn-secondary opacity-60 cursor-not-allowed' : 'btn-success'}`}
-              >
-                <CreditCardIcon size={13} />
-                {pagoInfo?.necesitaPago === false
-                  ? p.paid
-                  : `${p.pay} $${Number(turno.profesional.precioConsulta).toLocaleString(locale)}`}
-              </button>
-            )}
-
-            {/* Reschedule */}
-            <button
-              onClick={onReprogramar}
-              disabled={!canCancel}
-              className="btn btn-secondary btn-sm"
-              title={!canCancel ? `Requiere ${horasMinCancelacion}h de anticipación` : undefined}
-            >
-              <RefreshIcon size={13} /> {p.reschedule}
-            </button>
-
-            {/* Cancel */}
-            <button
-              onClick={onCancelar}
-              disabled={!canCancel}
-              className={`btn btn-sm ${canCancel ? 'btn-ghost text-red-500 hover:bg-red-50' : 'btn-ghost text-slate-400 cursor-not-allowed'}`}
-              title={!canCancel ? `Requiere ${horasMinCancelacion}h de anticipación` : undefined}
-            >
-              <XIcon size={13} /> {p.cancel}
-            </button>
-
-            <Link href={`/profesional/${turno.profesional?.id}`} className="btn btn-ghost btn-sm text-slate-500">
-              {p.viewProfessional}
-            </Link>
-
-            {/* Chat button */}
-            <button
-              onClick={() => { onChat(); setUnreadCount(0); }}
-              className="btn btn-ghost btn-sm text-blue-600 hover:bg-blue-50 relative"
-            >
-              <ChatIcon size={13} />
-              {p.chatLabel}
-              {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
-                  {unreadCount > 9 ? '9+' : unreadCount}
-                </span>
-              )}
-            </button>
-
-            {!preconsultaCompletada ? (
-              <button onClick={onCompletarPreconsulta} className="btn btn-primary btn-sm">
-                <ClipboardIcon size={13} /> {p.preconsulta}
-              </button>
-            ) : (
-              <span className="badge badge-green">{t('dashboard').preconsulta}</span>
-            )}
-
-            {(turno.estado === 'COMPLETADO' || turno.estado === 'CONFIRMADO') && (
-              <button onClick={onVerReceta} className="btn btn-secondary btn-sm">
-                <ClipboardIcon size={13} /> {p.viewPrescription}
-              </button>
-            )}
-
-            {turno.estado === 'COMPLETADO' && (
-              <button onClick={onCalificar} className="btn btn-ghost btn-sm text-amber-600 hover:bg-amber-50">
-                <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" /></svg>
-                {p.rate}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Calendar buttons for active future turnos */}
-        {isActive && isFuture && turno.profesional && (
-          <div className="mt-3 pt-3 border-t border-slate-100">
-            <AgendarCalendario
-              variant="compact"
-              turno={{
-                turnoId: turno.id,
-                fechaHora: turno.fechaHora,
-                duracionMin: turno.duracionMin,
-                modalidad: turno.modalidad,
-                profesionalNombre: turno.profesional.nombre,
-                profesionalApellido: turno.profesional.apellido,
-                especialidad: translateSpecialty(turno.profesional.especialidad?.nombre ?? ''),
-                lugarAtencion: turno.lugarAtencion ?? turno.profesional.lugarAtencion,
-              }}
-            />
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function RecetaModal({ turno, onClose }: { turno: Turno; onClose: () => void }) {
-  const { t } = useLang();
-  const d = t("dashboard");
-  const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
-  const [loading, setLoading] = useState(true);
-  const [receta, setReceta] = useState<RecetaIndicacion | null>(null);
-
-  useEffect(() => {
-    const loadReceta = async () => {
-      setLoading(true);
-      try {
-        const data = await api.turnos.getReceta(turno.id);
-        setReceta(data);
-      } catch (err) {
-        console.error(err);
-        setReceta(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadReceta();
-  }, [turno.id]);
-
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white">
-          <h3 className="font-bold text-slate-800">Receta e indicaciones</h3>
-          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
-        </div>
-
-        <div className="px-6 py-5">
-          {loading ? (
-            <div className="space-y-2">
-              <div className="skeleton h-20 rounded-lg" />
-              <div className="skeleton h-20 rounded-lg" />
-            </div>
-          ) : !receta ? (
-            <div className="alert alert-warning text-sm">
-              <InfoIcon size={14} className="shrink-0" />
-              <span>Aun no hay receta/indicaciones emitidas para este turno.</span>
-            </div>
-          ) : (
-            <div className="space-y-3 text-sm">
-              <p className="text-xs text-slate-500">Emitida: {new Date(receta.emitidaAt).toLocaleString('es-AR')}</p>
-              <div>
-                <p className="font-semibold text-slate-700">Diagnostico</p>
-                <p className="text-slate-600 whitespace-pre-wrap">{receta.diagnostico}</p>
-              </div>
-              {receta.planTratamiento && (
-                <div>
-                  <p className="font-semibold text-slate-700">Plan de tratamiento</p>
-                  <p className="text-slate-600 whitespace-pre-wrap">{receta.planTratamiento}</p>
-                </div>
-              )}
-              {receta.medicamentos && (
-                <div>
-                  <p className="font-semibold text-slate-700">Medicamentos</p>
-                  <p className="text-slate-600 whitespace-pre-wrap">{receta.medicamentos}</p>
-                </div>
-              )}
-              <div>
-                <p className="font-semibold text-slate-700">Indicaciones</p>
-                <p className="text-slate-600 whitespace-pre-wrap">{receta.indicaciones}</p>
-              </div>
-              {receta.estudiosSolicitados && (
-                <div>
-                  <p className="font-semibold text-slate-700">Estudios solicitados</p>
-                  <p className="text-slate-600 whitespace-pre-wrap">{receta.estudiosSolicitados}</p>
-                </div>
-              )}
-              {receta.proximoControl && (
-                <div>
-                  <p className="font-semibold text-slate-700">Proximo control</p>
-                  <p className="text-slate-600">{receta.proximoControl}</p>
-                </div>
-              )}
-              {receta.advertencias && (
-                <div>
-                  <p className="font-semibold text-slate-700">Advertencias</p>
-                  <p className="text-slate-600 whitespace-pre-wrap">{receta.advertencias}</p>
-                </div>
-              )}
-              {receta.observaciones && (
-                <div>
-                  <p className="font-semibold text-slate-700">Observaciones</p>
-                  <p className="text-slate-600 whitespace-pre-wrap">{receta.observaciones}</p>
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
-          {receta && turno.profesional && (
-            <button
-              onClick={() => imprimirReceta({
-                receta,
-                profesional: {
-                  nombre: turno.profesional!.nombre,
-                  apellido: turno.profesional!.apellido,
-                  especialidad: translateSpecialty(turno.profesional!.especialidad?.nombre ?? ''),
-                  matricula: turno.profesional!.matricula,
-                  lugarAtencion: turno.lugarAtencion ?? turno.profesional!.lugarAtencion,
-                  telefono: turno.profesional!.telefono,
-                  fotoUrl: turno.profesional!.fotoUrl,
-                },
-                paciente: turno.paciente
-                  ? { nombre: turno.paciente.nombre, apellido: turno.paciente.apellido, email: turno.paciente.email }
-                  : null,
-                fechaHora: turno.fechaHora,
-                modalidad: turno.modalidad,
-              })}
-              className="btn btn-primary flex-1 flex items-center justify-center gap-2"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-              </svg>
-              Descargar PDF
-            </button>
-          )}
-          <button onClick={onClose} className="btn btn-secondary flex-1">Cerrar</button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function PreconsultaModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
-  const [motivo, setMotivo] = useState('');
-  const [sintomas, setSintomas] = useState('');
-  const [escalaDolor, setEscalaDolor] = useState(0);
-  const [escalaAnsiedad, setEscalaAnsiedad] = useState(0);
-  const [inicioSintomas, setInicioSintomas] = useState('');
-  const [temperatura, setTemperatura] = useState('');
-  const [notasPaciente, setNotasPaciente] = useState('');
-  const [riesgo, setRiesgo] = useState<string | null>(null);
-  const [flags, setFlags] = useState<string[]>([]);
-  const [guardando, setGuardando] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [notice, setNotice] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
-
-  useEffect(() => {
-    const loadPreconsulta = async () => {
-      setLoading(true);
-      try {
-        const data = await api.turnos.getPreconsulta(turno.id);
-        setMotivo(data.motivo || '');
-        setSintomas(data.sintomas || '');
-        setEscalaDolor(data.escalaDolor ?? 0);
-        setEscalaAnsiedad(data.escalaAnsiedad ?? 0);
-        setInicioSintomas(data.inicioSintomas || '');
-        setTemperatura(typeof data.temperatura === 'number' ? data.temperatura.toString() : '');
-        setNotasPaciente(data.notasPaciente || '');
-        setRiesgo(data.riesgo);
-        setFlags(data.flags || []);
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadPreconsulta();
-  }, [turno.id]);
-
-  const handleGuardar = async () => {
-    if (motivo.trim().length < 5 || sintomas.trim().length < 5) {
-      setNotice({ type: 'error', text: 'Completa motivo y sintomas con al menos 5 caracteres.' });
-      return;
-    }
-
-    setGuardando(true);
-    try {
-      const data = await api.turnos.updatePreconsulta(turno.id, {
-        motivo: motivo.trim(),
-        sintomas: sintomas.trim(),
-        escalaDolor,
-        escalaAnsiedad,
-        inicioSintomas: inicioSintomas.trim() || null,
-        temperatura: temperatura.trim() ? Number(temperatura) : null,
-        notasPaciente: notasPaciente.trim() || null,
-      });
-
-      setRiesgo(data.riesgo);
-      setFlags(data.flags || []);
-      setNotice({ type: 'success', text: 'Cuestionario guardado correctamente.' });
-      onSuccess();
-    } catch (err) {
-      setNotice({ type: 'error', text: err instanceof Error ? err.message : 'No se pudo guardar la preconsulta' });
-    } finally {
-      setGuardando(false);
-    }
-  };
-
-  const riskClass = riesgo === 'URGENTE'
-    ? 'badge-red'
-    : riesgo === 'ALTO'
-    ? 'badge-yellow'
-    : riesgo === 'MEDIO'
-    ? 'badge-blue'
-    : riesgo === 'BAJO'
-    ? 'badge-green'
-    : 'badge-gray';
-
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white">
-          <h3 className="font-bold text-slate-800">Cuestionario preconsulta</h3>
-          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
-        </div>
-
-        <div className="px-6 py-5 space-y-4">
-          {notice && (
-            <div className={`alert ${notice.type === 'error' ? 'alert-error' : 'alert-success'}`} role="status" aria-live="polite">
-              <InfoIcon size={14} className="shrink-0" />
-              <span>{notice.text}</span>
-            </div>
-          )}
-
-          <p className="text-sm text-slate-600">
-            Completar este cuestionario ayuda a priorizar tu atencion y a que el profesional llegue mejor preparado al turno.
-          </p>
-
-          {loading ? (
-            <div className="space-y-2">
-              <div className="skeleton h-20 rounded-lg" />
-              <div className="skeleton h-20 rounded-lg" />
-            </div>
-          ) : (
-            <>
-              <div>
-                <label className="field-label">Motivo principal de consulta</label>
-                <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} className="field-input resize-none min-h-[72px]" placeholder="Describe en pocas lineas el motivo principal..." />
-              </div>
-
-              <div>
-                <label className="field-label">Sintomas actuales</label>
-                <textarea value={sintomas} onChange={(e) => setSintomas(e.target.value)} className="field-input resize-none min-h-[88px]" placeholder="Que sintomas tenes, desde cuando y como evolucionaron..." />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="field-label">Nivel de dolor: {escalaDolor}/10</label>
-                  <input type="range" min={0} max={10} value={escalaDolor} onChange={(e) => setEscalaDolor(Number(e.target.value))} className="w-full" />
-                </div>
-                <div>
-                  <label className="field-label">Nivel de ansiedad: {escalaAnsiedad}/10</label>
-                  <input type="range" min={0} max={10} value={escalaAnsiedad} onChange={(e) => setEscalaAnsiedad(Number(e.target.value))} className="w-full" />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="field-label">Inicio de sintomas</label>
-                  <input value={inicioSintomas} onChange={(e) => setInicioSintomas(e.target.value)} className="field-input" placeholder="Ej: hace 3 dias" />
-                </div>
-                <div>
-                  <label className="field-label">Temperatura corporal (opcional)</label>
-                  <input type="number" min="34" max="43" step="0.1" value={temperatura} onChange={(e) => setTemperatura(e.target.value)} className="field-input" placeholder="Ej: 38.2" />
-                </div>
-              </div>
-
-              <div>
-                <label className="field-label">Notas adicionales para el profesional</label>
-                <textarea value={notasPaciente} onChange={(e) => setNotasPaciente(e.target.value)} className="field-input resize-none min-h-[72px]" placeholder="Aclaraciones, medicacion previa, estudios recientes..." />
-              </div>
-
-              {riesgo && (
-                <div className="alert alert-info text-xs">
-                  <InfoIcon size={14} className="shrink-0" />
-                  <div className="space-y-1">
-                    <p className="flex items-center gap-2">Riesgo detectado: <span className={`badge ${riskClass}`}>{riesgo}</span></p>
-                    {flags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5">
-                        {flags.map((flag) => <span key={flag} className="badge badge-red">{flag}</span>)}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-            </>
-          )}
-        </div>
-
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
-          <button onClick={onClose} className="btn btn-secondary flex-1">Cancelar</button>
-          <button onClick={handleGuardar} disabled={guardando || loading} className="btn btn-primary flex-1">
-            {guardando ? 'Guardando...' : 'Guardar cuestionario'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Calificar Modal ─────────────────────────────────────── */
-function CalificarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
-  const { t } = useLang();
-  const d = t("dashboard");
-  const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
-  const p = t('paciente');
-  const [rating, setRating] = useState(0);
-  const [comentario, setComentario] = useState('');
-  const [guardando, setGuardando] = useState(false);
-  const [resenaExistente, setResenaExistente] = useState<Resena | null | undefined>(undefined);
-  const [notice, setNotice] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
-
-  useEffect(() => {
-    api.resenas.getMiResena(turno.id)
-      .then((r) => { setResenaExistente(r); if (r) { setRating(r.rating); setComentario(r.comentario || ''); } })
-      .catch(() => setResenaExistente(null));
-  }, [turno.id]);
-
-  const handleGuardar = async () => {
-    if (rating === 0) { setNotice({ type: 'error', text: 'Seleccioná al menos 1 estrella.' }); return; }
-    setGuardando(true);
-    try {
-      await api.resenas.crear({ turnoId: turno.id, rating, comentario: comentario.trim() || undefined });
-      onSuccess();
-    } catch (err) {
-      setNotice({ type: 'error', text: err instanceof Error ? err.message : 'Error al guardar' });
-    } finally {
-      setGuardando(false);
-    }
-  };
-
-  const labels = ['', 'Malo', 'Regular', 'Bueno', 'Muy bueno', 'Excelente'];
-
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800">{p.rateTitle}</h3>
-          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
-        </div>
-
-        <div className="px-6 py-5 space-y-5">
-          {notice && (
-            <div className={`alert ${notice.type === 'error' ? 'alert-error' : 'alert-success'}`}>
-              <InfoIcon size={14} className="shrink-0" /><span>{notice.text}</span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-xl">
-            <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center text-lg shrink-0">
-              {turno.profesional?.fotoUrl
-                ? <img src={turno.profesional.fotoUrl} className="w-full h-full rounded-full object-cover" alt="" />
-                : <UserIcon size={18} className="text-blue-700" />}
-            </div>
-            <div>
-              <p className="font-semibold text-slate-800 text-sm">Dr/a. {turno.profesional?.nombre} {turno.profesional?.apellido}</p>
-              <p className="text-xs text-blue-600">{translateSpecialty(turno.profesional?.especialidad?.nombre)}</p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                {new Date(turno.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
-              </p>
-            </div>
-          </div>
-
-          {resenaExistente !== undefined && (
-            resenaExistente ? (
-              <div className="alert alert-info text-sm">
-                <InfoIcon size={14} className="shrink-0" />
-                <span>Ya calificaste esta consulta con {resenaExistente.rating} estrellas.</span>
-              </div>
-            ) : (
-              <>
-                <div className="text-center space-y-2">
-                  <p className="text-sm font-medium text-slate-600">¿Cómo fue tu experiencia?</p>
-                  <StarRating value={rating} onChange={setRating} size={36} />
-                  {rating > 0 && (
-                    <p className="text-sm font-semibold text-amber-600">{labels[rating]}</p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                    Comentario <span className="font-normal normal-case">(opcional)</span>
-                  </label>
-                  <textarea
-                    value={comentario}
-                    onChange={(e) => setComentario(e.target.value)}
-                    rows={3}
-                    maxLength={500}
-                    placeholder="Contá tu experiencia con el profesional..."
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none text-slate-800"
-                  />
-                  <p className="text-xs text-slate-400 text-right mt-1">{comentario.length}/500</p>
-                </div>
-              </>
-            )
-          )}
-        </div>
-
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
-          <button onClick={onClose} className="btn btn-secondary flex-1">{t('common').cancel}</button>
-          {!resenaExistente && (
-            <button
-              onClick={handleGuardar}
-              disabled={guardando || rating === 0 || resenaExistente === undefined}
-              className="btn btn-primary flex-1"
-            >
-              {guardando ? t('common').saving : p.rateSubmit}
-            </button>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Reprogramar Modal ───────────────────────────────────── */
-function ReprogramarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
-  const [fecha, setFecha] = useState('');
-  const [slots, setSlots] = useState<{ hora: string; disponible: boolean }[]>([]);
-  const [horaSeleccionada, setHoraSeleccionada] = useState('');
-  const [guardando, setGuardando] = useState(false);
-  const [loadingSlots, setLoadingSlots] = useState(false);
-  const [notice, setNotice] = useState<string>('');
-
-  useEffect(() => {
-    const profesionalId = turno.profesional?.id;
-    if (!fecha || !profesionalId) { setSlots([]); setHoraSeleccionada(''); return; }
-
-    const loadSlots = async () => {
-      setLoadingSlots(true);
-      try {
-        const data = await api.profesionales.getSlots(profesionalId, fecha, turno.modalidad);
-        setSlots(data.filter(s => s.disponible));
-      } catch (err) { setSlots([]); }
-      finally { setLoadingSlots(false); }
-    };
-    loadSlots();
-  }, [fecha, turno.profesional?.id, turno.modalidad]);
-
-  const handleGuardar = async () => {
-    if (!fecha || !horaSeleccionada) { setNotice('Selecciona fecha y horario.'); return; }
-    const fechaHora = new Date(`${fecha}T${horaSeleccionada}:00`);
-    if (Number.isNaN(fechaHora.getTime()) || fechaHora <= new Date()) { setNotice('Selecciona una fecha futura valida.'); return; }
-
-    setGuardando(true);
-    try {
-      await api.turnos.reprogramar(turno.id, { fechaHora: fechaHora.toISOString(), modalidad: turno.modalidad });
-      onSuccess();
-    } catch (err) { setNotice(err instanceof Error ? err.message : 'No se pudo reprogramar'); }
-    finally { setGuardando(false); }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800">Reprogramar turno</h3>
-          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
-        </div>
-
-        <div className="px-6 py-5 space-y-4">
-          {notice && (
-            <div className="alert alert-error text-sm" role="status" aria-live="polite">
-              <InfoIcon size={14} className="shrink-0" />
-              <span>{notice}</span>
-            </div>
-          )}
-
-          <p className="text-sm text-slate-600">
-            Estás reprogramando tu turno con <strong>{turno.profesional?.nombre} {turno.profesional?.apellido}</strong>.
-            Elegí nueva fecha y horario.
-          </p>
-
-          <div>
-            <label className="field-label">Nueva fecha</label>
-            <input
-              type="date"
-              value={fecha}
-              min={new Date().toISOString().split('T')[0]}
-              onChange={(e) => { setFecha(e.target.value); setHoraSeleccionada(''); }}
-              className="field-input"
-            />
-          </div>
-
-          {fecha && (
-            <div>
-              <label className="field-label">Horario disponible</label>
-              {loadingSlots ? (
-                <div className="flex gap-1.5 flex-wrap">
-                  {[1,2,3,4].map(i => <div key={i} className="skeleton h-8 w-16 rounded-lg" />)}
-                </div>
-              ) : slots.length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-4">No hay horarios disponibles para esta fecha</p>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {slots.map((slot) => (
-                    <button
-                      key={slot.hora}
-                      onClick={() => setHoraSeleccionada(slot.hora)}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-                        horaSeleccionada === slot.hora
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-300 hover:bg-blue-50'
-                      }`}
-                    >
-                      {slot.hora}
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
-          <button onClick={onClose} className="btn btn-secondary flex-1">Cancelar</button>
-          <button
-            onClick={handleGuardar}
-            disabled={guardando || !fecha || !horaSeleccionada}
-            className="btn btn-primary flex-1"
-          >
-            {guardando ? 'Guardando...' : 'Confirmar cambio'}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Historial Card ──────────────────────────────────────── */
-function StarDisplay({ rating, size = 13 }: { rating: number; size?: number }) {
-  return (
-    <span className="flex items-center gap-0.5">
-      {[1, 2, 3, 4, 5].map(i => (
-        <svg key={i} width={size} height={size} viewBox="0 0 24 24"
-          fill={i <= rating ? '#F59E0B' : 'none'} stroke="#F59E0B" strokeWidth="1.5">
-          <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-        </svg>
-      ))}
-    </span>
-  );
-}
-
-function HistorialCard({ item, onCalificar, d, m, s, translateSpecialty }: { item: HistorialTurno; onCalificar: (turno: HistorialTurno) => void; d: any; m: any; s: any; translateSpecialty: (name?: string) => string }) {
-  const [expanded, setExpanded] = useState(false);
-
-  return (
-    <div className="border border-slate-200 rounded-xl overflow-hidden">
-      {/* Header bar */}
-      <div className="px-4 py-2 bg-blue-50 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-sm font-semibold text-blue-800">
-          <CalendarIcon size={13} />
-          {new Date(item.fechaHora).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
-          <span className="text-blue-500 font-normal text-xs">
-            {new Date(item.fechaHora).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
-          </span>
-        </div>
-        <span className="badge badge-green text-[10px]">{(s as any)[item.estado] || item.estado}</span>
-      </div>
-
-      <div className="p-4 space-y-3">
-        {/* Profesional info */}
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center shrink-0 overflow-hidden">
-            {item.profesional?.fotoUrl
-              ? <img src={item.profesional.fotoUrl} alt="" className="w-full h-full object-cover" />
-              : <UserIcon size={16} className="text-blue-500" />}
-          </div>
-          <div>
-            <p className="font-semibold text-slate-800 text-sm">
-              Dr/a. {item.profesional?.nombre} {item.profesional?.apellido}
-            </p>
-            <p className="text-xs text-blue-600">{translateSpecialty(item.profesional?.especialidad?.nombre)}</p>
-          </div>
-          <span className="ml-auto text-xs text-slate-400 flex items-center gap-1">
-            {item.modalidad === 'VIRTUAL'
-              ? <><VideoIcon size={11} /> {m.VIRTUAL}</>
-              : <><BuildingIcon size={11} /> {m.PRESENCIAL}</>}
-          </span>
-        </div>
-
-        {/* {d.clinicalEvolution} */}
-        {item.evolucion?.contenido && (
-          <div className="bg-slate-50 rounded-lg p-3 text-sm">
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{d.clinicalEvolution}</p>
-            <p className={`text-slate-700 leading-relaxed whitespace-pre-wrap ${!expanded && 'line-clamp-3'}`}>
-              {item.evolucion.contenido}
-            </p>
-            {item.evolucion.contenido.length > 200 && (
-              <button onClick={() => setExpanded(!expanded)} className="text-xs text-blue-600 hover:underline mt-1">
-                {expanded ? 'Ver menos' : 'Ver más'}
-              </button>
-            )}
-          </div>
-        )}
-
-        {/* Receta / indicaciones */}
-        {item.recetaIndicacion && (
-          <div className="border border-emerald-200 rounded-lg p-3 text-sm bg-emerald-50">
-            <div className="flex items-center justify-between mb-1.5">
-              <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Receta e indicaciones</p>
-              {item.profesional && (
-                <button
-                  onClick={() => imprimirReceta({
-                    receta: item.recetaIndicacion!,
-                    profesional: {
-                      nombre: item.profesional!.nombre ?? '',
-                      apellido: item.profesional!.apellido ?? '',
-                      especialidad: translateSpecialty(item.profesional!.especialidad?.nombre ?? ''),
-                      matricula: item.profesional!.matricula ?? undefined,
-                      lugarAtencion: item.lugarAtencion ?? item.profesional!.lugarAtencion ?? undefined,
-                      telefono: item.profesional!.telefono ?? undefined,
-                      fotoUrl: item.profesional!.fotoUrl ?? undefined,
-                    },
-                    paciente: null,
-                    fechaHora: item.fechaHora,
-                    modalidad: item.modalidad,
-                  })}
-                  className="flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-900 font-semibold"
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Descargar PDF
-                </button>
-              )}
-            </div>
-            <p className="text-slate-700 font-medium">{item.recetaIndicacion.diagnostico}</p>
-            {item.recetaIndicacion.medicamentos && (
-              <p className="text-xs text-slate-600 mt-1">
-                <span className="font-semibold">Medicamentos:</span> {item.recetaIndicacion.medicamentos}
-              </p>
-            )}
-            {item.recetaIndicacion.proximoControl && (
-              <p className="text-xs text-slate-500 mt-1">
-                <span className="font-semibold">Próximo control:</span> {item.recetaIndicacion.proximoControl}
-              </p>
-            )}
-          </div>
-        )}
-
-        {/* Certificado médico */}
-        {item.certificado && (
-          <div className="border border-blue-200 rounded-lg p-3 text-sm bg-blue-50">
-            <div className="flex items-center justify-between mb-1.5">
-              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Certificado médico</p>
-              <button
-                onClick={async () => {
-                  try {
-                    const certData = await api.certificados.getByTurno(item.id);
-                    imprimirCertificado({
-                      ...certData,
-                      turno: {
-                        fechaHora: item.fechaHora,
-                        modalidad: item.modalidad,
-                        profesional: {
-                          nombre: item.profesional?.nombre ?? '',
-                          apellido: item.profesional?.apellido ?? '',
-                          matricula: item.profesional?.matricula ?? undefined,
-                          fotoUrl: item.profesional?.fotoUrl ?? undefined,
-                          lugarAtencion: item.lugarAtencion ?? item.profesional?.lugarAtencion ?? undefined,
-                          telefono: item.profesional?.telefono ?? undefined,
-                          especialidad: { nombre: translateSpecialty(item.profesional?.especialidad?.nombre ?? '') },
-                        },
-                        paciente: null,
-                      },
-                    } as CertificadoConDatos);
-                  } catch (err) {
-                    console.error(err);
-                  }
-                }}
-                className="flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900 font-semibold"
-              >
-                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Descargar PDF
-              </button>
-            </div>
-            <p className="text-slate-700 font-medium">
-              {item.certificado.tipo === 'REPOSO' ? 'Reposo Médico'
-                : item.certificado.tipo === 'CONSULTA' ? 'Justificación de Consulta'
-                : item.certificado.tipo === 'APTITUD' ? 'Aptitud Física'
-                : 'Certificado Médico'}
-            </p>
-            <p className="text-xs text-slate-500 mt-1">
-              Emitido el {new Date(item.certificado.emitidaAt).toLocaleDateString('es-AR')}
-            </p>
-          </div>
-        )}
-
-        {/* Archivos adjuntos */}
-        {item.archivos.length > 0 && (
-          <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Documentos adjuntos</p>
-            <div className="flex flex-wrap gap-2">
-              {item.archivos.map(archivo => (
-                <a
-                  key={archivo.id}
-                  href={archivo.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs text-slate-700 hover:text-blue-700 transition-colors"
-                >
-                  <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
-                  </svg>
-                  {archivo.nombreOriginal}
-                </a>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Empty state */}
-        {!item.evolucion && !item.recetaIndicacion && item.archivos.length === 0 && (
-          <p className="text-xs text-slate-400 italic">{d.noClinicalEvolution}</p>
-        )}
-
-        {/* Calificación */}
-        {item.resena ? (
-          <div className="border border-amber-200 rounded-lg p-3 bg-amber-50 space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Tu calificación</p>
-              <div className="flex items-center gap-1.5">
-                <StarDisplay rating={item.resena.rating} size={13} />
-                <span className="text-xs font-bold text-amber-700">{item.resena.rating}/5</span>
-              </div>
-            </div>
-            {item.resena.comentario && (
-              <p className="text-xs text-slate-600 italic">"{item.resena.comentario}"</p>
-            )}
-            {item.resena.respuesta && (
-              <div className="mt-2 pt-2 border-t border-amber-200">
-                <p className="text-xs font-semibold text-blue-700 mb-1">
-                  Respuesta de Dr/a. {item.profesional?.nombre} {item.profesional?.apellido}
-                  {item.resena.respondidaAt && (
-                    <span className="font-normal text-slate-400 ml-1">
-                      · {new Date(item.resena.respondidaAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'short' })}
-                    </span>
-                  )}
-                </p>
-                <p className="text-xs text-slate-700 leading-relaxed">{item.resena.respuesta}</p>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex justify-end">
-            <button
-              onClick={() => onCalificar(item)}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 border border-amber-200 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors"
-            >
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" className="text-amber-500">
-                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" />
-              </svg>
-              {d.rateConsultation}
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ── Patient statistics panel ────────────────────────────────────────────── */
-function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats: PacienteStats | null; loading: boolean; d: any; translateSpecialty: (name?: string) => string }) {
-  const { lang } = useLang();
-  const locale = lang === 'en' ? 'en-US' : 'es-AR';
-
-  if (loading) {
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-          {[1,2,3,4].map(i => <div key={i} className="skeleton h-20 rounded-xl" />)}
-        </div>
-        <div className="skeleton h-40 rounded-xl" />
-        <div className="skeleton h-48 rounded-xl" />
-      </div>
-    );
-  }
-
-  if (!stats) {
-    return (
-      <div className="py-12 text-center text-slate-400">
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 opacity-40"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-        <p className="text-sm">{d.noStatsYet}</p>
-      </div>
-    );
-  }
-
-  const turnosPorMes = Array.isArray(stats.turnosPorMes)
-    ? stats.turnosPorMes.map((item) => ({ ...item, total: Number(item.total) || 0 }))
-    : [];
-  const maxMes = Math.max(...turnosPorMes.map(m => m.total), 1);
-  const MES_LABELS: Record<string, string> = lang === 'en'
-    ? {
-        '01': 'Jan', '02': 'Feb', '03': 'Mar', '04': 'Apr', '05': 'May', '06': 'Jun',
-        '07': 'Jul', '08': 'Aug', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dec',
-      }
-    : {
-        '01': 'Ene', '02': 'Feb', '03': 'Mar', '04': 'Abr', '05': 'May', '06': 'Jun',
-        '07': 'Jul', '08': 'Ago', '09': 'Sep', '10': 'Oct', '11': 'Nov', '12': 'Dic',
-      };
-
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <PacienteStatCard label={d.totalAppointments} value={stats.totalTurnos} color="blue" />
-        <PacienteStatCard label={d.completed} value={stats.completados} color="emerald" />
-        <PacienteStatCard label={d.cancelled} value={stats.cancelados} color="red" />
-        <PacienteStatCard label={d.totalSpent} value={`$${stats.totalGastado.toLocaleString(locale)}`} color="amber" />
-      </div>
-
-      {turnosPorMes.length > 0 && (
-        <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-            {d.appointmentsPerMonth}
-          </p>
-          <div className="flex gap-1.5 h-36">
-            {turnosPorMes.map(({ mes, total }) => {
-              const [, mm] = mes.split('-');
-              const pct = Math.round((total / maxMes) * 100);
-              return (
-                <div key={mes} className="flex-1 min-w-0 flex flex-col items-center gap-1 group">
-                  <span className="text-[10px] text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">{total}</span>
-                  <div className="w-full flex-1 flex items-end">
-                    <div
-                      className="w-full bg-blue-500 dark:bg-blue-600 rounded-t-sm transition-all min-h-1"
-                      style={{ height: `${Math.max(pct, 4)}%` }}
-                      title={`${MES_LABELS[mm] ?? mm}: ${total}`}
-                    />
-                  </div>
-                  <span className="text-[9px] text-slate-400 truncate max-w-full">{MES_LABELS[mm] ?? mm}</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {stats.topProfesionales.length > 0 && (
-        <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{d.mostVisitedProfessionals}</p>
-          <div className="space-y-3">
-            {stats.topProfesionales.map(({ profesional, totalTurnos }, i) => profesional && (
-              <div key={profesional.id} className="flex items-center gap-3">
-                <span className="text-xs font-bold text-slate-400 w-4 text-center">{i + 1}</span>
-                {profesional.fotoUrl ? (
-                  <img src={profesional.fotoUrl} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 shrink-0">
-                    {profesional.nombre[0]}{profesional.apellido[0]}
-                  </div>
-                )}
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">Dr/a. {profesional.nombre} {profesional.apellido}</p>
-                  <p className="text-xs text-slate-500 truncate">{translateSpecialty(profesional.especialidad.nombre)}</p>
-                </div>
-                <span className="text-xs font-semibold text-blue-600 shrink-0">{totalTurnos} {totalTurnos === 1 ? d.appointment : d.appointments}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {stats.pagos.length > 0 && (
-        <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center justify-between">
-            <span>{d.paymentHistory}</span>
-            <span className="text-xs font-normal text-slate-400">{stats.pagos.length} {d.payment}{stats.pagos.length !== 1 ? 's' : ''}</span>
-          </p>
-          <div className="space-y-2">
-            {stats.pagos.map((pago) => (
-              <div key={pago.id} className="flex items-center justify-between gap-3 py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">Dr/a. {pago.profesional}</p>
-                  <p className="text-xs text-slate-500 truncate">{translateSpecialty(pago.especialidad)} · {new Date(pago.fecha).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
-                </div>
-                <div className="text-right shrink-0">
-                  <p className="text-sm font-bold text-emerald-600">${pago.monto.toLocaleString(locale)}</p>
-                  <span className="badge badge-green text-[10px]">{d.approved}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {stats.totalTurnos === 0 && (
-        <div className="py-12 text-center text-slate-400">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 opacity-40"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-          <p className="text-sm">{d.noStatsYet} {d.bookFirstAppointmentStats}</p>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function PacienteStatCard({ label, value, color }: { label: string; value: string | number; color: 'blue' | 'emerald' | 'red' | 'amber' }) {
-  const colors = {
-    blue:    'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-800',
-    emerald: 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-800',
-    red:     'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-red-100 dark:border-red-800',
-    amber:   'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-amber-100 dark:border-amber-800',
-  };
-  return (
-    <div className={`rounded-xl border p-4 text-center ${colors[color]}`}>
-      <p className="text-2xl font-extrabold">{value}</p>
-      <p className="text-xs font-medium mt-0.5 opacity-80">{label}</p>
-    </div>
-  );
-}
-
-function ResumenPacienteView({
-  turnosProximos,
-  misRecetas,
-  misCertificados,
-  pacienteStats,
-  recordatorios,
-  d,
-}: {
-  turnosProximos: Turno[];
-  misRecetas: RecetaPaciente[];
-  misCertificados: CertificadoPaciente[];
-  pacienteStats: PacienteStats | null;
-  recordatorios: any[];
-  d: any;
-}) {
-  const { t, lang } = useLang();
-  const p = t('paciente');
-  const locale = lang === 'en' ? 'en-US' : 'es-AR';
-  const proximoTurno = turnosProximos.length > 0 ? turnosProximos[0] : null;
-  const recetasActivas = misRecetas.filter(r => {
-    if (!r.receta.proximoControl) return true;
-    const proximoControlDate = new Date(r.receta.proximoControl);
-    const hoy = new Date();
-    return proximoControlDate >= hoy;
-  });
-
-  return (
-    <div className="space-y-5">
-      <div className="grid grid-cols-2 gap-3">
-        <div className="border border-blue-200 bg-blue-50 rounded-xl p-4">
-          <p className="text-xs text-blue-600 font-semibold mb-1 flex items-center gap-1">
-            <CalendarIcon size={12} /> {d.nextAppointment}
-          </p>
-          {proximoTurno ? (
-            <>
-              <p className="font-bold text-slate-800 text-sm">
-                {proximoTurno.profesional?.nombre} {proximoTurno.profesional?.apellido}
-              </p>
-              <p className="text-xs text-slate-600 mt-1">
-                {new Date(proximoTurno.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short' })} {p.atTime}{' '}
-                {new Date(proximoTurno.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
-              </p>
-            </>
-          ) : (
-            <p className="text-xs text-slate-500 font-medium">{d.noScheduledAppointments}</p>
-          )}
-        </div>
-
-        <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4">
-          <p className="text-xs text-emerald-600 font-semibold mb-1 flex items-center gap-1">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></svg> {d.activeRecipes}
-          </p>
-          <p className="font-bold text-slate-800 text-sm">{recetasActivas.length}</p>
-          {recetasActivas.length > 0 && (
-            <p className="text-xs text-slate-600 mt-1">{d.latest}: {recetasActivas[0].profesional.nombre}</p>
-          )}
-        </div>
-
-        <div className="border border-amber-200 bg-amber-50 rounded-xl p-4">
-          <p className="text-xs text-amber-600 font-semibold mb-1 flex items-center gap-1">
-            <CreditCardIcon size={12} /> {d.spendingThisMonth}
-          </p>
-          <p className="font-bold text-slate-800 text-sm">
-            ${(pacienteStats?.totalGastado || 0).toLocaleString(locale)}
-          </p>
-        </div>
-
-        <div className="border border-slate-200 bg-slate-50 rounded-xl p-4">
-          <p className="text-xs text-slate-600 font-semibold mb-1 flex items-center gap-1">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> {d.certificates_}
-          </p>
-          <p className="font-bold text-slate-800 text-sm">{misCertificados.length}</p>
-        </div>
-      </div>
-
-      {recordatorios.length > 0 && (
-        <div className="border border-amber-200 bg-amber-50 rounded-xl p-4">
-          <p className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-1">
-            <BellIcon size={14} /> {d.remindersActive}
-          </p>
-          <div className="space-y-2">
-            {recordatorios.map(r => (
-              <p key={r.id} className="text-xs text-amber-700">
-                • Turno {new Date(r.fechaHora).toLocaleDateString(locale)} {p.atTime}{' '}
-                {new Date(r.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} {p.withProfessional}{' '}
-                {r.turno?.profesional?.nombre || 'profesional'}
-              </p>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {(pacienteStats?.topProfesionales || []).length > 0 && (
-        <div className="border border-slate-200 rounded-xl p-4">
-          <p className="text-sm font-semibold text-slate-700 mb-3">{d.mostVisitedProfessionals}</p>
-          <div className="flex flex-wrap gap-3">
-            {pacienteStats!.topProfesionales.map((prof) => (
-              prof.profesional && (
-                <div
-                  key={prof.profesional.id}
-                  className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2"
-                >
-                  {prof.profesional.fotoUrl ? (
-                    <img
-                      src={prof.profesional.fotoUrl}
-                      alt={prof.profesional.nombre}
-                      className="w-8 h-8 rounded-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center">
-                      <UserIcon size={12} className="text-blue-600" />
-                    </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-700 truncate">
-                      {prof.profesional.nombre}
-                    </p>
-                    <p className="text-xs text-slate-500">{prof.totalTurnos} {prof.totalTurnos === 1 ? d.appointment : d.appointments}</p>
-                  </div>
-                </div>
-              )
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function RecetaCard({
-  receta,
-  onDescargar,
-}: {
-  receta: RecetaPaciente;
-  onDescargar: () => void;
-}) {
-  const { t, lang } = useLang();
-  const p = t('paciente');
-  const s = t('status');
-  const locale = lang === 'en' ? 'en-US' : 'es-AR';
-  const isActive = !receta.receta.proximoControl || new Date(receta.receta.proximoControl) >= new Date();
-
-  return (
-    <div className="border border-slate-200 rounded-xl p-4">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex-1">
-          <p className="font-semibold text-slate-800">
-            Dr/a. {receta.profesional.nombre} {receta.profesional.apellido}
-          </p>
-          <p className="text-xs text-blue-600 font-medium">{receta.profesional.especialidad}</p>
-          <p className="text-xs text-slate-500 mt-1">
-            {new Date(receta.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
-          </p>
-        </div>
-        {isActive && (
-          <span className="badge bg-emerald-50 text-emerald-700 text-[10px] font-bold whitespace-nowrap">
-            {s.ACTIVA}
-          </span>
-        )}
-      </div>
-
-      <div className="border-t border-slate-100 pt-3 mb-3 space-y-2">
-        <div>
-          <p className="text-xs font-semibold text-slate-600">{p.diagnosisLabel}</p>
-          <p className="text-sm text-slate-700 line-clamp-2">{receta.receta.diagnostico}</p>
-        </div>
-        {receta.receta.medicamentos && (
-          <div>
-            <p className="text-xs font-semibold text-slate-600">{p.medicinesLabel}</p>
-            <p className="text-sm text-slate-700 line-clamp-2">{receta.receta.medicamentos}</p>
-          </div>
-        )}
-      </div>
-
-      <button
-        onClick={onDescargar}
-        className="btn btn-primary btn-sm w-full"
-      >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        {p.downloadPrescription}
-      </button>
-    </div>
-  );
-}
-
-function CertificadoCard({
-  certificado,
-  onDescargar,
-}: {
-  certificado: CertificadoPaciente;
-  onDescargar: () => void;
-}) {
-  const { t, lang } = useLang();
-  const p = t('paciente');
-  const d = t('dashboard');
-  const locale = lang === 'en' ? 'en-US' : 'es-AR';
-  const tipoLabel: Record<string, string> = {
-    REPOSO: lang === 'en' ? 'Rest' : 'Reposo',
-    CONSULTA: lang === 'en' ? 'Consultation' : 'Consulta',
-    APTITUD: lang === 'en' ? 'Fitness' : 'Aptitud',
-    LIBRE: lang === 'en' ? 'Free form' : 'Libre',
-  };
-
-  const tipoColor: Record<string, string> = {
-    REPOSO: 'bg-red-50 text-red-700 border-red-100',
-    CONSULTA: 'bg-blue-50 text-blue-700 border-blue-100',
-    APTITUD: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-    LIBRE: 'bg-slate-50 text-slate-700 border-slate-100',
-  };
-
-  return (
-    <div className="border border-slate-200 rounded-xl p-4">
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex-1">
-          <p className="font-semibold text-slate-800">
-            Dr/a. {certificado.profesional.nombre} {certificado.profesional.apellido}
-          </p>
-          <p className="text-xs text-slate-500 mt-1">
-            {new Date(certificado.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
-          </p>
-        </div>
-        <span className={`badge border text-[10px] font-bold whitespace-nowrap ${tipoColor[certificado.certificado.tipo]}`}>
-          {tipoLabel[certificado.certificado.tipo]}
-        </span>
-      </div>
-
-      <div className="border-t border-slate-100 pt-3 mb-3 space-y-2">
-        <div>
-          <p className="text-xs font-semibold text-slate-600">{d.certificate.diagnosisLabel}</p>
-          <p className="text-sm text-slate-700">{certificado.certificado.diagnostico}</p>
-        </div>
-        {certificado.certificado.diasReposo && (
-          <div className="bg-red-50 rounded px-2 py-1.5 border border-red-100">
-            <p className="text-xs font-semibold text-red-700">{d.certificate.restLabel}: {certificado.certificado.diasReposo}</p>
-          </div>
-        )}
-      </div>
-
-      <button
-        onClick={onDescargar}
-        className="btn btn-primary btn-sm w-full"
-      >
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        {p.downloadCertificate}
-      </button>
     </div>
   );
 }

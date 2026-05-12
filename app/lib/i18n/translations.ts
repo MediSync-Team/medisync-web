@@ -850,7 +850,7 @@ const translations = {
             'También funciona con Elementor o Divi usando el widget de HTML.'
           ],
           wix: [
-            'En el editor de Wix, hacé clic en "+ Agregar" â†’ "Más" â†’ "HTML iframe".',
+            'En el editor de Wix, hacé clic en "+ Agregar" → "Más" → "HTML iframe".',
             'Hacé clic en "Ingresar código" y pegá este snippet:',
             'O usá el modo "URL" y pegá la URL directa del widget.'
           ],
@@ -1894,7 +1894,7 @@ waitlistDesc: "We'll notify you when a slot becomes available",
             'Also works with Elementor or Divi using the HTML widget.'
           ],
           wix: [
-            'In the Wix editor, click "+ Add" â†’ "More" â†’ "HTML iframe".',
+            'In the Wix editor, click "+ Add" → "More" → "HTML iframe".',
             'Click "Enter code" and paste this snippet:',
             'Or use the "URL" mode and paste the widget direct URL.'
           ],

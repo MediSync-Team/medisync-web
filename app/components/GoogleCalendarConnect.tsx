@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { api } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
+import Spinner from './Spinner';
 
 export default function GoogleCalendarConnect() {
   const { t } = useLang();
@@ -62,10 +63,7 @@ export default function GoogleCalendarConnect() {
   if (loading) {
     return (
       <div className="flex items-center gap-2 text-sm text-slate-400">
-        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-        </svg>
+        <Spinner size={16} />
         {p.verifyingConnection}
       </div>
     );

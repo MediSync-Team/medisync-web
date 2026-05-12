@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { api, ChatMensaje } from '../lib/api';
 import { XIcon, SendIcon } from './icons';
+import Spinner from './Spinner';
 
 interface Props {
   turnoId: string;
@@ -186,10 +187,7 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
             className="w-9 h-9 rounded-xl bg-blue-600 text-white flex items-center justify-center hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors flex-shrink-0"
           >
             {sending ? (
-              <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-              </svg>
+              <Spinner size={16} />
             ) : (
               <SendIcon size={16} />
             )}

@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
@@ -8,12 +8,13 @@ import { getSavedCoverageFilter, isAutoCoverageDisabled, setAutoCoverageDisabled
 import { useLang } from './lib/i18n/context';
 import OnboardingTour from './components/OnboardingTour';
 import Pagination from './components/Pagination';
-import StarRating from './components/StarRating';
 import ThemeLangToggle from './components/ThemeLangToggle';
-import { MediSyncLogo, SearchIcon, HospitalIcon, StethoscopeIcon, BuildingIcon, VideoIcon, MapPinIcon } from './components/icons';
+import { MediSyncLogo, SearchIcon } from './components/icons';
 import { OBRAS_SOCIALES } from './lib/obras-sociales';
-import { translateSpecialtyName } from './lib/i18n/translations';
 import { getDashboardPath } from './lib/auth-redirects';
+import ProfCard from './components/ProfCard';
+import { getSpecialtyDisplayName } from './lib/specialty';
+import { getLocale } from './lib/date';
 
 const LIMIT = 9;
 
@@ -61,19 +62,6 @@ export default function HomePage() {
     { selector: '[data-onboarding="nav-register"]', title: h.tour.registerTitle, description: h.tour.registerDesc, position: 'bottom' as const },
   ];
 
-  const getSpecialtyName = (nombre: string) => {
-    const translated = translateSpecialtyName(nombre, lang);
-    if (translated !== nombre) return translated;
-    const key = nombre
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toUpperCase()
-      .replace(/[^A-Z0-9]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-    const specialties = h.specialties as Record<string, string>;
-    return specialties[key] || nombre;
-  };
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);
   const [loading, setLoading] = useState(true);
@@ -173,7 +161,7 @@ export default function HomePage() {
     ...(filters.precioMin ? [{ key: 'precioMin' as const, label: `${h.priceMin}: $${filters.precioMin}` }] : []),
     ...(filters.precioMax ? [{ key: 'precioMax' as const, label: `${h.priceMax}: $${filters.precioMax}` }] : []),
     ...(filters.modalidad ? [{ key: 'modalidad' as const, label: filters.modalidad === 'PRESENCIAL' ? h.inPerson : h.virtual }] : []),
-    ...(filters.fecha ? [{ key: 'fecha' as const, label: `${h.date} ${new Date(filters.fecha + 'T12:00:00').toLocaleDateString(lang === 'es' ? 'es-AR' : 'en-US', { day: 'numeric', month: 'short' })}` }] : []),
+    ...(filters.fecha ? [{ key: 'fecha' as const, label: `${h.date} ${new Date(filters.fecha + 'T12:00:00').toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}` }] : []),
     ...(filters.orderBy ? [{ key: 'orderBy' as const, label: { precio_asc: h.priceAsc, precio_desc: h.priceDesc, nombre_asc: h.nameAsc }[filters.orderBy] }] : []),
     ...(filters.obraSocial ? [{ key: 'obraSocial' as const, label: `${h.obraSocial || 'Obra social'}: ${filters.obraSocial}` }] : []),
   ];
@@ -184,7 +172,7 @@ export default function HomePage() {
         <OnboardingTour storageKey="medisync-home-tour-v1" steps={homeTourSteps} delay={1200} />
       )}
 
-      {/* ── Navbar ───────────────────────────────────────── */}
+      {/* -- Navbar ----------------------------------------- */}
       <nav className="bg-white dark:bg-slate-800 shadow-sm dark:border-b dark:border-slate-700 sticky top-0 z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -217,7 +205,7 @@ export default function HomePage() {
       </nav>
 
       <main>
-        {/* ── Hero ─────────────────────────────────────────── */}
+        {/* -- Hero ------------------------------------------- */}
         <section data-onboarding="hero" className="relative overflow-hidden bg-blue-600 text-white py-24">
           <span className="pointer-events-none absolute -top-16 -left-16 w-72 h-72 rounded-full bg-blue-500/40" />
           <span className="pointer-events-none absolute top-8 left-1/4 w-24 h-24 rounded-full bg-white/10" />
@@ -239,7 +227,7 @@ export default function HomePage() {
               {h.heroSubtitle}
             </p>
 
-            {/* ── Search bar ─────────────────────────────── */}
+            {/* -- Search bar ------------------------------- */}
             <div
               data-onboarding="search-bar"
               className="flex flex-col sm:flex-row gap-3 max-w-2xl mx-auto bg-white/15 backdrop-blur-sm p-2 rounded-2xl border border-white/20 shadow-xl"
@@ -259,7 +247,7 @@ export default function HomePage() {
               >
                 <option value="">{h.allSpecialties}</option>
                 {especialidades.map((esp) => (
-                  <option key={esp.id} value={esp.nombre}>{getSpecialtyName(esp.nombre)}</option>
+                  <option key={esp.id} value={esp.nombre}>{getSpecialtyDisplayName(esp.nombre, lang, h.specialties as Record<string, string>)}</option>
                 ))}
               </select>
               <button
@@ -270,7 +258,7 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* ── Quick filter pills ─────────────────────── */}
+            {/* -- Quick filter pills ----------------------- */}
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
               <button
                 onClick={() => {
@@ -288,7 +276,7 @@ export default function HomePage() {
                 {h.availableThisWeek}
               </button>
 
-              {/* ── Advanced filter toggle ─────────────────── */}
+              {/* -- Advanced filter toggle ------------------- */}
               <button
                 onClick={() => { setDraft(filters); setShowAdvanced(!showAdvanced); }}
                 className="inline-flex items-center gap-2 text-blue-100 hover:text-white text-sm transition-colors px-3.5 py-1.5 rounded-full border-2 border-white/20 bg-white/10 hover:bg-white/20"
@@ -307,7 +295,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          {/* ── Advanced filter panel ────────────────────── */}
+          {/* -- Advanced filter panel ---------------------- */}
           {showAdvanced && (
             <div className="relative max-w-2xl mx-auto mt-4 px-4">
               <div className="bg-white rounded-2xl shadow-2xl p-5 text-left">
@@ -441,7 +429,7 @@ export default function HomePage() {
           )}
         </section>
 
-        {/* ── Feature pills ────────────────────────────────── */}
+        {/* -- Feature pills ---------------------------------- */}
         <section className="bg-white dark:bg-slate-800 border-b border-slate-100 dark:border-slate-700">
           <div className="max-w-4xl mx-auto px-4 py-4 flex flex-wrap justify-center gap-6 text-sm text-slate-500 dark:text-slate-400">
             <span className="flex items-center gap-1.5"><span className="text-emerald-500">✓</span> {h.featurePills.onlineAppointments}</span>
@@ -451,7 +439,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Active filter pills ──────────────────────────── */}
+        {/* -- Active filter pills ---------------------------- */}
         {filterPills.length > 0 && (
           <div className="max-w-7xl mx-auto px-4 pt-5 flex flex-wrap items-center gap-2">
             <span className="text-xs text-slate-400 font-medium">{h.activeFilters}:</span>
@@ -472,7 +460,7 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* ── Professionals grid ───────────────────────────── */}
+        {/* -- Professionals grid ----------------------------- */}
         <section id="prof-section" className="max-w-7xl mx-auto px-4 py-8">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{h.professionalsAvailable}</h2>
@@ -533,108 +521,4 @@ export default function HomePage() {
   );
 }
 
-function ProfCard({ prof, showDisponible = false }: { prof: Profesional; showDisponible?: boolean }) {
-  const { t, lang } = useLang();
-  const h = t('home');
-  const modalidades = [...new Set(prof.disponibilidades?.map((d) => d.modalidad) ?? [])];
-  const tienePresencial = modalidades.some((m) => m === 'PRESENCIAL' || m === 'AMBOS');
-  const tieneVirtual = modalidades.some((m) => m === 'VIRTUAL' || m === 'AMBOS');
 
-  const getSpecialtyName = (nombre: string) => {
-    if (!nombre) return '';
-    const translated = translateSpecialtyName(nombre, lang);
-    if (translated !== nombre) return translated;
-    const key = nombre
-      .trim()
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toUpperCase()
-      .replace(/[^A-Z0-9]+/g, '_')
-      .replace(/^_+|_+$/g, '');
-    const specialties = (h.specialties as Record<string, string>) || {};
-    return specialties[key] || nombre;
-  };
-
-  return (
-    <div className={`bg-white dark:bg-slate-800 rounded-xl shadow-sm border p-6 hover:shadow-md transition-all flex flex-col ${showDisponible ? 'border-emerald-200 dark:border-emerald-700 hover:border-emerald-300' : 'border-slate-100 dark:border-slate-700 hover:border-blue-200 dark:hover:border-blue-600'}`}>
-      {showDisponible && (
-        <div className="flex items-center gap-1.5 mb-3 -mt-1">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">{h.availableThisWeek}</span>
-        </div>
-      )}
-      <div className="flex items-start gap-4">
-        <div className="w-14 h-14 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center text-2xl shrink-0 border border-blue-100 dark:border-blue-800 overflow-hidden">
-          {prof.fotoUrl
-            ? <img src={prof.fotoUrl} alt={prof.nombre} className="w-full h-full object-cover" />
-            : <StethoscopeIcon size={22} className="text-blue-700" />}
-        </div>
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-slate-900 dark:text-slate-100 truncate">Dr/a. {prof.nombre} {prof.apellido}</h3>
-          <p className="text-blue-600 dark:text-blue-400 text-sm font-medium mt-0.5">{getSpecialtyName(prof.especialidad?.nombre || '')}</p>
-          {prof.precioConsulta > 0 ? (
-            <p className="text-emerald-600 dark:text-emerald-400 font-semibold text-sm mt-1">
-              ${Number(prof.precioConsulta).toLocaleString('es-AR')}
-            </p>
-          ) : (
-              <p className="text-slate-400 text-xs mt-1">{h.consultPrice}</p>
-          )}
-          {prof.ratingPromedio != null && (
-            <div className="flex items-center gap-1.5 mt-1">
-              <StarRating value={prof.ratingPromedio} size={13} />
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">{prof.ratingPromedio} ({prof.totalResenas})</span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Modalidad badges */}
-      {(tienePresencial || tieneVirtual) && (
-        <div className="flex gap-1.5 mt-3">
-          {tienePresencial && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full text-[11px] font-medium">
-              <BuildingIcon size={12} /> {h.inPerson}
-            </span>
-          )}
-          {tieneVirtual && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-[11px] font-medium">
-              <VideoIcon size={12} /> {h.virtual}
-            </span>
-          )}
-        </div>
-      )}
-
-      {prof.lugarAtencion && (
-        <p className="text-slate-400 dark:text-slate-500 text-xs mt-2 flex items-center gap-1 truncate">
-          <MapPinIcon size={12} className="text-slate-400" /> {prof.lugarAtencion}
-        </p>
-      )}
-
-      {prof.obrasSociales && prof.obrasSociales.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-2">
-          {prof.obrasSociales.slice(0, 3).map((os) => (
-            <span key={os} className="inline-flex items-center px-1.5 py-0.5 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 rounded text-[10px] font-medium border border-emerald-100 dark:border-emerald-800">
-              {os}
-            </span>
-          ))}
-          {prof.obrasSociales.length > 3 && (
-              <span className="inline-flex items-center px-1.5 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-500 rounded text-[10px]">
-              {h.moreCount.replace('{{count}}', String(prof.obrasSociales.length - 3))}
-            </span>
-          )}
-        </div>
-      )}
-
-      {prof.bio && (
-        <p className="text-slate-500 dark:text-slate-400 text-xs mt-2 line-clamp-2">{prof.bio}</p>
-      )}
-
-      <Link
-        href={`/profesional/${prof.id}`}
-        className="block mt-4 text-center py-2.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-lg text-sm font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors"
-      >
-        {h.viewProfile}
-      </Link>
-    </div>
-  );
-}

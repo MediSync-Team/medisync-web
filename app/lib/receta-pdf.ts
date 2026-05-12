@@ -1,4 +1,4 @@
-import { RecetaIndicacion, Profesional, Paciente } from './api';
+﻿import { RecetaIndicacion, Profesional, Paciente } from './api';
 
 export interface RecetaPDFData {
   receta: RecetaIndicacion;
@@ -84,7 +84,7 @@ export function imprimirReceta(data: RecetaPDFData) {
       margin: 18mm 20mm 22mm 20mm;
     }
 
-    /* ── Membrete ─────────────────────── */
+    /* -- Membrete ----------------------- */
     .membrete {
       display: flex;
       align-items: flex-start;
@@ -148,7 +148,7 @@ export function imprimirReceta(data: RecetaPDFData) {
       color: #2563EB;
     }
 
-    /* ── Datos del turno ────────────────── */
+    /* -- Datos del turno ------------------ */
     .datos-turno {
       display: flex;
       gap: 0;
@@ -184,14 +184,14 @@ export function imprimirReceta(data: RecetaPDFData) {
       color: #1d4ed8;
     }
 
-    /* ── Separador ──────────────────────── */
+    /* -- Separador ------------------------ */
     .sep {
       border: none;
       border-top: 1px solid #e2e8f0;
       margin: 0 0 18px 0;
     }
 
-    /* ── Título principal ───────────────── */
+    /* -- Título principal ----------------- */
     .titulo-receta {
       font-size: 13pt;
       font-weight: bold;
@@ -204,7 +204,7 @@ export function imprimirReceta(data: RecetaPDFData) {
       padding-left: 10px;
     }
 
-    /* ── Secciones ──────────────────────── */
+    /* -- Secciones ------------------------ */
     .seccion {
       margin-bottom: 14px;
       page-break-inside: avoid;
@@ -225,7 +225,7 @@ export function imprimirReceta(data: RecetaPDFData) {
       padding-left: 2px;
     }
 
-    /* ── Pie de página ──────────────────── */
+    /* -- Pie de página -------------------- */
     .footer {
       position: fixed;
       bottom: 0;
@@ -269,7 +269,7 @@ export function imprimirReceta(data: RecetaPDFData) {
       .footer { position: fixed; bottom: 0; }
     }
 
-    /* ── Botón imprimir (solo pantalla) ── */
+    /* -- Botón imprimir (solo pantalla) -- */
     .btn-imprimir {
       display: block;
       margin: 20px auto;

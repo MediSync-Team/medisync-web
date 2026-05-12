@@ -10,6 +10,7 @@ import {
   getActivePushSubscription,
 } from '../lib/push';
 import { api, NotificationPreferences } from '../lib/api';
+import Spinner from './Spinner';
 
 type PushState = 'loading' | 'unsupported' | 'subscribed' | 'unsubscribed' | 'denied';
 
@@ -148,9 +149,7 @@ export default function PushNotificationToggle() {
           } disabled:opacity-60 disabled:cursor-not-allowed`}
         >
           {working ? (
-            <svg className="animate-spin" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-            </svg>
+            <Spinner size={14} />
           ) : isSubscribed ? (
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"/><line x1="2" y1="2" x2="22" y2="22"/></svg>
           ) : (

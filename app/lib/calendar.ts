@@ -1,4 +1,4 @@
-export interface CalendarEventData {
+﻿export interface CalendarEventData {
   turnoId: string;
   titulo: string;           // "Consulta con Dr/a. Nombre Apellido"
   descripcion: string;      // especialidad, modalidad, lugar
@@ -25,7 +25,7 @@ function escapeICS(s: string): string {
   return s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\n/g, '\\n');
 }
 
-// ── .ics file ────────────────────────────────────────────────────────────────
+// -- .ics file ----------------------------------------------------------------
 
 export function generarICS(ev: CalendarEventData): string {
   const start = new Date(ev.fechaHora);
@@ -71,7 +71,7 @@ export function descargarICS(ev: CalendarEventData) {
   URL.revokeObjectURL(url);
 }
 
-// ── Google Calendar URL ───────────────────────────────────────────────────────
+// -- Google Calendar URL -------------------------------------------------------
 
 export function urlGoogleCalendar(ev: CalendarEventData): string {
   const start = new Date(ev.fechaHora);
@@ -97,7 +97,7 @@ export function urlGoogleCalendar(ev: CalendarEventData): string {
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
 }
 
-// ── Outlook Web URL ───────────────────────────────────────────────────────────
+// -- Outlook Web URL -----------------------------------------------------------
 
 export function urlOutlookCalendar(ev: CalendarEventData): string {
   const start = new Date(ev.fechaHora);
@@ -116,7 +116,7 @@ export function urlOutlookCalendar(ev: CalendarEventData): string {
   return `https://outlook.live.com/calendar/0/action/compose?${params.toString()}`;
 }
 
-// ── Helpers para armar CalendarEventData desde un turno ─────────────────────
+// -- Helpers para armar CalendarEventData desde un turno ---------------------
 
 export interface TurnoCalendarInfo {
   turnoId: string;

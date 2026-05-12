@@ -1,4 +1,4 @@
-import { HistorialTurno, Paciente } from './api';
+﻿import { HistorialTurno, Paciente } from './api';
 
 export interface HistorialPDFData {
   paciente: Paciente;
@@ -25,14 +25,14 @@ function nl2br(str: string): string {
   return esc(str).replace(/\n/g, '<br>');
 }
 
-function formatFecha(isoString: string): string {
-  return new Date(isoString).toLocaleDateString('es-AR', {
+function formatFecha(isoString: string, locale = 'es-AR'): string {
+  return new Date(isoString).toLocaleDateString(locale, {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 }
 
-function formatHora(isoString: string): string {
-  return new Date(isoString).toLocaleTimeString('es-AR', {
+function formatHora(isoString: string, locale = 'es-AR'): string {
+  return new Date(isoString).toLocaleTimeString(locale, {
     hour: '2-digit', minute: '2-digit',
   });
 }
@@ -46,7 +46,7 @@ function renderAntecedente(label: string, valor?: string | null): string {
     </div>`;
 }
 
-function renderConsulta(item: HistorialTurno, idx: number): string {
+function renderConsulta(item: HistorialTurno, idx: number, locale = 'es-AR'): string {
   const prof = item.profesional;
   const profNombre = prof ? `Dr/a. ${esc(prof.nombre ?? '')} ${esc(prof.apellido ?? '')}` : 'Profesional no disponible';
   const especialidad = prof?.especialidad?.nombre ? esc(prof.especialidad.nombre) : '';
@@ -85,7 +85,7 @@ function renderConsulta(item: HistorialTurno, idx: number): string {
     <div class="consulta-header">
       <div class="consulta-fecha">
         <span class="consulta-num">${idx + 1}</span>
-        ${formatFecha(item.fechaHora)} — ${formatHora(item.fechaHora)} h
+        ${formatFecha(item.fechaHora, locale)} — ${formatHora(item.fechaHora, locale)} h
       </div>
       <span class="consulta-badge badge-${item.modalidad === 'VIRTUAL' ? 'blue' : 'slate'}">${modalidadLabel}</span>
     </div>
@@ -99,11 +99,11 @@ function renderConsulta(item: HistorialTurno, idx: number): string {
   </div>`;
 }
 
-export function imprimirHistorial(data: HistorialPDFData) {
+export function imprimirHistorial(data: HistorialPDFData, locale = 'es-AR') {
   const { paciente, turnos, antecedentes } = data;
 
   const pacienteNombre = `${paciente.nombre} ${paciente.apellido}`;
-  const hoy = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const hoy = new Date().toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' });
 
   const antecedentesHtml = antecedentes ? [
     renderAntecedente('Antecedentes personales', antecedentes.antecedentesPersonales),
@@ -115,7 +115,7 @@ export function imprimirHistorial(data: HistorialPDFData) {
   ].filter(Boolean).join('') : '';
 
   const consultasHtml = turnos.length
-    ? turnos.map((t, i) => renderConsulta(t, i)).join('')
+    ? turnos.map((t, i) => renderConsulta(t, i, locale)).join('')
     : '<p class="sin-datos">No hay consultas completadas en el historial.</p>';
 
   const logoSvg = `
@@ -138,7 +138,7 @@ export function imprimirHistorial(data: HistorialPDFData) {
     }
     @page { size: A4; margin: 18mm 20mm 22mm 20mm; }
 
-    /* ── Header ──────────────────────── */
+    /* -- Header ------------------------ */
     .header {
       display: flex;
       align-items: flex-start;
@@ -152,7 +152,7 @@ export function imprimirHistorial(data: HistorialPDFData) {
     .header-right { text-align: right; font-size: 8.5pt; color: #64748b; font-family: Arial, sans-serif; line-height: 1.7; }
     .header-right strong { font-size: 9.5pt; color: #1e293b; display: block; }
 
-    /* ── Datos del paciente ──────────── */
+    /* -- Datos del paciente ------------ */
     .paciente-box {
       background: #f8fafc;
       border: 1px solid #e2e8f0;
@@ -168,7 +168,7 @@ export function imprimirHistorial(data: HistorialPDFData) {
     .paciente-row { font-size: 9.5pt; }
     .paciente-label { color: #64748b; font-family: Arial, sans-serif; font-size: 8pt; }
 
-    /* ── Sección antecedentes ───────── */
+    /* -- Sección antecedentes --------- */
     .bloque-titulo {
       font-size: 11pt; font-weight: bold; color: #1e293b;
       font-family: Arial, sans-serif; text-transform: uppercase;
@@ -185,7 +185,7 @@ export function imprimirHistorial(data: HistorialPDFData) {
     }
     .ante-val { color: #1e293b; line-height: 1.6; flex: 1; }
 
-    /* ── Consultas ───────────────────── */
+    /* -- Consultas --------------------- */
     .consulta {
       border: 1px solid #e2e8f0;
       border-radius: 8px;
@@ -222,7 +222,7 @@ export function imprimirHistorial(data: HistorialPDFData) {
     }
     .prof-esp { color: #2563EB; font-style: italic; }
 
-    /* ── Secciones dentro de consulta ── */
+    /* -- Secciones dentro de consulta -- */
     .seccion { padding: 10px 14px; border-bottom: 1px solid #f1f5f9; }
     .seccion:last-child { border-bottom: none; }
     .sec-titulo {
@@ -251,7 +251,7 @@ export function imprimirHistorial(data: HistorialPDFData) {
     }
     .sin-datos { font-style: italic; color: #94a3b8; font-size: 9pt; padding: 10px 14px; }
 
-    /* ── Footer ──────────────────────── */
+    /* -- Footer ------------------------ */
     .footer {
       position: fixed; bottom: 0; left: 0; right: 0;
       padding: 8px 20mm; border-top: 1px solid #e2e8f0;
@@ -261,7 +261,7 @@ export function imprimirHistorial(data: HistorialPDFData) {
     }
     .footer-medisync { color: #2563EB; font-weight: 700; }
 
-    /* ── Botón imprimir ──────────────── */
+    /* -- Botón imprimir ---------------- */
     .btn-imprimir {
       display: block; margin: 18px auto;
       padding: 10px 28px; background: #2563EB; color: white;
@@ -299,7 +299,7 @@ export function imprimirHistorial(data: HistorialPDFData) {
     <div class="paciente-grid">
       <div class="paciente-row"><span class="paciente-label">Nombre completo</span><br>${esc(pacienteNombre)}</div>
       ${paciente.dni ? `<div class="paciente-row"><span class="paciente-label">DNI</span><br>${esc(paciente.dni)}</div>` : ''}
-      ${paciente.fechaNacimiento ? `<div class="paciente-row"><span class="paciente-label">Fecha de nacimiento</span><br>${new Date(paciente.fechaNacimiento).toLocaleDateString('es-AR')}</div>` : ''}
+      ${paciente.fechaNacimiento ? `<div class="paciente-row"><span class="paciente-label">Fecha de nacimiento</span><br>${new Date(paciente.fechaNacimiento).toLocaleDateString(locale)}</div>` : ''}
       ${paciente.telefono ? `<div class="paciente-row"><span class="paciente-label">Teléfono</span><br>${esc(paciente.telefono)}</div>` : ''}
       ${paciente.email ? `<div class="paciente-row"><span class="paciente-label">Email</span><br>${esc(paciente.email)}</div>` : ''}
       ${paciente.obraSocial ? `<div class="paciente-row"><span class="paciente-label">Obra social / Prepaga</span><br>${esc(paciente.obraSocial)}</div>` : ''}

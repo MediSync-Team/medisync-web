@@ -1,19 +1,20 @@
-'use client';
+﻿'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { api, Profesional, Slot } from '../../lib/api';
+import { useLang } from '../../lib/i18n/context';
+import { getLocale } from '../../lib/date';
 import { BuildingIcon, VideoIcon, MapPinIcon } from '../../components/icons';
+import Spinner from '../../components/Spinner';
 
 const FRONTEND_URL =
   typeof window !== 'undefined'
     ? window.location.origin
     : process.env.NEXT_PUBLIC_FRONTEND_URL ?? 'https://medisync-web.medisync.workers.dev';
 
-/* ── Helpers ─────────────────────────────────────────────── */
-function fmt(d: Date, opts: Intl.DateTimeFormatOptions) {
-  return d.toLocaleDateString('es-AR', opts);
-}
+/* -- Helpers ----------------------------------------------- */
+
 function dateKey(d: Date) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
@@ -37,7 +38,7 @@ const STEP_LABELS: Record<Step, string> = {
   done:  '¡Listo!',
 };
 
-/* ── Stepper ─────────────────────────────────────────────── */
+/* -- Stepper ----------------------------------------------- */
 function Stepper({ current }: { current: Step }) {
   const currentIdx = STEPS.indexOf(current);
   return (
@@ -73,10 +74,13 @@ function Stepper({ current }: { current: Step }) {
   );
 }
 
-/* ── Main component ──────────────────────────────────────── */
+/* -- Main component ---------------------------------------- */
 export default function WidgetPage() {
   const params = useParams();
   const profId = params.profesionalId as string;
+  const { lang } = useLang();
+  const locale = getLocale(lang);
+  const fmt = (d: Date, opts: Intl.DateTimeFormatOptions) => d.toLocaleDateString(locale, opts);
 
   const [profesional, setProfesional]   = useState<Profesional | null>(null);
   const [loadingProf, setLoadingProf]   = useState(true);
@@ -145,11 +149,11 @@ export default function WidgetPage() {
     }
   };
 
-  /* ── Loading ── */
+  /* -- Loading -- */
   if (loadingProf) {
     return (
       <div className="widget-shell flex items-center justify-center min-h-[260px]">
-        <Spinner />
+        <Spinner size={24} />
       </div>
     );
   }
@@ -167,7 +171,7 @@ export default function WidgetPage() {
     d.modalidad === 'VIRTUAL' || d.modalidad === 'AMBOS'
   );
 
-  /* ── DONE ── */
+  /* -- DONE -- */
   if (step === 'done' && confirmed) {
     const fh = new Date(confirmed.fechaHora);
     return (
@@ -182,7 +186,7 @@ export default function WidgetPage() {
           <div>
             <p className="text-base font-bold text-slate-800">¡Turno reservado!</p>
             <p className="text-sm text-slate-600 mt-1">
-              {fmt(fh, { weekday: 'long', day: 'numeric', month: 'long' })} · {fh.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' })}
+              {fmt(fh, { weekday: 'long', day: 'numeric', month: 'long' })} · {fh.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
             </p>
             <p className="text-xs text-slate-500 mt-0.5">
               con {profesional.nombre} {profesional.apellido}
@@ -199,7 +203,7 @@ export default function WidgetPage() {
             <Row label="Email"    value={guest.email} />
             {guest.telefono && <Row label="Teléfono" value={guest.telefono} />}
             {Number(profesional.precioConsulta) > 0 && (
-              <Row label="Precio" value={`$${Number(profesional.precioConsulta).toLocaleString('es-AR')}`} />
+              <Row label="Precio" value={`$${Number(profesional.precioConsulta).toLocaleString(locale)}`} />
             )}
           </div>
 
@@ -228,7 +232,7 @@ export default function WidgetPage() {
     );
   }
 
-  /* ── GUEST FORM ── */
+  /* -- GUEST FORM -- */
   if (step === 'guest') {
     return (
       <div className="widget-shell flex flex-col">
@@ -275,7 +279,7 @@ export default function WidgetPage() {
           <div className="flex gap-2 pt-1">
             <button onClick={() => setStep('slot')} className="widget-btn-secondary flex-1">← Volver</button>
             <button onClick={handleReservar} disabled={reservando} className="widget-btn-primary flex-1">
-              {reservando ? <Spinner sm /> : 'Confirmar turno'}
+              {reservando ? <Spinner size={14} /> : 'Confirmar turno'}
             </button>
           </div>
 
@@ -285,12 +289,12 @@ export default function WidgetPage() {
     );
   }
 
-  /* ── DATE + SLOT PICKER ── */
+  /* -- DATE + SLOT PICKER -- */
   return (
     <div className="widget-shell flex flex-col">
       <Stepper current={selectedDay ? 'slot' : 'date'} />
       <div className="p-4 space-y-4 flex-1">
-        <ProfHeader profesional={profesional} />
+        <ProfHeader profesional={profesional} locale={locale} />
 
         {/* Modalidad toggle */}
         {supportsVirtual && (
@@ -392,7 +396,7 @@ export default function WidgetPage() {
   );
 }
 
-/* ── Sub-components ──────────────────────────────────────── */
+/* -- Sub-components ---------------------------------------- */
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between gap-2">
@@ -402,7 +406,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ProfHeader({ profesional }: { profesional: Profesional }) {
+function ProfHeader({ profesional, locale }: { profesional: Profesional; locale: string }) {
   const initials = `${profesional.nombre[0]}${profesional.apellido[0]}`.toUpperCase();
   const obrasSociales = (profesional as any).obrasSociales as string[] | undefined;
   return (
@@ -420,7 +424,7 @@ function ProfHeader({ profesional }: { profesional: Profesional }) {
         <div className="flex flex-wrap items-center gap-2 mt-0.5">
           {Number(profesional.precioConsulta) > 0 && (
             <span className="text-xs text-slate-500">
-              ${Number(profesional.precioConsulta).toLocaleString('es-AR')} / consulta
+              ${Number(profesional.precioConsulta).toLocaleString(locale)} / consulta
             </span>
           )}
           {obrasSociales && obrasSociales.length > 0 && (
@@ -450,11 +454,4 @@ function WidgetBranding() {
   );
 }
 
-function Spinner({ sm }: { sm?: boolean }) {
-  const s = sm ? 14 : 24;
-  return (
-    <svg className="animate-spin" width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-      <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
-    </svg>
-  );
-}
+

@@ -1,7 +1,8 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { API_BASE } from '../lib/api';
+import Spinner from './Spinner';
 
 /** Derive WebSocket base from the REST API base URL. */
 function getWsBase(): string {
@@ -265,7 +266,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-slate-900">
 
-      {/* ── Header ── */}
+      {/* -- Header -- */}
       <div className="flex items-center justify-between px-4 py-2.5 bg-slate-800/90 backdrop-blur border-b border-slate-700 flex-shrink-0">
         <div className="flex items-center gap-2.5 min-w-0">
           {/* Status dot */}
@@ -295,7 +296,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
         </button>
       </div>
 
-      {/* ── Video area ── */}
+      {/* -- Video area -- */}
       <div className="flex-1 relative overflow-hidden bg-slate-900">
 
         {/* Remote video — full area */}
@@ -321,10 +322,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
               )}
             </div>
             {(state === 'connecting' || state === 'calling') && (
-              <svg className="w-5 h-5 text-slate-400 animate-spin" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
-              </svg>
+              <Spinner size={20} className="text-slate-400" />
             )}
           </div>
         )}
@@ -397,7 +395,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
         </div>
       </div>
 
-      {/* ── Controls ── */}
+      {/* -- Controls -- */}
       {(state === 'in-call' || state === 'waiting' || state === 'calling' || state === 'connecting') && (
         <div className="flex-shrink-0 flex items-center justify-center gap-5 py-4 px-4 bg-slate-800/90 backdrop-blur border-t border-slate-700">
           {/* Mic */}

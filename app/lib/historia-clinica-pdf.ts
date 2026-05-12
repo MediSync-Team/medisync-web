@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Historia Clínica — PDF export via browser print.
  *
  * Builds a fully-styled HTML document and opens it in a new window.
@@ -63,7 +63,7 @@ export function exportarHistoriaClinicaPDF(
   const { paciente, resumen, timeline } = historia;
   const hoy = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
 
-  // ── Patient info section ──────────────────────────────────────────────────
+  // -- Patient info section --------------------------------------------------
   const infoRows = [
     sectionRow('Nombre', `${paciente.nombre} ${paciente.apellido}`),
     sectionRow('DNI', paciente.dni),
@@ -74,7 +74,7 @@ export function exportarHistoriaClinicaPDF(
     sectionRow('Obra social', paciente.obraSocial),
   ].join('');
 
-  // ── Clinical antecedents ──────────────────────────────────────────────────
+  // -- Clinical antecedents --------------------------------------------------
   const antecedentesRows = [
     sectionRow('Antecedentes personales',  paciente.antecedentesPersonales),
     sectionRow('Antecedentes familiares',  paciente.antecedentesFamiliares),
@@ -85,7 +85,7 @@ export function exportarHistoriaClinicaPDF(
     sectionRow('Notas clínicas generales', paciente.notasClinicasGenerales),
   ].join('');
 
-  // ── Timeline ─────────────────────────────────────────────────────────────
+  // -- Timeline -------------------------------------------------------------
   const timelineHtml = timeline
     .filter(item => item.estado === 'COMPLETADO' || item.evolucion)
     .map((item, idx) => `
@@ -108,7 +108,7 @@ export function exportarHistoriaClinicaPDF(
       </div>`)
     .join('');
 
-  // ── Full HTML document ────────────────────────────────────────────────────
+  // -- Full HTML document ----------------------------------------------------
   const html = `<!DOCTYPE html>
 <html lang="es">
 <head>
@@ -128,7 +128,7 @@ export function exportarHistoriaClinicaPDF(
       margin: 20mm 18mm 20mm 18mm;
     }
 
-    /* ── Header ── */
+    /* -- Header -- */
     .header {
       display: flex;
       align-items: flex-start;
@@ -150,7 +150,7 @@ export function exportarHistoriaClinicaPDF(
     .header-meta { text-align: right; font-size: 8.5pt; color: #64748b; line-height: 1.6; }
     .header-meta strong { color: #1e293b; }
 
-    /* ── Doc title ── */
+    /* -- Doc title -- */
     .doc-title {
       font-size: 15pt;
       font-weight: 700;
@@ -165,7 +165,7 @@ export function exportarHistoriaClinicaPDF(
       margin-bottom: 20px;
     }
 
-    /* ── Section ── */
+    /* -- Section -- */
     .section { margin-bottom: 18px; page-break-inside: avoid; }
     .section-title {
       font-size: 9pt;
@@ -178,7 +178,7 @@ export function exportarHistoriaClinicaPDF(
       margin-bottom: 10px;
     }
 
-    /* ── Info table ── */
+    /* -- Info table -- */
     .info-table { width: 100%; border-collapse: collapse; }
     .info-table td { padding: 4px 6px; vertical-align: top; }
     .info-table td.label {
@@ -193,7 +193,7 @@ export function exportarHistoriaClinicaPDF(
     }
     .info-table tr:nth-child(even) td { background: #f8fafc; }
 
-    /* ── Resumen pills ── */
+    /* -- Resumen pills -- */
     .resumen {
       display: flex;
       gap: 12px;
@@ -210,7 +210,7 @@ export function exportarHistoriaClinicaPDF(
     .resumen-pill .rp-value { font-size: 16pt; font-weight: 700; color: #1e293b; line-height: 1.2; }
     .resumen-pill.green .rp-value { color: #059669; }
 
-    /* ── Consulta ── */
+    /* -- Consulta -- */
     .consulta {
       margin-bottom: 14px;
       padding: 10px 12px;
@@ -265,7 +265,7 @@ export function exportarHistoriaClinicaPDF(
       color: #475569;
     }
 
-    /* ── Footer ── */
+    /* -- Footer -- */
     .footer {
       margin-top: 24px;
       padding-top: 12px;

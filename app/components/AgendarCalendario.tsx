@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { descargarICS, urlGoogleCalendar, urlOutlookCalendar, TurnoCalendarInfo, turnoToCalendarEvent } from '../lib/calendar';
 
@@ -69,7 +69,7 @@ export default function AgendarCalendario({ turno, variant = 'card' }: Props) {
   );
 }
 
-// ── Inline SVG icons ─────────────────────────────────────────────────────────
+// -- Inline SVG icons ---------------------------------------------------------
 
 function GoogleCalIcon() {
   return (

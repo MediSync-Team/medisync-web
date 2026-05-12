@@ -45,7 +45,7 @@ export default function RegisterPage() {
       return;
     }
     if (formData.nombre.length < 2 || formData.apellido.length < 2) { setError(v.nameMinLength); return; }
-    if (formData.telefono && !/^[\d\s\-\+\(\)]{8,20}$/.test(formData.telefono)) { setError(v.invalidPhone); return; }
+    if (formData.telefono && !/[\d\s\-\+\(\)]{8,20}$/.test(formData.telefono)) { setError(v.invalidPhone); return; }
     setLoading(true);
     try {
       await register({

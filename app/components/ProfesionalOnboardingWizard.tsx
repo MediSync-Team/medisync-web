@@ -1,8 +1,10 @@
-'use client';
+﻿'use client';
 
 import { useState, useCallback } from 'react';
 import { api, Disponibilidad } from '../lib/api';
 import { DIAS_SEMANA } from '../lib/utils';
+import { useLang } from '../lib/i18n/context';
+import { getLocale } from '../lib/date';
 import { CalendarIcon, CheckIcon, ClipboardIcon, CreditCardIcon, InfoIcon, UserIcon } from './icons';
 
 interface Props {
@@ -22,11 +24,12 @@ const STEPS = [
 ];
 
 export default function ProfesionalOnboardingWizard({ profesionalId, userId, nombre, onComplete }: Props) {
+  const { lang } = useLang();
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  // ── Step 0: Perfil ──────────────────────────────────────────
+  // -- Step 0: Perfil ------------------------------------------
   const [fotoUrl, setFotoUrl] = useState('');
   const [bio, setBio] = useState('');
   const [matricula, setMatricula] = useState('');
@@ -34,7 +37,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
   const [fotoError, setFotoError] = useState('');
   const [fotoOk, setFotoOk] = useState(false);
 
-  // ── Step 1: Disponibilidad ──────────────────────────────────
+  // -- Step 1: Disponibilidad ----------------------------------
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [nuevaDisp, setNuevaDisp] = useState({
     diaSemana: 1,
@@ -44,12 +47,12 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
   });
   const [addingDisp, setAddingDisp] = useState(false);
 
-  // ── Step 2: Precio ──────────────────────────────────────────
+  // -- Step 2: Precio ------------------------------------------
   const [precio, setPrecio] = useState('');
   const [lugarAtencion, setLugarAtencion] = useState('');
   const [modalidadPerfil, setModalidadPerfil] = useState<'PRESENCIAL' | 'VIRTUAL' | 'AMBOS'>('PRESENCIAL');
 
-  // ── Helpers ─────────────────────────────────────────────────
+  // -- Helpers -------------------------------------------------
   const inp = 'field-input mt-1';
   const FRONTEND_URL = typeof window !== 'undefined' ? window.location.origin : 'https://medisync-web.medisync.workers.dev';
   const profileUrl = `${FRONTEND_URL}/profesional/${profesionalId}`;
@@ -150,7 +153,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
     <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
 
-        {/* ── Header ─────────────────────────────────────────── */}
+        {/* -- Header ------------------------------------------- */}
         <div className="bg-gradient-to-r from-blue-700 to-blue-500 px-6 py-5 text-white shrink-0">
           <p className="text-xs font-semibold uppercase tracking-wider text-blue-200 mb-1">
             Bienvenido/a, Dr/a. {nombre}
@@ -175,7 +178,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
           </div>
         </div>
 
-        {/* ── Step tabs ──────────────────────────────────────── */}
+        {/* -- Step tabs ---------------------------------------- */}
         <div className="flex border-b border-slate-200 dark:border-slate-700 shrink-0">
           {STEPS.map((s, i) => (
             <button
@@ -195,7 +198,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
           ))}
         </div>
 
-        {/* ── Body ───────────────────────────────────────────── */}
+        {/* -- Body --------------------------------------------- */}
         <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1">
 
           {error && (
@@ -444,7 +447,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                        ${Number(precio).toLocaleString('es-AR')}
+                        ${Number(precio).toLocaleString(getLocale(lang))}
                       </p>
                       <p className="text-xs text-slate-400">por consulta</p>
                     </div>
@@ -489,7 +492,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                     icon: <CreditCardIcon size={15} />,
                     label: 'Precio de consulta',
                     value: precio && Number(precio) > 0
-                      ? `$${Number(precio).toLocaleString('es-AR')} ARS`
+                      ? `$${Number(precio).toLocaleString(getLocale(lang))} ARS`
                       : 'No configurado',
                     ok: !!(precio && Number(precio) > 0),
                   },
@@ -570,7 +573,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
           )}
         </div>
 
-        {/* ── Footer ─────────────────────────────────────────── */}
+        {/* -- Footer ------------------------------------------- */}
         <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 shrink-0">
           <div>
             {step > 0 && step < 3 ? (

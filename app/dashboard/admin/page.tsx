@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -7,6 +7,8 @@ import Pagination from '../../components/Pagination';
 import StarRating from '../../components/StarRating';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { useLang } from '../../lib/i18n/context';
+import { getLocale } from '../../lib/date';
+import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
 
 type Tab = 'stats' | 'revenue' | 'usuarios' | 'profesionales' | 'turnos' | 'especialidades';
 
@@ -26,9 +28,9 @@ const ROL_COLORS: Record<string, string> = {
 
 export default function AdminPage() {
   const router = useRouter();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const d = t('dashboard');
-  const translateSpecialty = (name: string) => (d as any).translateSpecialty?.(name) || name;
+  const translateSpecialty = useTranslateSpecialty();
   const [tab, setTab] = useState<Tab>('stats');
 
   // Auth guard
@@ -105,8 +107,10 @@ export default function AdminPage() {
   );
 }
 
-// ── Revenue Tab ──────────────────────────────────────────────────────────────
+// -- Revenue Tab --------------------------------------------------------------
 function RevenueTab() {
+  const { lang } = useLang();
+  const locale = getLocale(lang);
   const [data, setData] = useState<AdminAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -128,8 +132,8 @@ function RevenueTab() {
       {/* KPI cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {[
-          { label: 'Revenue total', value: `$${data.revenueTotal.toLocaleString('es-AR')}`, color: 'emerald' },
-          { label: 'Comisiones (5%)', value: `$${data.comisionesTotal.toLocaleString('es-AR')}`, color: 'blue' },
+          { label: 'Revenue total', value: `$${data.revenueTotal.toLocaleString(locale)}`, color: 'emerald' },
+          { label: 'Comisiones (5%)', value: `$${data.comisionesTotal.toLocaleString(locale)}`, color: 'blue' },
           { label: 'Tasa completado', value: `${data.tasaCompletado.toFixed(1)}%`, color: 'indigo' },
           { label: 'Tasa cancelación', value: `${data.tasaCancelacion.toFixed(1)}%`, color: 'red' },
         ].map(c => {
@@ -160,7 +164,7 @@ function RevenueTab() {
                   style={{ height: `${Math.max((d.revenue / maxRevenue) * 128, d.revenue > 0 ? 4 : 0)}px` }}
                 />
                 <div className="absolute -top-6 left-1/2 -translate-x-1/2 hidden group-hover:block bg-slate-800 text-white text-xs rounded px-1.5 py-0.5 whitespace-nowrap z-10">
-                  ${d.revenue.toLocaleString('es-AR')}
+                  ${d.revenue.toLocaleString(locale)}
                 </div>
               </div>
               <span className="text-[10px] text-slate-400 rotate-45 origin-left translate-x-2 whitespace-nowrap">{d.month}</span>
@@ -231,7 +235,7 @@ function RevenueTab() {
                 <td className="px-5 py-3 font-medium text-slate-800 dark:text-slate-100">{p.nombre} {p.apellido}</td>
                 <td className="px-5 py-3 text-slate-500 dark:text-slate-400">{p.especialidad}</td>
                 <td className="px-5 py-3 text-right text-slate-700 dark:text-slate-200">{p.completados}</td>
-                <td className="px-5 py-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">${p.revenue.toLocaleString('es-AR')}</td>
+                <td className="px-5 py-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">${p.revenue.toLocaleString(locale)}</td>
               </tr>
             ))}
           </tbody>
@@ -241,10 +245,11 @@ function RevenueTab() {
   );
 }
 
-// ── Stats Tab ────────────────────────────────────────────────────────────────
+// -- Stats Tab ----------------------------------------------------------------
 function StatsTab() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const d = t('dashboard');
+  const locale = getLocale(lang);
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -262,7 +267,7 @@ function StatsTab() {
     { label: 'Turnos totales',       value: stats.totalTurnos,        color: 'amber' },
     { label: 'Especialidades',       value: stats.totalEspecialidades, color: 'purple' },
     { label: d.reviews,              value: stats.totalResenas,        color: 'pink' },
-    { label: 'Ingresos aprobados',   value: `$${stats.ingresosAprobados.toLocaleString('es-AR')}`, color: 'green' },
+    { label: 'Ingresos aprobados',   value: `$${stats.ingresosAprobados.toLocaleString(locale)}`, color: 'green' },
     { label: 'Turnos (30 días)',      value: stats.turnosUltimos30,    color: 'cyan' },
     { label: 'Registros (30 días)',   value: stats.registrosUltimos30, color: 'teal' },
   ];
@@ -318,11 +323,12 @@ function StatsTab() {
   );
 }
 
-// ── Usuarios Tab ─────────────────────────────────────────────────────────────
+// -- Usuarios Tab -------------------------------------------------------------
 function UsuariosTab() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const d = t("dashboard");
-  const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
+  const translateSpecialty = useTranslateSpecialty();
+  const locale = getLocale(lang);
   const [data, setData] = useState<{ usuarios: AdminUsuario[]; pagination: any } | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -403,7 +409,7 @@ function UsuariosTab() {
                         <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${ROL_COLORS[u.rol] ?? ''}`}>{u.rol}</span>
                       </td>
                       <td className="px-4 py-3 text-slate-500">{translateSpecialty(u.profesional?.especialidad.nombre) ?? '—'}</td>
-                      <td className="px-4 py-3 text-slate-400">{new Date(u.createdAt).toLocaleDateString('es-AR')}</td>
+                      <td className="px-4 py-3 text-slate-400">{new Date(u.createdAt).toLocaleDateString(locale)}</td>
                       <td className="px-4 py-3">
                         {u.profesional ? (
                           <button
@@ -442,11 +448,12 @@ function UsuariosTab() {
   );
 }
 
-// ── Profesionales Tab ────────────────────────────────────────────────────────
+// -- Profesionales Tab --------------------------------------------------------
 function ProfesionalesTab() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const d = t("dashboard");
-  const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
+  const translateSpecialty = useTranslateSpecialty();
+  const locale = getLocale(lang);
   const [data, setData] = useState<{ profesionales: AdminProfesional[]; pagination: any } | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -503,7 +510,7 @@ function ProfesionalesTab() {
                     <td className="px-4 py-3 font-medium text-slate-800">{p.nombre} {p.apellido}</td>
                     <td className="px-4 py-3 text-slate-500">{p.usuario.email}</td>
                     <td className="px-4 py-3 text-slate-600">{translateSpecialty(p.especialidad.nombre)}</td>
-                    <td className="px-4 py-3 text-right text-slate-700">${Number(p.precioConsulta).toLocaleString('es-AR')}</td>
+                    <td className="px-4 py-3 text-right text-slate-700">${Number(p.precioConsulta).toLocaleString(locale)}</td>
                     <td className="px-4 py-3">
                       {p.ratingPromedio != null ? (
                         <span className="flex items-center gap-1">
@@ -538,13 +545,14 @@ function ProfesionalesTab() {
   );
 }
 
-// ── Turnos Tab ───────────────────────────────────────────────────────────────
+// -- Turnos Tab ---------------------------------------------------------------
 const ESTADOS = ['', 'RESERVADO', 'CONFIRMADO', 'COMPLETADO', 'CANCELADO', 'AUSENTE'];
 
 function TurnosTab() {
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const d = t("dashboard");
-  const translateSpecialty = (name?: string) => { if (!name) return ""; return (d as any).translateSpecialty?.(name) || name; };
+  const translateSpecialty = useTranslateSpecialty();
+  const locale = getLocale(lang);
   const [data, setData] = useState<{ turnos: AdminTurno[]; pagination: any } | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState('');
@@ -608,7 +616,7 @@ function TurnosTab() {
                 {data?.turnos.map(t => (
                   <tr key={t.id} className="border-t border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
-                      {new Date(t.fechaHora).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' })}
+                      {new Date(t.fechaHora).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       {t.profesional.nombre} {t.profesional.apellido}
@@ -629,7 +637,7 @@ function TurnosTab() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       {t.pago ? (
-                        <span className="text-slate-700">${Number(t.pago.monto).toLocaleString('es-AR')}</span>
+                        <span className="text-slate-700">${Number(t.pago.monto).toLocaleString(locale)}</span>
                       ) : <span className="text-slate-400">—</span>}
                     </td>
                   </tr>
@@ -652,7 +660,7 @@ function TurnosTab() {
   );
 }
 
-// ── Especialidades Tab ───────────────────────────────────────────────────────
+// -- Especialidades Tab -------------------------------------------------------
 function EspecialidadesTab() {
   const [list, setList] = useState<Especialidad[]>([]);
   const [loading, setLoading] = useState(true);
