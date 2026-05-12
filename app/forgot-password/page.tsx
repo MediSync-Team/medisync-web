@@ -43,7 +43,7 @@ function ForgotPasswordContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || fp.requestError);
+        throw new Error(data?.error?.message || data?.message || fp.requestError);
       }
 
       setSuccess(fp.requestSuccess);
@@ -83,7 +83,7 @@ function ForgotPasswordContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || fp.resetError);
+        throw new Error(data?.error?.message || data?.message || fp.resetError);
       }
 
       setSuccess(fp.resetSuccess);
