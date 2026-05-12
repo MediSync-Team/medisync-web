@@ -16,6 +16,7 @@ import StarRating from '../../components/StarRating';
 import AgendarCalendario from '../../components/AgendarCalendario';
 import { getDaysShort, estadoBadge } from '../../lib/utils';
 import { translateSpecialtyName } from '../../lib/i18n/translations';
+import { getDashboardPath } from '../../lib/auth-redirects';
 
 export default function ProfesionalPage() {
   const params = useParams();
@@ -340,7 +341,7 @@ export default function ProfesionalPage() {
             <div className="flex items-center gap-2">
               <ThemeLangToggle compact />
               {user ? (
-                <Link href={user.paciente ? '/dashboard/paciente' : '/dashboard'} className="btn btn-ghost text-sm text-slate-600 dark:text-slate-300">
+                <Link href={getDashboardPath(user)} className="btn btn-ghost text-sm text-slate-600 dark:text-slate-300">
                   {t('nav').dashboard}
                 </Link>
               ) : (

@@ -13,6 +13,7 @@ import ThemeLangToggle from './components/ThemeLangToggle';
 import { MediSyncLogo, SearchIcon, HospitalIcon, StethoscopeIcon, BuildingIcon, VideoIcon, MapPinIcon } from './components/icons';
 import { OBRAS_SOCIALES } from './lib/obras-sociales';
 import { translateSpecialtyName } from './lib/i18n/translations';
+import { getDashboardPath } from './lib/auth-redirects';
 
 const LIMIT = 9;
 
@@ -195,7 +196,7 @@ export default function HomePage() {
               <ThemeLangToggle />
               {user ? (
                 <>
-                  <Link href={user.paciente ? '/dashboard/paciente' : '/dashboard'} className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium">
+                  <Link href={getDashboardPath(user)} className="text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white text-sm font-medium">
                     {nav.dashboard}
                   </Link>
                   <button onClick={logout} className="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg text-sm hover:bg-slate-200 dark:hover:bg-slate-600 font-medium">
