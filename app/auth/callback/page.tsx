@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { api } from '../../lib/api';
 import { useLang } from '../../lib/i18n/context';
 import { MediSyncLogo } from '../../components/icons';
+import { persistSsoToken } from '../../lib/sso-callback';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -33,7 +34,8 @@ function AuthCallbackContent() {
     }
 
     api.auth.exchangeCode(code)
-      .then(({ dest }) => {
+      .then(({ token, dest }) => {
+        persistSsoToken(token, typeof window !== 'undefined' ? window.localStorage : null);
         router.push(dest);
       })
       .catch(() => {

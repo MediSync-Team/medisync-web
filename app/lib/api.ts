@@ -64,7 +64,7 @@ export const api = {
       }),
     me: () => fetchApi<User>('/auth/me'),
     exchangeCode: (code: string) =>
-      fetchApi<{ dest: string }>('/auth/exchange-code', {
+      fetchApi<{ token?: string; dest: string }>('/auth/exchange-code', {
         method: 'POST',
         body: JSON.stringify({ code }),
       }),
