@@ -6,6 +6,7 @@ import { useLang } from '../../../lib/i18n/context';
 import { getLocale } from '../../../lib/date';
 import { imprimirReceta } from '../../../lib/receta-pdf';
 import { imprimirCertificado } from '../../../lib/certificado-pdf';
+import { BuildingIcon, CalendarIcon, UserIcon, VideoIcon } from '../../../components/icons';
 
 function StarDisplay({ rating, size = 13 }: { rating: number; size?: number }) {
   return (
@@ -157,7 +158,7 @@ export default function HistorialCard({
                         },
                         paciente: null,
                       },
-                    } as CertificadoConDatos);
+                    } as unknown as CertificadoConDatos);
                   } catch (err) {
                     console.error(err);
                   }
@@ -175,20 +176,20 @@ export default function HistorialCard({
                 : 'Certificado Médico'}
             </p>
             <p className="text-xs text-slate-500 mt-1">
-              Emitido el {new Date(item.certificado.emitidaAt).toLocaleDateString(locale)}
+              Emitido el {new Date(item.certificado.emitidaAt ?? item.fechaHora).toLocaleDateString(locale)}
             </p>
           </div>
         )}
 
         {/* Archivos adjuntos */}
-        {item.archivos.length > 0 && (
+        {(item.archivos ?? []).length > 0 && (
           <div>
             <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Documentos adjuntos</p>
             <div className="flex flex-wrap gap-2">
-              {item.archivos.map(archivo => (
+              {(item.archivos ?? []).map(archivo => (
                 <a
                   key={archivo.id}
-                  href={archivo.url}
+                  href={archivo.url ?? '#'}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 border border-slate-200 hover:border-blue-300 rounded-lg text-xs text-slate-700 hover:text-blue-700 transition-colors"
@@ -204,7 +205,7 @@ export default function HistorialCard({
         )}
 
         {/* Empty state */}
-        {!item.evolucion && !item.recetaIndicacion && item.archivos.length === 0 && (
+        {!item.evolucion && !item.recetaIndicacion && (item.archivos ?? []).length === 0 && (
           <p className="text-xs text-slate-400 italic">{d.noClinicalEvolution}</p>
         )}
 

@@ -4,7 +4,7 @@
   descripcion: string;      // especialidad, modalidad, lugar
   fechaHora: string;        // ISO string
   duracionMin?: number;     // default 30
-  lugarAtencion?: string;
+  lugarAtencion?: string | null;
 }
 
 function pad(n: number) { return String(n).padStart(2, '0'); }
@@ -126,7 +126,7 @@ export interface TurnoCalendarInfo {
   profesionalNombre: string;
   profesionalApellido: string;
   especialidad: string;
-  lugarAtencion?: string;
+  lugarAtencion?: string | null;
 }
 
 export function turnoToCalendarEvent(t: TurnoCalendarInfo): CalendarEventData {

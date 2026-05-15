@@ -23,8 +23,8 @@ export default function AuditoriaView({ profesionalId }: { profesionalId: string
     setLoading(true);
     try {
       const response = await api.profesional.getAuditoria(profesionalId, { page, limit: 20 });
-      setAuditoria(response.data);
-      setTotalPages(Math.ceil(response.meta.total / 20));
+      setAuditoria(response.data ?? response.auditoria ?? []);
+      setTotalPages(Math.max(1, Math.ceil((response.meta?.total ?? response.total ?? 0) / 20)));
     } catch (err) {
       console.error('Error loading auditoria:', err);
     }

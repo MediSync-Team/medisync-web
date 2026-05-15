@@ -66,6 +66,7 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
 
     es.onmessage = (event) => {
       if (!isActiveNotificationSession(sessionId, sessionRef.current, closed)) return;
+      if (!event.data.trim()) return;
       try {
         const notif: InAppNotification = JSON.parse(event.data);
         setNotifications(prev => [notif, ...prev]);

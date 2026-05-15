@@ -16,7 +16,7 @@ import { NotificationBell } from '../components/NotificationBell';
 import ProfesionalOnboardingWizard from '../components/ProfesionalOnboardingWizard';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
-  BellIcon, ChartIcon, ClipboardIcon, StarIcon, CheckIcon, XIcon,
+  BellIcon, ChartIcon, ClipboardIcon, StarIcon, CheckIcon, XIcon, InfoIcon,
 } from '../components/icons';
 
 import CalendarioView from './components/CalendarioView';

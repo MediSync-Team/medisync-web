@@ -6,10 +6,10 @@ export interface RecetaPDFData {
     nombre: string;
     apellido: string;
     especialidad: string;
-    matricula?: string;
-    lugarAtencion?: string;
-    telefono?: string;
-    fotoUrl?: string;
+    matricula?: string | null;
+    lugarAtencion?: string | null;
+    telefono?: string | null;
+    fotoUrl?: string | null;
   };
   paciente?: {
     nombre: string;

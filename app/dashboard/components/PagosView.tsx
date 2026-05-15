@@ -369,7 +369,7 @@ export default function PagosView() {
           </div>
 
           {/* Pagination */}
-          {data.pagination.pages > 1 && (
+          {(data.pagination.pages ?? data.pagination.totalPages ?? 1) > 1 && (
             <div className="flex items-center justify-between pt-2">
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {pg.showing} {((page - 1) * 15) + 1}–{Math.min(page * 15, data.pagination.total)} {pg.of} {data.pagination.total}
@@ -383,7 +383,7 @@ export default function PagosView() {
                   {d.previous}
                 </button>
                 <button
-                  disabled={page >= data.pagination.pages}
+                  disabled={page >= (data.pagination.pages ?? data.pagination.totalPages ?? 1)}
                   onClick={() => load(page + 1)}
                   className="btn btn-ghost text-sm disabled:opacity-40"
                 >

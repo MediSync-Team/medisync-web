@@ -6,6 +6,7 @@ import { api, Turno, RecetaIndicacion } from '../../../lib/api';
 import { getLocale } from '../../../lib/date';
 import { useTranslateSpecialty } from '../../../lib/i18n/use-translate-specialty';
 import { imprimirReceta } from '../../../lib/receta-pdf';
+import { InfoIcon, XIcon } from '../../../components/icons';
 
 export default function RecetaModal({ turno, onClose }: { turno: Turno; onClose: () => void }) {
   const { t, lang } = useLang();
@@ -52,7 +53,7 @@ export default function RecetaModal({ turno, onClose }: { turno: Turno; onClose:
             </div>
           ) : (
             <div className="space-y-3 text-sm">
-              <p className="text-xs text-slate-500">Emitida: {new Date(receta.emitidaAt).toLocaleString(getLocale(lang))}</p>
+              <p className="text-xs text-slate-500">Emitida: {new Date(receta.emitidaAt ?? receta.createdAt).toLocaleString(getLocale(lang))}</p>
               <div>
                 <p className="font-semibold text-slate-700">Diagnostico</p>
                 <p className="text-slate-600 whitespace-pre-wrap">{receta.diagnostico}</p>
@@ -110,10 +111,10 @@ export default function RecetaModal({ turno, onClose }: { turno: Turno; onClose:
                   nombre: turno.profesional!.nombre,
                   apellido: turno.profesional!.apellido,
                   especialidad: translateSpecialty(turno.profesional!.especialidad?.nombre ?? ''),
-                  matricula: turno.profesional!.matricula,
-                  lugarAtencion: turno.lugarAtencion ?? turno.profesional!.lugarAtencion,
-                  telefono: turno.profesional!.telefono,
-                  fotoUrl: turno.profesional!.fotoUrl,
+                  matricula: turno.profesional!.matricula ?? undefined,
+                  lugarAtencion: turno.lugarAtencion ?? turno.profesional!.lugarAtencion ?? undefined,
+                  telefono: turno.profesional!.telefono ?? undefined,
+                  fotoUrl: turno.profesional!.fotoUrl ?? undefined,
                 },
                 paciente: turno.paciente
                   ? { nombre: turno.paciente.nombre, apellido: turno.paciente.apellido, email: turno.paciente.email }

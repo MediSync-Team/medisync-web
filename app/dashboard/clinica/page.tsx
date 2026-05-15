@@ -16,6 +16,7 @@ import { BuildingIcon, VideoIcon, CheckIcon } from '../../components/icons';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { estadoLabel } from '../../lib/utils';
 import { getLocale } from '../../lib/date';
+import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
 
 // -- helpers ------------------------------------------------------------------
 function dateKey(d: Date) {
@@ -66,7 +67,7 @@ export default function ClinicaDashboard() {
   const c = t('clinica');
   const status = t('status');
   const modality = t('modality');
-  const translateSpecialty = d.translateSpecialty;
+  const translateSpecialty = useTranslateSpecialty();
   const locale = getLocale(lang);
   const dayLabel = (day: number) => {
     const base = new Date(2026, 4, 10 + day);
@@ -270,7 +271,7 @@ export default function ClinicaDashboard() {
                         <p className="text-sm font-semibold text-slate-800 truncate">{p.nombre} {p.apellido}</p>
                         <p className="text-xs text-blue-600 truncate">{translateSpecialty(p.especialidad?.nombre)}</p>
                         <p className="text-xs text-slate-400">
-                          {p.disponibilidades.length} {p.disponibilidades.length === 1 ? c.team.scheduleBlock : c.team.scheduleBlocks}{c.team.scheduleBlocksSuffix ? ` ${c.team.scheduleBlocksSuffix}` : ''}
+                          {(p.disponibilidades ?? []).length} {(p.disponibilidades ?? []).length === 1 ? c.team.scheduleBlock : c.team.scheduleBlocks}{c.team.scheduleBlocksSuffix ? ` ${c.team.scheduleBlocksSuffix}` : ''}
                         </p>
                       </div>
                       <div className={`w-2 h-2 rounded-full shrink-0 ${p.activo ? 'bg-emerald-400' : 'bg-slate-300'}`} title={p.activo ? c.team.active : c.team.inactive} />
@@ -299,7 +300,7 @@ export default function ClinicaDashboard() {
             ) : (
               <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
                 {clinica.profesionales.map(p => {
-                  const dias = [...new Set(p.disponibilidades.map(d => d.diaSemana))].sort();
+                  const dias = [...new Set((p.disponibilidades ?? []).map(d => d.diaSemana))].sort();
                   return (
                     <div key={p.id} className="flex items-center gap-4 px-5 py-4">
                       <Avatar p={p} />

@@ -9,6 +9,26 @@ interface ApiResponse<T> {
   };
 }
 
+async function parseApiResponse<T>(response: Response): Promise<ApiResponse<T> | null> {
+  const isJson = response.headers.get('content-type')?.includes('application/json');
+  const body = await response.text();
+
+  if (!body.trim()) return null;
+  if (!isJson) return null;
+
+  try {
+    return JSON.parse(body) as ApiResponse<T>;
+  } catch {
+    return {
+      success: false,
+      error: {
+        code: 'INVALID_JSON',
+        message: 'Respuesta inválida del servidor',
+      },
+    };
+  }
+}
+
 async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -29,8 +49,7 @@ async function fetchApi<T>(
       credentials: options.credentials ?? 'include',
     });
 
-    const isJson = response.headers.get('content-type')?.includes('application/json');
-    const data: ApiResponse<T> | null = isJson ? await response.json() : null;
+    const data = await parseApiResponse<T>(response);
 
     if (!response.ok) {
       throw new Error(data?.error?.message || `Error HTTP ${response.status}`);
@@ -99,10 +118,10 @@ export const api = {
       const query = buildQuery(params ?? {});
       return fetchApi<ProfesionalesPaginatedResponse>('/profesionales' + query);
     },
-    getById: (id: string) => fetchApi<{ profesional: Profesional; disponibilidades: Disponibilidad[] }>(`/profesionales/${id}`),
+    getById: (id: string) => fetchApi<Profesional>(`/profesionales/${id}`),
     getSlots: (id: string, fecha: string, modalidad: string) =>
-      fetchApi<{ hora: string; disponible: boolean }[]>(`/profesionales/${id}/slots-disponibles?fecha=${fecha}&modalidad=${modalidad}`),
-    crearDisponibilidad: (id: string, data: { diaSemana: number; horaInicio: string; horaFin: string; modalidad: 'PRESENCIAL' | 'VIRTUAL'; lugarAtencion?: string }) =>
+      fetchApi<Slot[]>(`/profesionales/${id}/slots-disponibles?fecha=${fecha}&modalidad=${modalidad}`),
+    crearDisponibilidad: (id: string, data: { diaSemana: number; horaInicio: string; horaFin: string; modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'AMBOS'; lugarAtencion?: string }) =>
       fetchApi<Disponibilidad>(`/profesionales/${id}/disponibilidad`, {
         method: 'POST',
         body: JSON.stringify(data),
@@ -299,7 +318,7 @@ export const api = {
     getUnread: (turnoId: string) => fetchApi<{ count: number }>(`/chat/${turnoId}/unread`),
     getMensajes: (turnoId: string) => fetchApi<{ id: string; remitenteId: string; contenido: string; createdAt: string }[]>(`/chat/${turnoId}`),
     enviar: (turnoId: string, contenido: string) =>
-      fetchApi<{ id: string }>(`/chat/${turnoId}`, {
+      fetchApi<ChatMensaje>(`/chat/${turnoId}`, {
         method: 'POST',
         body: JSON.stringify({ contenido }),
       }),
@@ -363,7 +382,7 @@ export const api = {
   listaEspera: {
     misSuscripciones: () => fetchApi<ListaEsperaItem[]>('/lista-espera/mis-suscripciones'),
     suscribirme: (data: { profesionalId: string; fecha: string; modalidad: string }) =>
-      fetchApi<ListaEsperaItem>('/lista-espera', {
+      fetchApi<ListaEsperaItem>('/lista-espera/suscribirme', {
         method: 'POST',
         body: JSON.stringify(data),
       }),
@@ -393,6 +412,32 @@ export const api = {
       }),
     testPush: () => fetchApi<void>('/notifications/push/test', { method: 'POST' }),
   },
+};
+
+export const clinicasApi = {
+  getMe: () => fetchApi<ClinicaConRelaciones>('/clinicas/me'),
+  updateMe: (data: Partial<ClinicaConRelaciones>) =>
+    fetchApi<ClinicaConRelaciones>('/clinicas/me', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  getStats: () => fetchApi<ClinicaStats>('/clinicas/me/stats'),
+  getAgenda: (fecha: string) => fetchApi<ClinicaAgendaTurno[]>(`/clinicas/me/agenda${buildQuery({ fecha })}`),
+  invitar: (email: string) =>
+    fetchApi<{ id: string; email: string; expiresAt: string }>('/clinicas/me/invitar', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  cancelarInvitacion: (id: string) =>
+    fetchApi<{ cancelled: boolean }>(`/clinicas/me/invitaciones/${id}`, { method: 'DELETE' }),
+  removerProfesional: (id: string) =>
+    fetchApi<{ removed: boolean }>(`/clinicas/me/profesionales/${id}`, { method: 'DELETE' }),
+  getInvitacion: (token: string) =>
+    fetchApi<InvitacionClinica & { clinica: Pick<Clinica, 'nombre' | 'descripcion' | 'logoUrl' | 'direccion'> }>(`/clinicas/invitaciones/${token}`),
+  aceptarInvitacion: (token: string) =>
+    fetchApi<{ accepted: boolean; clinica: string }>(`/clinicas/invitaciones/${token}/aceptar`, { method: 'POST' }),
+  rechazarInvitacion: (token: string) =>
+    fetchApi<{ rejected: boolean }>(`/clinicas/invitaciones/${token}/rechazar`, { method: 'POST' }),
 };
 
 export type RegisterData = {
@@ -448,14 +493,14 @@ export type Profesional = {
   id: string;
   nombre: string;
   apellido: string;
-  telefono: string;
+  telefono: string | null;
   genero: Genero;
   precioConsulta: number;
-  matricula?: string;
+  matricula?: string | null;
   bio?: string;
-  lugarAtencion?: string;
+  lugarAtencion?: string | null;
   obrasSociales?: string[];
-  fotoUrl?: string;
+  fotoUrl?: string | null;
   activo?: boolean;
   clinicaId?: string | null;
   especialidad: Especialidad;
@@ -484,14 +529,26 @@ export type ResenasStats = {
   distribucion?: Record<string, number>;
 };
 
+export type ResenasResponse = {
+  resenas: Resena[];
+  stats: ResenasStats;
+  pagination: { page: number; totalPages: number; total: number };
+};
+
 export type Disponibilidad = {
   id: string;
   diaSemana: number;
   horaInicio: string;
   horaFin: string;
-  modalidad: 'PRESENCIAL' | 'VIRTUAL';
+  modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'AMBOS';
   lugarAtencion?: string;
   activo: boolean;
+};
+
+export type Slot = {
+  hora: string;
+  disponible: boolean;
+  lugarAtencion?: string | null;
 };
 
 export type Turno = {
@@ -499,6 +556,7 @@ export type Turno = {
   pacienteId: string;
   profesionalId: string;
   fechaHora: string;
+  duracionMin: number;
   estado: 'RESERVADO' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO' | 'AUSENTE';
   modalidad: 'PRESENCIAL' | 'VIRTUAL';
   motivo?: string;
@@ -506,13 +564,18 @@ export type Turno = {
   cuponId?: string;
   createdAt: string;
   updatedAt: string;
-  lugarAtencion?: string;
+  lugarAtencion?: string | null;
   preconsultaRiesgo?: string;
   preconsultaCompletadaAt?: string;
   notasCancelacion?: string;
-  paciente?: Paciente;
+  paciente?: Paciente | null;
   profesional?: Profesional;
   preconsulta?: PreconsultaTurno;
+  evolucion?: Evolucion | null;
+  recetaIndicacion?: RecetaIndicacion | null;
+  certificado?: CertificadoConDatos | { id: string; tipo: TipoCertificado; emitidaAt?: string } | null;
+  archivos?: ArchivoTurno[];
+  pago?: Pago | null;
   resena?: Resena;
 };
 
@@ -521,37 +584,47 @@ export type Paciente = {
   nombre: string;
   apellido: string;
   email: string;
-  telefono?: string;
+  telefono?: string | null;
   genero?: Genero;
-  fotoUrl?: string;
-  fechaNacimiento?: string;
+  fotoUrl?: string | null;
+  fechaNacimiento?: string | null;
   obrasSociales?: string[];
-  dni?: string;
-  obraSocial?: string;
+  dni?: string | null;
+  obraSocial?: string | null;
+  antecedentesPersonales?: string;
+  antecedentesFamiliares?: string;
+  alergias?: string;
+  medicacionActual?: string;
+  habitos?: string;
+  diagnosticosPrevios?: string;
+  notasClinicasGenerales?: string;
 };
 
 export type Clinica = {
   id: string;
   nombre: string;
+  descripcion?: string;
   direccion?: string;
   telefono?: string;
   email?: string;
+  website?: string;
+  logoUrl?: string;
 };
 
 export type TurnosPaginatedResponse = {
   turnos: Turno[];
-  total: number;
-  page: number;
-  limit: number;
-  pagination?: { total: number; totalPages: number; page: number; limit: number };
+  total?: number;
+  page?: number;
+  limit?: number;
+  pagination: { total: number; totalPages: number; page: number; limit: number };
 };
 
 export type ProfesionalesPaginatedResponse = {
   profesionales: Profesional[];
-  total: number;
-  page: number;
-  limit: number;
-  pagination?: { total: number; totalPages: number; page: number; limit: number };
+  total?: number;
+  page?: number;
+  limit?: number;
+  pagination: { total: number; totalPages: number; page: number; limit: number };
 };
 
 export type PreconsultaTurno = {
@@ -564,11 +637,11 @@ export type PreconsultaTurno = {
   historia?: string;
   completadaAt?: string;
   riesgo?: 'BAJO' | 'MEDIO' | 'ALTO' | 'URGENTE';
-  escalaDolor?: number;
-  escalaAnsiedad?: number;
-  inicioSintomas?: string;
-  temperatura?: number;
-  notasPaciente?: string;
+  escalaDolor?: number | null;
+  escalaAnsiedad?: number | null;
+  inicioSintomas?: string | null;
+  temperatura?: number | null;
+  notasPaciente?: string | null;
   aiGenerated?: boolean;
   resumen?: string;
   flags?: string[];
@@ -580,6 +653,11 @@ export type PreconsultaInput = {
   alergias?: string;
   medicacion?: string;
   historia?: string;
+  escalaDolor?: number | null;
+  escalaAnsiedad?: number | null;
+  inicioSintomas?: string | null;
+  temperatura?: number | null;
+  notasPaciente?: string | null;
 };
 
 export type RecetaIndicacion = {
@@ -588,12 +666,12 @@ export type RecetaIndicacion = {
   diagnostico: string;
   indicaciones: string;
   planTratamiento?: string;
-  medicamentos?: string;
-  estudiosSolicitados?: string;
-  proximoControl?: string;
-  advertencias?: string;
-  observaciones?: string;
-  emitidaAt?: string;
+  medicamentos?: string | null;
+  estudiosSolicitados?: string | null;
+  proximoControl?: string | null;
+  advertencias?: string | null;
+  observaciones?: string | null;
+  emitidaAt: string;
   createdAt: string;
   updatedAt?: string;
 };
@@ -611,9 +689,10 @@ export type RecetaIndicacionInput = {
 
 export type HistorialPaginatedResponse = {
   turnos: Turno[];
-  total: number;
-  page: number;
-  limit: number;
+  total?: number;
+  page?: number;
+  limit?: number;
+  pagination: { total: number; totalPages: number; page: number; limit: number };
 };
 
 export type HistorialTurno = Turno;
@@ -622,6 +701,21 @@ export type PacienteStats = {
   totalTurnos: number;
   turnosCompletados: number;
   turnosCancelados: number;
+  completados: number;
+  cancelados: number;
+  totalGastado: number;
+  turnosPorMes: { mes: string; total: number }[];
+  topProfesionales: { profesional: Profesional | null; totalTurnos: number }[];
+  pagos: PacientePago[];
+};
+
+export type PacientePago = {
+  id: string;
+  monto: number;
+  fecha: string;
+  profesional: string;
+  especialidad: string;
+  mpPaymentId?: string | null;
 };
 
 export type RecetaPaciente = {
@@ -630,16 +724,16 @@ export type RecetaPaciente = {
   fechaHora: string;
   receta: {
     diagnostico: string;
-    medicamentos: { nombre: string; dosis: string; frecuencia: string; duracion: string }[];
+    medicamentos?: string | null;
     indicaciones: string;
     planTratamiento?: string;
     estudiosSolicitados?: string;
-    proximoControl?: string;
+    proximoControl?: string | null;
     advertencias?: string;
     observaciones?: string;
     emitidaAt: string;
   };
-  profesional: { nombre: string; apellido: string; especialidad: { nombre: string }; fotoUrl?: string };
+  profesional: { nombre: string; apellido: string; especialidad: string; fotoUrl?: string | null };
 };
 
 export type CertificadoPaciente = {
@@ -656,31 +750,31 @@ export type CertificadoPaciente = {
     emitidaAt: string;
     createdAt: string;
   };
-  profesional: { nombre: string; apellido: string; especialidad: { nombre: string } };
+  profesional: { nombre: string; apellido: string; especialidad?: { nombre: string } | string };
 };
 
 export type PagosDashboardResponse = {
   pagos: Pago[];
-  total: number;
-  page: number;
-  limit: number;
-  mesesResumen?: { mes: string; bruto: number; neto: number; cantidad: number }[];
-  totales?: { bruto: number; neto: number; pendiente: number; aprobados: number; pendientes: number };
-  pagination?: { pages: number; total: number };
+  total?: number;
+  page?: number;
+  limit?: number;
+  mesesResumen: { mes: string; bruto: number; neto: number; cantidad: number }[];
+  totales: { bruto: number; neto: number; pendiente: number; aprobados: number; pendientes: number };
+  pagination: { total: number; totalPages?: number; page?: number; limit?: number; pages?: number };
 };
 
 export type Pago = {
   id: string;
   turnoId: string;
   monto: number;
-  montoNeto?: number;
-  comisionPorcentaje?: number;
+  montoNeto: number;
+  comisionPorcentaje: number;
   mpPaymentId?: string;
   estado: string;
   metodo?: string;
   fechaPago?: string;
   createdAt: string;
-  turno?: Turno;
+  turno: Turno;
 };
 
 export type SuscripcionEstado = {
@@ -738,6 +832,12 @@ export type NotificationPreferences = {
   notifRecordatorio24h?: boolean;
   notifRecordatorio2h?: boolean;
   notifPush?: boolean;
+  pushTurno?: boolean;
+  pushPago?: boolean;
+  pushRecordatorio?: boolean;
+  pushCancelacion?: boolean;
+  pushReceta?: boolean;
+  pushChat?: boolean;
 };
 
 export type WebhookConfig = {
@@ -800,15 +900,21 @@ export type StatsResponse = {
 };
 
 export type HistoriaClinicaPaciente = {
-  id: string;
-  pacienteId: string;
-  fecha: string;
-  motivo: string;
-  diagnostico: string;
-  tratamiento: string;
-  observaciones?: string;
-  profesional?: { nombre: string; apellido: string };
-  turno?: Turno;
+  paciente: Paciente & HistoriaClinicaEditableFields;
+  resumen: {
+    totalConsultas: number;
+    consultasCompletadas: number;
+    ultimaConsulta: string | null;
+  };
+  timeline: {
+    id: string;
+    fechaHora: string;
+    modalidad: string;
+    estado: string;
+    profesional: { id: string; nombre: string; apellido: string; especialidad: string };
+    evolucion: (Evolucion & { updatedAt?: string }) | null;
+    archivos: ArchivoTurno[];
+  }[];
 };
 
 export type HistoriaClinicaEditableFields = {
@@ -836,6 +942,17 @@ export type TurnoPaciente = {
   resena?: Resena;
 };
 
+export type ArchivoTurno = {
+  id: string;
+  turnoId?: string;
+  tipo?: string;
+  url?: string;
+  nombreOriginal?: string;
+  tamanoBytes?: number;
+  mimeType?: string;
+  createdAt?: string;
+};
+
 export type BloqueoDisponibilidad = {
   id: string;
   profesionalId: string;
@@ -855,12 +972,26 @@ export type CertificadoConDatos = {
   diagnostico: string;
   texto: string;
   diasReposo?: number;
-  contenido: string;
+  contenido?: string;
   emitidaAt?: string;
   createdAt: string;
+  turno: {
+    fechaHora: string;
+    modalidad: string;
+    profesional: {
+      nombre: string;
+      apellido: string;
+      especialidad: { nombre: string };
+      matricula?: string | null;
+      telefono?: string | null;
+      fotoUrl?: string | null;
+      lugarAtencion?: string | null;
+    };
+    paciente?: (Partial<Paciente> & { dni?: string | null; fechaNacimiento?: string | null; obraSocial?: string | null }) | null;
+  };
 };
 
-export type TipoCertificado = 'AUSENTISMO' | 'ALTA_MEDICA' | 'REPOSO' | 'CONSULTA' | 'APTITUD' | 'LIBRE' | 'OTRO';
+export type TipoCertificado = 'REPOSO' | 'CONSULTA' | 'APTITUD' | 'LIBRE';
 
 export type Evolucion = {
   id: string;
@@ -871,12 +1002,23 @@ export type Evolucion = {
 
 export type InAppNotification = {
   id: string;
-  usuarioId: string;
+  usuarioId?: string;
   tipo: string;
   titulo: string;
-  mensaje: string;
+  mensaje?: string;
+  cuerpo: string;
+  link?: string | null;
   leida: boolean;
   createdAt: string;
+};
+
+export type ChatMensaje = {
+  id: string;
+  turnoId?: string;
+  remitenteId: string;
+  contenido: string;
+  createdAt: string;
+  leidoAt?: string | null;
 };
 
 export type ListaEsperaItem = {

@@ -72,7 +72,7 @@ function renderConsulta(item: HistorialTurno, idx: number, locale = 'es-AR'): st
 
   const archivosHtml = item.archivos?.length
     ? `<div class="seccion"><div class="sec-titulo">Documentos adjuntos</div><div class="sec-cuerpo">${
-        item.archivos.map(a => `<span class="archivo-chip">${esc(a.nombreOriginal)}</span>`).join(' ')
+        item.archivos.map(a => `<span class="archivo-chip">${esc(a.nombreOriginal ?? '')}</span>`).join(' ')
       }</div></div>`
     : '';
 

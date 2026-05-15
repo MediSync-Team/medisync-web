@@ -69,11 +69,8 @@ export async function subscribeToPush(): Promise<'granted' | 'denied' | 'unsuppo
   const json = sub.toJSON();
   await api.notifications.subscribePush({
     endpoint: sub.endpoint,
-    keys: {
-      p256dh: json.keys?.p256dh ?? '',
-      auth:   json.keys?.auth   ?? '',
-    },
-    userAgent: navigator.userAgent,
+    p256dh: json.keys?.p256dh ?? '',
+    auth:   json.keys?.auth   ?? '',
   });
 
   return 'granted';

@@ -30,7 +30,7 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
         setInicioSintomas(data.inicioSintomas || '');
         setTemperatura(typeof data.temperatura === 'number' ? data.temperatura.toString() : '');
         setNotasPaciente(data.notasPaciente || '');
-        setRiesgo(data.riesgo);
+        setRiesgo(data.riesgo ?? null);
         setFlags(data.flags || []);
       } catch (err) {
         console.error(err);
@@ -60,7 +60,7 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
         notasPaciente: notasPaciente.trim() || null,
       });
 
-      setRiesgo(data.riesgo);
+      setRiesgo(data.riesgo ?? null);
       setFlags(data.flags || []);
       setNotice({ type: 'success', text: 'Cuestionario guardado correctamente.' });
       onSuccess();
