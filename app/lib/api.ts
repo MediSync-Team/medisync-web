@@ -163,7 +163,6 @@ const turnosApi = {
     profesionalId: string;
     fechaHora: string;
     modalidad: 'PRESENCIAL' | 'VIRTUAL';
-    paciente?: { nombre?: string; apellido?: string; email?: string; telefono?: string };
   }) =>
     fetchApi<{ turno: Turno; linkPago: null }>('/turnos/reservar', {
       method: 'POST',

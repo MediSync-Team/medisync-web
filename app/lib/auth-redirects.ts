@@ -23,3 +23,11 @@ export function getSafeRedirectPath(redirect: string | null): string | null {
 export function getPostAuthRedirect(user: AuthUserLike, redirect: string | null): string {
   return getSafeRedirectPath(redirect) ?? getDashboardPath(user);
 }
+
+export function getProfessionalProfilePath(profesionalId: string): string {
+  return `/profesional/${profesionalId}`;
+}
+
+export function getProfessionalBookingLoginPath(profesionalId: string): string {
+  return `/login?redirect=${getProfessionalProfilePath(profesionalId)}`;
+}

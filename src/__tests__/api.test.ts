@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { fetchApi } from '../../app/lib/api';
+import { api, fetchApi } from '../../app/lib/api';
 
 let localStorageStore: Record<string, string>;
 
@@ -120,6 +120,33 @@ describe('API Client', () => {
       await expect(fetchApi<{ ok: boolean }>('/with-auth')).resolves.toEqual({ ok: true });
       const init = fetchMock.mock.calls[0][1] as RequestInit;
       expect(new Headers(init.headers).get('Authorization')).toBe('Bearer jwt-token');
+    });
+
+    it('sends authenticated booking payload without patient identity data', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+        success: true,
+        data: {
+          turno: { id: 'turno-1', fechaHora: '2026-05-20T13:00:00.000Z', duracionMin: 30 },
+          linkPago: null,
+        },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await api.turnos.reservar({
+        profesionalId: 'prof-1',
+        fechaHora: '2026-05-20T13:00:00.000Z',
+        modalidad: 'PRESENCIAL',
+      });
+
+      const init = fetchMock.mock.calls[0][1] as RequestInit;
+      expect(JSON.parse(String(init.body))).toEqual({
+        profesionalId: 'prof-1',
+        fechaHora: '2026-05-20T13:00:00.000Z',
+        modalidad: 'PRESENCIAL',
+      });
     });
   });
 

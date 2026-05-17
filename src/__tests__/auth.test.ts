@@ -1,5 +1,11 @@
 import { describe, it, expect } from 'vitest';
-import { getDashboardPath, getPostAuthRedirect, getSafeRedirectPath } from '../../app/lib/auth-redirects';
+import {
+  getDashboardPath,
+  getPostAuthRedirect,
+  getProfessionalBookingLoginPath,
+  getProfessionalProfilePath,
+  getSafeRedirectPath,
+} from '../../app/lib/auth-redirects';
 
 describe('Auth Context', () => {
   describe('Post-auth redirects', () => {
@@ -32,6 +38,11 @@ describe('Auth Context', () => {
       const patient = { rol: 'PACIENTE' as const };
       expect(getPostAuthRedirect(patient, '//example.com')).toBe('/dashboard/paciente');
       expect(getPostAuthRedirect({ rol: 'PROFESIONAL' }, 'https://example.com')).toBe('/dashboard');
+    });
+
+    it('should build logged-out professional booking redirects back to the profile', () => {
+      expect(getProfessionalProfilePath('prof-123')).toBe('/profesional/prof-123');
+      expect(getProfessionalBookingLoginPath('prof-123')).toBe('/login?redirect=/profesional/prof-123');
     });
   });
 

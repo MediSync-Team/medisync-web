@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { api, Profesional, Slot } from '../../lib/api';
 import { useLang } from '../../lib/i18n/context';
 import { getLocale } from '../../lib/date';
+import { getProfessionalBookingLoginPath, getProfessionalProfilePath } from '../../lib/auth-redirects';
 import { BuildingIcon, VideoIcon, MapPinIcon } from '../../components/icons';
 import Spinner from '../../components/Spinner';
 
@@ -34,7 +35,7 @@ const STEPS: Step[] = ['date', 'slot', 'guest', 'done'];
 const STEP_LABELS: Record<Step, string> = {
   date:  'Fecha',
   slot:  'Horario',
-  guest: 'Datos',
+  guest: 'Cuenta',
   done:  '¡Listo!',
 };
 
@@ -118,36 +119,8 @@ export default function WidgetPage() {
       .finally(() => setLoadingSlots(false));
   }, [selectedDay, modalidad, profId]);
 
-  const handleReservar = async () => {
-    const { nombre, apellido, email } = guest;
-    if (!nombre.trim() || !apellido.trim()) { setGuestError('Nombre y apellido son requeridos.'); return; }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setGuestError('Email inválido.'); return; }
-    if (!selectedDay || !selectedSlot || !profesional) return;
-
-    setReservando(true);
-    setGuestError('');
-    setBookingError('');
-    try {
-      const [h, m] = selectedSlot.split(':').map(Number);
-      const fechaHora = new Date(selectedDay.getFullYear(), selectedDay.getMonth(), selectedDay.getDate(), h, m);
-      const res = await api.turnos.reservar({
-        profesionalId: profId,
-        fechaHora: fechaHora.toISOString(),
-        modalidad,
-        paciente: { nombre: nombre.trim(), apellido: apellido.trim(), email: email.trim().toLowerCase(), telefono: guest.telefono.trim() || undefined },
-      });
-      setConfirmed({
-        id: res.turno.id,
-        fechaHora: res.turno.fechaHora,
-        needsPago: Number(profesional.precioConsulta) > 0,
-      });
-      setStep('done');
-    } catch (err) {
-      setBookingError(err instanceof Error ? err.message : 'No se pudo reservar. Intentá de nuevo.');
-    } finally {
-      setReservando(false);
-    }
-  };
+  const profileUrl = `${FRONTEND_URL}${getProfessionalProfilePath(profId)}`;
+  const loginUrl = `${FRONTEND_URL}${getProfessionalBookingLoginPath(profId)}`;
 
   /* -- Loading -- */
   if (loadingProf) {
@@ -249,39 +222,23 @@ export default function WidgetPage() {
             <button onClick={() => setStep('slot')} className="ml-auto text-blue-600 hover:underline">Cambiar</button>
           </div>
 
-          <p className="text-sm font-semibold text-slate-700">Tus datos de contacto</p>
-
-          {(bookingError || guestError) && (
-            <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              {bookingError || guestError}
+          <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
+            <p className="font-semibold">Para confirmar este turno necesitás iniciar sesión como paciente.</p>
+            <p className="text-xs mt-1">
+              La reserva como invitado volverá en una próxima versión con confirmación por email, vencimiento de reserva y pago seguro.
             </p>
-          )}
-
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="widget-label">Nombre *</label>
-              <input className="widget-input" value={guest.nombre} onChange={e => setGuest(g => ({ ...g, nombre: e.target.value }))} placeholder="Juan" />
-            </div>
-            <div>
-              <label className="widget-label">Apellido *</label>
-              <input className="widget-input" value={guest.apellido} onChange={e => setGuest(g => ({ ...g, apellido: e.target.value }))} placeholder="García" />
-            </div>
-          </div>
-          <div>
-            <label className="widget-label">Email *</label>
-            <input className="widget-input" type="email" value={guest.email} onChange={e => setGuest(g => ({ ...g, email: e.target.value }))} placeholder="juan@email.com" />
-          </div>
-          <div>
-            <label className="widget-label">Teléfono <span className="text-slate-400 font-normal">(opcional)</span></label>
-            <input className="widget-input" value={guest.telefono} onChange={e => setGuest(g => ({ ...g, telefono: e.target.value }))} placeholder="+54 11 1234 5678" />
           </div>
 
           <div className="flex gap-2 pt-1">
             <button onClick={() => setStep('slot')} className="widget-btn-secondary flex-1">← Volver</button>
-            <button onClick={handleReservar} disabled={reservando} className="widget-btn-primary flex-1">
-              {reservando ? <Spinner size={14} /> : 'Confirmar turno'}
-            </button>
+            <a href={loginUrl} target="_blank" rel="noopener noreferrer" className="widget-btn-primary flex-1 text-center">
+              Iniciar sesión
+            </a>
           </div>
+
+          <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="block text-center text-xs text-blue-600 hover:underline">
+            Ver perfil completo en MediSync
+          </a>
 
           <WidgetBranding />
         </div>
@@ -453,5 +410,3 @@ function WidgetBranding() {
     </div>
   );
 }
-
-

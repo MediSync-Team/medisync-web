@@ -17,7 +17,7 @@ import Spinner from '../../components/Spinner';
 import AgendarCalendario from '../../components/AgendarCalendario';
 import { getDaysShort, estadoBadge } from '../../lib/utils';
 import { translateSpecialtyName } from '../../lib/i18n/translations';
-import { getDashboardPath } from '../../lib/auth-redirects';
+import { getDashboardPath, getProfessionalBookingLoginPath } from '../../lib/auth-redirects';
 import { getLocale } from '../../lib/date';
 
 export default function ProfesionalPage() {
@@ -189,7 +189,7 @@ export default function ProfesionalPage() {
     return new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), hora, minuto, 0, 0);
   };
 
-  const doReservar = async (pacienteData?: { nombre: string; apellido: string; email: string; telefono?: string }) => {
+  const doReservar = async () => {
     if (!selectedSlot || !selectedDate || !profesional) return;
 
     setReservando(true);
@@ -203,7 +203,6 @@ export default function ProfesionalPage() {
         profesionalId: profesional.id,
         fechaHora: fechaHora.toISOString(),
         modalidad,
-        paciente: pacienteData,
       };
 
       const reserva = await api.turnos.reservar(reservaData);
@@ -233,18 +232,7 @@ export default function ProfesionalPage() {
         return;
       }
 
-      if (needsPago && !user) {
-        // Guest + paid: turno created, redirect to register so they can complete payment
-        setGuestTurnoReservado({ id: reserva.turno.id, fechaHora: reserva.turno.fechaHora, duracionMin: reserva.turno.duracionMin, needsPago: true });
-        return;
-      }
-
-      // Free turno — show success screen with calendar buttons
-      if (user) {
-        setTurnoReservado({ id: reserva.turno.id, fechaHora: reserva.turno.fechaHora, duracionMin: reserva.turno.duracionMin });
-      } else {
-        setGuestTurnoReservado({ id: reserva.turno.id, fechaHora: reserva.turno.fechaHora, duracionMin: reserva.turno.duracionMin, needsPago: false });
-      }
+      setTurnoReservado({ id: reserva.turno.id, fechaHora: reserva.turno.fechaHora, duracionMin: reserva.turno.duracionMin });
       setSuccessMessage(p.bookingSuccessNotice);
     } catch (err) {
       const msg = err instanceof Error ? err.message : p.bookingError;
@@ -260,16 +248,13 @@ export default function ProfesionalPage() {
     if (!selectedSlot || !selectedDate || !profesional) return;
 
     if (!user) {
-      // Show guest form instead of redirecting to login
-      setShowGuestForm(true);
+      // TODO: Restore guest booking here once the verified guest flow has email confirmation,
+      // expiring slot holds, taken-slot handling, and payment-safe behavior.
+      router.push(getProfessionalBookingLoginPath(params.id as string));
       return;
     }
 
-    await doReservar(
-      user.paciente
-        ? { nombre: user.paciente.nombre, apellido: user.paciente.apellido, email: user.paciente.email, telefono: user.paciente.telefono ?? undefined }
-        : undefined
-    );
+    await doReservar();
   };
 
   const handleReservarInvitado = async () => {
@@ -282,7 +267,7 @@ export default function ProfesionalPage() {
       setGuestFormError(p.invalidEmail);
       return;
     }
-    await doReservar({ nombre: nombre.trim(), apellido: apellido.trim(), email: email.trim().toLowerCase(), telefono: telefono.trim() || undefined });
+    router.push(getProfessionalBookingLoginPath(params.id as string));
   };
 
   if (loading) {
