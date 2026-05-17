@@ -6,8 +6,7 @@ import Link from 'next/link';
 import AgendarCalendario from '../components/AgendarCalendario';
 import Spinner from '../components/Spinner';
 import { TurnoCalendarInfo } from '../lib/calendar';
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
+import { api } from '../lib/api';
 
 function PagoExitosoContent() {
   const searchParams = useSearchParams();
@@ -36,22 +35,7 @@ function PagoExitosoContent() {
       }
 
       try {
-        const token = localStorage.getItem('token') || '';
-        const res = await fetch(`${API_URL}/pagos/confirmar-pago?turnoId=${turnoId}`, {
-          method: 'POST',
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        if (res.ok) {
-          await fetch(`${API_URL}/turnos/${turnoId}`, {
-            method: 'PATCH',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`,
-            },
-            body: JSON.stringify({ estado: 'CONFIRMADO' }),
-          });
-        }
+        await api.pagos.confirmarPago(turnoId);
       } catch (err) {
         console.error('Error confirming payment:', err);
       } finally {

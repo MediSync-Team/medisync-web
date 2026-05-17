@@ -7,8 +7,6 @@ import { useLang } from '../lib/i18n/context';
 import { getLocale } from '../lib/date';
 import { CreditCardIcon } from '../components/icons';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-
 function PagoContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -59,32 +57,27 @@ function PagoContent() {
   };
 
   const crearPreferenciaYRedirigir = async () => {
-    const token = localStorage.getItem('token');
-
     try {
       setRedirecting(true);
       setErrorMessage('');
 
-      const body: any = { turnoId };
+      if (!turnoId) {
+        setErrorMessage(p.paymentProcessingError);
+        setRedirecting(false);
+        return;
+      }
+
+      const body: { turnoId: string; cuponCodigo?: string } = { turnoId };
       if (validatedCoupon) {
         body.cuponCodigo = couponCode.trim();
       }
 
-      const res = await fetch(`${API_URL}/pagos/crear-preferencia`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(body),
-      });
+      const data = await api.pagos.crearPreferencia(body);
 
-      const data = await res.json();
-
-      if (data.success && data.data?.initPoint) {
-        window.location.href = data.data.initPoint;
+      if (data.initPoint) {
+        window.location.href = data.initPoint;
       } else {
-        setErrorMessage(data.error?.message || p.couponCreateError);
+        setErrorMessage(data.mensaje || p.couponCreateError);
         setRedirecting(false);
       }
     } catch (err) {

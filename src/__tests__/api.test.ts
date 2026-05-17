@@ -1,4 +1,28 @@
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { fetchApi } from '../../app/lib/api';
+
+let localStorageStore: Record<string, string>;
+
+beforeEach(() => {
+  localStorageStore = {};
+  vi.stubGlobal('localStorage', {
+    getItem: vi.fn((key: string) => localStorageStore[key] ?? null),
+    setItem: vi.fn((key: string, value: string) => {
+      localStorageStore[key] = value;
+    }),
+    removeItem: vi.fn((key: string) => {
+      delete localStorageStore[key];
+    }),
+    clear: vi.fn(() => {
+      localStorageStore = {};
+    }),
+  });
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
 
 describe('API Client', () => {
   const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
@@ -62,6 +86,40 @@ describe('API Client', () => {
 
       const errorResponse = { success: false, error: { message: 'Not found' } };
       expect(() => extractData(errorResponse)).toThrow('Not found');
+    });
+
+    it('does not throw raw SyntaxError for empty JSON responses', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })));
+
+      await expect(fetchApi('/empty-json')).rejects.toThrow('Error desconocido');
+    });
+
+    it('does not throw raw SyntaxError for malformed JSON responses', async () => {
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })));
+
+      await expect(fetchApi('/bad-json')).rejects.toThrow('Respuesta inválida del servidor');
+    });
+
+    it('adds authorization through the central API client', async () => {
+      localStorage.setItem('token', 'jwt-token');
+      const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+        success: true,
+        data: { ok: true },
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await expect(fetchApi<{ ok: boolean }>('/with-auth')).resolves.toEqual({ ok: true });
+      const init = fetchMock.mock.calls[0][1] as RequestInit;
+      expect(new Headers(init.headers).get('Authorization')).toBe('Bearer jwt-token');
     });
   });
 

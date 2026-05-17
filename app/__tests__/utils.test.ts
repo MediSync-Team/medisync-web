@@ -1,5 +1,13 @@
 import { describe, it, expect } from 'vitest';
-import { estadoBadge, estadoCanceladoAusenteLabel, estadoLabel, clinicalRiskBadge } from '../lib/utils';
+import {
+  clinicalRiskBadge,
+  estadoBadge,
+  estadoCanceladoAusenteLabel,
+  estadoLabel,
+  generoLabel,
+  invitacionEstadoLabel,
+  modalidadLabel,
+} from '../lib/utils';
 
 describe('UI utility badges', () => {
   it('maps appointment states to expected badge classes', () => {
@@ -49,5 +57,19 @@ describe('UI utility badges', () => {
     expect(clinicalRiskBadge('ALTO')).toBe('badge badge-yellow');
     expect(clinicalRiskBadge('URGENTE')).toBe('badge badge-red');
     expect(clinicalRiskBadge(null)).toBe('badge badge-gray');
+  });
+
+  it('centralizes common translated display labels with enum fallbacks', () => {
+    expect(modalidadLabel('VIRTUAL', { VIRTUAL: 'Virtual' })).toBe('Virtual');
+    expect(modalidadLabel('AMBOS', { AMBOS: 'Both' })).toBe('Both');
+    expect(modalidadLabel('UNKNOWN', { VIRTUAL: 'Virtual' })).toBe('UNKNOWN');
+
+    expect(generoLabel('MASCULINO', { genderM: 'Male' })).toBe('Male');
+    expect(generoLabel('NO_ESPECIFICADO', { genderNS: 'Prefer not to say' })).toBe('Prefer not to say');
+    expect(generoLabel('UNKNOWN', { genderM: 'Male' })).toBe('UNKNOWN');
+
+    expect(invitacionEstadoLabel('PENDIENTE', { invitations: { status: { PENDIENTE: 'Pending' } } })).toBe('Pending');
+    expect(invitacionEstadoLabel('EXPIRADA', { invitations: { status: { EXPIRADA: 'Expired' } } })).toBe('Expired');
+    expect(invitacionEstadoLabel('UNKNOWN', { invitations: { status: { PENDIENTE: 'Pending' } } })).toBe('UNKNOWN');
   });
 });

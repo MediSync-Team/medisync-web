@@ -174,12 +174,8 @@ export default function ProfesionalDashboard() {
   const loadStats = async () => {
     setLoadingStats(true);
     try {
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-      const res = await fetch(`${baseUrl}/profesional/stats`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      const data = await res.json();
-      if (data.success) setStats(data.data);
+      const data = await api.profesional.getStats();
+      setStats(data);
     } catch (err) { console.error(err); }
     finally { setLoadingStats(false); }
   };

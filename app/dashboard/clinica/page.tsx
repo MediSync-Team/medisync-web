@@ -14,7 +14,7 @@ import {
 } from '../../lib/api';
 import { BuildingIcon, VideoIcon, CheckIcon } from '../../components/icons';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
-import { estadoLabel } from '../../lib/utils';
+import { estadoLabel, invitacionEstadoLabel } from '../../lib/utils';
 import { getLocale } from '../../lib/date';
 import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
 
@@ -550,7 +550,7 @@ function InvitacionRow({
         </p>
       </div>
       <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${ESTADO_STYLE[inv.estado] ?? ''}`}>
-        {labels.states[inv.estado] ?? inv.estado}
+        {invitacionEstadoLabel(inv.estado, { invitations: { status: labels.states } })}
       </span>
       {inv.estado === 'PENDIENTE' && !expired && (
         <button onClick={onCancel} className="text-xs text-red-500 hover:text-red-700">{labels.cancel}</button>

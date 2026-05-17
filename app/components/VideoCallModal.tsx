@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import { useEffect, useRef, useState, useCallback } from 'react';
-import { API_BASE } from '../lib/api';
+import { API_BASE, api } from '../lib/api';
 import Spinner from './Spinner';
 
 /** Derive WebSocket base from the REST API base URL. */
@@ -92,14 +92,9 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
     async function init() {
       try {
         // 1. Get ticket from backend
-        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-        const res = await fetch(`${API_BASE}/turnos/${turnoId}/video-token`, {
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
-        });
-        const data = await res.json();
-        if (!data.success) throw new Error(data.error?.message ?? 'Error al obtener acceso');
+        const data = await api.turnos.getVideoToken(turnoId);
         if (cancelled) return;
-        const { ticket } = data.data as { ticket: string; roomId: string };
+        const { ticket } = data;
 
         // 2. Request camera + microphone
         let stream: MediaStream;

@@ -12,6 +12,7 @@ import {
   RecetaIndicacion,
   CertificadoConDatos,
   TipoCertificado,
+  ArchivoTurno,
 } from '../../lib/api';
 import Spinner from '../../components/Spinner';
 import { useAuth } from '../../lib/auth-context';
@@ -37,14 +38,12 @@ import VideoCallModal from '../../components/VideoCallModal';
 import ChatModal from '../../components/ChatModal';
 import EmitirCertificadoModal from './EmitirCertificadoModal';
 
-type Archivo = { id: string; url: string; nombreOriginal: string; tipo: string; tamanoBytes: number; mimeType: string };
-
 function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: Turno; onClose: () => void; onUpdate: () => void; translateSpecialty: (name?: string) => string }) {
   const [evolucion, setEvolucion] = useState<Evolucion | null>(null);
   const [notas, setNotas] = useState('');
   const [guardando, setGuardando] = useState(false);
   const [loadingEvolucion, setLoadingEvolucion] = useState(true);
-  const [archivos, setArchivos] = useState<Archivo[]>([]);
+  const [archivos, setArchivos] = useState<ArchivoTurno[]>([]);
   const [uploading, setUploading] = useState(false);
   const [fileType, setFileType] = useState('OTRO');
   const [savedMessage, setSavedMessage] = useState('');
@@ -95,8 +94,6 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
       api.chat.getUnread(turno.id).then(d => setUnreadChat(d.count)).catch(() => {});
     }
   }, [turno.id, turno.estado]);
-
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
 
   useEffect(() => { loadEvolucion(); loadArchivos(); }, [turno.id]);
   useEffect(() => { loadPreconsulta(); }, [turno.id]);
@@ -345,32 +342,23 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
   const loadEvolucion = async () => {
     try {
-      const data = await fetch(`${API_URL}/turnos/${turno.id}/evolucion`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      }).then(r => r.json());
-      if (data.success && data.data) { setEvolucion(data.data); setNotas(data.data.contenido || ''); }
+      const data = await api.turnos.getEvolucion(turno.id);
+      if (data) { setEvolucion(data); setNotas(data.contenido || ''); }
     } catch (err) { console.error(err); }
     finally { setLoadingEvolucion(false); }
   };
 
   const loadArchivos = async () => {
     try {
-      const res = await fetch(`${API_URL}/archivos/turno/${turno.id}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      const data = await res.json();
-      if (data.success) setArchivos(data.data || []);
+      const data = await api.archivos.getByTurno(turno.id);
+      setArchivos(data || []);
     } catch (err) { console.error(err); }
   };
 
   const handleGuardarNotas = async () => {
     setGuardando(true);
     try {
-      await fetch(`${API_URL}/turnos/${turno.id}/evolucion`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ contenido: notas }),
-      });
+      await api.turnos.guardarEvolucion(turno.id, notas);
       setSavedMessage('Notas guardadas');
       setTimeout(() => setSavedMessage(''), 2500);
       onUpdate();
@@ -382,45 +370,26 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
     const file = e.target.files?.[0];
     if (!file) return;
     setUploading(true);
-    const formData = new FormData();
-    formData.append('archivo', file);
-    formData.append('tipo', fileType);
     try {
-      const res = await fetch(`${API_URL}/archivos/${turno.id}`, {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.success) loadArchivos();
-      else setModalNotice({ type: 'error', text: data.error?.message || 'Error al subir archivo' });
+      await api.archivos.subir(turno.id, file, fileType);
+      loadArchivos();
     } catch (err) { console.error(err); }
     finally { setUploading(false); e.target.value = ''; }
   };
 
   const handleDeleteArchivo = async (id: string) => {
     try {
-      const res = await fetch(`${API_URL}/archivos/${id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
-      const data = await res.json();
-      if (data.success) {
-        loadArchivos();
-        setModalNotice({ type: 'success', text: 'Archivo eliminado.' });
-      }
+      await api.archivos.eliminar(id);
+      loadArchivos();
+      setModalNotice({ type: 'success', text: 'Archivo eliminado.' });
     } catch (err) { console.error(err); }
   };
 
-  const handleActualizarEstado = async (nuevoEstado: string) => {
+  const handleActualizarEstado = async (nuevoEstado: Turno['estado']) => {
     try {
-      const res = await fetch(`${API_URL}/turnos/${turno.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${localStorage.getItem('token')}` },
-        body: JSON.stringify({ estado: nuevoEstado }),
-      });
-      const data = await res.json();
-      if (data.success) { onUpdate(); onClose(); }
+      await api.turnos.updateEstado(turno.id, nuevoEstado);
+      onUpdate();
+      onClose();
     } catch (err) { console.error(err); }
   };
 
@@ -1049,11 +1018,11 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 {archivos.map((archivo) => (
                   <div key={archivo.id} className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-lg border border-slate-100">
                     <span className="text-2xl shrink-0">
-                      {archivo.mimeType.includes('pdf') ? '📄' : '🖼️'}
+                      {archivo.mimeType?.includes('pdf') ? '📄' : '🖼️'}
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-700 truncate">{archivo.nombreOriginal}</p>
-                      <p className="text-xs text-slate-400">{archivo.tipo} · {formatFileSize(archivo.tamanoBytes)}</p>
+                      <p className="text-xs text-slate-400">{archivo.tipo ?? 'OTRO'} · {formatFileSize(archivo.tamanoBytes ?? 0)}</p>
                     </div>
                     <a href={archivo.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost p-1.5 text-blue-500 hover:text-blue-700 text-xs">Ver</a>
                     <button onClick={() => handleDeleteArchivo(archivo.id)} className="btn btn-ghost p-1.5 text-red-400 hover:text-red-600">

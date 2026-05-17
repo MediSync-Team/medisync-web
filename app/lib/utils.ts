@@ -22,6 +22,9 @@ export function estadoBadge(estado: string): string {
 }
 
 type StatusTranslations = Partial<Record<string, string>>;
+type ModalityTranslations = Partial<Record<string, string>>;
+type ProfileTranslations = Partial<Record<string, string>>;
+type ClinicTranslations = { invitations?: { status?: Partial<Record<string, string>> } };
 
 export function estadoLabel(estado: string, statusTranslations: StatusTranslations = {}): string {
   return statusTranslations[estado] || estado;
@@ -29,6 +32,25 @@ export function estadoLabel(estado: string, statusTranslations: StatusTranslatio
 
 export function estadoCanceladoAusenteLabel(statusTranslations: StatusTranslations = {}): string {
   return `${estadoLabel('CANCELADO', statusTranslations)}/${estadoLabel('AUSENTE', statusTranslations)}`;
+}
+
+export function modalidadLabel(modalidad: string, modalityTranslations: ModalityTranslations = {}): string {
+  return modalityTranslations[modalidad] || modalidad;
+}
+
+export function generoLabel(genero: string, profileTranslations: ProfileTranslations = {}): string {
+  const map: Record<string, string> = {
+    NO_ESPECIFICADO: 'genderNS',
+    MASCULINO: 'genderM',
+    FEMENINO: 'genderF',
+    OTRO: 'genderO',
+  };
+  const key = map[genero];
+  return (key && profileTranslations[key]) || genero;
+}
+
+export function invitacionEstadoLabel(estado: string, clinicTranslations: ClinicTranslations = {}): string {
+  return clinicTranslations.invitations?.status?.[estado] || estado;
 }
 
 export function clinicalRiskBadge(riesgo: string | null | undefined): string {

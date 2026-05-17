@@ -29,7 +29,7 @@ async function parseApiResponse<T>(response: Response): Promise<ApiResponse<T> |
   }
 }
 
-async function fetchApi<T>(
+export async function fetchApi<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
@@ -78,114 +78,166 @@ function buildQuery(params: Record<string, string | number | boolean | undefined
   return '?' + q.toString();
 }
 
+const authApi = {
+  register: (data: RegisterData) =>
+    fetchApi<AuthResponse>('/auth/register', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  login: (data: LoginData) =>
+    fetchApi<AuthResponse>('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  me: () => fetchApi<User>('/auth/me'),
+  exchangeCode: (code: string) =>
+    fetchApi<{ token?: string; dest: string }>('/auth/exchange-code', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    }),
+  logout: () =>
+    fetchApi<{ logged_out: boolean }>('/auth/logout', { method: 'POST' }),
+};
+
+const especialidadesApi = {
+  getAll: () => fetchApi<Especialidad[]>('/especialidades'),
+};
+
+const profesionalesApi = {
+  getAll: (params?: {
+    especialidad?: string;
+    precioMin?: string;
+    precioMax?: string;
+    modalidad?: string;
+    fecha?: string;
+    disponibleEstaSemana?: string;
+    obraSocial?: string;
+    orderBy?: string;
+    page?: string;
+    limit?: string;
+  }) => {
+    const query = buildQuery(params ?? {});
+    return fetchApi<ProfesionalesPaginatedResponse>('/profesionales' + query);
+  },
+  getById: (id: string) => fetchApi<Profesional>(`/profesionales/${id}`),
+  getSlots: (id: string, fecha: string, modalidad: string) =>
+    fetchApi<Slot[]>(`/profesionales/${id}/slots-disponibles?fecha=${fecha}&modalidad=${modalidad}`),
+  crearDisponibilidad: (id: string, data: { diaSemana: number; horaInicio: string; horaFin: string; modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'AMBOS'; lugarAtencion?: string }) =>
+    fetchApi<Disponibilidad>(`/profesionales/${id}/disponibilidad`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  eliminarDisponibilidad: (id: string, dispId: string) =>
+    fetchApi<void>(`/profesionales/${id}/disponibilidad/${dispId}`, { method: 'DELETE' }),
+};
+
+const turnosApi = {
+  getAll: (params?: { page?: number; limit?: number }) => {
+    const query = buildQuery(params ? { page: params.page, limit: params.limit } : {});
+    return fetchApi<TurnosPaginatedResponse>('/turnos' + query);
+  },
+  getMisTurnos: (params?: { tipo?: string; estado?: string; page?: number; limit?: number }) => {
+    const query = buildQuery(params ? {
+      tipo: params.tipo,
+      estado: params.estado,
+      page: params.page,
+      limit: params.limit,
+    } : {});
+    return fetchApi<TurnosPaginatedResponse>('/turnos/mis-turnos' + query);
+  },
+  getByProfesional: (id: string, params?: Record<string, string | number | boolean | undefined>) => {
+    return fetchApi<TurnosPaginatedResponse>(`/turnos/profesional/${id}${buildQuery(params || {})}`);
+  },
+  getById: (id: string) => fetchApi<Turno>(`/turnos/${id}`),
+  updateEstado: (id: string, estado: Turno['estado'], notasCancelacion?: string) =>
+    fetchApi<Turno>(`/turnos/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ estado, notasCancelacion }),
+    }),
+  reprogramar: (id: string, data: { fechaHora: string; modalidad?: 'PRESENCIAL' | 'VIRTUAL' }) =>
+    fetchApi<Turno>(`/turnos/${id}/reprogramar`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  reservar: (data: {
+    profesionalId: string;
+    fechaHora: string;
+    modalidad: 'PRESENCIAL' | 'VIRTUAL';
+    paciente?: { nombre?: string; apellido?: string; email?: string; telefono?: string };
+  }) =>
+    fetchApi<{ turno: Turno; linkPago: null }>('/turnos/reservar', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  getPoliticaCancelacion: () =>
+    fetchApi<{ horasMinimas: number }>('/turnos/politica-cancelacion'),
+  getEvolucion: (id: string) =>
+    fetchApi<Evolucion | null>(`/turnos/${id}/evolucion`),
+  guardarEvolucion: (id: string, contenido: string) =>
+    fetchApi<Evolucion>(`/turnos/${id}/evolucion`, {
+      method: 'POST',
+      body: JSON.stringify({ contenido }),
+    }),
+  getPreconsulta: (id: string) =>
+    fetchApi<PreconsultaTurno>(`/turnos/${id}/preconsulta`),
+  updatePreconsulta: (id: string, data: PreconsultaInput) =>
+    fetchApi<PreconsultaTurno>(`/turnos/${id}/preconsulta`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+  getVideoToken: (id: string) =>
+    fetchApi<{ ticket: string; roomId: string }>(`/turnos/${id}/video-token`),
+  getReceta: (id: string) =>
+    fetchApi<RecetaIndicacion | null>(`/turnos/${id}/receta`),
+  guardarReceta: (id: string, data: RecetaIndicacionInput) =>
+    fetchApi<{ receta: RecetaIndicacion; shareText: string }>(`/turnos/${id}/receta`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  miHistorial: (params?: { page?: number; limit?: number }) => {
+    const query = buildQuery(params ? { page: params.page, limit: params.limit } : {});
+    return fetchApi<HistorialPaginatedResponse>('/turnos/mi-historial' + query);
+  },
+  getAuditoriaCancelacion: (id: string) =>
+    fetchApi<AuditoriaDisponibilidad | null>(`/turnos/${id}/auditoria-cancelacion`),
+};
+
+const pagosApi = {
+  getByProfesional: (params?: { desde?: string; hasta?: string; estado?: string; page?: number; limit?: number }) => {
+    const query = buildQuery(params ?? {});
+    return fetchApi<PagosDashboardResponse>(`/profesional/pagos${query}`);
+  },
+  getEstado: (turnoId: string) => fetchApi<PagoEstado>(`/pagos/estado/${turnoId}`),
+  crearPreferencia: (data: { turnoId: string; cuponCodigo?: string }) =>
+    fetchApi<PagoPreferenciaResponse>('/pagos/crear-preferencia', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  confirmarPago: (turnoId: string) =>
+    fetchApi<{ confirmed: boolean; estado: string | null }>(`/pagos/confirmar-pago${buildQuery({ turnoId })}`, {
+      method: 'POST',
+    }),
+};
+
+const archivosApi = {
+  getByTurno: (turnoId: string) => fetchApi<ArchivoTurno[]>(`/archivos/turno/${turnoId}`),
+  subir: (turnoId: string, archivo: File, tipo: string) => {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    formData.append('tipo', tipo);
+    return fetchApi<ArchivoTurno>(`/archivos/${turnoId}`, {
+      method: 'POST',
+      body: formData,
+    });
+  },
+  eliminar: (id: string) => fetchApi<{ deleted: boolean }>(`/archivos/${id}`, { method: 'DELETE' }),
+};
+
 export const api = {
-  auth: {
-    register: (data: RegisterData) =>
-      fetchApi<AuthResponse>('/auth/register', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    login: (data: LoginData) =>
-      fetchApi<AuthResponse>('/auth/login', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    me: () => fetchApi<User>('/auth/me'),
-    exchangeCode: (code: string) =>
-      fetchApi<{ token?: string; dest: string }>('/auth/exchange-code', {
-        method: 'POST',
-        body: JSON.stringify({ code }),
-      }),
-    logout: () =>
-      fetchApi<{ logged_out: boolean }>('/auth/logout', { method: 'POST' }),
-  },
-  especialidades: {
-    getAll: () => fetchApi<Especialidad[]>('/especialidades'),
-  },
-  profesionales: {
-    getAll: (params?: {
-      especialidad?: string;
-      precioMin?: string;
-      precioMax?: string;
-      modalidad?: string;
-      fecha?: string;
-      disponibleEstaSemana?: string;
-      obraSocial?: string;
-      orderBy?: string;
-      page?: string;
-      limit?: string;
-    }) => {
-      const query = buildQuery(params ?? {});
-      return fetchApi<ProfesionalesPaginatedResponse>('/profesionales' + query);
-    },
-    getById: (id: string) => fetchApi<Profesional>(`/profesionales/${id}`),
-    getSlots: (id: string, fecha: string, modalidad: string) =>
-      fetchApi<Slot[]>(`/profesionales/${id}/slots-disponibles?fecha=${fecha}&modalidad=${modalidad}`),
-    crearDisponibilidad: (id: string, data: { diaSemana: number; horaInicio: string; horaFin: string; modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'AMBOS'; lugarAtencion?: string }) =>
-      fetchApi<Disponibilidad>(`/profesionales/${id}/disponibilidad`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    eliminarDisponibilidad: (id: string, dispId: string) =>
-      fetchApi<void>(`/profesionales/${id}/disponibilidad/${dispId}`, { method: 'DELETE' }),
-  },
-  turnos: {
-    getAll: (params?: { page?: number; limit?: number }) => {
-      const query = buildQuery(params ? { page: params.page, limit: params.limit } : {});
-      return fetchApi<TurnosPaginatedResponse>('/turnos' + query);
-    },
-    getMisTurnos: (params?: { tipo?: string; estado?: string; page?: number; limit?: number }) => {
-      const query = buildQuery(params ? {
-        tipo: params.tipo,
-        estado: params.estado,
-        page: params.page,
-        limit: params.limit,
-      } : {});
-      return fetchApi<TurnosPaginatedResponse>('/turnos/mis-turnos' + query);
-    },
-    getByProfesional: (id: string, params?: Record<string, string | number | boolean | undefined>) => {
-      return fetchApi<TurnosPaginatedResponse>(`/turnos/profesional/${id}${buildQuery(params || {})}`);
-    },
-    reprogramar: (id: string, data: { fechaHora: string; modalidad?: 'PRESENCIAL' | 'VIRTUAL' }) =>
-      fetchApi<Turno>(`/turnos/${id}/reprogramar`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    reservar: (data: {
-      profesionalId: string;
-      fechaHora: string;
-      modalidad: 'PRESENCIAL' | 'VIRTUAL';
-      paciente?: { nombre?: string; apellido?: string; email?: string; telefono?: string };
-    }) =>
-      fetchApi<{ turno: Turno; linkPago: null }>('/turnos/reservar', {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    getPoliticaCancelacion: () =>
-      fetchApi<{ horasMinimas: number }>('/turnos/politica-cancelacion'),
-    getPreconsulta: (id: string) =>
-      fetchApi<PreconsultaTurno>(`/turnos/${id}/preconsulta`),
-    updatePreconsulta: (id: string, data: PreconsultaInput) =>
-      fetchApi<PreconsultaTurno>(`/turnos/${id}/preconsulta`, {
-        method: 'PUT',
-        body: JSON.stringify(data),
-      }),
-    getVideoToken: (id: string) =>
-      fetchApi<{ ticket: string; roomId: string }>(`/turnos/${id}/video-token`),
-    getReceta: (id: string) =>
-      fetchApi<RecetaIndicacion | null>(`/turnos/${id}/receta`),
-    guardarReceta: (id: string, data: RecetaIndicacionInput) =>
-      fetchApi<{ receta: RecetaIndicacion; shareText: string }>(`/turnos/${id}/receta`, {
-        method: 'POST',
-        body: JSON.stringify(data),
-      }),
-    miHistorial: (params?: { page?: number; limit?: number }) => {
-      const query = buildQuery(params ? { page: params.page, limit: params.limit } : {});
-      return fetchApi<HistorialPaginatedResponse>('/turnos/mi-historial' + query);
-    },
-    getAuditoriaCancelacion: (id: string) =>
-      fetchApi<AuditoriaDisponibilidad | null>(`/turnos/${id}/auditoria-cancelacion`),
-  },
+  auth: authApi,
+  especialidades: especialidadesApi,
+  profesionales: profesionalesApi,
+  turnos: turnosApi,
   pacientes: {
     updatePerfil: (data: Partial<Paciente>) =>
       fetchApi<Paciente>('/pacientes/perfil', {
@@ -247,10 +299,7 @@ export const api = {
     getPaciente: () => fetchApi<{ turnos: RecordatorioTurno[] }>('/recordatorios/paciente'),
   },
   pagos: {
-    getByProfesional: (params?: { desde?: string; hasta?: string; estado?: string; page?: number; limit?: number }) => {
-      const query = buildQuery(params ?? {});
-      return fetchApi<PagosDashboardResponse>(`/profesional/pagos${query}`);
-    },
+    ...pagosApi,
   },
   suscripciones: {
     estado: () => fetchApi<SuscripcionEstado>('/suscripciones/estado'),
@@ -314,6 +363,7 @@ export const api = {
         body: JSON.stringify(data),
       }),
   },
+  archivos: archivosApi,
   chat: {
     getUnread: (turnoId: string) => fetchApi<{ count: number }>(`/chat/${turnoId}/unread`),
     getMensajes: (turnoId: string) => fetchApi<{ id: string; remitenteId: string; contenido: string; createdAt: string }[]>(`/chat/${turnoId}`),
@@ -777,6 +827,19 @@ export type Pago = {
   turno: Turno;
 };
 
+export type PagoEstado = {
+  estado: string | null;
+  monto?: number;
+  necesitaPago?: boolean;
+  initPoint?: string | null;
+};
+
+export type PagoPreferenciaResponse = {
+  initPoint?: string;
+  necesitaPago?: boolean;
+  mensaje?: string;
+};
+
 export type SuscripcionEstado = {
   plan: PlanProfesional;
   estado: string;
@@ -893,10 +956,22 @@ export type AuditoriaPaginatedResponse = {
 };
 
 export type StatsResponse = {
-  totalTurnos: number;
-  totalPacientes: number;
-  totalIngresos: number;
-  turnosPorEstado: Record<string, number>;
+  turnosPorMes: {
+    mes: string;
+    total: number;
+    completados: number;
+    cancelados: number;
+    ausentes: number;
+  }[];
+  ingresosPorMes: {
+    mes: string;
+    bruto: number;
+    neto: number;
+  }[];
+  resumen: {
+    totalTurnos: number;
+    totalPacientes: number;
+  };
 };
 
 export type HistoriaClinicaPaciente = {

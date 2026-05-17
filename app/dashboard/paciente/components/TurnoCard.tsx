@@ -14,6 +14,7 @@ interface TurnoCardProps {
   turno: Turno;
   pagoInfo?: { necesitaPago: boolean };
   canCancel: boolean;
+  isCancelling?: boolean;
   horasMinCancelacion: number;
   onPagar: () => void;
   onCancelar: () => void;
@@ -29,7 +30,7 @@ interface TurnoCardProps {
 }
 
 export default function TurnoCard({
-  turno, pagoInfo, canCancel, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, onVideoCall, onChat, horasMinCancelacion, d, s, translateSpecialty,
+  turno, pagoInfo, canCancel, isCancelling = false, onPagar, onCancelar, onReprogramar, onCompletarPreconsulta, onVerReceta, onCalificar, onVideoCall, onChat, horasMinCancelacion, d, s, translateSpecialty,
 }: TurnoCardProps) {
   const { t, lang } = useLang();
   const p = t('paciente');
@@ -139,11 +140,11 @@ export default function TurnoCard({
             {/* Cancel */}
             <button
               onClick={onCancelar}
-              disabled={!canCancel}
-              className={`btn btn-sm ${canCancel ? 'btn-ghost text-red-500 hover:bg-red-50' : 'btn-ghost text-slate-400 cursor-not-allowed'}`}
+              disabled={!canCancel || isCancelling}
+              className={`btn btn-sm ${canCancel && !isCancelling ? 'btn-ghost text-red-500 hover:bg-red-50' : 'btn-ghost text-slate-400 cursor-not-allowed'}`}
               title={!canCancel ? `Requiere ${horasMinCancelacion}h de anticipación` : undefined}
             >
-              <XIcon size={13} /> {p.cancel}
+              <XIcon size={13} /> {isCancelling ? t('common').saving : p.cancel}
             </button>
 
             <Link href={`/profesional/${turno.profesional?.id}`} className="btn btn-ghost btn-sm text-slate-500">

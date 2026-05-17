@@ -62,8 +62,6 @@ import {
   BellIcon, XIcon, SearchIcon, WaitlistIcon, InfoIcon, ClipboardIcon,
 } from '../../components/icons';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api';
-
 export default function PacienteDashboard() {
   const router = useRouter();
   const { user, loading: authLoading, logout } = useAuth();
@@ -101,6 +99,7 @@ export default function PacienteDashboard() {
   const [turnoVideoCall, setTurnoVideoCall] = useState<Turno | null>(null);
   const [turnoChat, setTurnoChat] = useState<Turno | null>(null);
   const [inlineNotice, setInlineNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [cancellingTurnoId, setCancellingTurnoId] = useState<string | null>(null);
 
   // Datos médicos
   const [datosMedicos, setDatosMedicos] = useState<{
@@ -145,16 +144,11 @@ export default function PacienteDashboard() {
   }, []);
 
   const loadPagosInfo = async (turnosData: Turno[]) => {
-    const token = localStorage.getItem('token');
     const pagos: Record<string, any> = {};
     for (const turno of turnosData) {
       if (turno.estado === 'RESERVADO' && Number(turno.profesional?.precioConsulta) > 0) {
         try {
-          const res = await fetch(`${API_URL}/pagos/estado/${turno.id}`, {
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const data = await res.json();
-          if (data.success) pagos[turno.id] = data.data;
+          pagos[turno.id] = await api.pagos.getEstado(turno.id);
         } catch (err) { console.error(err); }
       }
     }
@@ -268,20 +262,17 @@ export default function PacienteDashboard() {
   };
 
   const handleCancelar = async (turnoId: string) => {
-    const token = localStorage.getItem('token');
+    if (cancellingTurnoId) return;
+    setCancellingTurnoId(turnoId);
     try {
-      const res = await fetch(`${API_URL}/turnos/${turnoId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ estado: 'CANCELADO' }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        loadTurnos(activeTab === 'proximos' || activeTab === 'pasados' ? activeTab : 'proximos', page);
-        setInlineNotice({ type: 'success', text: 'Turno cancelado correctamente.' });
-      }
+      await api.turnos.updateEstado(turnoId, 'CANCELADO');
+      setTurnos(prev => prev.map(turno => turno.id === turnoId ? { ...turno, estado: 'CANCELADO' } : turno));
+      await loadTurnos(activeTab === 'proximos' || activeTab === 'pasados' ? activeTab : 'proximos', page);
+      setInlineNotice({ type: 'success', text: 'Turno cancelado correctamente.' });
     } catch {
       setInlineNotice({ type: 'error', text: 'Error al cancelar turno' });
+    } finally {
+      setCancellingTurnoId(null);
     }
   };
 
@@ -825,6 +816,7 @@ export default function PacienteDashboard() {
                       pagoInfo={pagosPendientes[turno.id]}
                       horasMinCancelacion={horasMinCancelacion}
                       canCancel={canCancel(turno.fechaHora)}
+                      isCancelling={cancellingTurnoId === turno.id}
                       onPagar={() => router.push(`/pago?turno=${turno.id}`)}
                       onCancelar={() => handleCancelar(turno.id)}
                       onReprogramar={() => setTurnoReprogramar(turno)}
