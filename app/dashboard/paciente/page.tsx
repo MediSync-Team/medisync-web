@@ -267,7 +267,10 @@ export default function PacienteDashboard() {
     try {
       await api.turnos.updateEstado(turnoId, 'CANCELADO');
       setTurnos(prev => prev.map(turno => turno.id === turnoId ? { ...turno, estado: 'CANCELADO' } : turno));
-      await loadTurnos(activeTab === 'proximos' || activeTab === 'pasados' ? activeTab : 'proximos', page);
+      await Promise.all([
+        loadTurnos(activeTab === 'proximos' || activeTab === 'pasados' ? activeTab : 'proximos', page),
+        loadStats(),
+      ]);
       setInlineNotice({ type: 'success', text: 'Turno cancelado correctamente.' });
     } catch {
       setInlineNotice({ type: 'error', text: 'Error al cancelar turno' });
