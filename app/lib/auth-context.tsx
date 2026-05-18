@@ -14,14 +14,28 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
+export function hasStoredAuthToken(storage?: Pick<Storage, 'getItem'> | null) {
+  if (storage === null) return false;
+  const targetStorage = storage ?? (typeof window !== 'undefined' ? window.localStorage : null);
+  if (!targetStorage || typeof targetStorage.getItem !== 'function') return false;
+  return Boolean(targetStorage?.getItem('token'));
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!hasStoredAuthToken()) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     api.auth.me()
       .then(setUser)
       .catch(() => {
+        localStorage.removeItem('token');
         setUser(null);
       })
       .finally(() => setLoading(false));

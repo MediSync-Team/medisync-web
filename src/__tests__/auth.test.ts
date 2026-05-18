@@ -6,6 +6,7 @@ import {
   getProfessionalProfilePath,
   getSafeRedirectPath,
 } from '../../app/lib/auth-redirects';
+import { hasStoredAuthToken } from '../../app/lib/auth-context';
 
 describe('Auth Context', () => {
   describe('Post-auth redirects', () => {
@@ -61,6 +62,15 @@ describe('Auth Context', () => {
   });
 
   describe('Token management', () => {
+    it('should detect whether the current browser has an auth token', () => {
+      const withToken = { getItem: (key: string) => key === 'token' ? 'jwt-token' : null };
+      const withoutToken = { getItem: () => null };
+
+      expect(hasStoredAuthToken(withToken)).toBe(true);
+      expect(hasStoredAuthToken(withoutToken)).toBe(false);
+      expect(hasStoredAuthToken(null)).toBe(false);
+    });
+
     it('should validate token format', () => {
       const isValidTokenFormat = (token: string | null) => {
         if (!token) return false;
