@@ -58,4 +58,17 @@ describe('frontend clinic-time helpers', () => {
     })).toBe('Monday, May 18');
     expect(formatClinicInstantTime('2026-05-19T02:30:00.000Z', 'es-AR')).toContain('11:30');
   });
+  it('groups month-boundary appointments by Argentina clinic month', () => {
+    // 2026-05-31 23:30 ART = 2026-06-01 02:30 UTC
+    // Should be grouped as May, not June
+    const lateNightMay = '2026-06-01T02:30:00.000Z';
+    expect(clinicDateKeyFromInstant(lateNightMay)).toBe('2026-05-31');
+    expect(clinicDateKeyFromInstant(lateNightMay).startsWith('2026-05')).toBe(true);
+
+    // 2026-06-01 00:30 ART = 2026-06-01 03:30 UTC
+    // Should be grouped as June
+    const earlyJune = '2026-06-01T03:30:00.000Z';
+    expect(clinicDateKeyFromInstant(earlyJune)).toBe('2026-06-01');
+    expect(clinicDateKeyFromInstant(earlyJune).startsWith('2026-06')).toBe(true);
+  });
 });

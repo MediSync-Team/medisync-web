@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Cupon, TipoDescuento, SuscripcionEstado } from '../lib/api';
-import { formatClinicDateKey, getClinicMonthFetchBounds, getLocale, isSameClinicCalendarDay } from '../lib/date';
+import { clinicDateKeyFromInstant, formatClinicDateKey, getClinicMonthFetchBounds, getLocale, isSameClinicCalendarDay } from '../lib/date';
 import StatsPanel from '../components/StatsPanel';
 import ProfileModal from '../components/ProfileModal';
 import OnboardingTour from '../components/OnboardingTour';
@@ -237,11 +237,10 @@ export default function ProfesionalDashboard() {
   const hoyTurnos = turnos.filter(t =>
     isSameClinicCalendarDay(t.fechaHora, new Date()) && t.estado !== 'CANCELADO'
   );
-  const mesActual = new Date();
-  const turnosMes = turnos.filter(t => {
-    const f = new Date(t.fechaHora);
-    return f.getMonth() === mesActual.getMonth() && f.getFullYear() === mesActual.getFullYear() && t.estado !== 'CANCELADO';
-  });
+  const clinicMonthPrefix = formatClinicDateKey(new Date()).slice(0, 7); // "YYYY-MM"
+  const turnosMes = turnos.filter(t =>
+    clinicDateKeyFromInstant(t.fechaHora).startsWith(clinicMonthPrefix) && t.estado !== 'CANCELADO'
+  );
 
   const loadCupones = async () => {
     setLoadingCupones(true);
@@ -516,7 +515,7 @@ export default function ProfesionalDashboard() {
                   </div>
                 </div>
                 <p className="stat-value text-emerald-600">{turnosMes.length}</p>
-                <p className="stat-desc">{mesActual.toLocaleString(getLocale(lang), { month: 'long' })}</p>
+                <p className="stat-desc">{new Date().toLocaleString(getLocale(lang), { month: 'long' })}</p>
               </div>
 
               <div className="stat-card">
