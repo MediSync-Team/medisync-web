@@ -44,9 +44,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
   const [obrasSociales, setObrasSociales] = useState<string[]>([]);
   const [notifPrefs, setNotifPrefs] = useState<NotificationPreferences | null>(null);
-  const [savingNotif, setSavingNotif] = useState(false);
   const [notifMsg, setNotifMsg] = useState('');
-  const [sendingTest, setSendingTest] = useState(false);
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -101,37 +99,15 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
     }
   }, [isOpen, userType, user]);
 
-  const toggleNotif = (field: keyof NotificationPreferences) => {
+  const toggleNotif = async (field: keyof NotificationPreferences) => {
     if (!notifPrefs) return;
-    setNotifPrefs({ ...notifPrefs, [field]: !notifPrefs[field] });
-  };
-
-  const saveNotifPrefs = async () => {
-    if (!notifPrefs) return;
-    setSavingNotif(true);
+    const updated = { ...notifPrefs, [field]: !notifPrefs[field] };
+    setNotifPrefs(updated);
     setNotifMsg('');
     try {
-      await api.notifications.updatePreferences(notifPrefs);
-      setNotifMsg(isEs ? 'Preferencias guardadas' : 'Preferences saved');
+      await api.notifications.updatePreferences(updated);
     } catch {
       setNotifMsg(isEs ? 'Error al guardar preferencias' : 'Error saving preferences');
-    } finally {
-      setSavingNotif(false);
-    }
-  };
-
-  const sendTestNotif = async (canal: 'EMAIL' | 'WHATSAPP') => {
-    setSendingTest(true);
-    setNotifMsg('');
-    try {
-      await api.notifications.sendTest(canal);
-      setNotifMsg(isEs
-        ? `Prueba de ${canal === 'EMAIL' ? 'email' : 'WhatsApp'} enviada`
-        : `${canal === 'EMAIL' ? 'Email' : 'WhatsApp'} test sent`);
-    } catch {
-      setNotifMsg(isEs ? 'Error al enviar notificación de prueba' : 'Error sending test notification');
-    } finally {
-      setSendingTest(false);
     }
   };
 
@@ -499,34 +475,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                 </p>
               )}
 
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={saveNotifPrefs}
-                  disabled={savingNotif}
-                  className="flex-1 px-3 py-2 text-sm bg-blue-50 text-blue-700 border border-blue-200 rounded-md hover:bg-blue-100 disabled:opacity-50"
-                >
-                  {savingNotif ? c.saving : (isEs ? 'Guardar preferencias' : 'Save preferences')}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => sendTestNotif('EMAIL')}
-                  disabled={sendingTest}
-                  title={isEs ? 'Enviar email de prueba' : 'Send test email'}
-                  className="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50"
-                >
-                  {sendingTest ? '...' : '✉️'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => sendTestNotif('WHATSAPP')}
-                  disabled={sendingTest}
-                  title={isEs ? 'Enviar WhatsApp de prueba' : 'Send test WhatsApp'}
-                  className="px-3 py-2 text-sm text-gray-600 border border-gray-200 rounded-md hover:bg-gray-50 disabled:opacity-50"
-                >
-                  {sendingTest ? '...' : '💬'}
-                </button>
-              </div>
+
             </div>
           )}
 
