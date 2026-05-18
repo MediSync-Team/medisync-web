@@ -289,10 +289,26 @@
     display: flex;
     border-bottom: 1px solid var(--color-border);
     overflow-x: auto;
-    scrollbar-width: none;
     -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 transparent;
   }
-  .tab-nav::-webkit-scrollbar { display: none; }
+  .tab-nav::-webkit-scrollbar { 
+    height: 6px; 
+  }
+  .tab-nav::-webkit-scrollbar-track { 
+    background: transparent; 
+  }
+  .tab-nav::-webkit-scrollbar-thumb { 
+    background-color: #cbd5e1; 
+    border-radius: 20px; 
+  }
+  .dark .tab-nav {
+    scrollbar-color: #475569 transparent;
+  }
+  .dark .tab-nav::-webkit-scrollbar-thumb {
+    background-color: #475569;
+  }
   .tab-btn {
     padding: 0.75rem 1.25rem;
     font-size: 0.875rem;
