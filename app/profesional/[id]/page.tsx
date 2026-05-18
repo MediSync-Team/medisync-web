@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
@@ -299,10 +299,10 @@ export default function ProfesionalPage() {
       <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
-            <Link href="/" className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors">
+            <button onClick={() => window.history.length > 1 ? router.back() : router.push('/')} className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors">
               <ArrowLeftIcon size={16} />
               <span className="text-sm font-medium">{t('common').back}</span>
-            </Link>
+            </button>
             <div className="flex items-center gap-2">
               <MediSyncLogo size={24} />
               <span className="text-sm font-bold text-slate-700 dark:text-slate-200">MediSync</span>
