@@ -18,6 +18,7 @@ import Spinner from '../../components/Spinner';
 import { useAuth } from '../../lib/auth-context';
 import { useLang } from '../../lib/i18n/context';
 import { getLocale } from '../../lib/date';
+import { buildReprogrammingFechaHora, getReprogrammingMinDate } from '../../lib/reprogramming';
 import { estadoBadge, estadoLabel } from '../../lib/utils';
 import { imprimirReceta } from '../../lib/receta-pdf';
 import { imprimirCertificado } from '../../lib/certificado-pdf';
@@ -410,7 +411,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
       setModalNotice({ type: 'error', text: 'Seleccioná una fecha y un horario.' });
       return;
     }
-    const fechaHoraISO = `${reprogramarFecha}T${reprogramarHora}:00`;
+    const fechaHoraISO = buildReprogrammingFechaHora(reprogramarFecha, reprogramarHora);
     setReprogramando(true);
     try {
       await api.turnos.reprogramar(turno.id, { fechaHora: fechaHoraISO });
@@ -1058,7 +1059,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 <input
                   type="date"
                   value={reprogramarFecha}
-                  min={new Date().toISOString().split('T')[0]}
+                  min={getReprogrammingMinDate()}
                   onChange={(e) => {
                     setReprogramarFecha(e.target.value);
                     cargarSlots(e.target.value);

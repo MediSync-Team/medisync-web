@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api, Turno } from '../../../lib/api';
+import { buildReprogrammingFechaHora, getReprogrammingMinDate } from '../../../lib/reprogramming';
 import { XIcon, InfoIcon } from '../../../components/icons';
 
 export default function ReprogramarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
@@ -29,12 +30,12 @@ export default function ReprogramarModal({ turno, onClose, onSuccess }: { turno:
 
   const handleGuardar = async () => {
     if (!fecha || !horaSeleccionada) { setNotice('Selecciona fecha y horario.'); return; }
-    const fechaHora = new Date(`${fecha}T${horaSeleccionada}:00`);
-    if (Number.isNaN(fechaHora.getTime()) || fechaHora <= new Date()) { setNotice('Selecciona una fecha futura valida.'); return; }
+    const fechaHora = buildReprogrammingFechaHora(fecha, horaSeleccionada);
+    if (new Date(fechaHora) <= new Date()) { setNotice('Selecciona una fecha futura valida.'); return; }
 
     setGuardando(true);
     try {
-      await api.turnos.reprogramar(turno.id, { fechaHora: fechaHora.toISOString(), modalidad: turno.modalidad });
+      await api.turnos.reprogramar(turno.id, { fechaHora, modalidad: turno.modalidad });
       onSuccess();
     } catch (err) { setNotice(err instanceof Error ? err.message : 'No se pudo reprogramar'); }
     finally { setGuardando(false); }
@@ -66,7 +67,7 @@ export default function ReprogramarModal({ turno, onClose, onSuccess }: { turno:
             <input
               type="date"
               value={fecha}
-              min={new Date().toISOString().split('T')[0]}
+              min={getReprogrammingMinDate()}
               onChange={(e) => { setFecha(e.target.value); setHoraSeleccionada(''); }}
               className="field-input"
             />
