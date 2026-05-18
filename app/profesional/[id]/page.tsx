@@ -15,10 +15,10 @@ import {
 import StarRating from '../../components/StarRating';
 import Spinner from '../../components/Spinner';
 import AgendarCalendario from '../../components/AgendarCalendario';
-import { getDaysShort, estadoBadge } from '../../lib/utils';
+import { estadoBadge } from '../../lib/utils';
 import { translateSpecialtyName } from '../../lib/i18n/translations';
 import { getDashboardPath, getProfessionalBookingLoginPath } from '../../lib/auth-redirects';
-import { getLocale } from '../../lib/date';
+import { buildUpcomingClinicDays, clinicDateTimeToIso, formatClinicDateKey, getLocale, localDateKey, todayInputValue } from '../../lib/date';
 
 export default function ProfesionalPage() {
   const params = useParams();
@@ -28,7 +28,6 @@ export default function ProfesionalPage() {
   const h = t('home');
   const p = t('professional');
   const dateLocale = getLocale(lang);
-  const diasShort = getDaysShort(lang);
   const formatBookingDate = (date: Date, options: Intl.DateTimeFormatOptions) =>
     date.toLocaleDateString(dateLocale, options);
   const formatPrice = (value: number) =>
@@ -84,10 +83,7 @@ export default function ProfesionalPage() {
     setSlotsLoading(true);
     setSlotsError(null);
     try {
-      const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
-      const fecha = `${year}-${month}-${day}`;
+      const fecha = localDateKey(date);
       const data = await api.profesionales.getSlots(params.id as string, fecha, modalidad);
       setSlots(data);
     } catch (err) {
@@ -108,13 +104,10 @@ export default function ProfesionalPage() {
   };
 
   const selectedDateKey = selectedDate ? (() => {
-    const y = selectedDate.getFullYear();
-    const m = String(selectedDate.getMonth() + 1).padStart(2, '0');
-    const d = String(selectedDate.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
+    return localDateKey(selectedDate);
   })() : null;
   const selectedWaitlistItem = selectedDateKey
-    ? suscripcionesLista.find(x => x.modalidad === modalidad && new Date(x.fecha).toISOString().split('T')[0] === selectedDateKey)
+    ? suscripcionesLista.find(x => x.modalidad === modalidad && formatClinicDateKey(new Date(x.fecha)) === selectedDateKey)
     : null;
 
   const handleUnirseListaEspera = async () => {
@@ -135,10 +128,7 @@ export default function ProfesionalPage() {
 
     setSuscribiendoLista(true);
     try {
-      const year = selectedDate.getFullYear();
-      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
-      const day = String(selectedDate.getDate()).padStart(2, '0');
-      const fecha = `${year}-${month}-${day}`;
+      const fecha = localDateKey(selectedDate);
       await api.listaEspera.suscribirme({ profesionalId: params.id as string, fecha, modalidad });
       setSuccessMessage(p.waitlistJoinedMessage);
       setTimeout(() => setSuccessMessage(''), 4000);
@@ -173,20 +163,12 @@ export default function ProfesionalPage() {
   };
 
   const getProximosDias = () => {
-    const dias = [];
-    const hoy = new Date();
-    for (let i = 0; i < 14; i++) {
-      const f = new Date(hoy);
-      f.setDate(hoy.getDate() + i);
-      dias.push(f);
-    }
-    return dias;
+    return buildUpcomingClinicDays(14);
   };
 
   const buildFechaHora = () => {
     if (!selectedDate || !selectedSlot) return null;
-    const [hora, minuto] = selectedSlot.split(':').map(Number);
-    return new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), hora, minuto, 0, 0);
+    return clinicDateTimeToIso(localDateKey(selectedDate), selectedSlot);
   };
 
   const doReservar = async () => {
@@ -201,7 +183,7 @@ export default function ProfesionalPage() {
 
       const reservaData: Parameters<typeof api.turnos.reservar>[0] = {
         profesionalId: profesional.id,
-        fechaHora: fechaHora.toISOString(),
+        fechaHora,
         modalidad,
       };
 
@@ -644,11 +626,12 @@ export default function ProfesionalPage() {
                 <p className="field-label mb-2">{p.chooseDay}</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {getProximosDias().map((fecha) => {
-                    const isSelected = selectedDate?.toDateString() === fecha.toDateString();
-                    const isToday = fecha.toDateString() === new Date().toDateString();
+                    const fechaKey = localDateKey(fecha);
+                    const isSelected = selectedDate ? localDateKey(selectedDate) === fechaKey : false;
+                    const isToday = fechaKey === todayInputValue();
                     return (
                       <button
-                        key={fecha.toISOString()}
+                        key={fechaKey}
                         onClick={() => { setSelectedDate(fecha); setSelectedSlot(null); setSlotsError(null); }}
                         className={`flex flex-col items-center justify-center rounded-xl p-2 min-w-[50px] border-2 transition-all ${
                           isSelected
@@ -659,9 +642,9 @@ export default function ProfesionalPage() {
                         }`}
                       >
                         <span className="text-[9px] font-semibold uppercase tracking-wide">
-                          {diasShort[fecha.getDay()]}
+                          {formatBookingDate(fecha, { weekday: 'short' })}
                         </span>
-                        <span className="text-base font-bold leading-none mt-0.5">{fecha.getDate()}</span>
+                        <span className="text-base font-bold leading-none mt-0.5">{formatBookingDate(fecha, { day: 'numeric' })}</span>
                       </button>
                     );
                   })}

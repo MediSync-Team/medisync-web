@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { api, Profesional, Slot } from '../../lib/api';
 import { useLang } from '../../lib/i18n/context';
-import { getLocale } from '../../lib/date';
+import { buildUpcomingClinicDays, getLocale, localDateKey } from '../../lib/date';
 import { getProfessionalBookingLoginPath, getProfessionalProfilePath } from '../../lib/auth-redirects';
 import { BuildingIcon, VideoIcon, MapPinIcon } from '../../components/icons';
 import Spinner from '../../components/Spinner';
@@ -17,17 +17,10 @@ const FRONTEND_URL =
 /* -- Helpers ----------------------------------------------- */
 
 function dateKey(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+  return localDateKey(d);
 }
 function buildDays(n: number): Date[] {
-  const days: Date[] = [];
-  const today = new Date();
-  for (let i = 0; i < n; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    days.push(d);
-  }
-  return days;
+  return buildUpcomingClinicDays(n);
 }
 
 type Step = 'date' | 'slot' | 'guest' | 'done';
