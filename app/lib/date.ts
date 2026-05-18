@@ -25,6 +25,18 @@ export function formatClinicDateKey(date: Date): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+export function clinicDateKeyFromInstant(value: string | Date): string {
+  return formatClinicDateKey(typeof value === 'string' ? new Date(value) : value);
+}
+
+export function calendarDateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+export function isSameClinicCalendarDay(instant: string | Date, calendarDate: Date): boolean {
+  return clinicDateKeyFromInstant(instant) === calendarDateKey(calendarDate);
+}
+
 export function todayInputValue(): string {
   return formatClinicDateKey(new Date());
 }
@@ -51,6 +63,12 @@ export function clinicDateTimeToIso(dateKey: string, time: string): string {
   const minute = Number(timeMatch[2]);
 
   return new Date(Date.UTC(year, month - 1, day, hour - CLINIC_UTC_OFFSET_MINUTES / 60, minute, 0, 0)).toISOString();
+}
+
+export function getClinicMonthFetchBounds(year: number, month: number): { desde: string; hasta: string } {
+  const start = new Date(Date.UTC(year, month, 1, -CLINIC_UTC_OFFSET_MINUTES / 60, 0, 0, 0));
+  const end = new Date(Date.UTC(year, month + 1, 1, -CLINIC_UTC_OFFSET_MINUTES / 60, 0, 0, 0));
+  return { desde: start.toISOString(), hasta: end.toISOString() };
 }
 
 export function buildUpcomingClinicDays(count: number): Date[] {

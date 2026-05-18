@@ -5,7 +5,7 @@ import { useLang } from '../../lib/i18n/context';
 import { Turno } from '../../lib/api';
 import { CalendarIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon } from '../../components/icons';
 import { estadoBadge, estadoLabel, estadoCanceladoAusenteLabel, clinicalRiskBadge, getDaysShort } from '../../lib/utils';
-import { getLocale } from '../../lib/date';
+import { calendarDateKey, clinicDateKeyFromInstant, formatClinicDateKey, getLocale } from '../../lib/date';
 
 export default function CalendarioView({
   selectedDate, setSelectedDate, turnos: allTurnos, turnosDelDia, onSelectTurno,
@@ -30,7 +30,7 @@ export default function CalendarioView({
   const d = t('dashboard');
   const h = t('home');
   const status = t('status');
-  const hoy = typeof window !== 'undefined' ? new Date().toDateString() : '';
+  const hoy = typeof window !== 'undefined' ? formatClinicDateKey(new Date()) : '';
 
   const [calendarMonth, setCalendarMonth] = useState<Date>(() =>
     new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
@@ -64,7 +64,7 @@ export default function CalendarioView({
   const turnosByDay = useMemo(() => {
     const map = new Map<string, Turno[]>();
     for (const turno of allTurnos) {
-      const key = new Date(turno.fechaHora).toDateString();
+      const key = clinicDateKeyFromInstant(turno.fechaHora);
       if (!map.has(key)) map.set(key, []);
       map.get(key)!.push(turno);
     }
@@ -133,9 +133,10 @@ export default function CalendarioView({
         <div className="grid grid-cols-7 gap-0.5">
           {calendarGrid.map((date, idx) => {
             const isCurrentMonth = date.getMonth() === calendarMonth.getMonth();
-            const isToday = date.toDateString() === hoy;
-            const isSelected = date.toDateString() === selectedDate.toDateString();
-            const dayTurnos = isCurrentMonth ? (turnosByDay.get(date.toDateString()) || []) : [];
+            const dayKey = calendarDateKey(date);
+            const isToday = dayKey === hoy;
+            const isSelected = dayKey === calendarDateKey(selectedDate);
+            const dayTurnos = isCurrentMonth ? (turnosByDay.get(dayKey) || []) : [];
             const MAX_DOTS = 3;
             const visibleDots = dayTurnos.slice(0, MAX_DOTS);
             const extra = dayTurnos.length - MAX_DOTS;

@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Cupon, TipoDescuento, SuscripcionEstado } from '../lib/api';
-import { getLocale } from '../lib/date';
+import { formatClinicDateKey, getClinicMonthFetchBounds, getLocale, isSameClinicCalendarDay } from '../lib/date';
 import StatsPanel from '../components/StatsPanel';
 import ProfileModal from '../components/ProfileModal';
 import OnboardingTour from '../components/OnboardingTour';
@@ -105,7 +105,7 @@ export default function ProfesionalDashboard() {
 
   useEffect(() => {
     if (!selectedDate) return;
-    const delDia = turnos.filter(t => new Date(t.fechaHora).toDateString() === selectedDate.toDateString());
+    const delDia = turnos.filter(t => isSameClinicCalendarDay(t.fechaHora, selectedDate));
     setTurnosDelDia(delDia);
   }, [turnos, selectedDate]);
 
@@ -121,19 +121,21 @@ export default function ProfesionalDashboard() {
 
   const loadData = async (checkOnboarding = false) => {
     if (!user?.profesional) return;
+    const [clinicYear, clinicMonth] = formatClinicDateKey(new Date()).split('-').map(Number);
+    const initialStart = getClinicMonthFetchBounds(clinicYear, clinicMonth - 2);
+    const initialEnd = getClinicMonthFetchBounds(clinicYear, clinicMonth);
     try {
       const [turnosData, dispData] = await Promise.all([
         api.turnos.getByProfesional(user.profesional.id, {
-          desde: new Date(new Date().setMonth(new Date().getMonth() - 1)).toISOString(),
-          hasta: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString(),
+          desde: initialStart.desde,
+          hasta: initialEnd.hasta,
           limit: '200',
         }),
         api.profesionales.getById(user.profesional.id),
       ]);
       setTurnos(turnosData.turnos);
-      const now = new Date();
       [-1, 0, 1].forEach(delta => {
-        const d = new Date(now.getFullYear(), now.getMonth() + delta, 1);
+        const d = new Date(clinicYear, clinicMonth - 1 + delta, 1);
         loadedMonths.current.add(`${d.getFullYear()}-${d.getMonth()}`);
       });
       const disps = dispData.disponibilidades || [];
@@ -151,8 +153,7 @@ export default function ProfesionalDashboard() {
     if (loadedMonths.current.has(key) || !user?.profesional) return;
     loadedMonths.current.add(key);
     try {
-      const desde = new Date(year, month, 1).toISOString();
-      const hasta = new Date(year, month + 1, 0, 23, 59, 59).toISOString();
+      const { desde, hasta } = getClinicMonthFetchBounds(year, month);
       const data = await api.turnos.getByProfesional(user.profesional.id, { desde, hasta, limit: '200' });
       setTurnos(prev => {
         const ids = new Set(prev.map(t => t.id));
@@ -233,7 +234,7 @@ export default function ProfesionalDashboard() {
   if (!user?.profesional) return null;
 
   const hoyTurnos = turnos.filter(t =>
-    new Date(t.fechaHora).toDateString() === new Date().toDateString() && t.estado !== 'CANCELADO'
+    isSameClinicCalendarDay(t.fechaHora, new Date()) && t.estado !== 'CANCELADO'
   );
   const mesActual = new Date();
   const turnosMes = turnos.filter(t => {
