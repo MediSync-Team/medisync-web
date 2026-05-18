@@ -12,11 +12,11 @@ function PagoFallidoContent() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push('/dashboard/paciente');
+      router.push(turnoId ? `/pago?turno=${turnoId}` : '/dashboard/paciente');
     }, 5000);
 
     return () => clearTimeout(timer);
-  }, [router]);
+  }, [router, turnoId]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -28,10 +28,10 @@ function PagoFallidoContent() {
         </p>
         <div className="space-y-3">
           <Link 
-            href="/"
+            href={turnoId ? `/pago?turno=${turnoId}` : "/dashboard/paciente"}
             className="block w-full py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
-            Volver al inicio
+            Intentar nuevamente
           </Link>
           <Link 
             href="/dashboard/paciente"
