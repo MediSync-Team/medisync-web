@@ -364,6 +364,7 @@ export const api = {
   },
   archivos: archivosApi,
   chat: {
+    getUnreadGlobal: () => fetchApi<{ count: number }>('/chat/unread-global'),
     getUnread: (turnoId: string) => fetchApi<{ count: number }>(`/chat/${turnoId}/unread`),
     getMensajes: (turnoId: string) => fetchApi<{ id: string; remitenteId: string; contenido: string; createdAt: string }[]>(`/chat/${turnoId}`),
     enviar: (turnoId: string, contenido: string) =>

@@ -68,7 +68,7 @@ export default function EmbedWidgetSection({ profesionalId }: { profesionalId: s
       {/* Header */}
       <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between gap-3">
         <div>
-          <p className="font-semibold text-slate-800 text-sm flex items-center gap-2">
+          <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm flex items-center gap-2">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>
             </svg>
@@ -127,7 +127,7 @@ export default function EmbedWidgetSection({ profesionalId }: { profesionalId: s
                 key={p}
                 onClick={() => setPlatform(p)}
                 className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                  platform === p ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  platform === p ? 'bg-white text-slate-800 dark:text-slate-200 shadow-sm' : 'text-slate-500 hover:text-slate-700'
                 }`}
               >
                 {PLATFORM_SNIPPETS[p].label}

@@ -46,7 +46,7 @@ export default function PlanView({
             <div className={`text-sm font-bold uppercase tracking-wider ${isPro ? 'text-blue-700' : 'text-slate-700'}`}>
               {d.planCurrent}
             </div>
-            <h2 className={`text-3xl font-bold mt-2 ${isPro ? 'text-blue-900' : 'text-slate-900'}`}>
+            <h2 className={`text-3xl font-bold mt-2 ${isPro ? 'text-blue-900' : 'text-slate-900 dark:text-slate-200'}`}>
               {isPro ? d.planPro : d.planFree}
             </h2>
             <p className={`text-sm mt-3 ${isPro ? 'text-blue-700' : 'text-slate-600'}`}>
@@ -116,7 +116,7 @@ export default function PlanView({
 
       {/* Features comparison */}
       <div className="rounded-xl bg-white border border-slate-200 p-6">
-        <h3 className="font-bold text-slate-900 mb-4">{d.planCompare}</h3>
+        <h3 className="font-bold text-slate-900 dark:text-slate-200 mb-4">{d.planCompare}</h3>
         <div className="space-y-3">
           {[
             { feature: d.features.appointments, free: d.planFreeLimit, pro: d.planUnlimited },

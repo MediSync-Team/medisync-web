@@ -41,7 +41,7 @@ function StatCard({ label, value, sub, color }: { label: string; value: string |
   return (
     <div className="bg-white rounded-2xl border border-slate-200 p-5">
       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</p>
-      <p className={`text-3xl font-bold mt-1 ${color ?? 'text-slate-800'}`}>{value}</p>
+      <p className={`text-3xl font-bold mt-1 ${color ?? 'text-slate-800 dark:text-slate-200'}`}>{value}</p>
       {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
     </div>
   );
@@ -204,7 +204,7 @@ export default function ClinicaDashboard() {
               }
             </div>
             <div>
-              <p className="font-bold text-slate-800 text-sm leading-tight">{clinica?.nombre ?? c.defaultName}</p>
+              <p className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight">{clinica?.nombre ?? c.defaultName}</p>
               <p className="text-xs text-slate-500">{c.panelSubtitle}</p>
             </div>
           </div>
@@ -268,7 +268,7 @@ export default function ClinicaDashboard() {
                     <div key={p.id} className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
                       <Avatar p={p} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-slate-800 truncate">{p.nombre} {p.apellido}</p>
+                        <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{p.nombre} {p.apellido}</p>
                         <p className="text-xs text-blue-600 truncate">{translateSpecialty(p.especialidad?.nombre)}</p>
                         <p className="text-xs text-slate-400">
                           {(p.disponibilidades ?? []).length} {(p.disponibilidades ?? []).length === 1 ? c.team.scheduleBlock : c.team.scheduleBlocks}{c.team.scheduleBlocksSuffix ? ` ${c.team.scheduleBlocksSuffix}` : ''}
@@ -287,7 +287,7 @@ export default function ClinicaDashboard() {
         {tab === 'profesionales' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-800">{c.team.clinicProfessionals}</h2>
+              <h2 className="font-semibold text-slate-800 dark:text-slate-200">{c.team.clinicProfessionals}</h2>
               <button onClick={() => setShowInvite(true)} className="btn btn-primary btn-sm">
                 + {c.inviteShort}
               </button>
@@ -306,7 +306,7 @@ export default function ClinicaDashboard() {
                       <Avatar p={p} />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-semibold text-slate-800">{p.nombre} {p.apellido}</p>
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{p.nombre} {p.apellido}</p>
                           <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${p.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                             {p.activo ? c.team.active : c.team.inactive}
                           </span>
@@ -341,7 +341,7 @@ export default function ClinicaDashboard() {
         {tab === 'agenda' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between flex-wrap gap-3">
-              <h2 className="font-semibold text-slate-800">{c.agenda.combined}</h2>
+              <h2 className="font-semibold text-slate-800 dark:text-slate-200">{c.agenda.combined}</h2>
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => setAgendaDateKey(prev => addDaysToClinicDateKey(prev, -1))}
@@ -368,11 +368,11 @@ export default function ClinicaDashboard() {
                   return (
                     <div key={t.id} className="flex items-center gap-4 px-5 py-3">
                       <div className="w-14 shrink-0 text-center">
-                        <p className="text-sm font-bold text-slate-800">{formatClinicInstantTime(t.fechaHora, locale)}</p>
+                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{formatClinicInstantTime(t.fechaHora, locale)}</p>
                       </div>
                       <div className="w-px h-8 bg-slate-200 shrink-0" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-800">
+                        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
                           {t.paciente ? `${t.paciente.nombre} ${t.paciente.apellido}` : c.agenda.noPatient}
                         </p>
                         <p className="text-xs text-slate-500">
@@ -399,7 +399,7 @@ export default function ClinicaDashboard() {
         {tab === 'invitaciones' && (
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-slate-800">{c.invitations.sent}</h2>
+              <h2 className="font-semibold text-slate-800 dark:text-slate-200">{c.invitations.sent}</h2>
               <button onClick={() => setShowInvite(true)} className="btn btn-primary btn-sm">
                 + {c.newInvitation}
               </button>
@@ -422,7 +422,7 @@ export default function ClinicaDashboard() {
         {/* -- CONFIGURACIÓN -- */}
         {tab === 'configuracion' && (
           <div className="max-w-lg space-y-5">
-            <h2 className="font-semibold text-slate-800">{c.config.title}</h2>
+            <h2 className="font-semibold text-slate-800 dark:text-slate-200">{c.config.title}</h2>
             <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
               <Field label={c.config.name} value={cfgNombre} onChange={setCfgNombre} />
               <Field label={c.config.description} value={cfgDesc} onChange={setCfgDesc} multiline />
@@ -445,7 +445,7 @@ export default function ClinicaDashboard() {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="font-semibold text-slate-800">{c.inviteModal.title}</h3>
+              <h3 className="font-semibold text-slate-800 dark:text-slate-200">{c.inviteModal.title}</h3>
               <button onClick={() => { setShowInvite(false); setInviteEmail(''); setInviteError(''); setInviteOk(''); }} className="text-slate-400 hover:text-slate-600">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
@@ -494,7 +494,7 @@ export default function ClinicaDashboard() {
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
             </div>
             <div>
-              <p className="font-semibold text-slate-800">{c.removeModal.title}</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-200">{c.removeModal.title}</p>
               <p className="text-sm text-slate-500 mt-1">
                 {interpolate(c.removeModal.description, { name: `${removeTarget.nombre} ${removeTarget.apellido}` })}
               </p>
@@ -543,7 +543,7 @@ function InvitacionRow({
   return (
     <div className="flex items-center gap-4 px-5 py-3">
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-slate-800 truncate">{inv.email}</p>
+        <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{inv.email}</p>
         <p className="text-xs text-slate-400">
           {expired ? labels.expired : labels.expires} {labels.on} {expiry.toLocaleDateString(locale)}
         </p>

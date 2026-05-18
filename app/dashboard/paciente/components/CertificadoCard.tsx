@@ -33,7 +33,7 @@ export default function CertificadoCard({
     <div className="border border-slate-200 rounded-xl p-4">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1">
-          <p className="font-semibold text-slate-800">
+          <p className="font-semibold text-slate-800 dark:text-slate-200">
             Dr/a. {certificado.profesional.nombre} {certificado.profesional.apellido}
           </p>
           <p className="text-xs text-slate-500 mt-1">

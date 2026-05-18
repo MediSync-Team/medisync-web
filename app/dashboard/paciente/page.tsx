@@ -13,6 +13,7 @@ import VideoCallModal from '../../components/VideoCallModal';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { useLang } from '../../lib/i18n/context';
 import { NotificationBell } from '../../components/NotificationBell';
+import { GlobalChatHub } from '../../components/GlobalChatHub';
 import { imprimirReceta } from '../../lib/receta-pdf';
 import { imprimirHistorial } from '../../lib/historial-pdf';
 import { imprimirCertificado } from '../../lib/certificado-pdf';
@@ -374,6 +375,7 @@ export default function PacienteDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-1.5">
+              <GlobalChatHub user={user} />
               <NotificationBell />
               <ThemeLangToggle compact />
               <Link href="/" data-onboarding="pac-buscar-link" className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm hidden sm:inline-flex">
@@ -679,7 +681,7 @@ export default function PacienteDashboard() {
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, antecedentesPersonales: e.target.value }))}
                     rows={3}
                     placeholder={d.placeholder.personalHistory}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
                 <div>
@@ -690,7 +692,7 @@ export default function PacienteDashboard() {
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, antecedentesFamiliares: e.target.value }))}
                     rows={3}
                     placeholder={d.placeholder.familyHistory}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
                 <div>
@@ -701,7 +703,7 @@ export default function PacienteDashboard() {
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, alergias: e.target.value }))}
                     rows={2}
                     placeholder={d.placeholder.allergies}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
                 <div>
@@ -712,7 +714,7 @@ export default function PacienteDashboard() {
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, medicacionActual: e.target.value }))}
                     rows={3}
                     placeholder={d.placeholder.currentMedication}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
                 <div>
@@ -723,7 +725,7 @@ export default function PacienteDashboard() {
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, habitos: e.target.value }))}
                     rows={2}
                     placeholder={d.placeholder.habits}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
                 <div>
@@ -734,7 +736,7 @@ export default function PacienteDashboard() {
                     onChange={(e) => setDatosMedicos(prev => ({ ...prev, diagnosticosPrevios: e.target.value }))}
                     rows={2}
                     placeholder={d.placeholder.previousDiagnoses}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
                   />
                 </div>
                 <div className="flex items-center gap-3 pt-2">
@@ -766,7 +768,7 @@ export default function PacienteDashboard() {
                   {listaEspera.map((item) => (
                     <div key={item.id} className="border border-slate-200 rounded-xl p-4 flex flex-wrap items-start justify-between gap-3">
                       <div>
-                        <p className="font-semibold text-slate-800">
+                        <p className="font-semibold text-slate-800 dark:text-slate-200">
                           {item.profesional?.nombre} {item.profesional?.apellido}
                         </p>
                         <p className="text-sm text-blue-600 font-medium">{translateSpecialty(item.profesional?.especialidad?.nombre)}</p>

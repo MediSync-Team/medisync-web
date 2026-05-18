@@ -99,7 +99,7 @@ function PagoContent() {
     <div className="min-h-screen flex items-center justify-center bg-slate-50 py-6">
       <div className="card p-8 max-w-md w-full">
         <div className="text-4xl mb-4 text-center text-blue-700 flex items-center justify-center"><CreditCardIcon size={30} /></div>
-        <h1 className="text-xl font-bold text-slate-900 mb-6 text-center">{p.checkoutTitle}</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-200 mb-6 text-center">{p.checkoutTitle}</h1>
 
         {errorMessage && (
           <div className="alert alert-error text-left mb-4" role="status" aria-live="polite">

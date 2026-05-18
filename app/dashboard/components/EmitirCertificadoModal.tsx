@@ -35,7 +35,7 @@ export default function EmitirCertificadoModal({
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800 text-lg">{d.certificate.title}</h3>
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">{d.certificate.title}</h3>
           <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
             <XIcon size={18} />
           </button>

@@ -63,7 +63,7 @@ export default function HistorialCard({
               : <UserIcon size={16} className="text-blue-500" />}
           </div>
           <div>
-            <p className="font-semibold text-slate-800 text-sm">
+            <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
               Dr/a. {item.profesional?.nombre} {item.profesional?.apellido}
             </p>
             <p className="text-xs text-blue-600">{translateSpecialty(item.profesional?.especialidad?.nombre)}</p>

@@ -229,7 +229,7 @@ export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props
           <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
             Paso {stepIndex + 1} de {steps.length}
           </p>
-          <h3 className="font-bold text-slate-800 text-base mb-2 leading-snug">
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base mb-2 leading-snug">
             {step.title}
           </h3>
           <p className="text-sm text-slate-500 leading-relaxed">

@@ -188,7 +188,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900">{p.title}</h2>
+          <h2 className="text-xl font-bold text-gray-900 dark:text-slate-200">{p.title}</h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
@@ -223,7 +223,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                 required
                 minLength={2}
                 maxLength={50}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
               />
             </div>
             <div>
@@ -238,7 +238,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                 required
                 minLength={2}
                 maxLength={50}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
               />
             </div>
           </div>
@@ -273,7 +273,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
               onChange={handleChange}
               pattern="[\d\s\-\+\(\)]{8,20}"
               title="Solo números, espacios, +, - y paréntesis (8-20 caracteres)"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
               placeholder="+54 11 1234 5678"
             />
           </div>
@@ -287,7 +287,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
               name="fotoUrl"
               value={formData.fotoUrl}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
               placeholder={p.photoUrlPlaceholder}
             />
           </div>
@@ -305,7 +305,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   onChange={handleChange}
                   min="0"
                   max="999999"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
                   placeholder="5000"
                 />
               </div>
@@ -320,7 +320,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   value={formData.lugarAtencion}
                   onChange={handleChange}
                   maxLength={200}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
                   placeholder={isEs ? 'Dirección del consultorio' : 'Practice address'}
                 />
               </div>
@@ -335,7 +335,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   onChange={handleChange}
                   rows={3}
                   maxLength={500}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
                   placeholder={isEs ? 'Breve descripción profesional...' : 'Short professional bio...'}
                 />
               </div>
@@ -392,7 +392,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   value={formData.fechaNacimiento}
                   onChange={handleChange}
                   max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
                 />
               </div>
 
@@ -407,7 +407,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   onChange={handleChange}
                   pattern="\d{7,8}"
                   title="7 u 8 dígitos numéricos"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
                   placeholder="12345678"
                 />
               </div>
@@ -422,7 +422,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   value={formData.obraSocial}
                   onChange={handleChange}
                   maxLength={100}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
                   placeholder={isEs ? 'Nombre de obra social (opcional)' : 'Insurance provider name (optional)'}
                 />
               </div>

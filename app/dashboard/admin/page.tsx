@@ -286,7 +286,7 @@ function StatsTab() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-slate-800 mb-6">Métricas globales</h1>
+      <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-6">Métricas globales</h1>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-8">
         {cards.map(c => (
           <div key={c.label} className={`border rounded-xl p-5 ${colorMap[c.color]}`}>
@@ -313,7 +313,7 @@ function StatsTab() {
                     {estado}
                   </span>
                 </td>
-                <td className="px-4 py-3 text-right font-semibold text-slate-800">{count}</td>
+                <td className="px-4 py-3 text-right font-semibold text-slate-800 dark:text-slate-200">{count}</td>
               </tr>
             ))}
           </tbody>
@@ -367,7 +367,7 @@ function UsuariosTab() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-slate-800 mb-4">Usuarios</h1>
+      <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">Usuarios</h1>
       <form onSubmit={handleSearch} className="flex gap-2 mb-4">
         <input
           value={search}
@@ -476,7 +476,7 @@ function ProfesionalesTab() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-slate-800 mb-4">Profesionales</h1>
+      <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">Profesionales</h1>
       <form onSubmit={handleSearch} className="flex gap-2 mb-4">
         <input
           value={search}
@@ -507,7 +507,7 @@ function ProfesionalesTab() {
               <tbody>
                 {data?.profesionales.map(p => (
                   <tr key={p.id} className="border-t border-slate-100 hover:bg-slate-50">
-                    <td className="px-4 py-3 font-medium text-slate-800">{p.nombre} {p.apellido}</td>
+                    <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{p.nombre} {p.apellido}</td>
                     <td className="px-4 py-3 text-slate-500">{p.usuario.email}</td>
                     <td className="px-4 py-3 text-slate-600">{translateSpecialty(p.especialidad.nombre)}</td>
                     <td className="px-4 py-3 text-right text-slate-700">${Number(p.precioConsulta).toLocaleString(locale)}</td>
@@ -576,7 +576,7 @@ function TurnosTab() {
 
   return (
     <div>
-      <h1 className="text-xl font-bold text-slate-800 mb-4">Turnos</h1>
+      <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-4">Turnos</h1>
       <div className="flex gap-2 mb-4 flex-wrap">
         <form onSubmit={handleSearch} className="flex gap-2 flex-1">
           <input
@@ -730,7 +730,7 @@ function EspecialidadesTab() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold text-slate-800">Especialidades</h1>
+        <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">Especialidades</h1>
         <button
           onClick={openCreate}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-700 flex items-center gap-2"
@@ -814,7 +814,7 @@ function EspecialidadesTab() {
               {list.map(e => (
                 <tr key={e.id} className="border-t border-slate-100 hover:bg-slate-50">
                   <td className="px-4 py-3 text-xl">{e.icono ?? '—'}</td>
-                  <td className="px-4 py-3 font-medium text-slate-800">{e.nombre}</td>
+                  <td className="px-4 py-3 font-medium text-slate-800 dark:text-slate-200">{e.nombre}</td>
                   <td className="px-4 py-3 text-slate-500">{e.descripcion ?? '—'}</td>
                   <td className="px-4 py-3 text-right">
                     <button

@@ -45,7 +45,7 @@ export default function ReprogramarModal({ turno, onClose, onSuccess }: { turno:
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800">Reprogramar turno</h3>
+          <h3 className="font-bold text-slate-800 dark:text-slate-200">Reprogramar turno</h3>
           <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
         </div>
 

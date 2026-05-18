@@ -257,7 +257,7 @@ export default function CalendarioView({
 
                 {/* Patient */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-800 group-hover:text-blue-700 truncate">
+                  <p className="font-medium text-slate-800 dark:text-slate-200 group-hover:text-blue-700 truncate">
                     {turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : d.noAccount}
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">

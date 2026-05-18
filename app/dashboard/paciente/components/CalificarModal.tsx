@@ -44,7 +44,7 @@ export default function CalificarModal({ turno, onClose, onSuccess }: { turno: T
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800">{p.rateTitle}</h3>
+          <h3 className="font-bold text-slate-800 dark:text-slate-200">{p.rateTitle}</h3>
           <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
         </div>
 
@@ -62,7 +62,7 @@ export default function CalificarModal({ turno, onClose, onSuccess }: { turno: T
                 : <UserIcon size={18} className="text-blue-700" />}
             </div>
             <div>
-              <p className="font-semibold text-slate-800 text-sm">Dr/a. {turno.profesional?.nombre} {turno.profesional?.apellido}</p>
+              <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Dr/a. {turno.profesional?.nombre} {turno.profesional?.apellido}</p>
               <p className="text-xs text-blue-600">{translateSpecialty(turno.profesional?.especialidad?.nombre)}</p>
               <p className="text-xs text-slate-400 mt-0.5">
                 {new Date(turno.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'long', year: 'numeric' })}
@@ -96,7 +96,7 @@ export default function CalificarModal({ turno, onClose, onSuccess }: { turno: T
                     rows={3}
                     maxLength={500}
                     placeholder="Contá tu experiencia con el profesional..."
-                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none text-slate-800"
+                    className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none text-slate-800 dark:text-slate-200"
                   />
                   <p className="text-xs text-slate-400 text-right mt-1">{comentario.length}/500</p>
                 </div>

@@ -40,7 +40,7 @@ function ResumenPacienteView({
           </p>
           {proximoTurno ? (
             <>
-              <p className="font-bold text-slate-800 text-sm">
+              <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">
                 {proximoTurno.profesional?.nombre} {proximoTurno.profesional?.apellido}
               </p>
               <p className="text-xs text-slate-600 mt-1">
@@ -57,7 +57,7 @@ function ResumenPacienteView({
           <p className="text-xs text-emerald-600 font-semibold mb-1 flex items-center gap-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></svg> {d.activeRecipes}
           </p>
-          <p className="font-bold text-slate-800 text-sm">{recetasActivas.length}</p>
+          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{recetasActivas.length}</p>
           {recetasActivas.length > 0 && (
             <p className="text-xs text-slate-600 mt-1">{d.latest}: {recetasActivas[0].profesional.nombre}</p>
           )}
@@ -67,7 +67,7 @@ function ResumenPacienteView({
           <p className="text-xs text-amber-600 font-semibold mb-1 flex items-center gap-1">
             <CreditCardIcon size={12} /> {d.spendingThisMonth}
           </p>
-          <p className="font-bold text-slate-800 text-sm">
+          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">
             ${(pacienteStats?.totalGastado || 0).toLocaleString(locale)}
           </p>
         </div>
@@ -76,7 +76,7 @@ function ResumenPacienteView({
           <p className="text-xs text-slate-600 font-semibold mb-1 flex items-center gap-1">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> {d.certificates_}
           </p>
-          <p className="font-bold text-slate-800 text-sm">{misCertificados.length}</p>
+          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{misCertificados.length}</p>
         </div>
       </div>
 

@@ -68,7 +68,7 @@ export default function TurnoCard({
         <div className="flex items-start justify-between gap-3">
           {/* Professional info */}
           <div className="flex-1">
-            <p className="font-semibold text-slate-800">
+            <p className="font-semibold text-slate-800 dark:text-slate-200">
               {turno.profesional?.nombre} {turno.profesional?.apellido}
             </p>
             <p className="text-xs text-blue-600 font-medium mt-0.5">{translateSpecialty(turno.profesional?.especialidad?.nombre)}</p>

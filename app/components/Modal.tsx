@@ -29,7 +29,7 @@ export default function Modal({
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
       <div className={`bg-white rounded-2xl w-full ${maxWidth} ${maxHeight} overflow-y-auto shadow-2xl`}>
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl">
-          <h3 className="font-bold text-slate-800 text-lg">{title}</h3>
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">{title}</h3>
           <button
             aria-label={closeLabel}
             onClick={onClose}

@@ -446,7 +446,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
       <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl">
-          <h3 className="font-bold text-slate-800 text-lg">{d.appointmentDetail}</h3>
+          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">{d.appointmentDetail}</h3>
           <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
             <XIcon size={18} />
           </button>
@@ -465,7 +465,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-slate-50 rounded-xl p-3.5">
               <p className="text-xs text-slate-500 mb-1">{d.dateTime}</p>
-              <p className="font-semibold text-slate-800 text-sm">
+              <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
                 {new Date(turno.fechaHora).toLocaleDateString(getLocale(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
               </p>
               <p className="text-blue-600 font-bold">
@@ -480,7 +480,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
             <div className="bg-slate-50 rounded-xl p-3.5">
               <p className="text-xs text-slate-500 mb-1">{d.patient}</p>
-              <p className="font-semibold text-slate-800 text-sm">
+              <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
                 {turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : 'Sin cuenta'}
               </p>
               {turno.paciente?.telefono && (
@@ -492,9 +492,9 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
               <p className="text-xs text-slate-500 mb-1">{t('professional').modality}</p>
               <div className="flex items-center gap-1.5">
                 {turno.modalidad === 'VIRTUAL' ? (
-                  <><VideoIcon size={14} className="text-blue-500" /><span className="font-semibold text-sm text-slate-800">{t('home').virtual}</span></>
+                  <><VideoIcon size={14} className="text-blue-500" /><span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{t('home').virtual}</span></>
                 ) : (
-                  <><BuildingIcon size={14} className="text-emerald-500" /><span className="font-semibold text-sm text-slate-800">{t('home').inPerson}</span></>
+                  <><BuildingIcon size={14} className="text-emerald-500" /><span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{t('home').inPerson}</span></>
                 )}
               </div>
               {turno.modalidad === 'VIRTUAL' && (turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO') && (
@@ -571,7 +571,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   <div className="bg-slate-50 rounded-lg border border-slate-200 p-2.5">
                     <p className="text-xs text-slate-500 mb-1">Dolor</p>
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold text-slate-800">{preconsulta.escalaDolor}/10</p>
+                      <p className="font-semibold text-slate-800 dark:text-slate-200">{preconsulta.escalaDolor}/10</p>
                       <div className="flex-1 bg-slate-200 rounded-full h-1.5 overflow-hidden">
                         <div className={`h-full rounded-full ${(preconsulta.escalaDolor ?? 0) >= 8 ? 'bg-red-500' : (preconsulta.escalaDolor ?? 0) >= 5 ? 'bg-amber-400' : 'bg-emerald-400'}`}
                              style={{ width: `${((preconsulta.escalaDolor ?? 0) / 10) * 100}%` }} />
@@ -581,7 +581,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   <div className="bg-slate-50 rounded-lg border border-slate-200 p-2.5">
                     <p className="text-xs text-slate-500 mb-1">Ansiedad</p>
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold text-slate-800">{preconsulta.escalaAnsiedad}/10</p>
+                      <p className="font-semibold text-slate-800 dark:text-slate-200">{preconsulta.escalaAnsiedad}/10</p>
                       <div className="flex-1 bg-slate-200 rounded-full h-1.5 overflow-hidden">
                         <div className={`h-full rounded-full ${(preconsulta.escalaAnsiedad ?? 0) >= 8 ? 'bg-red-500' : (preconsulta.escalaAnsiedad ?? 0) >= 5 ? 'bg-amber-400' : 'bg-emerald-400'}`}
                              style={{ width: `${((preconsulta.escalaAnsiedad ?? 0) / 10) * 100}%` }} />
@@ -680,7 +680,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
                     <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
                       <p className="text-[11px] text-slate-500 uppercase tracking-wide">Consultas totales</p>
-                      <p className="text-lg font-bold text-slate-800">{historiaClinica.resumen.totalConsultas}</p>
+                      <p className="text-lg font-bold text-slate-800 dark:text-slate-200">{historiaClinica.resumen.totalConsultas}</p>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
                       <p className="text-[11px] text-slate-500 uppercase tracking-wide">Completadas</p>

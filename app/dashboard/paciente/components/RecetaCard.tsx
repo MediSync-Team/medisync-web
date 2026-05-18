@@ -21,7 +21,7 @@ export default function RecetaCard({
     <div className="border border-slate-200 rounded-xl p-4">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1">
-          <p className="font-semibold text-slate-800">
+          <p className="font-semibold text-slate-800 dark:text-slate-200">
             Dr/a. {receta.profesional.nombre} {receta.profesional.apellido}
           </p>
           <p className="text-xs text-blue-600 font-medium">{receta.profesional.especialidad}</p>

@@ -238,12 +238,12 @@ export default function HomePage() {
                 value={draft.search}
                 onChange={(e) => setDraft({ ...draft, search: e.target.value })}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="flex-1 px-4 py-3 rounded-xl text-slate-900 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm"
+                className="flex-1 px-4 py-3 rounded-xl text-slate-900 dark:text-slate-200 bg-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm"
               />
               <select
                 value={draft.especialidad}
                 onChange={(e) => setDraft({ ...draft, especialidad: e.target.value, search: '' })}
-                className="px-4 py-3 rounded-xl text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm"
+                className="px-4 py-3 rounded-xl text-slate-900 dark:text-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-blue-300 text-sm"
               >
                 <option value="">{h.allSpecialties}</option>
                 {especialidades.map((esp) => (
@@ -312,7 +312,7 @@ export default function HomePage() {
                           placeholder={h.minPrice}
                           value={draft.precioMin}
                           onChange={(e) => setDraft({ ...draft, precioMin: e.target.value })}
-                          className="w-full pl-7 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800"
+                          className="w-full pl-7 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800 dark:text-slate-200"
                         />
                       </div>
                       <span className="text-slate-400 text-sm shrink-0">—</span>
@@ -324,7 +324,7 @@ export default function HomePage() {
                           placeholder={h.maxPrice}
                           value={draft.precioMax}
                           onChange={(e) => setDraft({ ...draft, precioMax: e.target.value })}
-                          className="w-full pl-7 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800"
+                          className="w-full pl-7 pr-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800 dark:text-slate-200"
                         />
                       </div>
                     </div>
@@ -359,7 +359,7 @@ export default function HomePage() {
                       value={draft.fecha}
                       min={new Date().toISOString().split('T')[0]}
                       onChange={(e) => setDraft({ ...draft, fecha: e.target.value })}
-                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800"
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800 dark:text-slate-200"
                     />
                   </div>
 
@@ -369,7 +369,7 @@ export default function HomePage() {
                     <select
                       value={draft.orderBy}
                       onChange={(e) => setDraft({ ...draft, orderBy: e.target.value as OrderBy })}
-                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800"
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800 dark:text-slate-200"
                     >
                       <option value="">{h.relevance}</option>
                       <option value="precio_asc">{h.priceAsc}</option>
@@ -386,7 +386,7 @@ export default function HomePage() {
                     <select
                       value={draft.obraSocial}
                       onChange={(e) => setDraft({ ...draft, obraSocial: e.target.value })}
-                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800"
+                      className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800 dark:text-slate-200"
                     >
                       <option value="">{h.allCoverages}</option>
                       {OBRAS_SOCIALES.map((os) => (

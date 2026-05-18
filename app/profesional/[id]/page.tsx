@@ -371,7 +371,7 @@ export default function ProfesionalPage() {
                   </div>
                 )}
 
-                <h1 className="text-xl font-bold text-slate-800">
+                <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">
                   {profesional.nombre} {profesional.apellido}
                 </h1>
                 {profesional.especialidad?.nombre && (
@@ -508,7 +508,7 @@ export default function ProfesionalPage() {
                 {/* Summary bar */}
                 <div className="flex items-center gap-3 mb-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-xl border border-amber-100 dark:border-amber-800">
                   <div className="text-center shrink-0">
-                    <p className="text-3xl font-extrabold text-slate-800">{resenas.stats.promedio}</p>
+                    <p className="text-3xl font-extrabold text-slate-800 dark:text-slate-200">{resenas.stats.promedio}</p>
                     <StarRating value={resenas.stats.promedio ?? 0} size={12} />
                     <p className="text-xs text-slate-400 mt-0.5">{resenas.stats.total} reseña{resenas.stats.total !== 1 ? 's' : ''}</p>
                   </div>
@@ -581,7 +581,7 @@ export default function ProfesionalPage() {
           {/* -- Right: Booking -------------------------- */}
           <div className="lg:col-span-3">
             <div className="card p-5">
-              <h2 className="text-lg font-bold text-slate-800 mb-4">{p.bookAppointment}</h2>
+              <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">{p.bookAppointment}</h2>
 
               <div className="mb-5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl p-3">
                 <div className="flex items-center gap-2 text-xs sm:text-sm">
@@ -594,7 +594,7 @@ export default function ProfesionalPage() {
                       <span className={`w-6 h-6 rounded-full inline-flex items-center justify-center font-bold ${bookingStep >= step.n ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
                         {step.n}
                       </span>
-                      <span className={`${bookingStep >= step.n ? 'text-slate-800' : 'text-slate-500'} font-medium`}>{step.label}</span>
+                      <span className={`${bookingStep >= step.n ? 'text-slate-800 dark:text-slate-200' : 'text-slate-500'} font-medium`}>{step.label}</span>
                     </div>
                   ))}
                 </div>

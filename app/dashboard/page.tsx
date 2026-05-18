@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,6 +13,7 @@ import Spinner from '../components/Spinner';
 import { useLang } from '../lib/i18n/context';
 import { useTranslateSpecialty } from '../lib/i18n/use-translate-specialty';
 import { NotificationBell } from '../components/NotificationBell';
+import { GlobalChatHub } from '../components/GlobalChatHub';
 import ProfesionalOnboardingWizard from '../components/ProfesionalOnboardingWizard';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
@@ -401,6 +402,7 @@ export default function ProfesionalDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-1.5">
+              <GlobalChatHub user={user} />
               <NotificationBell />
               <ThemeLangToggle compact />
               <button
@@ -524,7 +526,7 @@ export default function ProfesionalDashboard() {
                     <ClipboardIcon size={15} className="text-purple-600" />
                   </div>
                 </div>
-                <p className="text-lg font-bold text-slate-800 mt-1 leading-tight">
+                <p className="text-lg font-bold text-slate-800 dark:text-slate-200 mt-1 leading-tight">
                   {translateSpecialty(user.profesional.especialidad?.nombre || '')}
                 </p>
                 <p className="stat-desc">{d.title}</p>
@@ -652,7 +654,7 @@ export default function ProfesionalDashboard() {
         <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
             <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-800 text-lg">{d.couponModal.title}</h3>
+              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">{d.couponModal.title}</h3>
               <button onClick={() => setShowNuevoCupon(false)} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
                 <XIcon size={18} />
               </button>

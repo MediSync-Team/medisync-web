@@ -24,7 +24,7 @@ export default function CuponesView({
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-800">{d.couponsView.title}</h3>
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">{d.couponsView.title}</h3>
         <button onClick={onShowNuevo} className="btn btn-primary btn-sm">
           + {d.couponsView.newCoupon}
         </button>
@@ -65,7 +65,7 @@ export default function CuponesView({
               <div key={cupon.id} className="flex items-center gap-3 p-4 bg-slate-50 border border-slate-200 rounded-xl">
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <p className="font-semibold text-slate-800">{cupon.codigo}</p>
+                    <p className="font-semibold text-slate-800 dark:text-slate-200">{cupon.codigo}</p>
                     <span className={`text-xs px-2 py-0.5 rounded-full ${statusColor}`}>{statusBadge}</span>
                   </div>
                   <p className="text-sm text-slate-600 mb-1">{cupon.descripcion || '-'}</p>

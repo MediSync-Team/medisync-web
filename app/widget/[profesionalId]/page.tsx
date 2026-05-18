@@ -150,7 +150,7 @@ export default function WidgetPage() {
             </svg>
           </div>
           <div>
-            <p className="text-base font-bold text-slate-800">¡Turno reservado!</p>
+            <p className="text-base font-bold text-slate-800 dark:text-slate-200">¡Turno reservado!</p>
             <p className="text-sm text-slate-600 mt-1">
               {fmt(fh, { weekday: 'long', day: 'numeric', month: 'long' })} · {fh.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
             </p>
@@ -367,7 +367,7 @@ function ProfHeader({ profesional, locale }: { profesional: Profesional; locale:
           : initials}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-bold text-slate-800">
+        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
           {profesional.nombre} {profesional.apellido}
         </p>
         <p className="text-xs text-blue-600">{profesional.especialidad?.nombre}</p>
