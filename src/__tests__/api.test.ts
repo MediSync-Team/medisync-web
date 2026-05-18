@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { api, fetchApi } from '../../app/lib/api';
+import { api, clinicasApi, fetchApi } from '../../app/lib/api';
 
 let localStorageStore: Record<string, string>;
 
@@ -147,6 +147,21 @@ describe('API Client', () => {
         fechaHora: '2026-05-20T13:00:00.000Z',
         modalidad: 'PRESENCIAL',
       });
+    });
+
+    it('sends clinic agenda date keys unchanged', async () => {
+      const fetchMock = vi.fn().mockResolvedValue(new Response(JSON.stringify({
+        success: true,
+        data: [],
+      }), {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      }));
+      vi.stubGlobal('fetch', fetchMock);
+
+      await clinicasApi.getAgenda('2026-05-18');
+
+      expect(String(fetchMock.mock.calls[0][0])).toBe(`${API_URL}/clinicas/me/agenda?fecha=2026-05-18`);
     });
   });
 

@@ -15,16 +15,16 @@ import {
 import { BuildingIcon, VideoIcon, CheckIcon } from '../../components/icons';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { estadoLabel, invitacionEstadoLabel } from '../../lib/utils';
-import { getLocale } from '../../lib/date';
+import {
+  addDaysToClinicDateKey,
+  formatClinicDateKeyForDisplay,
+  formatClinicInstantTime,
+  getLocale,
+  todayInputValue,
+} from '../../lib/date';
 import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
 
 // -- helpers ------------------------------------------------------------------
-function dateKey(d: Date) {
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
-function fmt(d: Date, locale: string, opts: Intl.DateTimeFormatOptions) {
-  return d.toLocaleDateString(locale, opts);
-}
 const ESTADO_COLORS: Record<string, string> = {
   RESERVADO:   'bg-blue-100 text-blue-700',
   CONFIRMADO:  'bg-emerald-100 text-emerald-700',
@@ -80,7 +80,7 @@ export default function ClinicaDashboard() {
   const [clinica, setClinica]       = useState<ClinicaConRelaciones | null>(null);
   const [stats, setStats]           = useState<ClinicaStats | null>(null);
   const [agenda, setAgenda]         = useState<ClinicaAgendaTurno[]>([]);
-  const [agendaDate, setAgendaDate] = useState<Date>(new Date());
+  const [agendaDateKey, setAgendaDateKey] = useState(() => todayInputValue());
   const [loadingMain, setLoadingMain] = useState(true);
 
   // Invite modal
@@ -125,15 +125,15 @@ export default function ClinicaDashboard() {
     }
   }, []);
 
-  const loadAgenda = useCallback(async (d: Date) => {
+  const loadAgenda = useCallback(async (dateKey: string) => {
     try {
-      const data = await clinicasApi.getAgenda(dateKey(d));
+      const data = await clinicasApi.getAgenda(dateKey);
       setAgenda(data);
     } catch { setAgenda([]); }
   }, []);
 
   useEffect(() => { if (user?.rol === 'CLINICA') load(); }, [user, load]);
-  useEffect(() => { if (tab === 'agenda') loadAgenda(agendaDate); }, [tab, agendaDate, loadAgenda]);
+  useEffect(() => { if (tab === 'agenda') loadAgenda(agendaDateKey); }, [tab, agendaDateKey, loadAgenda]);
 
   const handleInvite = async () => {
     setInviteError('');
@@ -344,17 +344,17 @@ export default function ClinicaDashboard() {
               <h2 className="font-semibold text-slate-800">{c.agenda.combined}</h2>
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => { const d = new Date(agendaDate); d.setDate(d.getDate() - 1); setAgendaDate(d); }}
+                  onClick={() => setAgendaDateKey(prev => addDaysToClinicDateKey(prev, -1))}
                   className="btn btn-secondary btn-sm"
                 >←</button>
                 <span className="text-sm font-medium text-slate-700 min-w-[140px] text-center">
-                  {fmt(agendaDate, locale, { weekday: 'long', day: 'numeric', month: 'long' })}
+                  {formatClinicDateKeyForDisplay(agendaDateKey, locale, { weekday: 'long', day: 'numeric', month: 'long' })}
                 </span>
                 <button
-                  onClick={() => { const d = new Date(agendaDate); d.setDate(d.getDate() + 1); setAgendaDate(d); }}
+                  onClick={() => setAgendaDateKey(prev => addDaysToClinicDateKey(prev, 1))}
                   className="btn btn-secondary btn-sm"
                 >→</button>
-                <button onClick={() => setAgendaDate(new Date())} className="btn btn-secondary btn-sm text-xs">{c.agenda.today}</button>
+                <button onClick={() => setAgendaDateKey(todayInputValue())} className="btn btn-secondary btn-sm text-xs">{c.agenda.today}</button>
               </div>
             </div>
 
@@ -365,11 +365,10 @@ export default function ClinicaDashboard() {
             ) : (
               <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
                 {agenda.map(t => {
-                  const fh = new Date(t.fechaHora);
                   return (
                     <div key={t.id} className="flex items-center gap-4 px-5 py-3">
                       <div className="w-14 shrink-0 text-center">
-                        <p className="text-sm font-bold text-slate-800">{fh.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}</p>
+                        <p className="text-sm font-bold text-slate-800">{formatClinicInstantTime(t.fechaHora, locale)}</p>
                       </div>
                       <div className="w-px h-8 bg-slate-200 shrink-0" />
                       <div className="flex-1 min-w-0">

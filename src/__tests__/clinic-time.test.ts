@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   calendarDateKey,
+  addDaysToClinicDateKey,
   clinicDateKeyFromInstant,
   clinicDateTimeToIso,
+  formatClinicDateKeyForDisplay,
+  formatClinicInstantTime,
   formatClinicDateKey,
   getClinicMonthFetchBounds,
   isSameClinicCalendarDay,
@@ -40,5 +43,19 @@ describe('frontend clinic-time helpers', () => {
       desde: '2026-05-01T03:00:00.000Z',
       hasta: '2026-06-01T03:00:00.000Z',
     });
+  });
+
+  it('navigates clinic agenda date keys without browser-local Date math', () => {
+    expect(addDaysToClinicDateKey('2026-05-18', -1)).toBe('2026-05-17');
+    expect(addDaysToClinicDateKey('2026-05-18', 1)).toBe('2026-05-19');
+  });
+
+  it('formats clinic agenda dates and times in Argentina time', () => {
+    expect(formatClinicDateKeyForDisplay('2026-05-18', 'en-US', {
+      weekday: 'long',
+      day: 'numeric',
+      month: 'long',
+    })).toBe('Monday, May 18');
+    expect(formatClinicInstantTime('2026-05-19T02:30:00.000Z', 'es-AR')).toContain('11:30');
   });
 });

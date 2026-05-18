@@ -1,5 +1,6 @@
 export const CLINIC_TIME_ZONE = 'America/Argentina/Buenos_Aires';
 const CLINIC_UTC_OFFSET_MINUTES = -180;
+const CLINIC_DATE_KEY_RE = /^(\d{4})-(\d{2})-(\d{2})$/;
 
 export function getLocale(lang: string): string {
   return lang === 'es' ? 'es-AR' : 'en-US';
@@ -39,6 +40,44 @@ export function isSameClinicCalendarDay(instant: string | Date, calendarDate: Da
 
 export function todayInputValue(): string {
   return formatClinicDateKey(new Date());
+}
+
+export function addDaysToClinicDateKey(dateKey: string, days: number): string {
+  const match = CLINIC_DATE_KEY_RE.exec(dateKey);
+  if (!match) {
+    throw new Error('Invalid clinic date key');
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  const shifted = new Date(Date.UTC(year, month - 1, day + days, 12, 0, 0, 0));
+  return `${shifted.getUTCFullYear()}-${String(shifted.getUTCMonth() + 1).padStart(2, '0')}-${String(shifted.getUTCDate()).padStart(2, '0')}`;
+}
+
+export function formatClinicDateKeyForDisplay(dateKey: string, locale: string, opts: Intl.DateTimeFormatOptions): string {
+  const match = CLINIC_DATE_KEY_RE.exec(dateKey);
+  if (!match) {
+    throw new Error('Invalid clinic date key');
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  return new Date(Date.UTC(year, month - 1, day, 12, 0, 0, 0)).toLocaleDateString(locale, {
+    ...opts,
+    timeZone: CLINIC_TIME_ZONE,
+  });
+}
+
+export function formatClinicInstantTime(value: string | Date, locale: string, opts: Intl.DateTimeFormatOptions = {}): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return date.toLocaleTimeString(locale, {
+    hour: '2-digit',
+    minute: '2-digit',
+    ...opts,
+    timeZone: CLINIC_TIME_ZONE,
+  });
 }
 
 export function formatDateInput(d: Date): string {
