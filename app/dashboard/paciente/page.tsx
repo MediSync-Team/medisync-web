@@ -1,4 +1,4 @@
-﻿'use client';
+'use client';
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -393,7 +393,7 @@ export default function PacienteDashboard() {
         </div>
       </header>
 
-      <main className="page-container py-6 max-w-3xl mx-auto">
+      <main className="page-container py-6 max-w-5xl mx-auto">
         {inlineNotice && (
           <div className={`alert mb-4 ${inlineNotice.type === 'success' ? 'alert-success' : inlineNotice.type === 'error' ? 'alert-error' : 'alert-info'}`} role="status" aria-live="polite">
             <InfoIcon size={15} className="shrink-0" />
