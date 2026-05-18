@@ -1,7 +1,6 @@
-﻿'use client';
+'use client';
 
-import { descargarICS, urlGoogleCalendar, urlOutlookCalendar, TurnoCalendarInfo, turnoToCalendarEvent } from '../lib/calendar';
-
+import { urlGoogleCalendar, TurnoCalendarInfo, turnoToCalendarEvent } from '../lib/calendar';
 interface Props {
   turno: TurnoCalendarInfo;
   /** compact = botones pequeños inline; default = tarjeta con título */
@@ -11,7 +10,6 @@ interface Props {
 export default function AgendarCalendario({ turno, variant = 'card' }: Props) {
   const ev = turnoToCalendarEvent(turno);
 
-  const handleICS = () => descargarICS(ev);
 
   if (variant === 'compact') {
     return (
@@ -25,13 +23,6 @@ export default function AgendarCalendario({ turno, variant = 'card' }: Props) {
           <GoogleCalIcon />
           Google Calendar
         </a>
-        <button
-          onClick={handleICS}
-          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-50 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
-        >
-          <ICalIcon />
-          iCal / Outlook
-        </button>
       </div>
     );
   }
@@ -56,14 +47,6 @@ export default function AgendarCalendario({ turno, variant = 'card' }: Props) {
           <GoogleCalIcon />
           Google Calendar
         </a>
-        <button
-          onClick={handleICS}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-100 border border-slate-200 dark:border-slate-600 hover:border-slate-400 shadow-sm transition-colors"
-        >
-          <ICalIcon />
-          Descargar .ics
-          <span className="text-xs text-slate-400 dark:text-slate-500">(iCal / Outlook)</span>
-        </button>
       </div>
     </div>
   );
@@ -81,12 +64,3 @@ function GoogleCalIcon() {
   );
 }
 
-function ICalIcon() {
-  return (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="3" y="4" width="18" height="17" rx="2" stroke="currentColor" strokeWidth="1.8" />
-      <path d="M16 2v4M8 2v4M3 9h18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-      <path d="M12 13v4M10 17h4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    </svg>
-  );
-}
