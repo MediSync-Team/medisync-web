@@ -12,7 +12,7 @@ function PagoFallidoContent() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      router.push(turnoId ? `/pago?turno=${turnoId}` : '/dashboard/paciente');
+      router.push(turnoId ? `/pago?turno=${turnoId}` : '/dashboard/paciente?tab=proximos');
     }, 5000);
 
     return () => clearTimeout(timer);
@@ -28,13 +28,13 @@ function PagoFallidoContent() {
         </p>
         <div className="space-y-3">
           <Link 
-            href={turnoId ? `/pago?turno=${turnoId}` : "/dashboard/paciente"}
+            href={turnoId ? `/pago?turno=${turnoId}` : "/dashboard/paciente?tab=proximos"}
             className="block w-full py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
             Intentar nuevamente
           </Link>
           <Link 
-            href="/dashboard/paciente"
+            href="/dashboard/paciente?tab=proximos"
             className="block w-full py-3 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
           >
             Ver mis turnos

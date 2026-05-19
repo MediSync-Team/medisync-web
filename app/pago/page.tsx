@@ -172,7 +172,7 @@ function PagoContent() {
         </button>
 
         <button
-          onClick={() => router.push('/dashboard/paciente')}
+          onClick={() => router.push('/dashboard/paciente?tab=proximos')}
           disabled={redirecting}
           className="btn btn-secondary w-full mt-3"
         >

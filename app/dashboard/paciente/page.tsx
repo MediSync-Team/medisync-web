@@ -77,6 +77,16 @@ export default function PacienteDashboard() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<PacienteDashboardTab>('resumen');
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tab = params.get('tab') as PacienteDashboardTab;
+      if (tab && ['resumen', 'proximos', 'pasados', 'listaEspera', 'historial', 'recetas', 'certificados', 'datosMedicos', 'estadisticas'].includes(tab)) {
+        setActiveTab(tab);
+      }
+    }
+  }, []);
   const [pacienteStats, setPacienteStats] = useState<PacienteStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [historial, setHistorial] = useState<HistorialTurno[]>([]);
