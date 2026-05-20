@@ -213,7 +213,7 @@ const pagosApi = {
       body: JSON.stringify(data),
     }),
   confirmarPago: (turnoId: string) =>
-    fetchApi<{ confirmed: boolean; estado: string | null }>(`/pagos/confirmar-pago${buildQuery({ turnoId })}`, {
+    fetchApi<{ confirmed: boolean; estado: string | null; turnoEstado?: Turno['estado'] }>(`/pagos/confirmar-pago${buildQuery({ turnoId })}`, {
       method: 'POST',
     }),
 };

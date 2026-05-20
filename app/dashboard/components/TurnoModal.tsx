@@ -19,6 +19,7 @@ import { useAuth } from '../../lib/auth-context';
 import { useLang } from '../../lib/i18n/context';
 import { getLocale } from '../../lib/date';
 import { buildReprogrammingFechaHora, getReprogrammingMinDate } from '../../lib/reprogramming';
+import { canCancelTurnoFromModal, canCompleteTurno, canReprogramTurno } from '../../lib/turno-actions';
 import { estadoBadge, estadoLabel } from '../../lib/utils';
 import { imprimirReceta } from '../../lib/receta-pdf';
 import { imprimirCertificado } from '../../lib/certificado-pdf';
@@ -1109,7 +1110,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
         {/* Footer actions */}
         <div className="px-6 py-4 border-t border-slate-100 flex flex-wrap gap-3 bg-slate-50 rounded-b-2xl">
-          {(turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO') && (
+          {canReprogramTurno(turno.estado) && (
             <button
               onClick={() => { setShowReprogramar((v) => !v); setModalNotice(null); }}
               className="btn btn-secondary flex-1"
@@ -1117,12 +1118,12 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
               <CalendarIcon size={15} /> Reprogramar
             </button>
           )}
-          {turno.estado !== 'COMPLETADO' && (
+          {canCompleteTurno(turno.estado) && (
             <button onClick={() => handleActualizarEstado('COMPLETADO')} className="btn btn-success flex-1">
               <CheckIcon size={15} /> {d.complete}
             </button>
           )}
-          {turno.estado !== 'CANCELADO' && (
+          {canCancelTurnoFromModal(turno.estado) && (
             <button onClick={() => handleActualizarEstado('CANCELADO')} className="btn btn-danger flex-1">
               <XIcon size={15} /> {d.cancel}
             </button>
