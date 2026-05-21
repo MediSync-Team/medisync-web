@@ -196,8 +196,20 @@ describe('Coupon Frontend Logic', () => {
 
       const coupon = { cuponId: '123', montoFinal: 900 };
       expect(canProceedWithCoupon(coupon, false)).toBe(true);
+      expect(canProceedWithCoupon({ cuponId: 'free-123', montoFinal: 0 }, false)).toBe(true);
       expect(canProceedWithCoupon(coupon, true)).toBe(false);
       expect(canProceedWithCoupon(null, false)).toBe(false);
+    });
+
+    it('should redirect to success flow when payment preference says no payment is needed', () => {
+      const getNextPaymentDestination = (turnoId: string, response: { initPoint?: string; necesitaPago?: boolean }) => {
+        if (response.initPoint) return response.initPoint;
+        if (response.necesitaPago === false) return `/pago-exitoso?turno=${turnoId}`;
+        return null;
+      };
+
+      expect(getNextPaymentDestination('turno-1', { necesitaPago: false })).toBe('/pago-exitoso?turno=turno-1');
+      expect(getNextPaymentDestination('turno-1', { initPoint: 'https://mp.test/checkout' })).toBe('https://mp.test/checkout');
     });
 
     it('should disable form inputs during validation/redirect', () => {

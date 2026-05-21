@@ -76,6 +76,8 @@ function PagoContent() {
 
       if (data.initPoint) {
         window.location.href = data.initPoint;
+      } else if (data.necesitaPago === false) {
+        router.push(`/pago-exitoso?turno=${turnoId}`);
       } else {
         setErrorMessage(data.mensaje || p.couponCreateError);
         setRedirecting(false);
@@ -165,10 +167,10 @@ function PagoContent() {
         {/* Payment button */}
         <button
           onClick={crearPreferenciaYRedirigir}
-          disabled={redirecting || (validatedCoupon !== null && validatedCoupon.montoFinal <= 0)}
-          className={`btn w-full ${validatedCoupon !== null && validatedCoupon.montoFinal <= 0 ? 'btn-secondary opacity-60 cursor-not-allowed' : 'btn-primary'}`}
+          disabled={redirecting}
+          className="btn btn-primary w-full"
         >
-          {redirecting ? p.processing : validatedCoupon !== null && validatedCoupon.montoFinal <= 0 ? 'Sin saldo a pagar' : p.continueToPayment}
+          {redirecting ? p.processing : validatedCoupon !== null && validatedCoupon.montoFinal <= 0 ? p.confirmAppointment : p.continueToPayment}
         </button>
 
         <button

@@ -838,6 +838,7 @@ export type PagoPreferenciaResponse = {
   initPoint?: string;
   necesitaPago?: boolean;
   mensaje?: string;
+  estado?: string;
 };
 
 export type SuscripcionEstado = {
