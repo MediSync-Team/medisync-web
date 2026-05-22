@@ -1,12 +1,15 @@
 'use client';
 
-import { Suspense, useEffect, useState, useCallback } from 'react';
+import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import AgendarCalendario from '../components/AgendarCalendario';
 import Spinner from '../components/Spinner';
 import { TurnoCalendarInfo } from '../lib/calendar';
 import { api } from '../lib/api';
+
+const PAYMENT_POLL_INTERVAL_MS = 3000;
+const PAYMENT_POLL_TIMEOUT_MS = 2 * 60 * 1000;
 
 function PagoExitosoContent() {
   const searchParams = useSearchParams();
@@ -16,34 +19,44 @@ function PagoExitosoContent() {
   const [confirming, setConfirming] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
   const [calInfo, setCalInfo] = useState<TurnoCalendarInfo | null>(null);
+  const pollRunRef = useRef(0);
 
   const checkPaymentStatus = useCallback(async () => {
     if (!turnoId) return false;
-    
+
+    const runId = pollRunRef.current + 1;
+    pollRunRef.current = runId;
     setConfirming(true);
-    let isConfirmed = false;
-    
-    // Poll up to 5 times, waiting 2 seconds between attempts
-    for (let i = 0; i < 5; i++) {
+    setConfirmed(false);
+
+    const startedAt = Date.now();
+
+    while (pollRunRef.current === runId) {
       try {
         const res = await api.pagos.confirmarPago(turnoId);
         if (res?.confirmed) {
-          isConfirmed = true;
-          break;
+          if (pollRunRef.current === runId) {
+            setConfirmed(true);
+            setConfirming(false);
+          }
+          return true;
         }
       } catch (err) {
-        console.error(`Error confirming payment (attempt ${i + 1}):`, err);
+        console.error('Error confirming payment:', err);
       }
-      
-      // Wait 2 seconds before next attempt (if not the last attempt)
-      if (i < 4) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
+
+      if (Date.now() - startedAt >= PAYMENT_POLL_TIMEOUT_MS) {
+        break;
       }
+
+      await new Promise(resolve => setTimeout(resolve, PAYMENT_POLL_INTERVAL_MS));
     }
-    
-    setConfirmed(isConfirmed);
-    setConfirming(false);
-    return isConfirmed;
+
+    if (pollRunRef.current === runId) {
+      setConfirmed(false);
+      setConfirming(false);
+    }
+    return false;
   }, [turnoId]);
 
   useEffect(() => {
@@ -64,6 +77,10 @@ function PagoExitosoContent() {
     } else {
       setConfirming(false);
     }
+
+    return () => {
+      pollRunRef.current += 1;
+    };
   }, [turnoId, checkPaymentStatus]);
 
   useEffect(() => {

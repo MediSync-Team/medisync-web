@@ -57,51 +57,98 @@ describe('PagoExitosoPage Component', () => {
     expect(mockPush).toHaveBeenCalledWith('/dashboard/paciente?tab=proximos');
   });
 
-  it('shows pending state if payment is not confirmed after 5 polling attempts', async () => {
+  it('keeps verifying after the old 5-attempt window if payment is not confirmed yet', async () => {
     (api.pagos.confirmarPago as any).mockResolvedValue({ confirmed: false, estado: 'PENDIENTE' });
 
     render(<PagoExitosoPage />);
 
-    // Fast-forward through all 5 polling attempts (5 * 2s = 10s total)
-    for (let i = 0; i < 5; i++) {
-      await act(async () => {
-        await vi.advanceTimersByTimeAsync(2500);
-      });
-    }
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(15000);
+    });
 
-    // Should now show the pending state
+    expect(screen.getByText('Confirmando pago...')).toBeInTheDocument();
+    expect(screen.queryByText('Verificación pendiente')).not.toBeInTheDocument();
+    expect(api.pagos.confirmarPago).toHaveBeenCalledTimes(6);
+    expect(mockPush).not.toHaveBeenCalled();
+  });
+
+  it('shows pending state only after the longer polling timeout', async () => {
+    (api.pagos.confirmarPago as any).mockResolvedValue({ confirmed: false, estado: 'PENDIENTE' });
+
+    render(<PagoExitosoPage />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(121000);
+    });
+
     await waitFor(() => {
       expect(screen.getByText('Verificación pendiente')).toBeInTheDocument();
     });
 
-    // Verify it polled exactly 5 times
-    expect(api.pagos.confirmarPago).toHaveBeenCalledTimes(5);
+    expect(api.pagos.confirmarPago).toHaveBeenCalledTimes(41);
     expect(mockPush).not.toHaveBeenCalled();
   });
 
-  it('succeeds after multiple polling attempts (webhook delay simulation)', async () => {
+  it('succeeds after more than 5 polling attempts (webhook delay simulation)', async () => {
     (api.pagos.confirmarPago as any)
-      .mockResolvedValueOnce({ confirmed: false }) // Attempt 1
-      .mockResolvedValueOnce({ confirmed: false }) // Attempt 2
-      .mockResolvedValue({ confirmed: true });     // Attempt 3
+      .mockResolvedValueOnce({ confirmed: false })
+      .mockResolvedValueOnce({ confirmed: false })
+      .mockResolvedValueOnce({ confirmed: false })
+      .mockResolvedValueOnce({ confirmed: false })
+      .mockResolvedValueOnce({ confirmed: false })
+      .mockResolvedValueOnce({ confirmed: false })
+      .mockResolvedValue({ confirmed: true });
 
     render(<PagoExitosoPage />);
 
-    // Advance first delay
     await act(async () => {
-      await vi.advanceTimersByTimeAsync(2500);
-    });
-    // Advance second delay
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(2500);
+      await vi.advanceTimersByTimeAsync(18000);
     });
     
-    // Wait for success
     await waitFor(() => {
       expect(screen.getByText('¡Pago exitoso!')).toBeInTheDocument();
     });
 
-    // Should have checked exactly 3 times before succeeding
-    expect(api.pagos.confirmarPago).toHaveBeenCalledTimes(3);
+    expect(api.pagos.confirmarPago).toHaveBeenCalledTimes(7);
+  });
+
+  it('manual retry restarts polling and can recover to success', async () => {
+    (api.pagos.confirmarPago as any).mockResolvedValue({ confirmed: false });
+
+    render(<PagoExitosoPage />);
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(121000);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText('Verificación pendiente')).toBeInTheDocument();
+    });
+
+    (api.pagos.confirmarPago as any).mockResolvedValue({ confirmed: true, estado: 'APROBADO' });
+
+    screen.getByRole('button', { name: 'Volver a intentar' }).click();
+
+    await waitFor(() => {
+      expect(screen.getByText('¡Pago exitoso!')).toBeInTheDocument();
+    });
+  });
+
+  it('stops polling after unmount', async () => {
+    (api.pagos.confirmarPago as any).mockResolvedValue({ confirmed: false });
+
+    const { unmount } = render(<PagoExitosoPage />);
+
+    await waitFor(() => {
+      expect(api.pagos.confirmarPago).toHaveBeenCalledTimes(1);
+    });
+
+    unmount();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10000);
+    });
+
+    expect(api.pagos.confirmarPago).toHaveBeenCalledTimes(1);
   });
 });
