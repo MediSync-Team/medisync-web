@@ -14,7 +14,7 @@ import { OBRAS_SOCIALES } from './lib/obras-sociales';
 import { getDashboardPath } from './lib/auth-redirects';
 import ProfCard from './components/ProfCard';
 import { getSpecialtyDisplayName } from './lib/specialty';
-import { getLocale } from './lib/date';
+import { formatClinicDateKeyForDisplay, getLocale, todayInputValue } from './lib/date';
 
 const LIMIT = 9;
 
@@ -161,7 +161,7 @@ export default function HomePage() {
     ...(filters.precioMin ? [{ key: 'precioMin' as const, label: `${h.priceMin}: $${filters.precioMin}` }] : []),
     ...(filters.precioMax ? [{ key: 'precioMax' as const, label: `${h.priceMax}: $${filters.precioMax}` }] : []),
     ...(filters.modalidad ? [{ key: 'modalidad' as const, label: filters.modalidad === 'PRESENCIAL' ? h.inPerson : h.virtual }] : []),
-    ...(filters.fecha ? [{ key: 'fecha' as const, label: `${h.date} ${new Date(filters.fecha + 'T12:00:00').toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}` }] : []),
+    ...(filters.fecha ? [{ key: 'fecha' as const, label: `${h.date} ${formatClinicDateKeyForDisplay(filters.fecha, getLocale(lang), { day: 'numeric', month: 'short' })}` }] : []),
     ...(filters.orderBy ? [{ key: 'orderBy' as const, label: { precio_asc: h.priceAsc, precio_desc: h.priceDesc, nombre_asc: h.nameAsc }[filters.orderBy] }] : []),
     ...(filters.obraSocial ? [{ key: 'obraSocial' as const, label: `${h.obraSocial || 'Obra social'}: ${filters.obraSocial}` }] : []),
   ];
@@ -357,7 +357,7 @@ export default function HomePage() {
                     <input
                       type="date"
                       value={draft.fecha}
-                      min={new Date().toISOString().split('T')[0]}
+                      min={todayInputValue()}
                       onChange={(e) => setDraft({ ...draft, fecha: e.target.value })}
                       className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800 dark:text-slate-200"
                     />
@@ -520,5 +520,3 @@ export default function HomePage() {
     </div>
   );
 }
-
-

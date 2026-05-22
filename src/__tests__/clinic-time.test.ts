@@ -10,6 +10,7 @@ import {
   formatClinicDateKey,
   getClinicMonthFetchBounds,
   isSameClinicCalendarDay,
+  todayInputValue,
 } from '../../app/lib/date';
 
 describe('frontend clinic-time helpers', () => {
@@ -65,6 +66,7 @@ describe('frontend clinic-time helpers', () => {
     try {
       vi.setSystemTime(new Date('2026-05-18T02:30:00.000Z'));
 
+      expect(todayInputValue()).toBe('2026-05-17');
       expect(buildUpcomingClinicDateKeys(3)).toEqual([
         '2026-05-17',
         '2026-05-18',
