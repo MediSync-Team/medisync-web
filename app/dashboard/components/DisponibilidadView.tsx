@@ -5,7 +5,7 @@ import { useLang } from '../../lib/i18n/context';
 import { api, Disponibilidad, BloqueoDisponibilidad } from '../../lib/api';
 import { ClockIcon, TrashIcon, MapPinIcon } from '../../components/icons';
 import { getDaysLong } from '../../lib/utils';
-import { getLocale } from '../../lib/date';
+import { formatClinicDateKeyForDisplay, getLocale, todayInputValue } from '../../lib/date';
 
 const MOTIVOS_BLOQUEO = ['Vacaciones', 'Feriado', 'Capacitación', 'Personal', 'Otro'];
 
@@ -79,11 +79,10 @@ export default function DisponibilidadView({
   };
 
   const formatFechaBloqueo = (b: BloqueoDisponibilidad) => {
-    const inicio = new Date(b.fechaInicio + 'T12:00:00');
-    const fin = new Date(b.fechaFin + 'T12:00:00');
-    const fmt = (d: Date) => d.toLocaleDateString(getLocale(lang), { day: '2-digit', month: 'short', year: 'numeric' });
-    if (b.fechaInicio === b.fechaFin) return fmt(inicio);
-    return `${fmt(inicio)} → ${fmt(fin)}`;
+    const fmt = (dateKey: string) =>
+      formatClinicDateKeyForDisplay(dateKey, getLocale(lang), { day: '2-digit', month: 'short', year: 'numeric' });
+    if (b.fechaInicio === b.fechaFin) return fmt(b.fechaInicio);
+    return `${fmt(b.fechaInicio)} → ${fmt(b.fechaFin)}`;
   };
 
   return (
@@ -291,7 +290,7 @@ export default function DisponibilidadView({
               <input
                 type="date"
                 value={nuevoBloqueo.fechaInicio}
-                min={new Date().toISOString().split('T')[0]}
+                min={todayInputValue()}
                 onChange={(e) => setNuevoBloqueo({ ...nuevoBloqueo, fechaInicio: e.target.value, fechaFin: e.target.value })}
                 className="field-input"
               />
@@ -301,7 +300,7 @@ export default function DisponibilidadView({
               <input
                 type="date"
                 value={nuevoBloqueo.fechaFin}
-                min={nuevoBloqueo.fechaInicio || new Date().toISOString().split('T')[0]}
+                min={nuevoBloqueo.fechaInicio || todayInputValue()}
                 onChange={(e) => setNuevoBloqueo({ ...nuevoBloqueo, fechaFin: e.target.value })}
                 className="field-input"
               />
