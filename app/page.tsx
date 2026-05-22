@@ -10,7 +10,7 @@ import OnboardingTour from './components/OnboardingTour';
 import Pagination from './components/Pagination';
 import ThemeLangToggle from './components/ThemeLangToggle';
 import { MediSyncLogo, SearchIcon } from './components/icons';
-import { OBRAS_SOCIALES } from './lib/obras-sociales';
+import { loadObrasSociales, getObrasSociales } from './lib/obras-sociales';
 import { getDashboardPath } from './lib/auth-redirects';
 import ProfCard from './components/ProfCard';
 import { getSpecialtyDisplayName } from './lib/specialty';
@@ -103,6 +103,7 @@ export default function HomePage() {
 
   useEffect(() => {
     api.especialidades.getAll().then(setEspecialidades).catch(() => {});
+    loadObrasSociales();
   }, []);
 
   useEffect(() => {
@@ -389,7 +390,7 @@ export default function HomePage() {
                       className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 text-slate-800 dark:text-slate-200"
                     >
                       <option value="">{h.allCoverages}</option>
-                      {OBRAS_SOCIALES.map((os) => (
+                      {getObrasSociales().map((os) => (
                         <option key={os} value={os}>{os}</option>
                       ))}
                     </select>

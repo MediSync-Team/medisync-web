@@ -1,10 +1,11 @@
-import { OBRAS_SOCIALES } from './obras-sociales';
+import { getObrasSociales } from './obras-sociales';
 
 const AUTO_COVERAGE_DISABLED_PREFIX = 'medisync:auto-coverage-filter-disabled';
 
 export function getSavedCoverageFilter(obraSocial?: string | null): string {
   const normalised = obraSocial?.trim().toUpperCase() ?? '';
-  return OBRAS_SOCIALES.includes(normalised) ? normalised : '';
+  const list = getObrasSociales();
+  return list.includes(normalised) ? normalised : '';
 }
 
 export function getAutoCoverageDisabledKey(userId?: string | null): string | null {

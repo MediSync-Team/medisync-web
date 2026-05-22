@@ -305,6 +305,9 @@ export const api = {
     iniciar: () => fetchApi<{ initPoint: string }>('/suscripciones/iniciar', { method: 'POST' }),
     cancelar: () => fetchApi<{ cancelada: boolean }>('/suscripciones/cancelar', { method: 'POST' }),
   },
+  obrasSociales: {
+    getAll: () => fetchApi<string[]>('/obras-sociales'),
+  },
   cupones: {
     getAll: () => fetchApi<Cupon[]>('/cupones'),
     listar: () => fetchApi<Cupon[]>('/cupones'),

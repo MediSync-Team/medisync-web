@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { api, Profesional, Paciente, Genero, NotificationPreferences } from '../lib/api';
-import { OBRAS_SOCIALES } from '../lib/obras-sociales';
+import { loadObrasSociales, getObrasSociales } from '../lib/obras-sociales';
 import { useLang } from '../lib/i18n/context';
 import GoogleCalendarConnect from './GoogleCalendarConnect';
 
@@ -96,6 +96,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
       setSuccess('');
       setNotifMsg('');
       api.notifications.getPreferences().then(setNotifPrefs).catch(() => {});
+      loadObrasSociales();
     }
   }, [isOpen, userType, user]);
 
@@ -350,7 +351,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                     : 'Select accepted coverages. Patients will be able to filter by insurance.'}
                 </p>
                 <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
-                  {OBRAS_SOCIALES.map((os) => {
+                  {getObrasSociales().map((os) => {
                     const checked = obrasSociales.includes(os);
                     return (
                       <label key={os} className="flex items-center gap-2.5 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5">
