@@ -14,7 +14,7 @@ export async function POST(request: Request) {
     });
 
     const data = await response.json();
-    return Response.json(data);
+    return Response.json(data, { status: response.status });
   } catch (error) {
     console.error('Webhook proxy error:', error);
     return Response.json({ success: false, error: 'Proxy error' }, { status: 500 });
