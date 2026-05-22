@@ -4,7 +4,14 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { api, Profesional, Slot } from '../../lib/api';
 import { useLang } from '../../lib/i18n/context';
-import { buildUpcomingClinicDays, getLocale, localDateKey } from '../../lib/date';
+import {
+  buildUpcomingClinicDateKeys,
+  clinicDateKeyFromInstant,
+  formatClinicDateKeyForDisplay,
+  formatClinicInstantTime,
+  getLocale,
+  todayInputValue,
+} from '../../lib/date';
 import { getProfessionalBookingLoginPath, getProfessionalProfilePath } from '../../lib/auth-redirects';
 import { BuildingIcon, VideoIcon, MapPinIcon } from '../../components/icons';
 import Spinner from '../../components/Spinner';
@@ -13,15 +20,6 @@ const FRONTEND_URL =
   typeof window !== 'undefined'
     ? window.location.origin
     : process.env.NEXT_PUBLIC_FRONTEND_URL ?? 'https://medisync-web.medisync.workers.dev';
-
-/* -- Helpers ----------------------------------------------- */
-
-function dateKey(d: Date) {
-  return localDateKey(d);
-}
-function buildDays(n: number): Date[] {
-  return buildUpcomingClinicDays(n);
-}
 
 type Step = 'date' | 'slot' | 'guest' | 'done';
 const STEPS: Step[] = ['date', 'slot', 'guest', 'done'];
@@ -74,14 +72,15 @@ export default function WidgetPage() {
   const profId = params.profesionalId as string;
   const { lang } = useLang();
   const locale = getLocale(lang);
-  const fmt = (d: Date, opts: Intl.DateTimeFormatOptions) => d.toLocaleDateString(locale, opts);
+  const formatDateKey = (dateKey: string, opts: Intl.DateTimeFormatOptions) =>
+    formatClinicDateKeyForDisplay(dateKey, locale, opts);
 
   const [profesional, setProfesional]   = useState<Profesional | null>(null);
   const [loadingProf, setLoadingProf]   = useState(true);
 
   const [step, setStep]                         = useState<Step>('date');
-  const [days]                                  = useState<Date[]>(buildDays(30));
-  const [selectedDay, setSelectedDay]           = useState<Date | null>(null);
+  const [days]                                  = useState<string[]>(() => buildUpcomingClinicDateKeys(30));
+  const [selectedDateKey, setSelectedDateKey]   = useState<string | null>(null);
   const [modalidad, setModalidad]               = useState<'PRESENCIAL' | 'VIRTUAL'>('PRESENCIAL');
   const [slots, setSlots]                       = useState<Slot[]>([]);
   const [loadingSlots, setLoadingSlots]         = useState(false);
@@ -102,15 +101,15 @@ export default function WidgetPage() {
   }, [profId]);
 
   useEffect(() => {
-    if (!selectedDay) return;
+    if (!selectedDateKey) return;
     setSlots([]);
     setSelectedSlot(null);
     setLoadingSlots(true);
-    api.profesionales.getSlots(profId, dateKey(selectedDay), modalidad)
+    api.profesionales.getSlots(profId, selectedDateKey, modalidad)
       .then(setSlots)
       .catch(() => setSlots([]))
       .finally(() => setLoadingSlots(false));
-  }, [selectedDay, modalidad, profId]);
+  }, [selectedDateKey, modalidad, profId]);
 
   const profileUrl = `${FRONTEND_URL}${getProfessionalProfilePath(profId)}`;
   const loginUrl = `${FRONTEND_URL}${getProfessionalBookingLoginPath(profId)}`;
@@ -139,7 +138,7 @@ export default function WidgetPage() {
 
   /* -- DONE -- */
   if (step === 'done' && confirmed) {
-    const fh = new Date(confirmed.fechaHora);
+    const confirmedDateKey = clinicDateKeyFromInstant(confirmed.fechaHora);
     return (
       <div className="widget-shell flex flex-col">
         <Stepper current="done" />
@@ -152,7 +151,7 @@ export default function WidgetPage() {
           <div>
             <p className="text-base font-bold text-slate-800 dark:text-slate-200">¡Turno reservado!</p>
             <p className="text-sm text-slate-600 mt-1">
-              {fmt(fh, { weekday: 'long', day: 'numeric', month: 'long' })} · {fh.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+              {formatDateKey(confirmedDateKey, { weekday: 'long', day: 'numeric', month: 'long' })} · {formatClinicInstantTime(confirmed.fechaHora, locale)}
             </p>
             <p className="text-xs text-slate-500 mt-0.5">
               con {profesional.nombre} {profesional.apellido}
@@ -207,7 +206,9 @@ export default function WidgetPage() {
           {/* Summary pill */}
           <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-            <span className="font-medium text-slate-700">{selectedDay && fmt(selectedDay, { weekday: 'short', day: 'numeric', month: 'short' })}</span>
+            <span className="font-medium text-slate-700">
+              {selectedDateKey && formatDateKey(selectedDateKey, { weekday: 'short', day: 'numeric', month: 'short' })}
+            </span>
             <span>·</span>
             <span>{selectedSlot}h</span>
             <span>·</span>
@@ -242,7 +243,7 @@ export default function WidgetPage() {
   /* -- DATE + SLOT PICKER -- */
   return (
     <div className="widget-shell flex flex-col">
-      <Stepper current={selectedDay ? 'slot' : 'date'} />
+      <Stepper current={selectedDateKey ? 'slot' : 'date'} />
       <div className="p-4 space-y-4 flex-1">
         <ProfHeader profesional={profesional} locale={locale} />
 
@@ -268,13 +269,13 @@ export default function WidgetPage() {
         <div>
           <p className="widget-section-label">Seleccioná un día</p>
           <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-            {days.map(d => {
-              const active  = selectedDay && dateKey(d) === dateKey(selectedDay);
-              const isToday = dateKey(d) === dateKey(new Date());
+            {days.map(dayKey => {
+              const active  = selectedDateKey === dayKey;
+              const isToday = dayKey === todayInputValue();
               return (
                 <button
-                  key={dateKey(d)}
-                  onClick={() => { setSelectedDay(d); setSelectedSlot(null); }}
+                  key={dayKey}
+                  onClick={() => { setSelectedDateKey(dayKey); setSelectedSlot(null); }}
                   className={`shrink-0 flex flex-col items-center py-2 px-2.5 rounded-xl border text-center transition-all ${
                     active
                       ? 'bg-blue-600 border-blue-600 text-white'
@@ -282,12 +283,12 @@ export default function WidgetPage() {
                   }`}
                 >
                   <span className="text-[10px] uppercase font-semibold opacity-70">
-                    {isToday ? 'Hoy' : fmt(d, { weekday: 'short' })}
+                    {isToday ? 'Hoy' : formatDateKey(dayKey, { weekday: 'short' })}
                   </span>
                   <span className="text-base font-bold leading-none mt-0.5">
-                    {fmt(d, { day: 'numeric' })}
+                    {formatDateKey(dayKey, { day: 'numeric' })}
                   </span>
-                  <span className="text-[10px] opacity-70">{fmt(d, { month: 'short' })}</span>
+                  <span className="text-[10px] opacity-70">{formatDateKey(dayKey, { month: 'short' })}</span>
                 </button>
               );
             })}
@@ -295,10 +296,10 @@ export default function WidgetPage() {
         </div>
 
         {/* Slot grid */}
-        {selectedDay && (
+        {selectedDateKey && (
           <div>
             <p className="widget-section-label">
-              Horarios — {fmt(selectedDay, { weekday: 'long', day: 'numeric', month: 'long' })}
+              Horarios — {formatDateKey(selectedDateKey, { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
             {loadingSlots ? (
               <div className="flex gap-1.5 flex-wrap">
@@ -336,7 +337,7 @@ export default function WidgetPage() {
           </button>
         )}
 
-        {!selectedDay && (
+        {!selectedDateKey && (
           <p className="text-xs text-slate-400 text-center">Seleccioná un día para ver los horarios disponibles</p>
         )}
 

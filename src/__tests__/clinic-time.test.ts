@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
+  buildUpcomingClinicDateKeys,
   calendarDateKey,
   addDaysToClinicDateKey,
   clinicDateKeyFromInstant,
@@ -58,6 +59,22 @@ describe('frontend clinic-time helpers', () => {
     })).toBe('Monday, May 18');
     expect(formatClinicInstantTime('2026-05-19T02:30:00.000Z', 'es-AR')).toContain('11:30');
   });
+
+  it('builds upcoming clinic date keys from Argentina today', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-05-18T02:30:00.000Z'));
+
+      expect(buildUpcomingClinicDateKeys(3)).toEqual([
+        '2026-05-17',
+        '2026-05-18',
+        '2026-05-19',
+      ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('groups month-boundary appointments by Argentina clinic month', () => {
     // 2026-05-31 23:30 ART = 2026-06-01 02:30 UTC
     // Should be grouped as May, not June

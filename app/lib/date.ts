@@ -115,3 +115,8 @@ export function buildUpcomingClinicDays(count: number): Date[] {
   const [year, month, day] = todayKey.split('-').map(Number);
   return Array.from({ length: count }, (_, i) => new Date(year, month - 1, day + i, 12, 0, 0, 0));
 }
+
+export function buildUpcomingClinicDateKeys(count: number): string[] {
+  const todayKey = todayInputValue();
+  return Array.from({ length: count }, (_, i) => addDaysToClinicDateKey(todayKey, i));
+}
