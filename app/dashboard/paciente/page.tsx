@@ -343,7 +343,7 @@ export default function PacienteDashboard() {
             <div className="flex items-center gap-2.5 text-sm">
               <BellIcon size={15} className="shrink-0" />
               <span className="font-medium">
-                {recordatorios.length} turno{recordatorios.length > 1 ? 's' : ''} mañana
+                {recordatorios.length} turno{recordatorios.length > 1 ? 's' : ''} {d.reminder.next24h}
               </span>
               <button onClick={() => setShowRecordatorios(!showRecordatorios)} className="underline underline-offset-2 text-amber-100 hover:text-white text-xs">
                 {showRecordatorios ? 'Ocultar' : 'Ver'}
