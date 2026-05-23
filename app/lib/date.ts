@@ -138,6 +138,26 @@ export function getClinicMonthFetchBounds(year: number, month: number): { desde:
   return { desde: start.toISOString(), hasta: end.toISOString() };
 }
 
+export function getClinicMonthRangeFromDateKey(dateKey: string): { desde: string; hasta: string } {
+  const match = CLINIC_DATE_KEY_RE.exec(dateKey);
+  if (!match) {
+    throw new Error('Invalid clinic date key');
+  }
+
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const lastDay = new Date(Date.UTC(year, month, 0, 12, 0, 0, 0)).getUTCDate();
+
+  return {
+    desde: `${year}-${String(month).padStart(2, '0')}-01`,
+    hasta: `${year}-${String(month).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`,
+  };
+}
+
+export function getClinicCurrentMonthRange(): { desde: string; hasta: string } {
+  return getClinicMonthRangeFromDateKey(todayInputValue());
+}
+
 export function buildUpcomingClinicDays(count: number): Date[] {
   const todayKey = todayInputValue();
   const [year, month, day] = todayKey.split('-').map(Number);

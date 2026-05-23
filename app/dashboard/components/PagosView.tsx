@@ -5,7 +5,7 @@ import { useLang } from '../../lib/i18n/context';
 import { api, PagosDashboardResponse } from '../../lib/api';
 import { CreditCardIcon, VideoIcon, BuildingIcon } from '../../components/icons';
 import Spinner from '../../components/Spinner';
-import { formatClinicInstantDate, formatClinicInstantDateTime, formatClinicInstantTime, getLocale } from '../../lib/date';
+import { formatClinicInstantDate, formatClinicInstantDateTime, formatClinicInstantTime, getClinicCurrentMonthRange, getLocale } from '../../lib/date';
 
 export default function PagosView() {
   const { lang, t } = useLang();
@@ -17,10 +17,8 @@ export default function PagosView() {
   const [page, setPage] = useState(1);
 
   // Filters
-  const currentYear = new Date().getFullYear();
-  const currentMonth = String(new Date().getMonth() + 1).padStart(2, '0');
-  const [desde, setDesde] = useState(`${currentYear}-${currentMonth}-01`);
-  const [hasta, setHasta] = useState(`${currentYear}-${currentMonth}-${new Date(currentYear, new Date().getMonth() + 1, 0).getDate()}`);
+  const [desde, setDesde] = useState(() => getClinicCurrentMonthRange().desde);
+  const [hasta, setHasta] = useState(() => getClinicCurrentMonthRange().hasta);
   const [estado, setEstado] = useState('TODOS');
   const [applied, setApplied] = useState({ desde: '', hasta: '', estado: 'TODOS' });
 
@@ -49,8 +47,9 @@ export default function PagosView() {
   };
 
   const clearFilters = () => {
-    setDesde(`${currentYear}-${currentMonth}-01`);
-    setHasta(`${currentYear}-${currentMonth}-${new Date(currentYear, new Date().getMonth() + 1, 0).getDate()}`);
+    const currentClinicMonth = getClinicCurrentMonthRange();
+    setDesde(currentClinicMonth.desde);
+    setHasta(currentClinicMonth.hasta);
     setEstado('TODOS');
     const f = { desde: '', hasta: '', estado: 'TODOS' };
     setApplied(f);

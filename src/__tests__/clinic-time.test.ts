@@ -11,6 +11,8 @@ import {
   formatClinicInstantDateTime,
   formatClinicInstantTime,
   formatClinicDateKey,
+  getClinicCurrentMonthRange,
+  getClinicMonthRangeFromDateKey,
   getClinicMonthFetchBounds,
   isSameClinicCalendarDay,
   todayInputValue,
@@ -53,6 +55,25 @@ describe('frontend clinic-time helpers', () => {
       desde: '2026-05-01T03:00:00.000Z',
       hasta: '2026-06-01T03:00:00.000Z',
     });
+  });
+
+  it('builds current clinic month filter ranges from Argentina today', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-06-01T02:30:00.000Z'));
+      expect(getClinicCurrentMonthRange()).toEqual({ desde: '2026-05-01', hasta: '2026-05-31' });
+
+      vi.setSystemTime(new Date('2026-06-15T15:00:00.000Z'));
+      expect(getClinicCurrentMonthRange()).toEqual({ desde: '2026-06-01', hasta: '2026-06-30' });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('builds clinic month filter ranges with correct month endings', () => {
+    expect(getClinicMonthRangeFromDateKey('2024-02-10')).toEqual({ desde: '2024-02-01', hasta: '2024-02-29' });
+    expect(getClinicMonthRangeFromDateKey('2026-02-10')).toEqual({ desde: '2026-02-01', hasta: '2026-02-28' });
+    expect(getClinicMonthRangeFromDateKey('2026-12-31')).toEqual({ desde: '2026-12-01', hasta: '2026-12-31' });
   });
 
   it('navigates clinic agenda date keys without browser-local Date math', () => {
