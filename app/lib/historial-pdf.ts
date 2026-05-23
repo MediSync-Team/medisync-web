@@ -1,5 +1,5 @@
 ﻿import { HistorialTurno, Paciente } from './api';
-import { formatClinicInstantDate, formatClinicInstantTime } from './date';
+import { formatClinicCurrentDate, formatClinicInstantDate, formatClinicInstantTime } from './date';
 
 export interface HistorialPDFData {
   paciente: Paciente;
@@ -102,7 +102,7 @@ export function imprimirHistorial(data: HistorialPDFData, locale = 'es-AR') {
   const { paciente, turnos, antecedentes } = data;
 
   const pacienteNombre = `${paciente.nombre} ${paciente.apellido}`;
-  const hoy = new Date().toLocaleDateString(locale, { day: '2-digit', month: 'long', year: 'numeric' });
+  const hoy = formatClinicCurrentDate(locale, { day: '2-digit', month: 'long', year: 'numeric' });
 
   const antecedentesHtml = antecedentes ? [
     renderAntecedente('Antecedentes personales', antecedentes.antecedentesPersonales),

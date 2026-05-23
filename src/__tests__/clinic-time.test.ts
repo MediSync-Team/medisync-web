@@ -6,6 +6,7 @@ import {
   clinicDateKeyFromDateOnly,
   clinicDateKeyFromInstant,
   clinicDateTimeToIso,
+  formatClinicCurrentDate,
   formatClinicDateKeyForDisplay,
   formatClinicInstantDate,
   formatClinicInstantDateTime,
@@ -114,6 +115,21 @@ describe('frontend clinic-time helpers', () => {
         '2026-05-18',
         '2026-05-19',
       ]);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('formats current clinic date using Argentina today', () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date('2026-06-01T02:30:00.000Z'));
+
+      expect(formatClinicCurrentDate('es-AR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric',
+      })).toBe('31 de mayo de 2026');
     } finally {
       vi.useRealTimers();
     }

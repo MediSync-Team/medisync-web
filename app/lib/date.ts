@@ -54,6 +54,10 @@ export function todayInputValue(): string {
   return formatClinicDateKey(new Date());
 }
 
+export function formatClinicCurrentDate(locale: string, opts: Intl.DateTimeFormatOptions = {}): string {
+  return formatClinicDateKeyForDisplay(todayInputValue(), locale, opts);
+}
+
 export function addDaysToClinicDateKey(dateKey: string, days: number): string {
   const match = CLINIC_DATE_KEY_RE.exec(dateKey);
   if (!match) {

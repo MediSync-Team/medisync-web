@@ -7,7 +7,7 @@
  */
 
 import type { HistoriaClinicaPaciente } from './api';
-import { formatClinicInstantDateTime } from './date';
+import { formatClinicCurrentDate, formatClinicInstantDateTime } from './date';
 
 interface ProfesionalInfo {
   nombre: string;
@@ -66,7 +66,7 @@ export function exportarHistoriaClinicaPDF(
   profesional: ProfesionalInfo,
 ): void {
   const { paciente, resumen, timeline } = historia;
-  const hoy = new Date().toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const hoy = formatClinicCurrentDate('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
 
   // -- Patient info section --------------------------------------------------
   const infoRows = [
