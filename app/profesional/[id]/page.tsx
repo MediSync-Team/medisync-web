@@ -18,7 +18,7 @@ import AgendarCalendario from '../../components/AgendarCalendario';
 import { estadoBadge } from '../../lib/utils';
 import { translateSpecialtyName } from '../../lib/i18n/translations';
 import { getDashboardPath, getProfessionalBookingLoginPath } from '../../lib/auth-redirects';
-import { buildUpcomingClinicDays, clinicDateTimeToIso, formatClinicDateKey, formatClinicInstantDate, formatClinicInstantTime, getLocale, localDateKey, todayInputValue } from '../../lib/date';
+import { buildUpcomingClinicDays, clinicDateKeyFromDateOnly, clinicDateTimeToIso, formatClinicInstantDate, formatClinicInstantTime, getLocale, localDateKey, todayInputValue } from '../../lib/date';
 
 export default function ProfesionalPage() {
   const params = useParams();
@@ -107,7 +107,7 @@ export default function ProfesionalPage() {
     return localDateKey(selectedDate);
   })() : null;
   const selectedWaitlistItem = selectedDateKey
-    ? suscripcionesLista.find(x => x.modalidad === modalidad && formatClinicDateKey(new Date(x.fecha)) === selectedDateKey)
+    ? suscripcionesLista.find(x => x.modalidad === modalidad && clinicDateKeyFromDateOnly(x.fecha) === selectedDateKey)
     : null;
 
   const handleUnirseListaEspera = async () => {

@@ -3,6 +3,7 @@ import {
   buildUpcomingClinicDateKeys,
   calendarDateKey,
   addDaysToClinicDateKey,
+  clinicDateKeyFromDateOnly,
   clinicDateKeyFromInstant,
   clinicDateTimeToIso,
   formatClinicDateKeyForDisplay,
@@ -31,6 +32,11 @@ describe('frontend clinic-time helpers', () => {
   it('groups appointment instants by Argentina clinic date', () => {
     expect(clinicDateKeyFromInstant('2026-05-19T02:30:00.000Z')).toBe('2026-05-18');
     expect(clinicDateKeyFromInstant('2026-05-18T13:00:00.000Z')).toBe('2026-05-18');
+  });
+
+  it('extracts date-only API values without applying Argentina instant conversion', () => {
+    expect(clinicDateKeyFromDateOnly('2026-05-18T00:00:00.000Z')).toBe('2026-05-18');
+    expect(clinicDateKeyFromDateOnly(new Date('2026-05-18T00:00:00.000Z'))).toBe('2026-05-18');
   });
 
   it('compares appointment instants to synthetic calendar cells by clinic date', () => {

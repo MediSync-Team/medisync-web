@@ -30,6 +30,18 @@ export function clinicDateKeyFromInstant(value: string | Date): string {
   return formatClinicDateKey(typeof value === 'string' ? new Date(value) : value);
 }
 
+export function clinicDateKeyFromDateOnly(value: string | Date): string {
+  if (typeof value === 'string') {
+    const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+    if (!match) {
+      throw new Error('Invalid date-only value');
+    }
+    return `${match[1]}-${match[2]}-${match[3]}`;
+  }
+
+  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, '0')}-${String(value.getUTCDate()).padStart(2, '0')}`;
+}
+
 export function calendarDateKey(date: Date): string {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 }
