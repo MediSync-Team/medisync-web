@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { api, Turno, User } from '../lib/api';
 import { ChatIcon, UserIcon } from './icons';
 import ChatModal from './ChatModal';
+import { formatClinicInstantDate } from '../lib/date';
 
 export function GlobalChatHub({ user }: { user: User }) {
   const [open, setOpen] = useState(false);
@@ -107,7 +108,7 @@ export function GlobalChatHub({ user }: { user: User }) {
                     const otherName = isPaciente 
                       ? `Dr/a. ${turno.profesional?.nombre} ${turno.profesional?.apellido}` 
                       : `${turno.paciente?.nombre} ${turno.paciente?.apellido}`;
-                    const fecha = new Date(turno.fechaHora).toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit' });
+                    const fecha = formatClinicInstantDate(turno.fechaHora, 'es-AR', { day: '2-digit', month: '2-digit' });
 
                     return (
                       <button

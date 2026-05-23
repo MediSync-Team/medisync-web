@@ -7,6 +7,7 @@
  */
 
 import type { HistoriaClinicaPaciente } from './api';
+import { formatClinicInstantDateTime } from './date';
 
 interface ProfesionalInfo {
   nombre: string;
@@ -32,9 +33,13 @@ function fmtDate(iso: string | null | undefined, opts?: Intl.DateTimeFormatOptio
 
 function fmtDateTime(iso: string | null | undefined): string {
   if (!iso) return '—';
-  const d = new Date(iso);
-  return d.toLocaleDateString('es-AR', { day: '2-digit', month: '2-digit', year: 'numeric' })
-    + ' ' + d.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+  return formatClinicInstantDateTime(iso, 'es-AR', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 function estadoLabel(estado: string): string {

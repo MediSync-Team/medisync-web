@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api, Turno } from '../../../lib/api';
 import { useLang } from '../../../lib/i18n/context';
-import { getLocale } from '../../../lib/date';
+import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../../lib/date';
 import {
   VideoIcon, BuildingIcon, MapPinIcon, CreditCardIcon, RefreshIcon, XIcon, ChatIcon, ClipboardIcon,
 } from '../../../components/icons';
@@ -76,10 +76,10 @@ export default function TurnoCard({
           {/* Date/time */}
           <div className="text-right shrink-0">
             <p className="text-sm font-bold text-slate-700">
-              {new Date(turno.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
+              {formatClinicInstantDate(turno.fechaHora, locale, { day: 'numeric', month: 'short' })}
             </p>
             <p className="text-xs text-slate-500">
-              {new Date(turno.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+              {formatClinicInstantTime(turno.fechaHora, locale)}
             </p>
           </div>
         </div>

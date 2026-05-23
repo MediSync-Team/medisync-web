@@ -1,10 +1,10 @@
 import { CertificadoConDatos } from './api';
+import { formatClinicInstantDate } from './date';
 
 export function imprimirCertificado(cert: CertificadoConDatos) {
   const prof = cert.turno.profesional;
   const pac = cert.turno.paciente;
-  const fecha = new Date(cert.turno.fechaHora);
-  const fechaStr = fecha.toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const fechaStr = formatClinicInstantDate(cert.turno.fechaHora, 'es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
   const diasTexto = cert.diasReposo && cert.diasReposo > 0
     ? `prescribiéndose reposo médico por ${cert.diasReposo} día${cert.diasReposo !== 1 ? 's' : ''} a partir del ${fechaStr}`
     : '';

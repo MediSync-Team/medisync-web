@@ -1,7 +1,7 @@
 'use client';
 
 import { useLang } from '../../../lib/i18n/context';
-import { getLocale } from '../../../lib/date';
+import { formatClinicInstantDate, getLocale } from '../../../lib/date';
 import { CertificadoPaciente } from '../../../lib/api';
 
 export default function CertificadoCard({
@@ -37,7 +37,7 @@ export default function CertificadoCard({
             Dr/a. {certificado.profesional.nombre} {certificado.profesional.apellido}
           </p>
           <p className="text-xs text-slate-500 mt-1">
-            {new Date(certificado.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
+            {formatClinicInstantDate(certificado.fechaHora, locale, { day: 'numeric', month: 'short', year: 'numeric' })}
           </p>
         </div>
         <span className={`badge border text-[10px] font-bold whitespace-nowrap ${tipoColor[certificado.certificado.tipo]}`}>

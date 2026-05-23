@@ -5,7 +5,7 @@ import { useLang } from '../../lib/i18n/context';
 import { Turno } from '../../lib/api';
 import { CalendarIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon } from '../../components/icons';
 import { estadoBadge, estadoLabel, estadoCanceladoAusenteLabel, clinicalRiskBadge, getDaysShort } from '../../lib/utils';
-import { calendarDateKey, clinicDateKeyFromInstant, formatClinicDateKey, getLocale } from '../../lib/date';
+import { calendarDateKey, clinicDateKeyFromInstant, formatClinicDateKey, formatClinicInstantTime, getLocale } from '../../lib/date';
 
 export default function CalendarioView({
   selectedDate, setSelectedDate, turnos: allTurnos, turnosDelDia, onSelectTurno,
@@ -249,7 +249,7 @@ export default function CalendarioView({
                 {/* Time */}
                 <div className="shrink-0 text-center w-14">
                   <p className="text-lg font-bold text-slate-700 group-hover:text-blue-700 leading-none">
-                    {new Date(turno.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
+                    {formatClinicInstantTime(turno.fechaHora, getLocale(lang))}
                   </p>
                 </div>
 

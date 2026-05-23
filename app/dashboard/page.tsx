@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Cupon, TipoDescuento, SuscripcionEstado } from '../lib/api';
-import { clinicDateKeyFromInstant, formatClinicDateKey, getClinicMonthFetchBounds, getLocale, isSameClinicCalendarDay } from '../lib/date';
+import { clinicDateKeyFromInstant, formatClinicDateKey, formatClinicInstantTime, getClinicMonthFetchBounds, getLocale, isSameClinicCalendarDay } from '../lib/date';
 import StatsPanel from '../components/StatsPanel';
 import ProfileModal from '../components/ProfileModal';
 import OnboardingTour from '../components/OnboardingTour';
@@ -375,7 +375,7 @@ export default function ProfesionalDashboard() {
                   <div key={rec.id} className="flex items-center gap-3 text-sm text-blue-50">
                     <ClockIcon size={13} className="shrink-0 text-blue-300" />
                     <span>
-                      {new Date(rec.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
+                      {formatClinicInstantTime(rec.fechaHora, getLocale(lang))}
                       {' - '}
                       {rec.paciente?.nombre} {rec.paciente?.apellido}
                     </span>

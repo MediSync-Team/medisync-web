@@ -6,6 +6,8 @@ import {
   clinicDateKeyFromInstant,
   clinicDateTimeToIso,
   formatClinicDateKeyForDisplay,
+  formatClinicInstantDate,
+  formatClinicInstantDateTime,
   formatClinicInstantTime,
   formatClinicDateKey,
   getClinicMonthFetchBounds,
@@ -59,6 +61,19 @@ describe('frontend clinic-time helpers', () => {
       month: 'long',
     })).toBe('Monday, May 18');
     expect(formatClinicInstantTime('2026-05-19T02:30:00.000Z', 'es-AR')).toContain('11:30');
+  });
+
+  it('formats appointment instants for display in Argentina time', () => {
+    expect(formatClinicInstantDate('2026-06-01T02:30:00.000Z', 'es-AR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })).toBe('31/05/2026');
+    expect(formatClinicInstantTime('2026-06-01T02:30:00.000Z', 'es-AR')).toContain('11:30');
+    expect(formatClinicInstantDateTime('2026-06-01T03:00:00.000Z', 'en-US', {
+      dateStyle: 'short',
+      timeStyle: 'short',
+    })).toMatch(/6\/1\/26.*12:00 AM/);
   });
 
   it('builds upcoming clinic date keys from Argentina today', () => {

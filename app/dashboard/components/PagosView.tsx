@@ -5,7 +5,7 @@ import { useLang } from '../../lib/i18n/context';
 import { api, PagosDashboardResponse } from '../../lib/api';
 import { CreditCardIcon, VideoIcon, BuildingIcon } from '../../components/icons';
 import Spinner from '../../components/Spinner';
-import { getLocale } from '../../lib/date';
+import { formatClinicInstantDate, formatClinicInstantDateTime, formatClinicInstantTime, getLocale } from '../../lib/date';
 
 export default function PagosView() {
   const { lang, t } = useLang();
@@ -72,7 +72,7 @@ export default function PagosView() {
         tx.csvHeaders,
         ...res.pagos.map(p => [
           new Date(p.createdAt).toLocaleDateString(getLocale(lang)),
-          new Date(p.turno.fechaHora).toLocaleDateString(getLocale(lang)) + ' ' + new Date(p.turno.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' }),
+          formatClinicInstantDateTime(p.turno.fechaHora, getLocale(lang), { dateStyle: 'short', timeStyle: 'short' }),
           p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : tx.noAccount,
           p.turno.paciente?.email ?? '',
           p.turno.modalidad === 'VIRTUAL' ? m.VIRTUAL : m.PRESENCIAL,
@@ -316,9 +316,9 @@ export default function PagosView() {
                       <span className="ml-1">{p.turno.modalidad === 'VIRTUAL' ? m.VIRTUAL : m.PRESENCIAL}</span>
                     </td>
                     <td className="px-4 py-3 text-slate-500 dark:text-slate-400 whitespace-nowrap text-xs">
-                      {new Date(p.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: '2-digit', month: 'short' })}
+                      {formatClinicInstantDate(p.turno.fechaHora, getLocale(lang), { day: '2-digit', month: 'short' })}
                       {' '}
-                      {new Date(p.turno.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
+                      {formatClinicInstantTime(p.turno.fechaHora, getLocale(lang))}
                     </td>
                     <td className="px-4 py-3 font-semibold text-slate-800 dark:text-slate-100 whitespace-nowrap">
                       {fmt(p.monto)}
@@ -345,7 +345,7 @@ export default function PagosView() {
                       {p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : d.noAccount}
                     </p>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      {new Date(p.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: '2-digit', month: 'short', year: '2-digit' })}
+                      {formatClinicInstantDate(p.turno.fechaHora, getLocale(lang), { day: '2-digit', month: 'short', year: '2-digit' })}
                       {' · '}
                       {modalidadIcon(p.turno.modalidad)} {p.turno.modalidad === 'VIRTUAL' ? m.VIRTUAL : m.PRESENCIAL}
                     </p>

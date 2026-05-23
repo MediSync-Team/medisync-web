@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { API_BASE, api } from '../lib/api';
+import { formatClinicInstantDateTime } from '../lib/date';
 import Spinner from './Spinner';
 
 /** Derive WebSocket base from the REST API base URL. */
@@ -42,7 +43,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
   // Queue ICE candidates received before remote description is set
   const iceCandidateQueue = useRef<RTCIceCandidateInit[]>([]);
 
-  const fecha = new Date(fechaHora).toLocaleString('es-AR', { dateStyle: 'short', timeStyle: 'short' });
+  const fecha = formatClinicInstantDateTime(fechaHora, 'es-AR', { dateStyle: 'short', timeStyle: 'short' });
 
   const cleanup = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);

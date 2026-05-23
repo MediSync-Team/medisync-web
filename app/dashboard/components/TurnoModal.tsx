@@ -17,7 +17,7 @@ import {
 import Spinner from '../../components/Spinner';
 import { useAuth } from '../../lib/auth-context';
 import { useLang } from '../../lib/i18n/context';
-import { getLocale } from '../../lib/date';
+import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../lib/date';
 import { buildReprogrammingFechaHora, getReprogrammingMinDate } from '../../lib/reprogramming';
 import { canCancelTurnoFromModal, canCompleteTurno, canReprogramTurno } from '../../lib/turno-actions';
 import { estadoBadge, estadoLabel } from '../../lib/utils';
@@ -467,10 +467,10 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             <div className="bg-slate-50 rounded-xl p-3.5">
               <p className="text-xs text-slate-500 mb-1">{d.dateTime}</p>
               <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
-                {new Date(turno.fechaHora).toLocaleDateString(getLocale(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
+                {formatClinicInstantDate(turno.fechaHora, getLocale(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
               </p>
               <p className="text-blue-600 font-bold">
-                {new Date(turno.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
+                {formatClinicInstantTime(turno.fechaHora, getLocale(lang))}
               </p>
             </div>
 
@@ -691,7 +691,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                       <p className="text-[11px] text-slate-500 uppercase tracking-wide">Ultima consulta</p>
                       <p className="text-sm font-semibold text-slate-700">
                         {historiaClinica.resumen.ultimaConsulta
-                          ? new Date(historiaClinica.resumen.ultimaConsulta).toLocaleDateString(getLocale(lang))
+                          ? formatClinicInstantDate(historiaClinica.resumen.ultimaConsulta, getLocale(lang))
                           : 'Sin registros'}
                       </p>
                     </div>
@@ -754,9 +754,9 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                         <div key={item.id} className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
                           <div className="flex items-center justify-between gap-2">
                             <p className="text-xs font-semibold text-slate-700">
-                              {new Date(item.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short', year: 'numeric' })}
+                              {formatClinicInstantDate(item.fechaHora, getLocale(lang), { day: 'numeric', month: 'short', year: 'numeric' })}
                               {' · '}
-                              {new Date(item.fechaHora).toLocaleTimeString(getLocale(lang), { hour: '2-digit', minute: '2-digit' })}
+                              {formatClinicInstantTime(item.fechaHora, getLocale(lang))}
                             </p>
                             <span className={estadoBadge(item.estado)}>{estadoLabel(item.estado, status)}</span>
                           </div>

@@ -18,7 +18,7 @@ import AgendarCalendario from '../../components/AgendarCalendario';
 import { estadoBadge } from '../../lib/utils';
 import { translateSpecialtyName } from '../../lib/i18n/translations';
 import { getDashboardPath, getProfessionalBookingLoginPath } from '../../lib/auth-redirects';
-import { buildUpcomingClinicDays, clinicDateTimeToIso, formatClinicDateKey, getLocale, localDateKey, todayInputValue } from '../../lib/date';
+import { buildUpcomingClinicDays, clinicDateTimeToIso, formatClinicDateKey, formatClinicInstantDate, formatClinicInstantTime, getLocale, localDateKey, todayInputValue } from '../../lib/date';
 
 export default function ProfesionalPage() {
   const params = useParams();
@@ -944,9 +944,8 @@ function GuestConfirmacion({
   const h = t('home');
   const dateLocale = getLocale(lang);
   const specialtyName = (name?: string | null) => translateSpecialtyName(name ?? '', lang);
-  const fecha = new Date(turno.fechaHora);
-  const fechaStr = fecha.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const horaStr  = fecha.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit', hour12: false });
+  const fechaStr = formatClinicInstantDate(turno.fechaHora, dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const horaStr  = formatClinicInstantTime(turno.fechaHora, dateLocale, { hour12: false });
 
   return (
     <div className="max-w-lg mx-auto">
@@ -1060,9 +1059,8 @@ function ConfirmacionTurno({
   const h = t('home');
   const dateLocale = getLocale(lang);
   const specialtyName = (name?: string | null) => translateSpecialtyName(name ?? '', lang);
-  const fecha = new Date(turno.fechaHora);
-  const fechaStr = fecha.toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-  const horaStr  = fecha.toLocaleTimeString(dateLocale, { hour: '2-digit', minute: '2-digit', hour12: false });
+  const fechaStr = formatClinicInstantDate(turno.fechaHora, dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const horaStr  = formatClinicInstantTime(turno.fechaHora, dateLocale, { hour12: false });
 
   return (
     <div className="max-w-lg mx-auto">

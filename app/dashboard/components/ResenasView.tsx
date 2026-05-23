@@ -5,7 +5,7 @@ import { useLang } from '../../lib/i18n/context';
 import { api, Resena, ResenasStats } from '../../lib/api';
 import { InfoIcon } from '../../components/icons';
 import StarRating from '../../components/StarRating';
-import { getLocale } from '../../lib/date';
+import { formatClinicInstantDate, getLocale } from '../../lib/date';
 
 export default function ResenasView() {
   const { lang, t } = useLang();
@@ -182,7 +182,7 @@ export default function ResenasView() {
                       </p>
                       <p className="text-xs text-slate-400">
                         {new Date(resena.createdAt).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'long', year: 'numeric' })}
-                        {resena.turno && ` · ${new Date(resena.turno.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'short' })}`}
+                        {resena.turno && ` · ${formatClinicInstantDate(resena.turno.fechaHora, getLocale(lang), { day: 'numeric', month: 'short' })}`}
                       </p>
                     </div>
                   </div>

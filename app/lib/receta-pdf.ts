@@ -1,4 +1,5 @@
 ﻿import { RecetaIndicacion, Profesional, Paciente } from './api';
+import { formatClinicInstantDate, formatClinicInstantTime } from './date';
 
 export interface RecetaPDFData {
   receta: RecetaIndicacion;
@@ -31,12 +32,10 @@ function seccion(titulo: string, contenido: string): string {
 export function imprimirReceta(data: RecetaPDFData) {
   const { receta, profesional, paciente, fechaHora, modalidad } = data;
 
-  const fechaTurno = new Date(fechaHora).toLocaleDateString('es-AR', {
+  const fechaTurno = formatClinicInstantDate(fechaHora, 'es-AR', {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
-  const horaTurno = new Date(fechaHora).toLocaleTimeString('es-AR', {
-    hour: '2-digit', minute: '2-digit',
-  });
+  const horaTurno = formatClinicInstantTime(fechaHora, 'es-AR');
   const emitidaAt = new Date(receta.emitidaAt).toLocaleString('es-AR', {
     day: '2-digit', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit',

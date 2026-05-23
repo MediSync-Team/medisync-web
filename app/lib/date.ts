@@ -80,6 +80,22 @@ export function formatClinicInstantTime(value: string | Date, locale: string, op
   });
 }
 
+export function formatClinicInstantDate(value: string | Date, locale: string, opts: Intl.DateTimeFormatOptions = {}): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return date.toLocaleDateString(locale, {
+    ...opts,
+    timeZone: CLINIC_TIME_ZONE,
+  });
+}
+
+export function formatClinicInstantDateTime(value: string | Date, locale: string, opts: Intl.DateTimeFormatOptions = {}): string {
+  const date = typeof value === 'string' ? new Date(value) : value;
+  return date.toLocaleString(locale, {
+    ...opts,
+    timeZone: CLINIC_TIME_ZONE,
+  });
+}
+
 export function formatDateInput(d: Date): string {
   return formatClinicDateKey(d);
 }

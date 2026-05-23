@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { api, HistorialTurno, CertificadoConDatos } from '../../../lib/api';
 import { useLang } from '../../../lib/i18n/context';
-import { getLocale } from '../../../lib/date';
+import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../../lib/date';
 import { imprimirReceta } from '../../../lib/receta-pdf';
 import { imprimirCertificado } from '../../../lib/certificado-pdf';
 import { BuildingIcon, CalendarIcon, UserIcon, VideoIcon } from '../../../components/icons';
@@ -46,9 +46,9 @@ export default function HistorialCard({
       <div className="px-4 py-2 bg-blue-50 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-sm font-semibold text-blue-800">
           <CalendarIcon size={13} />
-          {new Date(item.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' })}
+          {formatClinicInstantDate(item.fechaHora, locale, { day: 'numeric', month: 'long', year: 'numeric' })}
           <span className="text-blue-500 font-normal text-xs">
-            {new Date(item.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+            {formatClinicInstantTime(item.fechaHora, locale)}
           </span>
         </div>
         <span className="badge badge-green text-[10px]">{(s as any)[item.estado] || item.estado}</span>

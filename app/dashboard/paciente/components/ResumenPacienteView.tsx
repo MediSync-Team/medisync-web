@@ -1,7 +1,7 @@
 'use client';
 
 import { useLang } from '../../../lib/i18n/context';
-import { getLocale } from '../../../lib/date';
+import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../../lib/date';
 import { Turno, RecetaPaciente, CertificadoPaciente, PacienteStats } from '../../../lib/api';
 import { CalendarIcon, CreditCardIcon, BellIcon, UserIcon } from '../../../components/icons';
 
@@ -44,8 +44,8 @@ function ResumenPacienteView({
                 {proximoTurno.profesional?.nombre} {proximoTurno.profesional?.apellido}
               </p>
               <p className="text-xs text-slate-600 mt-1">
-                {new Date(proximoTurno.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short' })} {p.atTime}{' '}
-                {new Date(proximoTurno.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+                {formatClinicInstantDate(proximoTurno.fechaHora, locale, { day: 'numeric', month: 'short' })} {p.atTime}{' '}
+                {formatClinicInstantTime(proximoTurno.fechaHora, locale)}
               </p>
             </>
           ) : (
@@ -88,8 +88,8 @@ function ResumenPacienteView({
           <div className="space-y-2">
             {recordatorios.map(r => (
               <p key={r.id} className="text-xs text-amber-700">
-                • Turno {new Date(r.fechaHora).toLocaleDateString(locale)} {p.atTime}{' '}
-                {new Date(r.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })} {p.withProfessional}{' '}
+                • Turno {formatClinicInstantDate(r.fechaHora, locale)} {p.atTime}{' '}
+                {formatClinicInstantTime(r.fechaHora, locale)} {p.withProfessional}{' '}
                 {r.turno?.profesional?.nombre || 'profesional'}
               </p>
             ))}

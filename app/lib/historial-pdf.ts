@@ -1,4 +1,5 @@
 ﻿import { HistorialTurno, Paciente } from './api';
+import { formatClinicInstantDate, formatClinicInstantTime } from './date';
 
 export interface HistorialPDFData {
   paciente: Paciente;
@@ -26,15 +27,13 @@ function nl2br(str: string): string {
 }
 
 function formatFecha(isoString: string, locale = 'es-AR'): string {
-  return new Date(isoString).toLocaleDateString(locale, {
+  return formatClinicInstantDate(isoString, locale, {
     weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
   });
 }
 
 function formatHora(isoString: string, locale = 'es-AR'): string {
-  return new Date(isoString).toLocaleTimeString(locale, {
-    hour: '2-digit', minute: '2-digit',
-  });
+  return formatClinicInstantTime(isoString, locale);
 }
 
 function renderAntecedente(label: string, valor?: string | null): string {

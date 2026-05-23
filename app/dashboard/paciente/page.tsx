@@ -19,7 +19,7 @@ import { imprimirHistorial } from '../../lib/historial-pdf';
 import { imprimirCertificado } from '../../lib/certificado-pdf';
 import { getTurnosTabRequest, PacienteDashboardTab } from '../../lib/paciente-dashboard-tabs';
 import Spinner from '../../components/Spinner';
-import { getLocale } from '../../lib/date';
+import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../lib/date';
 import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
 import TurnoCard from './components/TurnoCard';
 import HistorialCard from './components/HistorialCard';
@@ -360,8 +360,8 @@ export default function PacienteDashboard() {
                   <div key={rec.id} className="flex items-center gap-3 text-sm text-amber-50">
                     <CalendarIcon size={13} className="shrink-0 text-amber-200" />
                     <span>
-                      {new Date(rec.fechaHora).toLocaleDateString(locale)} {p.atTime}{' '}
-                      {new Date(rec.fechaHora).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' })}
+                      {formatClinicInstantDate(rec.fechaHora, locale)} {p.atTime}{' '}
+                      {formatClinicInstantTime(rec.fechaHora, locale)}
                       {' '}{p.withProfessional}{' '}
                       {rec.profesional?.nombre} {rec.profesional?.apellido}
                     </span>

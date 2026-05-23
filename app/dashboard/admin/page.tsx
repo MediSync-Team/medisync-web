@@ -7,7 +7,7 @@ import Pagination from '../../components/Pagination';
 import StarRating from '../../components/StarRating';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { useLang } from '../../lib/i18n/context';
-import { getLocale } from '../../lib/date';
+import { formatClinicInstantDateTime, getLocale } from '../../lib/date';
 import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
 
 type Tab = 'stats' | 'revenue' | 'usuarios' | 'profesionales' | 'turnos' | 'especialidades';
@@ -616,7 +616,7 @@ function TurnosTab() {
                 {data?.turnos.map(t => (
                   <tr key={t.id} className="border-t border-slate-100 hover:bg-slate-50">
                     <td className="px-4 py-3 text-slate-700 whitespace-nowrap">
-                      {new Date(t.fechaHora).toLocaleString(locale, { dateStyle: 'short', timeStyle: 'short' })}
+                      {formatClinicInstantDateTime(t.fechaHora, locale, { dateStyle: 'short', timeStyle: 'short' })}
                     </td>
                     <td className="px-4 py-3 text-slate-700">
                       {t.profesional.nombre} {t.profesional.apellido}

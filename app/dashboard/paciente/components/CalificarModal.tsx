@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '../../../lib/i18n/context';
 import { api, Turno, Resena } from '../../../lib/api';
-import { getLocale } from '../../../lib/date';
+import { formatClinicInstantDate, getLocale } from '../../../lib/date';
 import { useTranslateSpecialty } from '../../../lib/i18n/use-translate-specialty';
 import { XIcon, InfoIcon, UserIcon } from '../../../components/icons';
 import StarRating from '../../../components/StarRating';
@@ -65,7 +65,7 @@ export default function CalificarModal({ turno, onClose, onSuccess }: { turno: T
               <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">Dr/a. {turno.profesional?.nombre} {turno.profesional?.apellido}</p>
               <p className="text-xs text-blue-600">{translateSpecialty(turno.profesional?.especialidad?.nombre)}</p>
               <p className="text-xs text-slate-400 mt-0.5">
-                {new Date(turno.fechaHora).toLocaleDateString(getLocale(lang), { day: 'numeric', month: 'long', year: 'numeric' })}
+                {formatClinicInstantDate(turno.fechaHora, getLocale(lang), { day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             </div>
           </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useLang } from '../../../lib/i18n/context';
-import { getLocale } from '../../../lib/date';
+import { formatClinicInstantDate, getLocale } from '../../../lib/date';
 import { RecetaPaciente } from '../../../lib/api';
 
 export default function RecetaCard({
@@ -26,7 +26,7 @@ export default function RecetaCard({
           </p>
           <p className="text-xs text-blue-600 font-medium">{receta.profesional.especialidad}</p>
           <p className="text-xs text-slate-500 mt-1">
-            {new Date(receta.fechaHora).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}
+            {formatClinicInstantDate(receta.fechaHora, locale, { day: 'numeric', month: 'short', year: 'numeric' })}
           </p>
         </div>
         {isActive && (
