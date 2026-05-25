@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
 import { api, Profesional, Slot } from '../../lib/api';
 import { useLang } from '../../lib/i18n/context';
+import type { Translations } from '../../lib/i18n/translations';
 import {
   buildUpcomingClinicDateKeys,
   clinicDateKeyFromInstant,
@@ -23,15 +24,10 @@ const FRONTEND_URL =
 
 type Step = 'date' | 'slot' | 'guest' | 'done';
 const STEPS: Step[] = ['date', 'slot', 'guest', 'done'];
-const STEP_LABELS: Record<Step, string> = {
-  date:  'Fecha',
-  slot:  'Horario',
-  guest: 'Cuenta',
-  done:  '¡Listo!',
-};
+type WidgetTranslations = Translations['widget'];
 
 /* -- Stepper ----------------------------------------------- */
-function Stepper({ current }: { current: Step }) {
+function Stepper({ current, labels }: { current: Step; labels: WidgetTranslations['steps'] }) {
   const currentIdx = STEPS.indexOf(current);
   return (
     <div className="flex items-center gap-0 px-4 pt-4 pb-2">
@@ -54,7 +50,7 @@ function Stepper({ current }: { current: Step }) {
               </div>
               <span className={`text-[9px] mt-0.5 font-semibold whitespace-nowrap ${
                 active ? 'text-blue-600' : done ? 'text-emerald-600' : 'text-slate-400'
-              }`}>{STEP_LABELS[s]}</span>
+              }`}>{labels[s]}</span>
             </div>
             {i < STEPS.filter(s => s !== 'done').length - 1 && (
               <div className={`h-px flex-1 mx-1 mb-3 transition-colors ${done ? 'bg-emerald-400' : 'bg-slate-200'}`} />
@@ -70,7 +66,9 @@ function Stepper({ current }: { current: Step }) {
 export default function WidgetPage() {
   const params = useParams();
   const profId = params.profesionalId as string;
-  const { lang } = useLang();
+  const { t, lang } = useLang();
+  const widget = t('widget');
+  const modalityLabels = t('modality');
   const locale = getLocale(lang);
   const formatDateKey = (dateKey: string, opts: Intl.DateTimeFormatOptions) =>
     formatClinicDateKeyForDisplay(dateKey, locale, opts);
@@ -126,7 +124,7 @@ export default function WidgetPage() {
   if (!profesional) {
     return (
       <div className="widget-shell flex items-center justify-center min-h-[180px]">
-        <p className="text-slate-500 text-sm">Profesional no encontrado.</p>
+        <p className="text-slate-500 text-sm">{widget.notFound}</p>
       </div>
     );
   }
@@ -141,7 +139,7 @@ export default function WidgetPage() {
     const confirmedDateKey = clinicDateKeyFromInstant(confirmed.fechaHora);
     return (
       <div className="widget-shell flex flex-col">
-        <Stepper current="done" />
+        <Stepper current="done" labels={widget.steps} />
         <div className="p-5 flex flex-col items-center gap-4 text-center flex-1">
           <div className="w-16 h-16 rounded-full bg-emerald-100 flex items-center justify-center">
             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#059669" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -149,26 +147,26 @@ export default function WidgetPage() {
             </svg>
           </div>
           <div>
-            <p className="text-base font-bold text-slate-800 dark:text-slate-200">¡Turno reservado!</p>
+            <p className="text-base font-bold text-slate-800 dark:text-slate-200">{widget.reservedTitle}</p>
             <p className="text-sm text-slate-600 mt-1">
               {formatDateKey(confirmedDateKey, { weekday: 'long', day: 'numeric', month: 'long' })} · {formatClinicInstantTime(confirmed.fechaHora, locale)}
             </p>
             <p className="text-xs text-slate-500 mt-0.5">
-              con {profesional.nombre} {profesional.apellido}
+              {widget.withProfessional} {profesional.nombre} {profesional.apellido}
             </p>
             <p className="text-xs text-slate-500 inline-flex items-center gap-1">
               {modalidad === 'VIRTUAL' ? <VideoIcon size={11} className="text-blue-600" /> : <MapPinIcon size={11} className="text-slate-500" />}
-              {modalidad === 'VIRTUAL' ? 'Modalidad virtual' : (profesional.lugarAtencion ?? 'Presencial')}
+              {modalidad === 'VIRTUAL' ? widget.virtualModality : (profesional.lugarAtencion ?? widget.inPersonFallback)}
             </p>
           </div>
 
           {/* Summary box */}
           <div className="w-full bg-slate-50 rounded-xl border border-slate-200 px-4 py-3 text-left space-y-1.5 text-xs text-slate-600">
-            <Row label="Paciente" value={`${guest.nombre} ${guest.apellido}`} />
-            <Row label="Email"    value={guest.email} />
-            {guest.telefono && <Row label="Teléfono" value={guest.telefono} />}
+            <Row label={widget.patient} value={`${guest.nombre} ${guest.apellido}`} />
+            <Row label={widget.email} value={guest.email} />
+            {guest.telefono && <Row label={widget.phone} value={guest.telefono} />}
             {Number(profesional.precioConsulta) > 0 && (
-              <Row label="Precio" value={`$${Number(profesional.precioConsulta).toLocaleString(locale)}`} />
+              <Row label={widget.price} value={`$${Number(profesional.precioConsulta).toLocaleString(locale)}`} />
             )}
           </div>
 
@@ -179,7 +177,7 @@ export default function WidgetPage() {
               rel="noopener noreferrer"
               className="widget-btn-primary w-full text-center"
             >
-              Completar pago →
+              {widget.completePayment}
             </a>
           )}
 
@@ -189,9 +187,9 @@ export default function WidgetPage() {
             rel="noopener noreferrer"
             className="text-xs text-blue-600 hover:underline"
           >
-            Ver perfil completo en MediSync
+            {widget.viewFullProfile}
           </a>
-          <WidgetBranding />
+          <WidgetBranding label={widget.poweredBy} />
         </div>
       </div>
     );
@@ -201,7 +199,7 @@ export default function WidgetPage() {
   if (step === 'guest') {
     return (
       <div className="widget-shell flex flex-col">
-        <Stepper current="guest" />
+        <Stepper current="guest" labels={widget.steps} />
         <div className="p-4 space-y-3 flex-1">
           {/* Summary pill */}
           <div className="flex items-center gap-2 text-xs text-slate-500 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
@@ -212,29 +210,29 @@ export default function WidgetPage() {
             <span>·</span>
             <span>{selectedSlot}h</span>
             <span>·</span>
-            <span>{modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}</span>
-            <button onClick={() => setStep('slot')} className="ml-auto text-blue-600 hover:underline">Cambiar</button>
+            <span>{modalityLabels[modalidad]}</span>
+            <button onClick={() => setStep('slot')} className="ml-auto text-blue-600 hover:underline">{widget.change}</button>
           </div>
 
           <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-3 text-sm text-amber-800">
-            <p className="font-semibold">Para confirmar este turno necesitás iniciar sesión como paciente.</p>
+            <p className="font-semibold">{widget.guestLoginTitle}</p>
             <p className="text-xs mt-1">
-              La reserva como invitado volverá en una próxima versión con confirmación por email, vencimiento de reserva y pago seguro.
+              {widget.guestLoginDesc}
             </p>
           </div>
 
           <div className="flex gap-2 pt-1">
-            <button onClick={() => setStep('slot')} className="widget-btn-secondary flex-1">← Volver</button>
+            <button onClick={() => setStep('slot')} className="widget-btn-secondary flex-1">{widget.back}</button>
             <a href={loginUrl} target="_blank" rel="noopener noreferrer" className="widget-btn-primary flex-1 text-center">
-              Iniciar sesión
+              {widget.login}
             </a>
           </div>
 
           <a href={profileUrl} target="_blank" rel="noopener noreferrer" className="block text-center text-xs text-blue-600 hover:underline">
-            Ver perfil completo en MediSync
+            {widget.viewFullProfile}
           </a>
 
-          <WidgetBranding />
+          <WidgetBranding label={widget.poweredBy} />
         </div>
       </div>
     );
@@ -243,9 +241,9 @@ export default function WidgetPage() {
   /* -- DATE + SLOT PICKER -- */
   return (
     <div className="widget-shell flex flex-col">
-      <Stepper current={selectedDateKey ? 'slot' : 'date'} />
+      <Stepper current={selectedDateKey ? 'slot' : 'date'} labels={widget.steps} />
       <div className="p-4 space-y-4 flex-1">
-        <ProfHeader profesional={profesional} locale={locale} />
+        <ProfHeader profesional={profesional} locale={locale} labels={widget} />
 
         {/* Modalidad toggle */}
         {supportsVirtual && (
@@ -258,7 +256,7 @@ export default function WidgetPage() {
               >
                 <span className="inline-flex items-center justify-center gap-1">
                   {m === 'PRESENCIAL' ? <BuildingIcon size={11} /> : <VideoIcon size={11} />}
-                  {m === 'PRESENCIAL' ? 'Presencial' : 'Virtual'}
+                  {modalityLabels[m]}
                 </span>
               </button>
             ))}
@@ -267,7 +265,7 @@ export default function WidgetPage() {
 
         {/* Day strip */}
         <div>
-          <p className="widget-section-label">Seleccioná un día</p>
+          <p className="widget-section-label">{widget.selectDay}</p>
           <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
             {days.map(dayKey => {
               const active  = selectedDateKey === dayKey;
@@ -283,7 +281,7 @@ export default function WidgetPage() {
                   }`}
                 >
                   <span className="text-[10px] uppercase font-semibold opacity-70">
-                    {isToday ? 'Hoy' : formatDateKey(dayKey, { weekday: 'short' })}
+                    {isToday ? widget.today : formatDateKey(dayKey, { weekday: 'short' })}
                   </span>
                   <span className="text-base font-bold leading-none mt-0.5">
                     {formatDateKey(dayKey, { day: 'numeric' })}
@@ -299,14 +297,14 @@ export default function WidgetPage() {
         {selectedDateKey && (
           <div>
             <p className="widget-section-label">
-              Horarios — {formatDateKey(selectedDateKey, { weekday: 'long', day: 'numeric', month: 'long' })}
+              {widget.schedules} — {formatDateKey(selectedDateKey, { weekday: 'long', day: 'numeric', month: 'long' })}
             </p>
             {loadingSlots ? (
               <div className="flex gap-1.5 flex-wrap">
                 {[1,2,3,4,5,6].map(i => <div key={i} className="skeleton h-8 w-14 rounded-lg" />)}
               </div>
             ) : availableSlots.length === 0 ? (
-              <p className="text-xs text-slate-500 py-3 text-center">Sin horarios disponibles este día.</p>
+              <p className="text-xs text-slate-500 py-3 text-center">{widget.noSlots}</p>
             ) : (
               <div className="flex flex-wrap gap-1.5">
                 {availableSlots.map(s => (
@@ -333,15 +331,15 @@ export default function WidgetPage() {
             onClick={() => setStep('guest')}
             className="widget-btn-primary w-full"
           >
-            Continuar con {selectedSlot}h →
+            {widget.continueWith.replace('{{time}}', selectedSlot)}
           </button>
         )}
 
         {!selectedDateKey && (
-          <p className="text-xs text-slate-400 text-center">Seleccioná un día para ver los horarios disponibles</p>
+          <p className="text-xs text-slate-400 text-center">{widget.selectDayFirst}</p>
         )}
 
-        <WidgetBranding />
+        <WidgetBranding label={widget.poweredBy} />
       </div>
     </div>
   );
@@ -357,7 +355,7 @@ function Row({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ProfHeader({ profesional, locale }: { profesional: Profesional; locale: string }) {
+function ProfHeader({ profesional, locale, labels }: { profesional: Profesional; locale: string; labels: WidgetTranslations }) {
   const initials = `${profesional.nombre[0]}${profesional.apellido[0]}`.toUpperCase();
   const obrasSociales = (profesional as any).obrasSociales as string[] | undefined;
   return (
@@ -375,12 +373,12 @@ function ProfHeader({ profesional, locale }: { profesional: Profesional; locale:
         <div className="flex flex-wrap items-center gap-2 mt-0.5">
           {Number(profesional.precioConsulta) > 0 && (
             <span className="text-xs text-slate-500">
-              ${Number(profesional.precioConsulta).toLocaleString(locale)} / consulta
+              ${Number(profesional.precioConsulta).toLocaleString(locale)} / {labels.consultationSuffix}
             </span>
           )}
           {obrasSociales && obrasSociales.length > 0 && (
             <span className="text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-1.5 py-0.5 font-medium">
-              {obrasSociales.length === 1 ? obrasSociales[0] : `${obrasSociales.length} obras sociales`}
+              {obrasSociales.length === 1 ? obrasSociales[0] : `${obrasSociales.length} ${labels.insurancePlural}`}
             </span>
           )}
         </div>
@@ -389,10 +387,10 @@ function ProfHeader({ profesional, locale }: { profesional: Profesional; locale:
   );
 }
 
-function WidgetBranding() {
+function WidgetBranding({ label }: { label: string }) {
   return (
     <div className="flex items-center justify-center gap-1.5 pt-1">
-      <span className="text-[10px] text-slate-400">Powered by</span>
+      <span className="text-[10px] text-slate-400">{label}</span>
       <a
         href="https://medisync-web.medisync.workers.dev"
         target="_blank"

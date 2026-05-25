@@ -3,13 +3,19 @@ import { beforeEach, afterEach, describe, expect, it, vi } from 'vitest';
 import { useParams } from 'next/navigation';
 import WidgetPage from '../../app/widget/[profesionalId]/page';
 import { api } from '../../app/lib/api';
+import translations from '../../app/lib/i18n/translations';
+
+const mockLanguage = vi.hoisted(() => ({ lang: 'es' as 'es' | 'en' }));
 
 vi.mock('next/navigation', () => ({
   useParams: vi.fn(),
 }));
 
 vi.mock('../../app/lib/i18n/context', () => ({
-  useLang: () => ({ lang: 'es' }),
+  useLang: () => ({
+    lang: mockLanguage.lang,
+    t: (section: keyof typeof translations.es) => translations[mockLanguage.lang][section],
+  }),
 }));
 
 vi.mock('../../app/lib/api', () => ({
@@ -26,6 +32,7 @@ describe('WidgetPage timezone behavior', () => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
     vi.setSystemTime(new Date('2026-05-18T02:30:00.000Z'));
     vi.clearAllMocks();
+    mockLanguage.lang = 'es';
 
     (useParams as any).mockReturnValue({ profesionalId: 'prof-1' });
     (api.profesionales.getById as any).mockResolvedValue({
@@ -76,5 +83,27 @@ describe('WidgetPage timezone behavior', () => {
 
     expect(await screen.findByText('10:00')).toBeInTheDocument();
     expect(screen.getByText(/Horarios/i)).toHaveTextContent('17 de mayo');
+  });
+
+  it('renders widget labels in Spanish', async () => {
+    render(<WidgetPage />);
+
+    expect(await screen.findByText('Seleccioná un día')).toBeInTheDocument();
+    expect(screen.getByText('Fecha')).toBeInTheDocument();
+    expect(screen.getByText('Horario')).toBeInTheDocument();
+    expect(screen.getByText('Cuenta')).toBeInTheDocument();
+    expect(screen.getByText(/Seleccioná un día para ver los horarios disponibles/i)).toBeInTheDocument();
+  });
+
+  it('renders widget labels in English', async () => {
+    mockLanguage.lang = 'en';
+
+    render(<WidgetPage />);
+
+    expect(await screen.findByText('Select a day')).toBeInTheDocument();
+    expect(screen.getByText('Date')).toBeInTheDocument();
+    expect(screen.getByText('Time')).toBeInTheDocument();
+    expect(screen.getByText('Account')).toBeInTheDocument();
+    expect(screen.getByText(/Select a day to see available times/i)).toBeInTheDocument();
   });
 });
