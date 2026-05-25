@@ -782,7 +782,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
               <h4 className="font-semibold text-slate-700 text-sm">Receta e indicaciones post-consulta</h4>
               {receta?.emitidaAt && (
                 <span className="badge badge-blue ml-auto text-xs">
-                  Emitida {new Date(receta.emitidaAt).toLocaleDateString(getLocale(lang))}
+                  Emitida {formatClinicInstantDate(receta.emitidaAt, getLocale(lang))}
                 </span>
               )}
             </div>
@@ -921,7 +921,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 <h4 className="font-semibold text-slate-700 text-sm">Certificado médico</h4>
                 {certificado?.emitidaAt && (
                   <span className="badge badge-blue ml-auto text-xs">
-                    Emitido {new Date(certificado.emitidaAt).toLocaleDateString(getLocale(lang))}
+                    Emitido {formatClinicInstantDate(certificado.emitidaAt, getLocale(lang))}
                   </span>
                 )}
               </div>

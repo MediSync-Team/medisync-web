@@ -176,7 +176,7 @@ export default function HistorialCard({
                 : 'Certificado Médico'}
             </p>
             <p className="text-xs text-slate-500 mt-1">
-              Emitido el {new Date(item.certificado.emitidaAt ?? item.fechaHora).toLocaleDateString(locale)}
+              Emitido el {formatClinicInstantDate(item.certificado.emitidaAt ?? item.fechaHora, locale)}
             </p>
           </div>
         )}

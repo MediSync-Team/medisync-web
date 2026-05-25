@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useLang } from '../../../lib/i18n/context';
 import { api, Turno, RecetaIndicacion } from '../../../lib/api';
-import { getLocale } from '../../../lib/date';
+import { formatClinicInstantDateTime, getLocale } from '../../../lib/date';
 import { useTranslateSpecialty } from '../../../lib/i18n/use-translate-specialty';
 import { imprimirReceta } from '../../../lib/receta-pdf';
 import { InfoIcon, XIcon } from '../../../components/icons';
@@ -53,7 +53,7 @@ export default function RecetaModal({ turno, onClose }: { turno: Turno; onClose:
             </div>
           ) : (
             <div className="space-y-3 text-sm">
-              <p className="text-xs text-slate-500">Emitida: {new Date(receta.emitidaAt ?? receta.createdAt).toLocaleString(getLocale(lang))}</p>
+              <p className="text-xs text-slate-500">Emitida: {formatClinicInstantDateTime(receta.emitidaAt ?? receta.createdAt, getLocale(lang))}</p>
               <div>
                 <p className="font-semibold text-slate-700">Diagnostico</p>
                 <p className="text-slate-600 whitespace-pre-wrap">{receta.diagnostico}</p>
