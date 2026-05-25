@@ -1,13 +1,14 @@
 'use client';
 
 import { Suspense, useEffect } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { useLang } from '../lib/i18n/context';
 
 function PagoPendienteContent() {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const turnoId = searchParams.get('turno');
+  const { t } = useLang();
+  const labels = t('auth').paymentResult.pending;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -21,26 +22,25 @@ function PagoPendienteContent() {
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg text-center">
         <div className="text-6xl mb-4">⏳</div>
-        <h1 className="text-2xl font-bold text-yellow-600 mb-4">Pago pendiente</h1>
+        <h1 className="text-2xl font-bold text-yellow-600 mb-4">{labels.title}</h1>
         <p className="text-gray-600 mb-6">
-          Tu pago está siendo procesado. Te notificaremos cuando sea confirmado. 
-          Tu turno quedará pendiente hasta que se complete el pago.
+          {labels.description}
         </p>
         <div className="space-y-3">
           <Link 
             href="/dashboard/paciente"
             className="block w-full py-3 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
           >
-            Ver mis turnos
+            {labels.viewAppointments}
           </Link>
           <Link 
             href="/"
             className="block w-full py-3 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
           >
-            Volver al inicio
+            {labels.home}
           </Link>
         </div>
-        <p className="text-sm text-gray-400 mt-4">Redirigiendo en 5 segundos...</p>
+        <p className="text-sm text-gray-400 mt-4">{labels.redirecting}</p>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import AgendarCalendario from '../components/AgendarCalendario';
 import Spinner from '../components/Spinner';
 import { TurnoCalendarInfo } from '../lib/calendar';
 import { api } from '../lib/api';
+import { useLang } from '../lib/i18n/context';
 
 const PAYMENT_POLL_INTERVAL_MS = 3000;
 const PAYMENT_POLL_TIMEOUT_MS = 2 * 60 * 1000;
@@ -14,6 +15,8 @@ const PAYMENT_POLL_TIMEOUT_MS = 2 * 60 * 1000;
 function PagoExitosoContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { t } = useLang();
+  const labels = t('auth').paymentResult.success;
   const turnoId = searchParams.get('turno');
   
   const [confirming, setConfirming] = useState(true);
@@ -120,17 +123,17 @@ function PagoExitosoContent() {
           <div>
             <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">
               {confirming 
-                ? 'Confirmando pago...' 
+                ? labels.confirmingTitle
                 : confirmed 
-                  ? '¡Pago exitoso!' 
-                  : 'Verificación pendiente'}
+                  ? labels.confirmedTitle
+                  : labels.pendingTitle}
             </h1>
             <p className="text-slate-500 mt-1 text-sm">
               {confirming
-                ? 'Verificando tu pago con Mercado Pago...'
+                ? labels.confirmingDescription
                 : confirmed
-                  ? 'Tu turno quedó confirmado. Recibirás un email con los detalles.'
-                  : 'El pago aún no se ha confirmado. Si ya pagaste, puede demorar unos minutos en procesarse.'}
+                  ? labels.confirmedDescription
+                  : labels.pendingDescription}
             </p>
           </div>
 
@@ -140,21 +143,21 @@ function PagoExitosoContent() {
                 href="/dashboard/paciente?tab=proximos"
                 className="btn btn-primary w-full"
               >
-                Ver mis turnos
+                {labels.viewAppointments}
               </Link>
               {!confirmed ? (
                 <button
                   onClick={checkPaymentStatus}
                   className="btn btn-ghost w-full text-slate-500"
                 >
-                  Volver a intentar
+                  {labels.retry}
                 </button>
               ) : (
                 <Link
                   href="/"
                   className="btn btn-ghost w-full text-slate-500"
                 >
-                  Volver al inicio
+                  {labels.home}
                 </Link>
               )}
             </div>
@@ -174,7 +177,7 @@ function PagoExitosoContent() {
 
         {!confirming && confirmed && (
           <p className="text-center text-xs text-slate-400">
-            Redirigiendo a tus turnos en 8 segundos...
+            {labels.redirecting}
           </p>
         )}
       </div>

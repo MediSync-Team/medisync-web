@@ -3,6 +3,7 @@ import { render, screen, waitFor, act } from '@testing-library/react';
 import PagoExitosoPage from '../../app/pago-exitoso/page';
 import { api } from '../../app/lib/api';
 import { useRouter, useSearchParams } from 'next/navigation';
+import translations from '../../app/lib/i18n/translations';
 
 // Mock Next.js routing and search params
 vi.mock('next/navigation', () => ({
@@ -17,6 +18,13 @@ vi.mock('../../app/lib/api', () => ({
       confirmarPago: vi.fn(),
     },
   },
+}));
+
+vi.mock('../../app/lib/i18n/context', () => ({
+  useLang: () => ({
+    lang: 'en',
+    t: (section: keyof typeof translations.en) => translations.en[section],
+  }),
 }));
 
 describe('PagoExitosoPage Component', () => {
@@ -44,7 +52,7 @@ describe('PagoExitosoPage Component', () => {
 
     // Wait for the success UI to appear
     await waitFor(() => {
-      expect(screen.getByText('¡Pago exitoso!')).toBeInTheDocument();
+      expect(screen.getByText('Payment successful!')).toBeInTheDocument();
     });
 
     expect(api.pagos.confirmarPago).toHaveBeenCalledTimes(1);
@@ -66,8 +74,8 @@ describe('PagoExitosoPage Component', () => {
       await vi.advanceTimersByTimeAsync(15000);
     });
 
-    expect(screen.getByText('Confirmando pago...')).toBeInTheDocument();
-    expect(screen.queryByText('Verificación pendiente')).not.toBeInTheDocument();
+    expect(screen.getByText('Confirming payment...')).toBeInTheDocument();
+    expect(screen.queryByText('Verification pending')).not.toBeInTheDocument();
     expect(api.pagos.confirmarPago).toHaveBeenCalledTimes(6);
     expect(mockPush).not.toHaveBeenCalled();
   });
@@ -82,7 +90,7 @@ describe('PagoExitosoPage Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Verificación pendiente')).toBeInTheDocument();
+      expect(screen.getByText('Verification pending')).toBeInTheDocument();
     });
 
     expect(api.pagos.confirmarPago).toHaveBeenCalledTimes(41);
@@ -106,7 +114,7 @@ describe('PagoExitosoPage Component', () => {
     });
     
     await waitFor(() => {
-      expect(screen.getByText('¡Pago exitoso!')).toBeInTheDocument();
+      expect(screen.getByText('Payment successful!')).toBeInTheDocument();
     });
 
     expect(api.pagos.confirmarPago).toHaveBeenCalledTimes(7);
@@ -122,15 +130,15 @@ describe('PagoExitosoPage Component', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText('Verificación pendiente')).toBeInTheDocument();
+      expect(screen.getByText('Verification pending')).toBeInTheDocument();
     });
 
     (api.pagos.confirmarPago as any).mockResolvedValue({ confirmed: true, estado: 'APROBADO' });
 
-    screen.getByRole('button', { name: 'Volver a intentar' }).click();
+    screen.getByRole('button', { name: 'Try again' }).click();
 
     await waitFor(() => {
-      expect(screen.getByText('¡Pago exitoso!')).toBeInTheDocument();
+      expect(screen.getByText('Payment successful!')).toBeInTheDocument();
     });
   });
 
