@@ -3,11 +3,12 @@ import { describe, expect, it, vi } from 'vitest';
 import HistorialCard from '../../app/dashboard/paciente/components/HistorialCard';
 import RecetaModal from '../../app/dashboard/paciente/components/RecetaModal';
 import { api } from '../../app/lib/api';
+import translations from '../../app/lib/i18n/translations';
 
 vi.mock('../../app/lib/i18n/context', () => ({
   useLang: () => ({
     lang: 'es',
-    t: () => ({}),
+    t: (section: keyof typeof translations.es) => translations.es[section],
   }),
 }));
 

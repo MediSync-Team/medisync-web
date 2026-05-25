@@ -10,9 +10,9 @@ import StarRating from '../../../components/StarRating';
 
 export default function CalificarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
   const { t, lang } = useLang();
-  const d = t("dashboard");
   const translateSpecialty = useTranslateSpecialty();
   const p = t('paciente');
+  const common = t('common');
   const [rating, setRating] = useState(0);
   const [comentario, setComentario] = useState('');
   const [guardando, setGuardando] = useState(false);
@@ -26,26 +26,26 @@ export default function CalificarModal({ turno, onClose, onSuccess }: { turno: T
   }, [turno.id]);
 
   const handleGuardar = async () => {
-    if (rating === 0) { setNotice({ type: 'error', text: 'Seleccioná al menos 1 estrella.' }); return; }
+    if (rating === 0) { setNotice({ type: 'error', text: p.ratingRequired }); return; }
     setGuardando(true);
     try {
       await api.resenas.crear({ turnoId: turno.id, rating, comentario: comentario.trim() || undefined });
       onSuccess();
     } catch (err) {
-      setNotice({ type: 'error', text: err instanceof Error ? err.message : 'Error al guardar' });
+      setNotice({ type: 'error', text: err instanceof Error ? err.message : p.ratingSaveError });
     } finally {
       setGuardando(false);
     }
   };
 
-  const labels = ['', 'Malo', 'Regular', 'Bueno', 'Muy bueno', 'Excelente'];
+  const labels = p.ratingLabels;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
           <h3 className="font-bold text-slate-800 dark:text-slate-200">{p.rateTitle}</h3>
-          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+          <button aria-label={p.closeModal} onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
         </div>
 
         <div className="px-6 py-5 space-y-5">
@@ -74,12 +74,12 @@ export default function CalificarModal({ turno, onClose, onSuccess }: { turno: T
             resenaExistente ? (
               <div className="alert alert-info text-sm">
                 <InfoIcon size={14} className="shrink-0" />
-                <span>Ya calificaste esta consulta con {resenaExistente.rating} estrellas.</span>
+                <span>{p.alreadyRated} ({resenaExistente.rating}/5).</span>
               </div>
             ) : (
               <>
                 <div className="text-center space-y-2">
-                  <p className="text-sm font-medium text-slate-600">¿Cómo fue tu experiencia?</p>
+                  <p className="text-sm font-medium text-slate-600">{p.ratingPrompt}</p>
                   <StarRating value={rating} onChange={setRating} size={36} />
                   {rating > 0 && (
                     <p className="text-sm font-semibold text-amber-600">{labels[rating]}</p>
@@ -88,14 +88,14 @@ export default function CalificarModal({ turno, onClose, onSuccess }: { turno: T
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
-                    Comentario <span className="font-normal normal-case">(opcional)</span>
+                    {p.rateComment}
                   </label>
                   <textarea
                     value={comentario}
                     onChange={(e) => setComentario(e.target.value)}
                     rows={3}
                     maxLength={500}
-                    placeholder="Contá tu experiencia con el profesional..."
+                    placeholder={p.ratePlaceholder}
                     className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300 resize-none text-slate-800 dark:text-slate-200"
                   />
                   <p className="text-xs text-slate-400 text-right mt-1">{comentario.length}/500</p>
@@ -106,14 +106,14 @@ export default function CalificarModal({ turno, onClose, onSuccess }: { turno: T
         </div>
 
         <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
-          <button onClick={onClose} className="btn btn-secondary flex-1">{t('common').cancel}</button>
+          <button onClick={onClose} className="btn btn-secondary flex-1">{common.cancel}</button>
           {!resenaExistente && (
             <button
               onClick={handleGuardar}
               disabled={guardando || rating === 0 || resenaExistente === undefined}
               className="btn btn-primary flex-1"
             >
-              {guardando ? t('common').saving : p.rateSubmit}
+              {guardando ? common.saving : p.rateSubmit}
             </button>
           )}
         </div>

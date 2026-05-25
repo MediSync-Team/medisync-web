@@ -37,7 +37,8 @@ export default function HistorialCard({
   translateSpecialty: (name?: string) => string;
 }) {
   const [expanded, setExpanded] = useState(false);
-  const { lang } = useLang();
+  const { t, lang } = useLang();
+  const p = t('paciente');
   const locale = getLocale(lang);
 
   return (
@@ -84,7 +85,7 @@ export default function HistorialCard({
             </p>
             {item.evolucion.contenido.length > 200 && (
               <button onClick={() => setExpanded(!expanded)} className="text-xs text-blue-600 hover:underline mt-1">
-                {expanded ? 'Ver menos' : 'Ver más'}
+                {expanded ? p.showLess : p.showMore}
               </button>
             )}
           </div>
@@ -94,7 +95,7 @@ export default function HistorialCard({
         {item.recetaIndicacion && (
           <div className="border border-emerald-200 rounded-lg p-3 text-sm bg-emerald-50">
             <div className="flex items-center justify-between mb-1.5">
-              <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">Receta e indicaciones</p>
+              <p className="text-xs font-semibold text-emerald-700 uppercase tracking-wide">{p.prescriptionAndIndications}</p>
               {item.profesional && (
                 <button
                   onClick={() => imprimirReceta({
@@ -115,19 +116,19 @@ export default function HistorialCard({
                   className="flex items-center gap-1 text-xs text-emerald-700 hover:text-emerald-900 font-semibold"
                 >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                  Descargar PDF
+                  {p.downloadPdf}
                 </button>
               )}
             </div>
             <p className="text-slate-700 font-medium">{item.recetaIndicacion.diagnostico}</p>
             {item.recetaIndicacion.medicamentos && (
               <p className="text-xs text-slate-600 mt-1">
-                <span className="font-semibold">Medicamentos:</span> {item.recetaIndicacion.medicamentos}
+                <span className="font-semibold">{p.medicines}:</span> {item.recetaIndicacion.medicamentos}
               </p>
             )}
             {item.recetaIndicacion.proximoControl && (
               <p className="text-xs text-slate-500 mt-1">
-                <span className="font-semibold">Próximo control:</span> {item.recetaIndicacion.proximoControl}
+                <span className="font-semibold">{p.nextControl}:</span> {item.recetaIndicacion.proximoControl}
               </p>
             )}
           </div>
@@ -137,7 +138,7 @@ export default function HistorialCard({
         {item.certificado && (
           <div className="border border-blue-200 rounded-lg p-3 text-sm bg-blue-50">
             <div className="flex items-center justify-between mb-1.5">
-              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">Certificado médico</p>
+              <p className="text-xs font-semibold text-blue-700 uppercase tracking-wide">{p.medicalCertificate}</p>
               <button
                 onClick={async () => {
                   try {
@@ -166,17 +167,17 @@ export default function HistorialCard({
                 className="flex items-center gap-1 text-xs text-blue-700 hover:text-blue-900 font-semibold"
               >
                 <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Descargar PDF
+                {p.downloadPdf}
               </button>
             </div>
             <p className="text-slate-700 font-medium">
-              {item.certificado.tipo === 'REPOSO' ? 'Reposo Médico'
-                : item.certificado.tipo === 'CONSULTA' ? 'Justificación de Consulta'
-                : item.certificado.tipo === 'APTITUD' ? 'Aptitud Física'
-                : 'Certificado Médico'}
+              {item.certificado.tipo === 'REPOSO' ? p.certificateTypeRest
+                : item.certificado.tipo === 'CONSULTA' ? p.certificateTypeConsultation
+                : item.certificado.tipo === 'APTITUD' ? p.certificateTypeFitness
+                : p.certificateTypeGeneric}
             </p>
             <p className="text-xs text-slate-500 mt-1">
-              Emitido el {formatClinicInstantDate(item.certificado.emitidaAt ?? item.fechaHora, locale)}
+              {p.issuedOn} {formatClinicInstantDate(item.certificado.emitidaAt ?? item.fechaHora, locale)}
             </p>
           </div>
         )}
@@ -184,7 +185,7 @@ export default function HistorialCard({
         {/* Archivos adjuntos */}
         {(item.archivos ?? []).length > 0 && (
           <div>
-            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">Documentos adjuntos</p>
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">{p.attachedDocuments}</p>
             <div className="flex flex-wrap gap-2">
               {(item.archivos ?? []).map(archivo => (
                 <a
@@ -213,7 +214,7 @@ export default function HistorialCard({
         {item.resena ? (
           <div className="border border-amber-200 rounded-lg p-3 bg-amber-50 space-y-2">
             <div className="flex items-center justify-between">
-              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">Tu calificación</p>
+              <p className="text-xs font-semibold text-amber-700 uppercase tracking-wide">{p.yourRating}</p>
               <div className="flex items-center gap-1.5">
                 <StarDisplay rating={item.resena.rating} size={13} />
                 <span className="text-xs font-bold text-amber-700">{item.resena.rating}/5</span>
@@ -225,7 +226,7 @@ export default function HistorialCard({
             {item.resena.respuesta && (
               <div className="mt-2 pt-2 border-t border-amber-200">
                 <p className="text-xs font-semibold text-blue-700 mb-1">
-                  Respuesta de Dr/a. {item.profesional?.nombre} {item.profesional?.apellido}
+                  {p.professionalResponse} {item.profesional?.nombre} {item.profesional?.apellido}
                   {item.resena.respondidaAt && (
                     <span className="font-normal text-slate-400 ml-1">
                       · {new Date(item.resena.respondidaAt).toLocaleDateString(locale, { day: 'numeric', month: 'short' })}
