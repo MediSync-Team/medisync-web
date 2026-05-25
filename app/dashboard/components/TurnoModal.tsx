@@ -58,6 +58,8 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
   const [loadingPreconsulta, setLoadingPreconsulta] = useState(true);
   const { t, lang } = useLang();
   const d = t('dashboard');
+  const common = t('common');
+  const modal = d.turnoModal;
   const status = t('status');
   const [receta, setReceta] = useState<RecetaIndicacion | null>(null);
   const [recetaForm, setRecetaForm] = useState<RecetaIndicacionInput>({ diagnostico: '', indicaciones: '' });
@@ -197,7 +199,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
   const handleSaveReceta = async () => {
     if (recetaForm.diagnostico.trim().length < 5 || recetaForm.indicaciones.trim().length < 5) {
-      setModalNotice({ type: 'error', text: 'Completa diagnostico e indicaciones (minimo 5 caracteres).' });
+      setModalNotice({ type: 'error', text: modal.notices.completePrescription });
       return;
     }
 
@@ -210,11 +212,11 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
       });
       setReceta(response.receta);
       setShareText(response.shareText);
-      setSavedMessage('Receta/indicaciones emitidas');
+      setSavedMessage(modal.notices.prescriptionSavedBadge);
       setTimeout(() => setSavedMessage(''), 2500);
-      setModalNotice({ type: 'success', text: 'Receta emitida correctamente.' });
+      setModalNotice({ type: 'success', text: modal.notices.prescriptionSaved });
     } catch (err) {
-      setModalNotice({ type: 'error', text: err instanceof Error ? err.message : 'No se pudo emitir la receta' });
+      setModalNotice({ type: 'error', text: err instanceof Error ? err.message : modal.notices.prescriptionError });
     } finally {
       setSavingReceta(false);
     }
@@ -224,20 +226,20 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
     if (!shareText) return;
     try {
       await navigator.clipboard.writeText(shareText);
-      setSavedMessage('Texto de receta copiado');
+      setSavedMessage(modal.notices.prescriptionCopied);
       setTimeout(() => setSavedMessage(''), 2500);
     } catch {
-      setModalNotice({ type: 'error', text: 'No se pudo copiar al portapapeles.' });
+      setModalNotice({ type: 'error', text: modal.notices.clipboardError });
     }
   };
 
   const handleSaveCertificado = async () => {
     if (certificadoForm.diagnostico.trim().length < 5 || certificadoForm.texto.trim().length < 5) {
-      setModalNotice({ type: 'error', text: 'Completa diagnóstico y texto (mínimo 5 caracteres).' });
+      setModalNotice({ type: 'error', text: modal.notices.completeCertificate });
       return;
     }
     if (certificadoForm.tipo === 'REPOSO' && certificadoForm.diasReposo <= 0) {
-      setModalNotice({ type: 'error', text: 'Indicá cantidad de días de reposo.' });
+      setModalNotice({ type: 'error', text: modal.notices.restDaysRequired });
       return;
     }
 
@@ -252,7 +254,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
       });
       setCertificado(response as any);
       setShowEmitirCertificado(false);
-      setModalNotice({ type: 'success', text: 'Certificado emitido correctamente.' });
+      setModalNotice({ type: 'success', text: modal.notices.certificateSaved });
       if (turno.profesional && turno.paciente) {
         imprimirCertificado({
           ...response,
@@ -282,7 +284,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
         } as CertificadoConDatos);
       }
     } catch (err) {
-      setModalNotice({ type: 'error', text: err instanceof Error ? err.message : 'No se pudo emitir el certificado' });
+      setModalNotice({ type: 'error', text: err instanceof Error ? err.message : modal.notices.certificateError });
     } finally {
       setSavingCertificado(false);
     }
@@ -294,11 +296,11 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
     setSavingHistoria(true);
     try {
       await api.pacientes.updateHistoriaClinica(turno.paciente.id, historiaForm);
-      setHistoriaMessage('Historia clinica longitudinal actualizada');
+      setHistoriaMessage(modal.notices.historySaved);
       setTimeout(() => setHistoriaMessage(''), 3000);
       await loadHistoriaClinica(turno.paciente.id);
     } catch (err) {
-      setModalNotice({ type: 'error', text: err instanceof Error ? err.message : 'No se pudo actualizar la historia clinica' });
+      setModalNotice({ type: 'error', text: err instanceof Error ? err.message : modal.notices.historyError });
     } finally {
       setSavingHistoria(false);
     }
@@ -307,38 +309,38 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
   const historiaFields: { key: keyof HistoriaClinicaEditableFields; label: string; placeholder: string }[] = [
     {
       key: 'antecedentesPersonales',
-      label: 'Antecedentes personales',
-      placeholder: 'Patologias previas, cirugias, internaciones relevantes...',
+      label: modal.history.fields.antecedentesPersonales.label,
+      placeholder: modal.history.fields.antecedentesPersonales.placeholder,
     },
     {
       key: 'antecedentesFamiliares',
-      label: 'Antecedentes familiares',
-      placeholder: 'Antecedentes familiares de importancia clinica...',
+      label: modal.history.fields.antecedentesFamiliares.label,
+      placeholder: modal.history.fields.antecedentesFamiliares.placeholder,
     },
     {
       key: 'alergias',
-      label: 'Alergias',
-      placeholder: 'Medicamentos, alimentos u otras alergias conocidas...',
+      label: modal.history.fields.alergias.label,
+      placeholder: modal.history.fields.alergias.placeholder,
     },
     {
       key: 'medicacionActual',
-      label: 'Medicacion actual',
-      placeholder: 'Tratamientos en curso, dosis y frecuencia...',
+      label: modal.history.fields.medicacionActual.label,
+      placeholder: modal.history.fields.medicacionActual.placeholder,
     },
     {
       key: 'habitos',
-      label: 'Habitos y estilo de vida',
-      placeholder: 'Sueno, actividad fisica, consumo de tabaco/alcohol, alimentacion...',
+      label: modal.history.fields.habitos.label,
+      placeholder: modal.history.fields.habitos.placeholder,
     },
     {
       key: 'diagnosticosPrevios',
-      label: 'Diagnosticos previos',
-      placeholder: 'Diagnosticos relevantes previos y fecha aproximada...',
+      label: modal.history.fields.diagnosticosPrevios.label,
+      placeholder: modal.history.fields.diagnosticosPrevios.placeholder,
     },
     {
       key: 'notasClinicasGenerales',
-      label: 'Notas clinicas generales',
-      placeholder: 'Observaciones longitudinales, plan general y alertas medicas...',
+      label: modal.history.fields.notasClinicasGenerales.label,
+      placeholder: modal.history.fields.notasClinicasGenerales.placeholder,
     },
   ];
 
@@ -361,7 +363,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
     setGuardando(true);
     try {
       await api.turnos.guardarEvolucion(turno.id, notas);
-      setSavedMessage('Notas guardadas');
+      setSavedMessage(modal.notices.notesSaved);
       setTimeout(() => setSavedMessage(''), 2500);
       onUpdate();
     } catch (err) { console.error(err); }
@@ -383,7 +385,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
     try {
       await api.archivos.eliminar(id);
       loadArchivos();
-      setModalNotice({ type: 'success', text: 'Archivo eliminado.' });
+      setModalNotice({ type: 'success', text: modal.notices.fileDeleted });
     } catch (err) { console.error(err); }
   };
 
@@ -409,19 +411,19 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
   const handleReprogramar = async () => {
     if (!reprogramarFecha || !reprogramarHora) {
-      setModalNotice({ type: 'error', text: 'Seleccioná una fecha y un horario.' });
+      setModalNotice({ type: 'error', text: modal.notices.rescheduleMissingFields });
       return;
     }
     const fechaHoraISO = buildReprogrammingFechaHora(reprogramarFecha, reprogramarHora);
     setReprogramando(true);
     try {
       await api.turnos.reprogramar(turno.id, { fechaHora: fechaHoraISO });
-      setModalNotice({ type: 'success', text: 'Turno reprogramado. El paciente fue notificado.' });
+      setModalNotice({ type: 'success', text: modal.notices.rescheduleSaved });
       setShowReprogramar(false);
       onUpdate();
       setTimeout(onClose, 1200);
     } catch (err) {
-      setModalNotice({ type: 'error', text: err instanceof Error ? err.message : 'No se pudo reprogramar el turno.' });
+      setModalNotice({ type: 'error', text: err instanceof Error ? err.message : modal.notices.rescheduleError });
     } finally {
       setReprogramando(false);
     }
@@ -441,6 +443,20 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
     return 'badge-gray';
   };
 
+  const certificateTypeLabel = (tipo: TipoCertificado) => {
+    if (tipo === 'REPOSO') return modal.certificate.types.REPOSO;
+    if (tipo === 'CONSULTA') return modal.certificate.types.CONSULTA;
+    if (tipo === 'APTITUD') return modal.certificate.types.APTITUD;
+    return modal.certificate.types.LIBRE;
+  };
+
+  const fileTypeLabel = (tipo?: string | null) => {
+    if (tipo === 'LABORATORIO') return modal.files.types.LABORATORIO;
+    if (tipo === 'IMAGEN') return modal.files.types.IMAGEN;
+    if (tipo === 'EVOLUCION') return modal.files.types.EVOLUCION;
+    return modal.files.types.OTRO;
+  };
+
   return (
     <>
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -448,7 +464,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl">
           <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">{d.appointmentDetail}</h3>
-          <button aria-label="Cerrar modal" onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
+          <button aria-label={modal.closeModal} onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
             <XIcon size={18} />
           </button>
         </div>
@@ -482,7 +498,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             <div className="bg-slate-50 rounded-xl p-3.5">
               <p className="text-xs text-slate-500 mb-1">{d.patient}</p>
               <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
-                {turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : 'Sin cuenta'}
+                {turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : modal.noAccount}
               </p>
               {turno.paciente?.telefono && (
                 <p className="text-xs text-slate-500 mt-0.5">{turno.paciente.telefono}</p>
@@ -516,10 +532,10 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
               className="w-full flex items-center justify-center gap-2 py-2.5 border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-medium transition-colors relative"
             >
               <ChatIcon size={15} />
-              Chat con {turno.paciente.nombre} {turno.paciente.apellido}
+              {modal.chatWith} {turno.paciente.nombre} {turno.paciente.apellido}
               {unreadChat > 0 && (
                 <span className="ml-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                  {unreadChat} nuevo{unreadChat !== 1 ? 's' : ''}
+                  {unreadChat} {unreadChat === 1 ? modal.unreadSingular : modal.unreadPlural}
                 </span>
               )}
             </button>
@@ -534,23 +550,23 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             {loadingPreconsulta ? (
               <div className="skeleton h-24 rounded-lg" />
             ) : !preconsulta?.completadaAt ? (
-              <p className="text-sm text-slate-500">El paciente aun no completo el cuestionario preconsulta.</p>
+              <p className="text-sm text-slate-500">{modal.preconsulta.notCompleted}</p>
             ) : (
               <div className="space-y-2.5 text-sm">
                 {/* Header row: timestamp + risk badge */}
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <p className="font-medium text-slate-700 text-xs">
-                    Completado {new Date(preconsulta.completadaAt).toLocaleDateString(getLocale(lang))}
+                    {modal.preconsulta.completed} {new Date(preconsulta.completadaAt).toLocaleDateString(getLocale(lang))}
                   </p>
                   <div className="flex items-center gap-1.5">
                     {preconsulta.aiGenerated && (
                       <span className="inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-violet-50 text-violet-600 border border-violet-200 font-medium">
                         <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/></svg>
-                        IA
+                        {modal.preconsulta.ai}
                       </span>
                     )}
                     <span className={`badge ${preconsultaRiskClass(preconsulta.riesgo)}`}>
-                      Riesgo {preconsulta.riesgo}
+                      {modal.preconsulta.risk} {preconsulta.riesgo}
                     </span>
                   </div>
                 </div>
@@ -559,7 +575,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 {preconsulta.resumen && (
                   <div className={`rounded-lg border p-3 ${preconsulta.aiGenerated ? 'bg-violet-50 border-violet-200' : 'bg-slate-50 border-slate-200'}`}>
                     <p className={`text-xs font-semibold mb-1 ${preconsulta.aiGenerated ? 'text-violet-700' : 'text-slate-600'}`}>
-                      {preconsulta.aiGenerated ? '✦ Resumen generado por IA' : 'Resumen'}
+                      {preconsulta.aiGenerated ? `✦ ${modal.preconsulta.aiSummary}` : modal.preconsulta.summary}
                     </p>
                     <p className={`text-sm leading-relaxed ${preconsulta.aiGenerated ? 'text-violet-900' : 'text-slate-700'}`}>
                       {preconsulta.resumen}
@@ -570,7 +586,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 {/* Scales */}
                 <div className="grid grid-cols-2 gap-2">
                   <div className="bg-slate-50 rounded-lg border border-slate-200 p-2.5">
-                    <p className="text-xs text-slate-500 mb-1">Dolor</p>
+                    <p className="text-xs text-slate-500 mb-1">{modal.preconsulta.pain}</p>
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-slate-800 dark:text-slate-200">{preconsulta.escalaDolor}/10</p>
                       <div className="flex-1 bg-slate-200 rounded-full h-1.5 overflow-hidden">
@@ -580,7 +596,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                     </div>
                   </div>
                   <div className="bg-slate-50 rounded-lg border border-slate-200 p-2.5">
-                    <p className="text-xs text-slate-500 mb-1">Ansiedad</p>
+                    <p className="text-xs text-slate-500 mb-1">{modal.preconsulta.anxiety}</p>
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-slate-800 dark:text-slate-200">{preconsulta.escalaAnsiedad}/10</p>
                       <div className="flex-1 bg-slate-200 rounded-full h-1.5 overflow-hidden">
@@ -591,20 +607,18 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   </div>
                 </div>
 
-                <p><span className="font-medium text-slate-700">{lang === 'es' ? 'Motivo:' : 'Reason:'}</span> <span className="text-slate-600">{preconsulta.motivo}</span></p>
-                <p><span className="font-medium text-slate-700">{lang === 'es' ? 'Sintomas:' : 'Symptoms:'}</span> <span className="text-slate-600">{preconsulta.sintomas}</span></p>
+                <p><span className="font-medium text-slate-700">{modal.preconsulta.reason}</span> <span className="text-slate-600">{preconsulta.motivo}</span></p>
+                <p><span className="font-medium text-slate-700">{modal.preconsulta.symptoms}</span> <span className="text-slate-600">{preconsulta.sintomas}</span></p>
                 {preconsulta.inicioSintomas && (
-                  <p><span className="font-medium text-slate-700">{lang === 'es' ? 'Inicio sintomas:' : 'Symptoms onset:'}</span> <span className="text-slate-600">{preconsulta.inicioSintomas}</span></p>
+                  <p><span className="font-medium text-slate-700">{modal.preconsulta.symptomsStart}</span> <span className="text-slate-600">{preconsulta.inicioSintomas}</span></p>
                 )}
                 {typeof preconsulta.temperatura === 'number' && (
-                  <p><span className="font-medium text-slate-700">{lang === 'es' ? 'Temperatura:' : 'Temperature:'}</span> <span className="text-slate-600">{preconsulta.temperatura.toFixed(1)} °C</span></p>
+                  <p><span className="font-medium text-slate-700">{modal.preconsulta.temperature}</span> <span className="text-slate-600">{preconsulta.temperatura.toFixed(1)} °C</span></p>
                 )}
                 {preconsulta.flags && preconsulta.flags.length > 0 && (
                   <div>
                     <p className="font-medium text-slate-700 mb-1">
-                      {preconsulta.aiGenerated
-                        ? (lang === 'es' ? 'Alertas identificadas por IA' : 'AI-identified alerts')
-                        : (lang === 'es' ? 'Alertas detectadas' : 'Detected alerts')}
+                      {preconsulta.aiGenerated ? modal.preconsulta.aiAlerts : modal.preconsulta.alerts}
                     </p>
                     <div className="flex flex-wrap gap-1.5">
                       {preconsulta.flags.map((flag) => (
@@ -614,7 +628,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   </div>
                 )}
                 {preconsulta.notasPaciente && (
-                  <p className="text-slate-600"><span className="font-medium text-slate-700">Notas del paciente:</span> {preconsulta.notasPaciente}</p>
+                  <p className="text-slate-600"><span className="font-medium text-slate-700">{modal.preconsulta.patientNotes}</span> {preconsulta.notasPaciente}</p>
                 )}
               </div>
             )}
@@ -638,7 +652,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 <textarea
                   value={notas}
                   onChange={(e) => setNotas(e.target.value)}
-                  placeholder="Notas de la consulta, diagnóstico, tratamiento indicado..."
+                  placeholder={modal.evolution.placeholder}
                   className="field-input resize-none h-28 text-sm"
                 />
                 <button
@@ -656,7 +670,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
           <div className="border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <InfoIcon size={15} className="text-slate-400" />
-              <h4 className="font-semibold text-slate-700 text-sm">Historia clinica longitudinal</h4>
+              <h4 className="font-semibold text-slate-700 text-sm">{modal.history.title}</h4>
               {historiaMessage && (
                 <span className="badge badge-green ml-auto text-xs flex items-center gap-1">
                   <CheckIcon size={10} /> {historiaMessage}
@@ -667,7 +681,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             {!turno.paciente ? (
               <div className="alert alert-warning text-xs">
                 <InfoIcon size={14} className="shrink-0" />
-                <span>Este turno no esta asociado a un paciente con cuenta. No se puede construir una historia longitudinal.</span>
+                <span>{modal.history.noLinkedPatient}</span>
               </div>
             ) : loadingHistoria ? (
               <div className="space-y-2">
@@ -680,19 +694,19 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 {historiaClinica && (
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 mb-4">
                     <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
-                      <p className="text-[11px] text-slate-500 uppercase tracking-wide">Consultas totales</p>
+                      <p className="text-[11px] text-slate-500 uppercase tracking-wide">{modal.history.totalConsults}</p>
                       <p className="text-lg font-bold text-slate-800 dark:text-slate-200">{historiaClinica.resumen.totalConsultas}</p>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
-                      <p className="text-[11px] text-slate-500 uppercase tracking-wide">Completadas</p>
+                      <p className="text-[11px] text-slate-500 uppercase tracking-wide">{modal.history.completed}</p>
                       <p className="text-lg font-bold text-emerald-600">{historiaClinica.resumen.consultasCompletadas}</p>
                     </div>
                     <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
-                      <p className="text-[11px] text-slate-500 uppercase tracking-wide">Ultima consulta</p>
+                      <p className="text-[11px] text-slate-500 uppercase tracking-wide">{modal.history.lastConsult}</p>
                       <p className="text-sm font-semibold text-slate-700">
                         {historiaClinica.resumen.ultimaConsulta
                           ? formatClinicInstantDate(historiaClinica.resumen.ultimaConsulta, getLocale(lang))
-                          : 'Sin registros'}
+                          : modal.history.noRecords}
                       </p>
                     </div>
                   </div>
@@ -714,7 +728,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
                 <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
                   <p className="text-xs text-slate-500">
-                    Este resumen se comparte en todos los turnos del paciente para este profesional.
+                    {modal.history.sharedNote}
                   </p>
                   <div className="flex items-center gap-2 shrink-0">
                     <button
@@ -726,20 +740,20 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                         lugarAtencion: turno.profesional?.lugarAtencion,
                       })}
                       className="btn btn-secondary btn-sm flex items-center gap-1.5"
-                      title="Exportar como PDF"
+                      title={modal.history.exportTitle}
                     >
                       {/* Download icon */}
                       <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
                       </svg>
-                      Exportar PDF
+                      {modal.history.exportPdf}
                     </button>
                     <button
                       onClick={handleSaveHistoriaClinica}
                       disabled={savingHistoria}
                       className="btn btn-primary btn-sm"
                     >
-                      {savingHistoria ? 'Guardando...' : 'Guardar historia'}
+                      {savingHistoria ? modal.history.saving : modal.history.save}
                     </button>
                   </div>
                 </div>
@@ -747,7 +761,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 {historiaClinica && historiaClinica.timeline.length > 0 && (
                   <div className="mt-4 pt-4 border-t border-slate-100">
                     <h5 className="font-semibold text-slate-700 text-xs uppercase tracking-wider mb-2">
-                      Timeline de atenciones
+                      {modal.history.timeline}
                     </h5>
                     <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                       {historiaClinica.timeline.slice(0, 8).map((item) => (
@@ -764,7 +778,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                             <p className="text-xs text-slate-600 mt-1 line-clamp-2">{item.evolucion.contenido}</p>
                           )}
                           {item.archivos.length > 0 && (
-                            <p className="text-[11px] text-slate-500 mt-1">{item.archivos.length} archivo(s) adjunto(s)</p>
+                            <p className="text-[11px] text-slate-500 mt-1">{item.archivos.length} {modal.history.attachedFiles}</p>
                           )}
                         </div>
                       ))}
@@ -779,10 +793,10 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
           <div className="border border-slate-200 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-3">
               <ClipboardIcon size={15} className="text-slate-400" />
-              <h4 className="font-semibold text-slate-700 text-sm">Receta e indicaciones post-consulta</h4>
+              <h4 className="font-semibold text-slate-700 text-sm">{modal.prescription.title}</h4>
               {receta?.emitidaAt && (
                 <span className="badge badge-blue ml-auto text-xs">
-                  Emitida {formatClinicInstantDate(receta.emitidaAt, getLocale(lang))}
+                  {modal.prescription.emitted} {formatClinicInstantDate(receta.emitidaAt, getLocale(lang))}
                 </span>
               )}
             </div>
@@ -792,77 +806,77 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             ) : (
               <div className="space-y-3">
                 <div>
-                  <label className="field-label">Diagnostico</label>
+                  <label className="field-label">{modal.prescription.diagnosisLabel}</label>
                   <textarea
                     value={recetaForm.diagnostico}
                     onChange={(e) => setRecetaForm((prev) => ({ ...prev, diagnostico: e.target.value }))}
                     className="field-input resize-none min-h-[72px] text-sm"
-                    placeholder="Diagnostico principal y diferenciales..."
+                    placeholder={modal.prescription.diagnosisPlaceholder}
                   />
                 </div>
                 <div>
-                  <label className="field-label">Plan de tratamiento</label>
+                  <label className="field-label">{modal.prescription.treatmentPlanLabel}</label>
                   <textarea
                     value={recetaForm.planTratamiento || ''}
                     onChange={(e) => setRecetaForm((prev) => ({ ...prev, planTratamiento: e.target.value }))}
                     className="field-input resize-none min-h-[64px] text-sm"
-                    placeholder="Plan terapeutico general..."
+                    placeholder={modal.prescription.treatmentPlanPlaceholder}
                   />
                 </div>
                 <div>
-                  <label className="field-label">Medicamentos</label>
+                  <label className="field-label">{modal.prescription.medicinesLabel}</label>
                   <textarea
                     value={recetaForm.medicamentos || ''}
                     onChange={(e) => setRecetaForm((prev) => ({ ...prev, medicamentos: e.target.value }))}
                     className="field-input resize-none min-h-[72px] text-sm"
-                    placeholder="Nombre, dosis, frecuencia y duracion..."
+                    placeholder={modal.prescription.medicinesPlaceholder}
                   />
                 </div>
                 <div>
-                  <label className="field-label">Indicaciones (obligatorio)</label>
+                  <label className="field-label">{modal.prescription.indicationsLabel}</label>
                   <textarea
                     value={recetaForm.indicaciones}
                     onChange={(e) => setRecetaForm((prev) => ({ ...prev, indicaciones: e.target.value }))}
                     className="field-input resize-none min-h-[88px] text-sm"
-                    placeholder="Indicaciones para el paciente en lenguaje claro..."
+                    placeholder={modal.prescription.indicationsPlaceholder}
                   />
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="field-label">Estudios solicitados</label>
+                    <label className="field-label">{modal.prescription.studiesLabel}</label>
                     <textarea
                       value={recetaForm.estudiosSolicitados || ''}
                       onChange={(e) => setRecetaForm((prev) => ({ ...prev, estudiosSolicitados: e.target.value }))}
                       className="field-input resize-none min-h-[64px] text-sm"
-                      placeholder="Laboratorio, imagenes, etc."
+                      placeholder={modal.prescription.studiesPlaceholder}
                     />
                   </div>
                   <div>
-                    <label className="field-label">Proximo control</label>
+                    <label className="field-label">{modal.prescription.nextControlLabel}</label>
                     <input
                       value={recetaForm.proximoControl || ''}
                       onChange={(e) => setRecetaForm((prev) => ({ ...prev, proximoControl: e.target.value }))}
                       className="field-input"
-                      placeholder="Ej: en 2 semanas"
+                      placeholder={modal.prescription.nextControlPlaceholder}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="field-label">Advertencias</label>
+                  <label className="field-label">{modal.prescription.warningsLabel}</label>
                   <textarea
                     value={recetaForm.advertencias || ''}
                     onChange={(e) => setRecetaForm((prev) => ({ ...prev, advertencias: e.target.value }))}
                     className="field-input resize-none min-h-[64px] text-sm"
-                    placeholder="Signos de alarma para consultar urgente..."
+                    placeholder={modal.prescription.warningsPlaceholder}
                   />
                 </div>
                 <div>
-                  <label className="field-label">Observaciones</label>
+                  <label className="field-label">{modal.prescription.observationsLabel}</label>
                   <textarea
                     value={recetaForm.observaciones || ''}
                     onChange={(e) => setRecetaForm((prev) => ({ ...prev, observaciones: e.target.value }))}
                     className="field-input resize-none min-h-[64px] text-sm"
-                    placeholder="Observaciones internas o aclaraciones adicionales..."
+                    placeholder={modal.prescription.observationsPlaceholder}
                   />
                 </div>
 
@@ -872,14 +886,14 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                     disabled={savingReceta}
                     className="btn btn-success btn-sm"
                   >
-                    {savingReceta ? 'Emitiendo...' : 'Emitir receta/indicaciones'}
+                    {savingReceta ? modal.prescription.issuing : modal.prescription.issue}
                   </button>
                   <button
                     onClick={handleCopyShareText}
                     disabled={!shareText}
                     className="btn btn-secondary btn-sm"
                   >
-                    Copiar para compartir
+                    {modal.prescription.copy}
                   </button>
                   {receta && turno.profesional && (
                     <button
@@ -905,7 +919,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
-                      Descargar PDF
+                      {modal.prescription.downloadPdf}
                     </button>
                   )}
                 </div>
@@ -918,10 +932,10 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             <div className="border border-slate-200 rounded-xl p-4">
               <div className="flex items-center gap-2 mb-3">
                 <ClipboardIcon size={15} className="text-slate-400" />
-                <h4 className="font-semibold text-slate-700 text-sm">Certificado médico</h4>
+                <h4 className="font-semibold text-slate-700 text-sm">{modal.certificate.title}</h4>
                 {certificado?.emitidaAt && (
                   <span className="badge badge-blue ml-auto text-xs">
-                    Emitido {formatClinicInstantDate(certificado.emitidaAt, getLocale(lang))}
+                    {modal.certificate.emitted} {formatClinicInstantDate(certificado.emitidaAt, getLocale(lang))}
                   </span>
                 )}
               </div>
@@ -931,12 +945,9 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
               ) : certificado ? (
                 <div className="space-y-3">
                   <div className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">Tipo</p>
+                    <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{modal.certificate.type}</p>
                     <p className="font-semibold text-slate-700">
-                      {certificado.tipo === 'REPOSO' ? 'Reposo Médico'
-                        : certificado.tipo === 'CONSULTA' ? 'Justificación de Consulta'
-                        : certificado.tipo === 'APTITUD' ? 'Aptitud Física'
-                        : 'Certificado Médico'}
+                      {certificateTypeLabel(certificado.tipo)}
                     </p>
                   </div>
                   <div className="flex gap-2">
@@ -972,13 +983,13 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
                       </svg>
-                      Ver/Reimprimir PDF
+                      {modal.certificate.printPdf}
                     </button>
                     <button
                       onClick={() => { setShowEmitirCertificado(true); setCertificadoForm({ tipo: certificado.tipo, diagnostico: certificado.diagnostico, texto: certificado.texto, diasReposo: certificado.diasReposo || 0 }); }}
                       className="btn btn-secondary btn-sm"
                     >
-                      Editar
+                      {modal.certificate.edit}
                     </button>
                   </div>
                 </div>
@@ -987,7 +998,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                   onClick={() => setShowEmitirCertificado(true)}
                   className="btn btn-primary btn-sm"
                 >
-                  Emitir Certificado
+                  {modal.certificate.issue}
                 </button>
               )}
             </div>
@@ -1002,15 +1013,15 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
             <div className="flex gap-2 mb-3">
               <select value={fileType} onChange={(e) => setFileType(e.target.value)} className="field-select text-xs">
-                <option value="LABORATORIO">Laboratorio</option>
-                <option value="IMAGEN">Imagen médica</option>
-                <option value="EVOLUCION">Evolución</option>
-                <option value="OTRO">Otro</option>
+                <option value="LABORATORIO">{modal.files.types.LABORATORIO}</option>
+                <option value="IMAGEN">{modal.files.types.IMAGEN}</option>
+                <option value="EVOLUCION">{modal.files.types.EVOLUCION}</option>
+                <option value="OTRO">{modal.files.types.OTRO}</option>
               </select>
               <label className="flex-1">
                 <input type="file" onChange={handleUpload} disabled={uploading} accept=".pdf,.jpg,.jpeg,.png,.gif" className="hidden" />
                 <span className={`btn btn-secondary btn-sm w-full justify-center cursor-pointer ${uploading ? 'opacity-50' : ''}`}>
-                  {uploading ? t('common').saving : `+ ${d.uploadFile}`}
+                  {uploading ? common.saving : `+ ${d.uploadFile}`}
                 </span>
               </label>
             </div>
@@ -1024,9 +1035,9 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                     </span>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium text-slate-700 truncate">{archivo.nombreOriginal}</p>
-                      <p className="text-xs text-slate-400">{archivo.tipo ?? 'OTRO'} · {formatFileSize(archivo.tamanoBytes ?? 0)}</p>
+                      <p className="text-xs text-slate-400">{fileTypeLabel(archivo.tipo)} · {formatFileSize(archivo.tamanoBytes ?? 0)}</p>
                     </div>
-                    <a href={archivo.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost p-1.5 text-blue-500 hover:text-blue-700 text-xs">Ver</a>
+                    <a href={archivo.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost p-1.5 text-blue-500 hover:text-blue-700 text-xs">{modal.files.view}</a>
                     <button onClick={() => handleDeleteArchivo(archivo.id)} className="btn btn-ghost p-1.5 text-red-400 hover:text-red-600">
                       <TrashIcon size={13} />
                     </button>
@@ -1045,18 +1056,18 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             <div className="flex items-center justify-between">
               <h4 className="font-semibold text-blue-800 text-sm flex items-center gap-2">
                 <CalendarIcon size={15} className="text-blue-600" />
-                Reprogramar turno
+                {modal.reschedule.title}
               </h4>
               <button onClick={() => setShowReprogramar(false)} className="text-blue-400 hover:text-blue-600">
                 <XIcon size={15} />
               </button>
             </div>
             <p className="text-xs text-blue-700">
-              El paciente recibirá una notificación con el nuevo horario.
+              {modal.reschedule.patientNotified}
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="field-label">Nueva fecha</label>
+                <label className="field-label">{modal.reschedule.newDate}</label>
                 <input
                   type="date"
                   value={reprogramarFecha}
@@ -1069,15 +1080,15 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 />
               </div>
               <div>
-                <label className="field-label">Horario disponible</label>
+                <label className="field-label">{modal.reschedule.availableTime}</label>
                 {cargandoSlots ? (
                   <div className="field-input flex items-center gap-2 text-slate-400 text-sm">
                     <Spinner size={16} />
-                    Cargando slots...
+                    {modal.reschedule.loadingSlots}
                   </div>
                 ) : reprogramarSlots.length === 0 ? (
                   <div className="field-input text-slate-400 text-sm">
-                    {reprogramarFecha ? 'Sin disponibilidad ese día' : 'Seleccioná una fecha'}
+                    {reprogramarFecha ? modal.reschedule.noAvailability : modal.reschedule.selectDate}
                   </div>
                 ) : (
                   <select
@@ -1085,7 +1096,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                     onChange={(e) => setReprogramarHora(e.target.value)}
                     className="field-select"
                   >
-                    <option value="">Seleccionar horario</option>
+                    <option value="">{modal.reschedule.selectTime}</option>
                     {reprogramarSlots.map((s) => (
                       <option key={s.hora} value={s.hora}>{s.hora}</option>
                     ))}
@@ -1095,14 +1106,14 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             </div>
             <div className="flex gap-2 justify-end pt-1">
               <button onClick={() => setShowReprogramar(false)} className="btn btn-secondary btn-sm">
-                Cancelar
+                {modal.reschedule.cancel}
               </button>
               <button
                 onClick={handleReprogramar}
                 disabled={reprogramando || !reprogramarFecha || !reprogramarHora}
                 className="btn btn-primary btn-sm"
               >
-                {reprogramando ? 'Reprogramando...' : 'Confirmar reprogramación'}
+                {reprogramando ? modal.reschedule.reprogramming : modal.reschedule.confirm}
               </button>
             </div>
           </div>
@@ -1115,7 +1126,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
               onClick={() => { setShowReprogramar((v) => !v); setModalNotice(null); }}
               className="btn btn-secondary flex-1"
             >
-              <CalendarIcon size={15} /> Reprogramar
+              <CalendarIcon size={15} /> {modal.reschedule.action}
             </button>
           )}
           {canCompleteTurno(turno.estado) && (
@@ -1135,7 +1146,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
     {showVideoCall && (
       <VideoCallModal
         turnoId={turno.id}
-        profesionalNombre={turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : 'Paciente'}
+        profesionalNombre={turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : modal.fallbackPatient}
         fechaHora={turno.fechaHora}
         onClose={() => setShowVideoCall(false)}
       />
