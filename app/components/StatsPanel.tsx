@@ -2,6 +2,7 @@
 
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell } from 'recharts';
 import { useLang } from '../lib/i18n/context';
+import { getLocale } from '../lib/date';
 
 const COLORS = ['#3B82F6', '#10B981', '#EF4444', '#F59E0B'];
 
@@ -25,39 +26,40 @@ interface StatsData {
 }
 
 export default function StatsPanel({ stats }: { stats: StatsData | null }) {
-  const { lang } = useLang();
-  const isEs = lang === 'es';
+  const { lang, t } = useLang();
+  const statsText = t('dashboard').statsPanel;
+  const locale = getLocale(lang);
 
   if (!stats) {
     return (
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">{isEs ? 'Estadísticas' : 'Statistics'}</h3>
-        <p className="text-gray-500">{isEs ? 'Cargando estadísticas...' : 'Loading statistics...'}</p>
+        <h3 className="text-lg font-semibold mb-4">{statsText.title}</h3>
+        <p className="text-gray-500">{statsText.loading}</p>
       </div>
     );
   }
 
   const estadoData = [
-    { name: isEs ? 'Completados' : 'Completed', value: stats.turnosPorMes.reduce((acc, m) => acc + m.completados, 0) },
-    { name: isEs ? 'Cancelados' : 'Cancelled', value: stats.turnosPorMes.reduce((acc, m) => acc + m.cancelados, 0) },
-    { name: isEs ? 'Ausentes' : 'No-show', value: stats.turnosPorMes.reduce((acc, m) => acc + m.ausentes, 0) },
+    { name: statsText.completed, value: stats.turnosPorMes.reduce((acc, m) => acc + m.completados, 0) },
+    { name: statsText.cancelled, value: stats.turnosPorMes.reduce((acc, m) => acc + m.cancelados, 0) },
+    { name: statsText.absent, value: stats.turnosPorMes.reduce((acc, m) => acc + m.ausentes, 0) },
   ].filter(d => d.value > 0);
 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-2 gap-4">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-6 text-white">
-          <p className="text-sm opacity-80">{isEs ? 'Total Turnos' : 'Total Appointments'}</p>
+          <p className="text-sm opacity-80">{statsText.totalAppointments}</p>
           <p className="text-3xl font-bold">{stats.resumen.totalTurnos}</p>
         </div>
         <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-6 text-white">
-          <p className="text-sm opacity-80">{isEs ? 'Pacientes Atendidos' : 'Patients Attended'}</p>
+          <p className="text-sm opacity-80">{statsText.patientsAttended}</p>
           <p className="text-3xl font-bold">{stats.resumen.totalPacientes}</p>
         </div>
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">{isEs ? 'Turnos por Mes' : 'Appointments by Month'}</h3>
+        <h3 className="text-lg font-semibold mb-4">{statsText.appointmentsByMonth}</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={stats.turnosPorMes}>
@@ -65,9 +67,9 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
               <XAxis dataKey="mes" fontSize={12} />
               <YAxis />
               <Tooltip />
-                <Bar dataKey="completados" name={isEs ? 'Completados' : 'Completed'} fill="#10B981" />
-                <Bar dataKey="ausentes" name={isEs ? 'Ausentes' : 'No-show'} fill="#EF4444" />
-                <Bar dataKey="cancelados" name={isEs ? 'Cancelados' : 'Cancelled'} fill="#F59E0B" />
+                <Bar dataKey="completados" name={statsText.completed} fill="#10B981" />
+                <Bar dataKey="ausentes" name={statsText.absent} fill="#EF4444" />
+                <Bar dataKey="cancelados" name={statsText.cancelled} fill="#F59E0B" />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -75,7 +77,7 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">{isEs ? 'Estado de Turnos' : 'Appointment Status'}</h3>
+          <h3 className="text-lg font-semibold mb-4">{statsText.appointmentStatus}</h3>
           {estadoData.length > 0 ? (
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
@@ -99,12 +101,12 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">{isEs ? 'No hay datos disponibles' : 'No data available'}</p>
+            <p className="text-gray-500 text-center py-8">{statsText.noData}</p>
           )}
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold mb-4">{isEs ? 'Tendencia de Turnos' : 'Appointments Trend'}</h3>
+          <h3 className="text-lg font-semibold mb-4">{statsText.appointmentsTrend}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={stats.turnosPorMes}>
@@ -112,7 +114,7 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
                 <XAxis dataKey="mes" fontSize={12} />
                 <YAxis />
                 <Tooltip />
-                <Line type="monotone" dataKey="total" name={isEs ? 'Total' : 'Total'} stroke="#3B82F6" strokeWidth={2} />
+                <Line type="monotone" dataKey="total" name={statsText.total} stroke="#3B82F6" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </div>
@@ -120,7 +122,7 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
       </div>
 
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold mb-4">{isEs ? 'Ingresos por Mes' : 'Revenue by Month'}</h3>
+        <h3 className="text-lg font-semibold mb-4">{statsText.revenueByMonth}</h3>
         {stats.ingresosPorMes.some(i => i.bruto > 0) ? (
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -128,15 +130,15 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="mes" fontSize={12} />
                 <YAxis tickFormatter={(value) => `$${value / 1000}k`} />
-                <Tooltip formatter={(value) => [`$${Number(value).toLocaleString(isEs ? 'es-AR' : 'en-US')}`, '']} />
-                <Bar dataKey="bruto" name={isEs ? 'Bruto' : 'Gross'} fill="#3B82F6" />
-                <Bar dataKey="neto" name={isEs ? 'Neto' : 'Net'} fill="#10B981" />
+                <Tooltip formatter={(value) => [`$${Number(value).toLocaleString(locale)}`, '']} />
+                <Bar dataKey="bruto" name={statsText.gross} fill="#3B82F6" />
+                <Bar dataKey="neto" name={statsText.net} fill="#10B981" />
               </BarChart>
             </ResponsiveContainer>
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-gray-500">{isEs ? 'Integrá Mercado Pago para ver ingresos' : 'Connect Mercado Pago to view revenue'}</p>
+            <p className="text-gray-500">{statsText.connectMercadoPago}</p>
           </div>
         )}
       </div>
