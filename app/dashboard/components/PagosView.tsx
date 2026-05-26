@@ -10,6 +10,7 @@ import { formatClinicInstantDate, formatClinicInstantDateTime, formatClinicInsta
 export default function PagosView() {
   const { lang, t } = useLang();
   const d = t('dashboard');
+  const payments = d.paymentsView;
   const pg = t('pagination');
   const m = t('modality');
   const [data, setData] = useState<PagosDashboardResponse | null>(null);
@@ -68,11 +69,11 @@ export default function PagosView() {
         limit: 1000,
       });
       const rows = [
-        tx.csvHeaders,
+        payments.csvHeaders,
         ...res.pagos.map(p => [
           new Date(p.createdAt).toLocaleDateString(getLocale(lang)),
           formatClinicInstantDateTime(p.turno.fechaHora, getLocale(lang), { dateStyle: 'short', timeStyle: 'short' }),
-          p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : tx.noAccount,
+          p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : payments.noAccount,
           p.turno.paciente?.email ?? '',
           p.turno.modalidad === 'VIRTUAL' ? m.VIRTUAL : m.PRESENCIAL,
           p.monto.toFixed(2),
@@ -87,7 +88,7 @@ export default function PagosView() {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `pagos-medisync-${applied.desde || 'todos'}.csv`;
+      a.download = `${payments.csvFilenamePrefix}-${applied.desde || payments.csvFilenameAll}.csv`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (e) { console.error(e); }
@@ -106,10 +107,10 @@ export default function PagosView() {
 
   const estadoLabel = (e: string) => {
     const map: Record<string, string> = {
-      APROBADO: d.approved,
-      PENDIENTE: lang === 'es' ? 'Pendiente' : 'Pending',
-      RECHAZADO: lang === 'es' ? 'Rechazado' : 'Rejected',
-      REEMBOLSADO: lang === 'es' ? 'Reembolsado' : 'Refunded',
+      APROBADO: payments.statusLabels.APROBADO,
+      PENDIENTE: payments.statusLabels.PENDIENTE,
+      RECHAZADO: payments.statusLabels.RECHAZADO,
+      REEMBOLSADO: payments.statusLabels.REEMBOLSADO,
     };
     return map[e] ?? e;
   };
@@ -119,70 +120,6 @@ export default function PagosView() {
       ? <VideoIcon size={13} className="text-blue-600" />
       : <BuildingIcon size={13} className="text-emerald-600" />
   );
-
-  const tx = lang === 'es'
-    ? {
-        csvHeaders: ['Fecha pago', 'Fecha turno', 'Paciente', 'Email', 'Modalidad', 'Monto bruto', 'Comision %', 'Monto neto', 'Estado', 'ID pago MP'],
-        noAccount: 'Sin cuenta',
-        billedGross: 'Facturado (bruto)',
-        approvedPayments: 'pagos aprobados',
-        netReceived: 'Neto recibido',
-        commission: '-10% comision',
-        pendingCollection: 'Pendiente de cobro',
-        payment: 'pago',
-        payments: 'pagos',
-        transactions: 'Transacciones',
-        approvedShort: 'aprob.',
-        monthlyBilling: 'Facturacion por fecha de turno - ultimos 12 meses',
-        from: 'Desde',
-        to: 'Hasta',
-        status: 'Estado',
-        all: 'Todos',
-        filter: 'Filtrar',
-        clear: 'Limpiar',
-        exporting: 'Exportando...',
-        exportCsv: 'Exportar CSV',
-        loadingPayments: 'Cargando pagos...',
-        noPayments: 'No hay pagos en el periodo seleccionado.',
-        date: 'Fecha',
-        patient: 'Paciente',
-        modality: 'Modalidad',
-        appointment: 'Turno',
-        grossAmount: 'Monto bruto',
-        gross: 'Bruto',
-        net: 'Neto',
-      }
-    : {
-        csvHeaders: ['Payment date', 'Appointment date', 'Patient', 'Email', 'Modality', 'Gross amount', 'Commission %', 'Net amount', 'Status', 'Payment ID MP'],
-        noAccount: 'No account',
-        billedGross: 'Billed (gross)',
-        approvedPayments: 'approved payments',
-        netReceived: 'Net received',
-        commission: '-10% commission',
-        pendingCollection: 'Pending collection',
-        payment: 'payment',
-        payments: 'payments',
-        transactions: 'Transactions',
-        approvedShort: 'approved',
-        monthlyBilling: 'Billing by appointment date - last 12 months',
-        from: 'From',
-        to: 'To',
-        status: 'Status',
-        all: 'All',
-        filter: 'Filter',
-        clear: 'Clear',
-        exporting: 'Exporting...',
-        exportCsv: 'Export CSV',
-        loadingPayments: 'Loading payments...',
-        noPayments: 'No payments in the selected period.',
-        date: 'Date',
-        patient: 'Patient',
-        modality: 'Modality',
-        appointment: 'Appointment',
-        grossAmount: 'Gross amount',
-        gross: 'Gross',
-        net: 'Net',
-      };
 
   // Bar chart helpers
   const maxBruto = data ? Math.max(...data.mesesResumen.map(m => m.bruto), 1) : 1;
@@ -194,10 +131,10 @@ export default function PagosView() {
       {data && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: tx.billedGross, value: fmt(data.totales.bruto), sub: tx.approvedPayments, color: 'emerald' },
-            { label: tx.netReceived, value: fmt(data.totales.neto), sub: tx.commission, color: 'blue' },
-            { label: tx.pendingCollection, value: fmt(data.totales.pendiente), sub: `${data.totales.pendientes} ${data.totales.pendientes !== 1 ? tx.payments : tx.payment}`, color: 'amber' },
-            { label: tx.transactions, value: String(data.totales.aprobados + data.totales.pendientes), sub: `${data.totales.aprobados} ${tx.approvedShort}`, color: 'purple' },
+            { label: payments.billedGross, value: fmt(data.totales.bruto), sub: payments.approvedPayments, color: 'emerald' },
+            { label: payments.netReceived, value: fmt(data.totales.neto), sub: payments.commission, color: 'blue' },
+            { label: payments.pendingCollection, value: fmt(data.totales.pendiente), sub: `${data.totales.pendientes} ${data.totales.pendientes !== 1 ? payments.payments : payments.payment}`, color: 'amber' },
+            { label: payments.transactions, value: String(data.totales.aprobados + data.totales.pendientes), sub: `${data.totales.aprobados} ${payments.approvedShort}`, color: 'purple' },
           ].map(card => (
             <div key={card.label} className="stat-card">
               <p className="stat-label">{card.label}</p>
@@ -212,7 +149,7 @@ export default function PagosView() {
       {data && data.mesesResumen.some(m => m.bruto > 0) && (
         <div className="bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4">
           <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-4">
-            {tx.monthlyBilling}
+            {payments.monthlyBilling}
           </p>
           <div className="flex items-end gap-1.5 h-28">
             {data.mesesResumen.map((m, i) => (
@@ -220,9 +157,9 @@ export default function PagosView() {
                 {/* Tooltip */}
                 <div className="absolute bottom-full mb-1.5 left-1/2 -translate-x-1/2 bg-slate-800 dark:bg-slate-900 text-white text-[10px] rounded px-2 py-1 whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 shadow-lg">
                   <p className="font-semibold">{m.mes}</p>
-                  <p>{fmt(m.bruto)} bruto</p>
-                  <p className="text-slate-300">{fmt(m.neto)} neto</p>
-                  <p className="text-slate-400">{m.cantidad} pago{m.cantidad !== 1 ? 's' : ''}</p>
+                  <p>{fmt(m.bruto)} {payments.tooltipGross}</p>
+                  <p className="text-slate-300">{fmt(m.neto)} {payments.tooltipNet}</p>
+                  <p className="text-slate-400">{m.cantidad} {m.cantidad !== 1 ? payments.payments : payments.payment}</p>
                 </div>
                 {/* Bar */}
                 <div
@@ -245,32 +182,32 @@ export default function PagosView() {
       {/* -- Filters ---------------------------------------------- */}
       <div className="flex flex-wrap items-end gap-3 bg-slate-50 dark:bg-slate-700/30 rounded-xl p-4">
         <div>
-          <label className="field-label text-xs">{tx.from}</label>
+          <label className="field-label text-xs">{payments.from}</label>
           <input type="date" className="field-input mt-1 text-sm" value={desde} onChange={e => setDesde(e.target.value)} />
         </div>
         <div>
-          <label className="field-label text-xs">{tx.to}</label>
+          <label className="field-label text-xs">{payments.to}</label>
           <input type="date" className="field-input mt-1 text-sm" value={hasta} onChange={e => setHasta(e.target.value)} />
         </div>
         <div>
-          <label className="field-label text-xs">{tx.status}</label>
+          <label className="field-label text-xs">{payments.status}</label>
           <select className="field-select mt-1 text-sm" value={estado} onChange={e => setEstado(e.target.value)}>
-            <option value="TODOS">{tx.all}</option>
+            <option value="TODOS">{payments.all}</option>
             <option value="APROBADO">{estadoLabel('APROBADO')}</option>
             <option value="PENDIENTE">{estadoLabel('PENDIENTE')}</option>
             <option value="RECHAZADO">{estadoLabel('RECHAZADO')}</option>
           </select>
         </div>
         <div className="flex gap-2 mt-4 sm:mt-0 flex-wrap">
-          <button onClick={applyFilters} className="btn btn-primary text-sm">{tx.filter}</button>
-          <button onClick={clearFilters} className="btn btn-ghost text-sm text-slate-500">{tx.clear}</button>
+          <button onClick={applyFilters} className="btn btn-primary text-sm">{payments.filter}</button>
+          <button onClick={clearFilters} className="btn btn-ghost text-sm text-slate-500">{payments.clear}</button>
           <button
             onClick={exportarCSV}
             disabled={exporting || !data || data.pagos.length === 0}
             className="btn btn-ghost text-sm text-emerald-700 border border-emerald-200 hover:bg-emerald-50 disabled:opacity-40 flex items-center gap-1.5"
           >
             <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            {exporting ? tx.exporting : tx.exportCsv}
+            {exporting ? payments.exporting : payments.exportCsv}
           </button>
         </div>
       </div>
@@ -279,12 +216,12 @@ export default function PagosView() {
       {loading ? (
         <div className="py-12 flex items-center justify-center gap-2 text-slate-400">
           <Spinner size={20} />
-          {tx.loadingPayments}
+          {payments.loadingPayments}
         </div>
       ) : !data || data.pagos.length === 0 ? (
         <div className="py-12 text-center">
           <p className="text-3xl mb-2 text-blue-700 flex items-center justify-center"><CreditCardIcon size={26} /></p>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">{tx.noPayments}</p>
+          <p className="text-slate-500 dark:text-slate-400 text-sm">{payments.noPayments}</p>
         </div>
       ) : (
         <>
@@ -293,7 +230,7 @@ export default function PagosView() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-700/50 border-b border-slate-200 dark:border-slate-700">
-                  {[tx.date, tx.patient, tx.modality, tx.appointment, tx.grossAmount, tx.net, tx.status].map(h => (
+                  {[payments.date, payments.patient, payments.modality, payments.appointment, payments.grossAmount, payments.net, payments.status].map(h => (
                     <th key={h} className="px-4 py-3 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{h}</th>
                   ))}
                 </tr>
@@ -308,7 +245,7 @@ export default function PagosView() {
                       {p.turno.paciente
                         ? <><p className="font-medium text-slate-800 dark:text-slate-100">{p.turno.paciente.nombre} {p.turno.paciente.apellido}</p>
                             <p className="text-xs text-slate-400 dark:text-slate-500">{p.turno.paciente.email}</p></>
-                        : <span className="text-slate-400">{d.noAccount}</span>}
+                        : <span className="text-slate-400">{payments.noAccount}</span>}
                     </td>
                     <td className="px-4 py-3 text-slate-500 dark:text-slate-400">
                       <span className="inline-flex items-center">{modalidadIcon(p.turno.modalidad)}</span>
@@ -341,7 +278,7 @@ export default function PagosView() {
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-medium text-slate-800 dark:text-slate-100 text-sm">
-                      {p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : d.noAccount}
+                      {p.turno.paciente ? `${p.turno.paciente.nombre} ${p.turno.paciente.apellido}` : payments.noAccount}
                     </p>
                     <p className="text-xs text-slate-400 mt-0.5">
                       {formatClinicInstantDate(p.turno.fechaHora, getLocale(lang), { day: '2-digit', month: 'short', year: '2-digit' })}
@@ -353,12 +290,12 @@ export default function PagosView() {
                 </div>
                 <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-700">
                   <div>
-                    <p className="text-xs text-slate-400">{tx.gross}</p>
+                    <p className="text-xs text-slate-400">{payments.gross}</p>
                     <p className="font-semibold text-slate-800 dark:text-slate-100">{fmt(p.monto)}</p>
                   </div>
                   {p.estado === 'APROBADO' && (
                     <div className="text-right">
-                      <p className="text-xs text-slate-400">{tx.net}</p>
+                      <p className="text-xs text-slate-400">{payments.net}</p>
                       <p className="font-semibold text-emerald-600 dark:text-emerald-400">{fmt(p.montoNeto)}</p>
                     </div>
                   )}
