@@ -2,7 +2,6 @@
 
 import { useState, useCallback } from 'react';
 import { api, Disponibilidad } from '../lib/api';
-import { DIAS_SEMANA } from '../lib/utils';
 import { useLang } from '../lib/i18n/context';
 import { getLocale } from '../lib/date';
 import { CalendarIcon, CheckIcon, ClipboardIcon, CreditCardIcon, InfoIcon, UserIcon } from './icons';
@@ -16,15 +15,15 @@ interface Props {
 
 type Modalidad = 'PRESENCIAL' | 'VIRTUAL';
 
-const STEPS = [
-  { label: 'Tu perfil',      icon: '1', desc: 'Foto y presentacion' },
-  { label: 'Disponibilidad', icon: '2', desc: 'Dias y horarios' },
-  { label: 'Precio',         icon: '3', desc: 'Tarifa y modalidad' },
-  { label: 'Listo',          icon: '4', desc: 'Comenza a recibir turnos' },
-];
-
 export default function ProfesionalOnboardingWizard({ profesionalId, userId, nombre, onComplete }: Props) {
-  const { lang } = useLang();
+  const { lang, t } = useLang();
+  const labels = t('professionalOnboarding');
+  const steps = [
+    { ...labels.steps.profile, icon: '1' },
+    { ...labels.steps.availability, icon: '2' },
+    { ...labels.steps.price, icon: '3' },
+    { ...labels.steps.done, icon: '4' },
+  ];
   const [step, setStep] = useState(0);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
@@ -56,6 +55,14 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
   const inp = 'field-input mt-1';
   const FRONTEND_URL = typeof window !== 'undefined' ? window.location.origin : 'https://medisync-web.medisync.workers.dev';
   const profileUrl = `${FRONTEND_URL}/profesional/${profesionalId}`;
+  const modalityLabel = (modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'AMBOS') => labels.modality[modalidad];
+  const profileModalityLabel = () => modalidadPerfil === 'AMBOS' ? labels.modality.PRESENCIAL_VIRTUAL : modalityLabel(modalidadPerfil);
+  const progressLabel = labels.header.stepProgress
+    .replace('{{current}}', String(Math.min(step + 1, steps.length)))
+    .replace('{{total}}', String(steps.length));
+  const availabilitySummary = disponibilidades.length === 1
+    ? labels.done.availabilityConfiguredSingular
+    : labels.done.availabilityConfiguredPlural.replace('{{count}}', String(disponibilidades.length));
 
   const saveProfile = useCallback(async () => {
     const data: Record<string, unknown> = {};
@@ -71,7 +78,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
 
   const handleAgregarDisp = async () => {
     if (nuevaDisp.horaInicio >= nuevaDisp.horaFin) {
-      setError('La hora de fin debe ser mayor a la de inicio');
+      setError(labels.errors.endAfterStart);
       return;
     }
     setAddingDisp(true);
@@ -80,7 +87,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
       const disp = await api.profesionales.crearDisponibilidad(profesionalId, nuevaDisp);
       setDisponibilidades(prev => [...prev, disp]);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al agregar horario');
+      setError(e instanceof Error ? e.message : labels.errors.addSchedule);
     } finally {
       setAddingDisp(false);
     }
@@ -91,7 +98,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
       await api.profesionales.eliminarDisponibilidad(profesionalId, id);
       setDisponibilidades(prev => prev.filter(d => d.id !== id));
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al eliminar');
+      setError(e instanceof Error ? e.message : labels.errors.deleteSchedule);
     }
   };
 
@@ -101,7 +108,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
     try {
       if (step === 0) {
         if (fotoUrl.trim() && !fotoUrl.startsWith('http')) {
-          setError('La URL de la foto debe comenzar con http o https');
+          setError(labels.errors.photoUrl);
           setSaving(false);
           return;
         }
@@ -117,14 +124,14 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
       }
       if (step === 1) {
         if (disponibilidades.length === 0) {
-          setError('Agregá al menos un horario de atención para continuar.');
+          setError(labels.errors.scheduleRequired);
           setSaving(false);
           return;
         }
       }
       if (step === 2) {
         if (!precio || Number(precio) <= 0) {
-          setError('Ingresá un precio de consulta válido');
+          setError(labels.errors.validPrice);
           setSaving(false);
           return;
         }
@@ -132,7 +139,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
       }
       setStep(s => s + 1);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Error al guardar');
+      setError(e instanceof Error ? e.message : labels.errors.save);
     } finally {
       setSaving(false);
     }
@@ -147,7 +154,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
     navigator.clipboard.writeText(profileUrl).catch(() => {});
   };
 
-  const progressPct = step === 3 ? 100 : Math.round((step / (STEPS.length - 1)) * 100);
+  const progressPct = step === 3 ? 100 : Math.round((step / (steps.length - 1)) * 100);
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
@@ -156,17 +163,17 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
         {/* -- Header ------------------------------------------- */}
         <div className="bg-gradient-to-r from-blue-700 to-blue-500 px-6 py-5 text-white shrink-0">
           <p className="text-xs font-semibold uppercase tracking-wider text-blue-200 mb-1">
-            Bienvenido/a, Dr/a. {nombre}
+            {labels.header.welcome} {nombre}
           </p>
-          <h2 className="text-lg font-bold">Configurá tu perfil profesional</h2>
+          <h2 className="text-lg font-bold">{labels.header.title}</h2>
           <p className="text-sm text-blue-100 mt-1">
-            Solo 3 pasos para empezar a recibir turnos de tus pacientes.
+            {labels.header.subtitle}
           </p>
 
           {/* Progress bar */}
           <div className="mt-4">
             <div className="flex justify-between text-xs text-blue-200 mb-1.5">
-              <span>Paso {Math.min(step + 1, STEPS.length)} de {STEPS.length}</span>
+              <span>{progressLabel}</span>
               <span>{progressPct}%</span>
             </div>
             <div className="h-1.5 bg-blue-800/50 rounded-full overflow-hidden">
@@ -180,7 +187,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
 
         {/* -- Step tabs ---------------------------------------- */}
         <div className="flex border-b border-slate-200 dark:border-slate-700 shrink-0">
-          {STEPS.map((s, i) => (
+          {steps.map((s, i) => (
             <button
               key={i}
               onClick={() => { if (i < step) { setError(''); setStep(i); } }}
@@ -209,16 +216,16 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
           {step === 0 && (
             <>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Una foto y una buena presentación generan más confianza. Podés completar estos datos ahora o después desde tu perfil.
+                {labels.profile.intro}
               </p>
 
               {/* Foto */}
               <div>
-                <label className="field-label">URL de foto de perfil</label>
+                <label className="field-label">{labels.profile.photoUrl}</label>
                 <input
                   type="url"
                   className={inp}
-                  placeholder="https://ejemplo.com/tu-foto.jpg"
+                  placeholder={labels.profile.photoPlaceholder}
                   value={fotoUrl}
                   onChange={e => { setFotoUrl(e.target.value); setFotoOk(false); setFotoError(''); }}
                 />
@@ -226,24 +233,24 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                   <div className="mt-2 flex items-center gap-3">
                     <img
                       src={fotoUrl}
-                      alt="Preview"
+                      alt={labels.profile.photoPreviewAlt}
                       className="w-14 h-14 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600 shrink-0"
                       onLoad={() => setFotoOk(true)}
-                      onError={() => { setFotoError('No se pudo cargar la imagen.'); setFotoOk(false); }}
+                      onError={() => { setFotoError(labels.errors.imageLoad); setFotoOk(false); }}
                     />
                     {fotoError && <p className="text-xs text-red-600">{fotoError}</p>}
-                    {fotoOk && !fotoError && <p className="text-xs text-emerald-600">✓ Vista previa correcta</p>}
+                    {fotoOk && !fotoError && <p className="text-xs text-emerald-600">{labels.profile.photoOk}</p>}
                   </div>
                 )}
               </div>
 
               {/* Bio */}
               <div>
-                <label className="field-label">Biografía profesional</label>
+                <label className="field-label">{labels.profile.bio}</label>
                 <textarea
                   className="field-input mt-1 resize-none"
                   rows={3}
-                  placeholder="Contá brevemente tu experiencia, especialización y enfoque de atención…"
+                  placeholder={labels.profile.bioPlaceholder}
                   value={bio}
                   onChange={e => setBio(e.target.value)}
                   maxLength={600}
@@ -254,28 +261,28 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
               <div className="grid grid-cols-2 gap-3">
                 {/* Matrícula */}
                 <div>
-                  <label className="field-label">Matrícula profesional</label>
+                  <label className="field-label">{labels.profile.license}</label>
                   <input
                     type="text"
                     className={inp}
-                    placeholder="MN 123456"
+                    placeholder={labels.profile.licensePlaceholder}
                     value={matricula}
                     onChange={e => setMatricula(e.target.value)}
                   />
-                  <p className="text-xs text-slate-400 mt-1">Se muestra en recetas y perfil.</p>
+                  <p className="text-xs text-slate-400 mt-1">{labels.profile.licenseHelp}</p>
                 </div>
 
                 {/* Teléfono */}
                 <div>
-                  <label className="field-label">Teléfono de contacto</label>
+                  <label className="field-label">{labels.profile.phone}</label>
                   <input
                     type="tel"
                     className={inp}
-                    placeholder="+54 11 4567-8901"
+                    placeholder={labels.profile.phonePlaceholder}
                     value={telefono}
                     onChange={e => setTelefono(e.target.value)}
                   />
-                  <p className="text-xs text-slate-400 mt-1">Para recordatorios y contacto.</p>
+                  <p className="text-xs text-slate-400 mt-1">{labels.profile.phoneHelp}</p>
                 </div>
               </div>
             </>
@@ -285,45 +292,44 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
           {step === 1 && (
             <>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                Definí en qué días y horarios atendés. Los pacientes solo podrán reservar dentro de estos bloques.
-                Podés agregar más desde tu panel después.
+                {labels.availability.intro}
               </p>
 
               {/* Form */}
               <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-4 space-y-3">
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="field-label">Día</label>
+                    <label className="field-label">{labels.availability.day}</label>
                     <select
                       className="field-select mt-1"
                       value={nuevaDisp.diaSemana}
                       onChange={e => setNuevaDisp(d => ({ ...d, diaSemana: Number(e.target.value) }))}
                     >
-                      {DIAS_SEMANA.map((dia, i) => (
+                      {labels.days.map((dia, i) => (
                         <option key={i} value={i}>{dia}</option>
                       ))}
                     </select>
                   </div>
                   <div>
-                    <label className="field-label">Modalidad</label>
+                    <label className="field-label">{labels.availability.modality}</label>
                     <select
                       className="field-select mt-1"
                       value={nuevaDisp.modalidad}
                       onChange={e => setNuevaDisp(d => ({ ...d, modalidad: e.target.value as Modalidad }))}
                     >
-                      <option value="PRESENCIAL">Presencial</option>
-                      <option value="VIRTUAL">Virtual</option>
+                      <option value="PRESENCIAL">{labels.modality.PRESENCIAL}</option>
+                      <option value="VIRTUAL">{labels.modality.VIRTUAL}</option>
                     </select>
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="field-label">Desde</label>
+                    <label className="field-label">{labels.availability.from}</label>
                     <input type="time" className={inp} value={nuevaDisp.horaInicio}
                       onChange={e => setNuevaDisp(d => ({ ...d, horaInicio: e.target.value }))} />
                   </div>
                   <div>
-                    <label className="field-label">Hasta</label>
+                    <label className="field-label">{labels.availability.to}</label>
                     <input type="time" className={inp} value={nuevaDisp.horaFin}
                       onChange={e => setNuevaDisp(d => ({ ...d, horaFin: e.target.value }))} />
                   </div>
@@ -334,7 +340,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                   disabled={addingDisp}
                   className="btn btn-secondary w-full text-sm"
                 >
-                  {addingDisp ? 'Agregando…' : '+ Agregar horario'}
+                  {addingDisp ? labels.availability.adding : labels.availability.add}
                 </button>
               </div>
 
@@ -342,18 +348,18 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
               {disponibilidades.length > 0 ? (
                 <div className="space-y-2">
                   <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                    Horarios configurados ({disponibilidades.length})
+                    {labels.availability.configured} ({disponibilidades.length})
                   </p>
                   {disponibilidades.map(d => (
                     <div key={d.id}
                       className="flex items-center justify-between bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2">
                       <div className="text-sm text-emerald-800 dark:text-emerald-300">
-                        <span className="font-semibold">{DIAS_SEMANA[d.diaSemana]}</span>
+                        <span className="font-semibold">{labels.days[d.diaSemana]}</span>
                         <span className="text-emerald-600 dark:text-emerald-500 mx-1.5">·</span>
                         {d.horaInicio}–{d.horaFin}
                         <span className="text-emerald-600 dark:text-emerald-500 mx-1.5">·</span>
                         <span className="text-emerald-600 dark:text-emerald-400 text-xs">
-                          {d.modalidad === 'PRESENCIAL' ? 'Presencial' : 'Virtual'}
+                          {modalityLabel(d.modalidad)}
                         </span>
                       </div>
                       <button onClick={() => handleEliminarDisp(d.id)}
@@ -369,7 +375,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                 <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
                   <InfoIcon size={14} className="text-amber-500 mt-0.5" />
                   <p className="text-xs text-amber-700 dark:text-amber-300">
-                    Sin horarios los pacientes no pueden reservarte. Agregá al menos uno para continuar.
+                    {labels.availability.empty}
                   </p>
                 </div>
               )}
@@ -380,32 +386,32 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
           {step === 2 && (
             <>
               <p className="text-sm text-slate-500 dark:text-slate-400">
-                El precio y la modalidad son lo primero que ven los pacientes al buscar profesionales.
+                {labels.price.intro}
               </p>
 
               {/* Precio */}
               <div>
                 <label className="field-label">
-                  Precio de consulta (ARS) <span className="text-red-500">*</span>
+                  {labels.price.consultationPrice} <span className="text-red-500">*</span>
                 </label>
                 <div className="relative mt-1">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-semibold text-sm">$</span>
                   <input
                     type="number" min={0} step={500}
                     className="field-input pl-7"
-                    placeholder="20000"
+                    placeholder={labels.price.pricePlaceholder}
                     value={precio}
                     onChange={e => setPrecio(e.target.value)}
                   />
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
-                  Consultá rangos típicos de tu especialidad. Podés cambiarlo después.
+                  {labels.price.priceHelp}
                 </p>
               </div>
 
               {/* Modalidad */}
               <div>
-                <label className="field-label">Modalidad de atención</label>
+                <label className="field-label">{labels.price.modality}</label>
                 <div className="flex gap-2 mt-2">
                   {(['PRESENCIAL', 'VIRTUAL', 'AMBOS'] as const).map(m => (
                     <button key={m} type="button" onClick={() => setModalidadPerfil(m)}
@@ -413,7 +419,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                         ${modalidadPerfil === m
                           ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
                           : 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-blue-300'}`}>
-                      {m === 'PRESENCIAL' ? 'Presencial' : m === 'VIRTUAL' ? 'Virtual' : 'Ambas'}
+                      {modalityLabel(m)}
                     </button>
                   ))}
                 </div>
@@ -421,14 +427,14 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
 
               {/* Lugar */}
               <div>
-                <label className="field-label">Lugar de atención</label>
+                <label className="field-label">{labels.price.location}</label>
                 <input type="text" className={inp}
-                  placeholder="Av. Corrientes 1234, CABA"
+                  placeholder={labels.price.locationPlaceholder}
                   value={lugarAtencion}
                   onChange={e => setLugarAtencion(e.target.value)}
                 />
                 <p className="text-xs text-slate-400 mt-1">
-                  Aparece en tu perfil y en la confirmación de cada turno presencial.
+                  {labels.price.locationHelp}
                 </p>
               </div>
 
@@ -436,20 +442,20 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
               {precio && Number(precio) > 0 && (
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
                   <p className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wide mb-2">
-                    Así te verán los pacientes
+                    {labels.price.previewTitle}
                   </p>
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm">Dr/a. {nombre}</p>
                       <p className="text-xs text-blue-600 dark:text-blue-400 mt-0.5">
-                          {modalidadPerfil === 'PRESENCIAL' ? 'Presencial' : modalidadPerfil === 'VIRTUAL' ? 'Virtual' : 'Presencial y virtual'}
+                          {profileModalityLabel()}
                       </p>
                     </div>
                     <div className="text-right">
                       <p className="text-lg font-bold text-slate-800 dark:text-slate-100">
                         ${Number(precio).toLocaleString(getLocale(lang))}
                       </p>
-                      <p className="text-xs text-slate-400">por consulta</p>
+                      <p className="text-xs text-slate-400">{labels.price.priceSuffix}</p>
                     </div>
                   </div>
                 </div>
@@ -466,10 +472,10 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                 </div>
                 <div>
                   <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                    ¡Tu perfil está listo, Dr/a. {nombre}!
+                    {labels.done.titlePrefix} {nombre}{labels.done.titleSuffix}
                   </h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
-                    Ya podés recibir turnos de tus pacientes.
+                    {labels.done.subtitle}
                   </p>
                 </div>
               </div>
@@ -477,35 +483,35 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
               {/* Resumen */}
               <div className="bg-slate-50 dark:bg-slate-700/40 rounded-xl p-4 text-left space-y-2.5">
                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
-                  Resumen de configuración
+                  {labels.done.summaryTitle}
                 </p>
                 {[
                   {
                     icon: <CalendarIcon size={15} />,
-                    label: 'Disponibilidad',
+                    label: labels.done.availability,
                     value: disponibilidades.length > 0
-                      ? `${disponibilidades.length} bloque${disponibilidades.length > 1 ? 's' : ''} configurado${disponibilidades.length > 1 ? 's' : ''}`
-                      : 'No configurada',
+                      ? availabilitySummary
+                      : labels.done.notConfigured,
                     ok: disponibilidades.length > 0,
                   },
                   {
                     icon: <CreditCardIcon size={15} />,
-                    label: 'Precio de consulta',
+                    label: labels.done.consultationPrice,
                     value: precio && Number(precio) > 0
                       ? `$${Number(precio).toLocaleString(getLocale(lang))} ARS`
-                      : 'No configurado',
+                      : labels.done.priceNotConfigured,
                     ok: !!(precio && Number(precio) > 0),
                   },
                   {
                     icon: <ClipboardIcon size={15} />,
-                    label: 'Matrícula',
-                    value: matricula.trim() || 'No completada',
+                    label: labels.done.license,
+                    value: matricula.trim() || labels.done.licenseMissing,
                     ok: !!matricula.trim(),
                   },
                   {
                     icon: <UserIcon size={15} />,
-                    label: 'Foto de perfil',
-                    value: fotoUrl.trim() ? 'Configurada' : 'No completada',
+                    label: labels.done.profilePhoto,
+                    value: fotoUrl.trim() ? labels.done.configured : labels.done.licenseMissing,
                     ok: !!fotoUrl.trim(),
                   },
                 ].map(item => (
@@ -527,7 +533,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
               {/* Link al perfil */}
               <div className="space-y-2">
                 <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-                  Tu perfil público
+                  {labels.done.publicProfile}
                 </p>
                 <div className="flex items-center gap-2 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg px-3 py-2">
                   <span className="text-xs text-slate-500 dark:text-slate-400 truncate flex-1">{profileUrl}</span>
@@ -535,7 +541,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                     onClick={copyLink}
                     className="shrink-0 text-xs font-semibold text-blue-600 hover:text-blue-800 dark:text-blue-400 transition-colors"
                   >
-                    Copiar
+                    {labels.done.copy}
                   </button>
                 </div>
                 <a
@@ -544,28 +550,28 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                   rel="noopener noreferrer"
                   className="block w-full text-center py-2 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-800 border border-blue-200 dark:border-blue-700 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
                 >
-                  Ver mi perfil como lo ven los pacientes
+                  {labels.done.viewAsPatient}
                 </a>
               </div>
 
               {/* Tips */}
               <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl p-4 text-left">
                 <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 uppercase tracking-wide mb-2">
-                   Proximos pasos recomendados
+                   {labels.done.nextSteps}
                 </p>
                 <ul className="space-y-1.5 text-xs text-amber-800 dark:text-amber-300">
                   <li className="flex items-start gap-1.5">
                     <span className="mt-0.5">→</span>
-                    <span>Compartí tu link de perfil con tus pacientes actuales para que reserven online.</span>
+                    <span>{labels.done.shareLinkTip}</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="mt-0.5">→</span>
-                    <span>Configurá tu Google Calendar para sincronizar los turnos automáticamente.</span>
+                    <span>{labels.done.calendarTip}</span>
                   </li>
                   <li className="flex items-start gap-1.5">
                     <span className="mt-0.5">→</span>
-                    {!matricula.trim() && <span>Completá tu matrícula profesional en tu perfil — aparece en las recetas.</span>}
-                    {matricula.trim() && <span>Explorá las estadísticas de tu panel para seguir tus ingresos y métricas.</span>}
+                    {!matricula.trim() && <span>{labels.done.licenseTip}</span>}
+                    {matricula.trim() && <span>{labels.done.statsTip}</span>}
                   </li>
                 </ul>
               </div>
@@ -581,10 +587,10 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                 onClick={() => { setError(''); setStep(s => s - 1); }}
                 className="btn btn-ghost text-sm text-slate-600 dark:text-slate-300"
               >
-                ← Anterior
+                {labels.footer.previous}
               </button>
             ) : step === 0 ? (
-              <span className="text-xs text-slate-400">Paso 1 de 4</span>
+              <span className="text-xs text-slate-400">{labels.footer.firstStep}</span>
             ) : null}
           </div>
 
@@ -595,21 +601,21 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                 onClick={() => { setError(''); setStep(1); }}
                 className="text-xs text-slate-400 hover:text-slate-600 underline"
               >
-                Completar después
+                {labels.footer.completeLater}
               </button>
             )}
 
             {step < 3 ? (
               <button onClick={goNext} disabled={saving} className="btn btn-primary text-sm">
                 {saving
-                  ? 'Guardando…'
+                  ? labels.footer.saving
                   : step === 2
-                    ? 'Guardar y ver resumen →'
-                    : 'Siguiente →'}
+                    ? labels.footer.saveAndSummary
+                    : labels.footer.next}
               </button>
             ) : (
               <button onClick={handleFinish} className="btn btn-primary text-sm px-6">
-                ✓ Abrir mi panel
+                {labels.footer.openDashboard}
               </button>
             )}
           </div>
