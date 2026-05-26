@@ -19,14 +19,14 @@ export default function CuponesView({
   onEliminar: (id: string) => void;
 }) {
   const { lang, t } = useLang();
-  const c = t('common');
   const d = t('dashboard');
+  const couponsText = d.couponsView;
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">{d.couponsView.title}</h3>
+        <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">{couponsText.title}</h3>
         <button onClick={onShowNuevo} className="btn btn-primary btn-sm">
-          + {d.couponsView.newCoupon}
+          + {couponsText.newCoupon}
         </button>
       </div>
 
@@ -42,9 +42,9 @@ export default function CuponesView({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" />
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 6h.008v.008H6V6z" />
           </svg>
-          <p className="text-sm">{d.couponsView.empty}</p>
+          <p className="text-sm">{couponsText.empty}</p>
           <button onClick={onShowNuevo} className="btn btn-primary btn-sm mt-3">
-            {d.couponsView.createFirst}
+            {couponsText.createFirst}
           </button>
         </div>
       ) : (
@@ -53,12 +53,12 @@ export default function CuponesView({
             const isExpired = cupon.expiresAt && new Date(cupon.expiresAt) < new Date();
             const isExhausted = cupon.maxUsos && cupon.usosActuales >= cupon.maxUsos;
             const statusBadge = !cupon.activo
-              ? (lang === 'es' ? 'Inactivo' : 'Inactive')
+              ? couponsText.statusInactive
               : isExpired
-                ? (lang === 'es' ? 'Vencido' : 'Expired')
+                ? couponsText.statusExpired
                 : isExhausted
-                  ? (lang === 'es' ? 'Agotado' : 'Exhausted')
-                  : (lang === 'es' ? 'Activo' : 'Active');
+                  ? couponsText.statusExhausted
+                  : couponsText.statusActive;
             const statusColor = !cupon.activo ? 'bg-slate-100 text-slate-600' : isExpired ? 'bg-red-100 text-red-600' : isExhausted ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600';
 
             return (
@@ -70,12 +70,12 @@ export default function CuponesView({
                   </div>
                   <p className="text-sm text-slate-600 mb-1">{cupon.descripcion || '-'}</p>
                   <div className="text-xs text-slate-500 space-y-0.5">
-                    <p>{lang === 'es' ? 'Descuento' : 'Discount'}: {cupon.tipo === 'PORCENTAJE' ? `${cupon.valor}%` : `$${cupon.valor.toLocaleString(getLocale(lang))}`}</p>
+                    <p>{couponsText.discount}: {cupon.tipo === 'PORCENTAJE' ? `${cupon.valor}%` : `$${cupon.valor.toLocaleString(getLocale(lang))}`}</p>
                     {cupon.maxUsos && (
-                      <p>{lang === 'es' ? 'Usos' : 'Uses'}: {cupon.usosActuales}/{cupon.maxUsos}</p>
+                      <p>{couponsText.uses}: {cupon.usosActuales}/{cupon.maxUsos}</p>
                     )}
                     {cupon.expiresAt && (
-                      <p>{lang === 'es' ? 'Vence' : 'Expires'}: {new Date(cupon.expiresAt).toLocaleDateString(getLocale(lang))}</p>
+                      <p>{couponsText.expires}: {new Date(cupon.expiresAt).toLocaleDateString(getLocale(lang))}</p>
                     )}
                   </div>
                 </div>
@@ -88,7 +88,7 @@ export default function CuponesView({
                         : 'bg-slate-100 text-slate-600 border-slate-300 hover:bg-slate-200'
                     }`}
                   >
-                    {cupon.activo ? (lang === 'es' ? 'Activo' : 'Active') : (lang === 'es' ? 'Inactivo' : 'Inactive')}
+                    {cupon.activo ? couponsText.statusActive : couponsText.statusInactive}
                   </button>
                   <button
                     onClick={() => onEliminar(cupon.id)}

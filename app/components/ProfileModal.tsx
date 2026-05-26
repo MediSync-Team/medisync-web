@@ -34,10 +34,9 @@ const validateDNI = (dni: string): boolean => {
 };
 
 export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate }: ProfileModalProps) {
-  const { t, lang } = useLang();
+  const { t } = useLang();
   const p = t('profile');
   const c = t('common');
-  const isEs = lang === 'es';
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -59,6 +58,8 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
     obraSocial: '',
     fotoUrl: '',
   });
+  const fill = (template: string, values: Record<string, string | number>) =>
+    Object.entries(values).reduce((text, [key, value]) => text.replaceAll(`{{${key}}}`, String(value)), template);
 
   useEffect(() => {
     if (isOpen) {
@@ -108,7 +109,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
     try {
       await api.notifications.updatePreferences(updated);
     } catch {
-      setNotifMsg(isEs ? 'Error al guardar preferencias' : 'Error saving preferences');
+      setNotifMsg(p.notificationSaveError);
     }
   };
 
@@ -123,13 +124,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
     setSuccess('');
 
     if (formData.telefono && !validateTelefono(formData.telefono)) {
-      setError('El teléfono debe tener entre 8 y 20 caracteres (solo números, espacios, +, - y paréntesis)');
+      setError(p.phoneError);
       setLoading(false);
       return;
     }
 
     if (userType === 'paciente' && formData.dni && !validateDNI(formData.dni)) {
-      setError('El DNI debe tener entre 7 y 8 dígitos numéricos');
+      setError(p.dniError);
       setLoading(false);
       return;
     }
@@ -138,7 +139,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
       const fecha = new Date(formData.fechaNacimiento);
       const hoy = new Date();
       if (fecha > hoy) {
-        setError('La fecha de nacimiento no puede ser futura');
+        setError(p.birthDateFutureError);
         setLoading(false);
         return;
       }
@@ -170,14 +171,14 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
         });
       }
 
-      setSuccess(isEs ? '¡Perfil actualizado correctamente!' : 'Profile updated successfully!');
+      setSuccess(p.saveSuccess);
       setTimeout(() => {
         onClose();
         if (onUpdate) onUpdate();
         window.location.reload();
       }, 1500);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al guardar');
+      setError(err instanceof Error ? err.message : p.saveError);
     } finally {
       setLoading(false);
     }
@@ -273,7 +274,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
               value={formData.telefono}
               onChange={handleChange}
               pattern="[\d\s\-\+\(\)]{8,20}"
-              title="Solo números, espacios, +, - y paréntesis (8-20 caracteres)"
+              title={p.phoneInputTitle}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
               placeholder="+54 11 1234 5678"
             />
@@ -297,7 +298,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
             <>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {isEs ? 'Precio de Consulta ($)' : 'Consultation Fee ($)'}
+                  {p.consultationFee}
                 </label>
                 <input
                   type="number"
@@ -313,7 +314,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {isEs ? 'Lugar de Atención' : 'Practice Location'}
+                  {p.practiceLocation}
                 </label>
                 <input
                   type="text"
@@ -322,13 +323,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   onChange={handleChange}
                   maxLength={200}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
-                  placeholder={isEs ? 'Dirección del consultorio' : 'Practice address'}
+                  placeholder={p.practiceLocationPlaceholder}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {isEs ? 'Biografía' : 'Biography'}
+                  {p.biography}
                 </label>
                 <textarea
                   name="bio"
@@ -337,18 +338,16 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   rows={3}
                   maxLength={500}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
-                  placeholder={isEs ? 'Breve descripción profesional...' : 'Short professional bio...'}
+                  placeholder={p.biographyPlaceholder}
                 />
               </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {isEs ? 'Obras sociales / prepagas aceptadas' : 'Accepted health insurance providers'}
+                  {p.acceptedInsurance}
                 </label>
                 <p className="text-xs text-gray-500 mb-2">
-                  {isEs
-                    ? 'Seleccioná las coberturas que aceptás. Los pacientes podrán filtrar por su obra social.'
-                    : 'Select accepted coverages. Patients will be able to filter by insurance.'}
+                  {p.acceptedInsuranceHelp}
                 </p>
                 <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
                   {getObrasSociales().map((os) => {
@@ -372,9 +371,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                 </div>
                 {obrasSociales.length > 0 && (
                   <p className="text-xs text-blue-600 mt-1.5 font-medium">
-                    {isEs
-                      ? `${obrasSociales.length} cobertura${obrasSociales.length > 1 ? 's' : ''} seleccionada${obrasSociales.length > 1 ? 's' : ''}`
-                      : `${obrasSociales.length} coverage${obrasSociales.length > 1 ? 's' : ''} selected`}
+                    {fill(obrasSociales.length === 1 ? p.coverageSelectedSingular : p.coverageSelectedPlural, { count: obrasSociales.length })}
                   </p>
                 )}
               </div>
@@ -407,7 +404,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   value={formData.dni}
                   onChange={handleChange}
                   pattern="\d{7,8}"
-                  title="7 u 8 dígitos numéricos"
+                  title={p.dniInputTitle}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
                   placeholder="12345678"
                 />
@@ -424,7 +421,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   onChange={handleChange}
                   maxLength={100}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
-                  placeholder={isEs ? 'Nombre de obra social (opcional)' : 'Insurance provider name (optional)'}
+                  placeholder={p.patientInsurancePlaceholder}
                 />
               </div>
             </>
