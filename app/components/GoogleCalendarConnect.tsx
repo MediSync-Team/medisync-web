@@ -24,11 +24,11 @@ export default function GoogleCalendarConnect() {
     const google = params.get('google');
     if (google === 'connected') {
       setConnected(true);
-      setMsg({ ok: true, text: '¡Google Calendar conectado correctamente!' });
+      setMsg({ ok: true, text: p.googleCalendarOAuthSuccess });
       // Clean up the URL without reload
       window.history.replaceState({}, '', window.location.pathname);
     } else if (google === 'error') {
-      setMsg({ ok: false, text: 'No se pudo conectar Google Calendar. Intentá de nuevo.' });
+      setMsg({ ok: false, text: p.googleCalendarOAuthError });
       window.history.replaceState({}, '', window.location.pathname);
     }
   }, []);
@@ -40,21 +40,21 @@ export default function GoogleCalendarConnect() {
       const { url } = await api.google.getAuthUrl();
       window.location.href = url;     // redirect to Google consent page
     } catch (e: any) {
-      setMsg({ ok: false, text: e.message ?? 'Error al obtener URL de autorización' });
+      setMsg({ ok: false, text: e.message ?? p.googleCalendarAuthUrlError });
       setWorking(false);
     }
   }
 
   async function handleDisconnect() {
-    if (!confirm('¿Desconectar Google Calendar? Los turnos futuros ya no se sincronizarán.')) return;
+    if (!confirm(p.googleCalendarDisconnectConfirm)) return;
     setWorking(true);
     setMsg(null);
     try {
       await api.google.disconnect();
       setConnected(false);
-      setMsg({ ok: true, text: 'Google Calendar desconectado.' });
+      setMsg({ ok: true, text: p.googleCalendarDisconnectSuccess });
     } catch (e: any) {
-      setMsg({ ok: false, text: e.message ?? 'Error al desconectar' });
+      setMsg({ ok: false, text: e.message ?? p.googleCalendarDisconnectError });
     } finally {
       setWorking(false);
     }
@@ -91,8 +91,8 @@ export default function GoogleCalendarConnect() {
           <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">Google Calendar</p>
           <p className="text-xs text-slate-500 dark:text-slate-400">
             {connected
-              ? 'Los turnos se sincronizan automáticamente con tu calendario'
-              : 'Sincronizá tus turnos con Google Calendar'}
+              ? p.googleCalendarConnectedDescription
+              : p.googleCalendarDisconnectedDescription}
           </p>
         </div>
 
@@ -102,7 +102,7 @@ export default function GoogleCalendarConnect() {
             disabled={working}
             className="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 disabled:opacity-50 transition-colors"
           >
-            {working ? 'Desconectando…' : 'Desconectar'}
+            {working ? p.googleCalendarDisconnecting : p.googleCalendarDisconnect}
           </button>
         ) : (
           <button
@@ -110,7 +110,7 @@ export default function GoogleCalendarConnect() {
             disabled={working}
             className="flex-shrink-0 text-xs px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
-            {working ? 'Redirigiendo…' : 'Conectar'}
+            {working ? p.googleCalendarConnecting : p.googleCalendarConnect}
           </button>
         )}
       </div>
@@ -119,7 +119,7 @@ export default function GoogleCalendarConnect() {
       <div className="flex items-center gap-1.5">
         <span className={`w-2 h-2 rounded-full flex-shrink-0 ${connected ? 'bg-emerald-500' : 'bg-slate-300'}`} />
         <span className={`text-xs ${connected ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'}`}>
-          {connected ? 'Conectado — nuevos turnos aparecerán en tu calendario' : 'No conectado'}
+          {connected ? p.googleCalendarConnectedStatus : p.googleCalendarDisconnectedStatus}
         </span>
       </div>
 
