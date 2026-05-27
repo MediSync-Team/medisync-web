@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { API_BASE, api } from '../lib/api';
-import { formatClinicInstantDateTime } from '../lib/date';
+import { formatClinicInstantDateTime, getLocale } from '../lib/date';
+import { useLang } from '../lib/i18n/context';
 import Spinner from './Spinner';
 
 /** Derive WebSocket base from the REST API base URL. */
@@ -27,6 +28,9 @@ interface VideoCallModalProps {
 }
 
 export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, onClose }: VideoCallModalProps) {
+  const { t, lang } = useLang();
+  const vc = t('videoCall');
+  const dateLocale = getLocale(lang);
   const [state, setState]           = useState<CallState>('connecting');
   const [errorMsg, setErrorMsg]     = useState('');
   const [micOn, setMicOn]           = useState(true);
@@ -43,7 +47,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
   // Queue ICE candidates received before remote description is set
   const iceCandidateQueue = useRef<RTCIceCandidateInit[]>([]);
 
-  const fecha = formatClinicInstantDateTime(fechaHora, 'es-AR', { dateStyle: 'short', timeStyle: 'short' });
+  const fecha = formatClinicInstantDateTime(fechaHora, dateLocale, { dateStyle: 'short', timeStyle: 'short' });
 
   const cleanup = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
@@ -102,7 +106,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
         try {
           stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
         } catch {
-          throw new Error('No se pudo acceder a la cámara o el micrófono. Verificá los permisos del navegador.');
+          throw new Error(vc.mediaPermissionError);
         }
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
 
@@ -121,7 +125,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
 
         ws.onerror = () => {
           if (!cancelled) {
-            setErrorMsg('Error al conectar con el servidor de videollamada.');
+            setErrorMsg(vc.signalingError);
             setState('error');
           }
         };
@@ -208,7 +212,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
               break;
 
             case 'error':
-              setErrorMsg(String(msg.message ?? 'Error desconocido'));
+              setErrorMsg(String(msg.message ?? vc.unknownError));
               setState('error');
               break;
           }
@@ -216,7 +220,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
 
       } catch (err) {
         if (!cancelled) {
-          setErrorMsg(err instanceof Error ? err.message : 'Error al iniciar la videollamada');
+          setErrorMsg(err instanceof Error ? err.message : vc.startError);
           setState('error');
         }
       }
@@ -227,7 +231,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
       cancelled = true;
       cleanup();
     };
-  }, [turnoId, createPC, cleanup]);
+  }, [turnoId, createPC, cleanup, vc.mediaPermissionError, vc.signalingError, vc.startError, vc.unknownError]);
 
   const toggleMic = () => {
     const track = streamRef.current?.getAudioTracks()[0];
@@ -251,12 +255,12 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
   };
 
   const statusLabel = {
-    connecting: 'Iniciando...',
-    waiting:    'Esperando al otro participante…',
-    calling:    'Estableciendo conexión…',
-    'in-call':  `En consulta · ${formatDuration(duration)}`,
-    ended:      'Llamada finalizada',
-    error:      'Error de conexión',
+    connecting: vc.starting,
+    waiting:    vc.waiting,
+    calling:    vc.calling,
+    'in-call':  `${vc.inConsultation} · ${formatDuration(duration)}`,
+    ended:      vc.ended,
+    error:      vc.connectionError,
   }[state];
 
   return (
@@ -273,7 +277,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
           }`} />
           <span className="text-white font-medium text-sm truncate">
             {state === 'in-call' || state === 'calling' || state === 'waiting'
-              ? `Videoconsulta · Dr/a. ${profesionalNombre}`
+              ? `${vc.title} · Dr/a. ${profesionalNombre}`
               : statusLabel}
           </span>
           {state === 'in-call' && (
@@ -284,7 +288,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
         <button
           onClick={state === 'ended' || state === 'error' ? onClose : hangUp}
           className="ml-3 shrink-0 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-700 transition-colors"
-          title="Cerrar"
+          title={vc.close}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -314,7 +318,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
             <div className="text-center">
               <p className="text-slate-200 font-medium mb-1">{statusLabel}</p>
               {state === 'waiting' && (
-                <p className="text-slate-400 text-sm">Compartí el link o avisale al otro participante que ingrese</p>
+                <p className="text-slate-400 text-sm">{vc.waitingInstructions}</p>
               )}
             </div>
             {(state === 'connecting' || state === 'calling') && (
@@ -330,15 +334,15 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
                 <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z" />
               </svg>
             </div>
-            <p className="text-slate-200 font-medium">Llamada finalizada</p>
+            <p className="text-slate-200 font-medium">{vc.ended}</p>
             {duration > 0 && (
-              <p className="text-slate-400 text-sm">Duración: {formatDuration(duration)}</p>
+              <p className="text-slate-400 text-sm">{vc.duration}: {formatDuration(duration)}</p>
             )}
             <button
               onClick={onClose}
               className="mt-2 px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm transition-colors"
             >
-              Cerrar
+              {vc.close}
             </button>
           </div>
         )}
@@ -351,14 +355,14 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
               </svg>
             </div>
             <div>
-              <p className="text-white font-semibold mb-2">No se pudo conectar</p>
+              <p className="text-white font-semibold mb-2">{vc.errorTitle}</p>
               <p className="text-slate-400 text-sm leading-relaxed">{errorMsg}</p>
             </div>
             <button
               onClick={onClose}
               className="px-5 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-xl text-sm transition-colors"
             >
-              Cerrar
+              {vc.close}
             </button>
           </div>
         )}
@@ -397,7 +401,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
           {/* Mic */}
           <button
             onClick={toggleMic}
-            title={micOn ? 'Silenciar micrófono' : 'Activar micrófono'}
+            title={micOn ? vc.muteMic : vc.unmuteMic}
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
               micOn ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-red-600 hover:bg-red-700 text-white'
             }`}
@@ -416,7 +420,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
           {/* Hang up */}
           <button
             onClick={hangUp}
-            title="Colgar"
+            title={vc.hangUp}
             className="w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 flex items-center justify-center transition-all shadow-lg scale-100 hover:scale-105 active:scale-95"
           >
             <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -427,7 +431,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
           {/* Camera */}
           <button
             onClick={toggleCamera}
-            title={cameraOn ? 'Apagar cámara' : 'Activar cámara'}
+            title={cameraOn ? vc.turnCameraOff : vc.turnCameraOn}
             className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
               cameraOn ? 'bg-slate-700 hover:bg-slate-600 text-white' : 'bg-red-600 hover:bg-red-700 text-white'
             }`}
