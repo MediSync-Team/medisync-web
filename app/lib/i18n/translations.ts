@@ -449,6 +449,7 @@ const translations = {
       },
       passwordStrength: {
         title: 'Fortaleza de contraseña',
+        ariaLabel: 'Fortaleza de contraseña: {{level}}',
         requirements: 'Requisitos:',
         levels: {
           weak: 'Muy débil',
@@ -2253,6 +2254,7 @@ const translations = {
       },
       passwordStrength: {
         title: 'Password strength',
+        ariaLabel: 'Password strength: {{level}}',
         requirements: 'Requirements:',
         levels: {
           weak: 'Very weak',

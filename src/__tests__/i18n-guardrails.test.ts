@@ -61,11 +61,6 @@ const ternaryAllowlist: AllowlistEntry[] = [
 
 const spanishPhraseAllowlist: AllowlistEntry[] = [
   {
-    file: 'app/components/PasswordStrengthIndicator.tsx',
-    pattern: /Fortaleza de contraseña:/,
-    reason: 'Known remaining password strength aria copy.',
-  },
-  {
     file: 'app/dashboard/components/DisponibilidadView.tsx',
     pattern: /(Capacitación|Para bloqueo parcial indicá hora de inicio y fin\.|Error al guardar|Error al eliminar|Eliminar horario)/,
     reason: 'Known remaining availability dashboard copy/default data pending i18n pass.',

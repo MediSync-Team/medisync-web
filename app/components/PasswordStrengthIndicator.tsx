@@ -65,6 +65,7 @@ export default function PasswordStrengthIndicator({ password }: PasswordStrength
     good: ps.levels.good,
     strong: ps.levels.strong,
   };
+  const strengthAriaLabel = ps.ariaLabel.replace('{{level}}', labels[level]);
 
   return (
     <div className="mt-3 space-y-2">
@@ -93,7 +94,7 @@ export default function PasswordStrengthIndicator({ password }: PasswordStrength
             aria-valuenow={score}
             aria-valuemin={0}
             aria-valuemax={4}
-            aria-label={`Fortaleza de contraseña: ${labels[level]}`}
+            aria-label={strengthAriaLabel}
           />
         </div>
       </div>
