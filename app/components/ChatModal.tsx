@@ -4,6 +4,8 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { api, ChatMensaje } from '../lib/api';
 import { XIcon, SendIcon } from './icons';
 import Spinner from './Spinner';
+import { getLocale } from '../lib/date';
+import { useLang } from '../lib/i18n/context';
 
 interface Props {
   turnoId: string;
@@ -15,6 +17,9 @@ interface Props {
 }
 
 export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Props) {
+  const { t, lang } = useLang();
+  const chat = t('chat');
+  const locale = getLocale(lang);
   const [mensajes, setMensajes] = useState<ChatMensaje[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -27,9 +32,9 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
       const data = await api.chat.getMensajes(turnoId);
       setMensajes(data);
     } catch (e: any) {
-      setError(e.message ?? 'Error al cargar mensajes');
+      setError(e.message ?? chat.loadError);
     }
-  }, [turnoId]);
+  }, [turnoId, chat.loadError]);
 
   useEffect(() => {
     load();
@@ -55,7 +60,7 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
       setInput('');
       setMensajes(prev => [...prev, nuevo]);
     } catch (e: any) {
-      setError(e.message ?? 'No se pudo enviar el mensaje');
+      setError(e.message ?? chat.sendError);
     } finally {
       setSending(false);
     }
@@ -69,11 +74,11 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
   }
 
   function formatTime(iso: string) {
-    return new Date(iso).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' });
+    return new Date(iso).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   }
 
   function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString('es-AR', { day: '2-digit', month: 'short' });
+    return new Date(iso).toLocaleDateString(locale, { day: '2-digit', month: 'short' });
   }
 
   // Group messages by date
@@ -100,7 +105,7 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
             </div>
             <div>
               <p className="font-semibold text-slate-800 dark:text-slate-100 text-sm leading-none">{otherName}</p>
-              <p className="text-xs text-slate-400 mt-0.5">Chat pre-turno</p>
+              <p className="text-xs text-slate-400 mt-0.5">{chat.preAppointment}</p>
             </div>
           </div>
           <button
@@ -120,8 +125,10 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
                 </svg>
               </div>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Sin mensajes aún.</p>
-              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Mandá un mensaje a {otherName} antes del turno.</p>
+              <p className="text-sm text-slate-500 dark:text-slate-400">{chat.emptyTitle}</p>
+              <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">
+                {chat.emptyDescription.replace('{{name}}', otherName)}
+              </p>
             </div>
           )}
 
@@ -171,7 +178,7 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Escribí tu mensaje… (Enter para enviar)"
+            placeholder={chat.placeholder}
             rows={1}
             className="flex-1 border border-slate-200 dark:border-slate-600 rounded-xl px-3 py-2 text-sm resize-none outline-none focus:ring-2 focus:ring-blue-500 dark:bg-slate-700 dark:text-slate-100 dark:placeholder-slate-400"
             style={{ maxHeight: '120px', overflowY: 'auto' }}

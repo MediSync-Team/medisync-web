@@ -4,9 +4,13 @@ import { useState, useRef, useEffect } from 'react';
 import { api, Turno, User } from '../lib/api';
 import { ChatIcon, UserIcon } from './icons';
 import ChatModal from './ChatModal';
-import { formatClinicInstantDate } from '../lib/date';
+import { formatClinicInstantDate, getLocale } from '../lib/date';
+import { useLang } from '../lib/i18n/context';
 
 export function GlobalChatHub({ user }: { user: User }) {
+  const { t, lang } = useLang();
+  const chat = t('chat');
+  const locale = getLocale(lang);
   const [open, setOpen] = useState(false);
   const [unread, setUnread] = useState(0);
   const [turnos, setTurnos] = useState<Turno[]>([]);
@@ -80,7 +84,7 @@ export function GlobalChatHub({ user }: { user: User }) {
         <button
           onClick={() => setOpen(o => !o)}
           className="relative p-2 mr-2 rounded-lg text-slate-500 hover:text-slate-700 hover:bg-slate-100 dark:text-slate-400 dark:hover:text-slate-200 dark:hover:bg-slate-700 transition-colors"
-          aria-label="Chats"
+          aria-label={chat.ariaLabel}
         >
           <ChatIcon size={20} />
           {unread > 0 && (
@@ -93,22 +97,22 @@ export function GlobalChatHub({ user }: { user: User }) {
         {open && (
           <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-xl border border-slate-100 dark:border-slate-700 overflow-hidden">
             <div className="p-4 border-b border-slate-100 dark:border-slate-700">
-              <h3 className="font-bold text-slate-800 dark:text-slate-100">Tus Chats</h3>
+              <h3 className="font-bold text-slate-800 dark:text-slate-100">{chat.title}</h3>
             </div>
             
             <div className="max-h-96 overflow-y-auto">
               {loading ? (
-                <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">Cargando chats...</div>
+                <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">{chat.loading}</div>
               ) : turnos.length === 0 ? (
-                <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">No tenés chats activos.</div>
+                <div className="p-4 text-center text-sm text-slate-500 dark:text-slate-400">{chat.emptyHub}</div>
               ) : (
                 <div className="divide-y divide-slate-100 dark:divide-slate-700/50">
                   {turnos.map(turno => {
                     const isPaciente = user.rol === 'PACIENTE';
                     const otherName = isPaciente 
-                      ? `Dr/a. ${turno.profesional?.nombre} ${turno.profesional?.apellido}` 
-                      : `${turno.paciente?.nombre} ${turno.paciente?.apellido}`;
-                    const fecha = formatClinicInstantDate(turno.fechaHora, 'es-AR', { day: '2-digit', month: '2-digit' });
+                      ? `Dr/a. ${turno.profesional?.nombre ?? chat.professionalFallback} ${turno.profesional?.apellido ?? ''}`.trim()
+                      : `${turno.paciente?.nombre ?? chat.patientFallback} ${turno.paciente?.apellido ?? ''}`.trim();
+                    const fecha = formatClinicInstantDate(turno.fechaHora, locale, { day: '2-digit', month: '2-digit' });
 
                     return (
                       <button
@@ -124,7 +128,7 @@ export function GlobalChatHub({ user }: { user: User }) {
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm text-slate-800 dark:text-slate-100 truncate">{otherName}</p>
-                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Último turno: {fecha}</p>
+                          <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">{chat.lastAppointment}: {fecha}</p>
                         </div>
                       </button>
                     );
@@ -141,8 +145,8 @@ export function GlobalChatHub({ user }: { user: User }) {
           turnoId={activeTurno.id}
           myUserId={user.id}
           otherName={user.rol === 'PACIENTE' 
-            ? `Dr/a. ${activeTurno.profesional?.nombre} ${activeTurno.profesional?.apellido}` 
-            : `${activeTurno.paciente?.nombre} ${activeTurno.paciente?.apellido}`
+            ? `Dr/a. ${activeTurno.profesional?.nombre ?? chat.professionalFallback} ${activeTurno.profesional?.apellido ?? ''}`.trim()
+            : `${activeTurno.paciente?.nombre ?? chat.patientFallback} ${activeTurno.paciente?.apellido ?? ''}`.trim()
           }
           onClose={() => {
             setActiveTurno(null);

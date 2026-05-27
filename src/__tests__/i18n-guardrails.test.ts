@@ -61,11 +61,6 @@ const ternaryAllowlist: AllowlistEntry[] = [
 
 const spanishPhraseAllowlist: AllowlistEntry[] = [
   {
-    file: 'app/components/ChatModal.tsx',
-    pattern: /(Error al cargar mensajes|Escribí tu mensaje… \(Enter para enviar\))/,
-    reason: 'Known remaining chat modal placeholder pending chat i18n pass.',
-  },
-  {
     file: 'app/components/PasswordInput.tsx',
     pattern: /(Ocultar|Mostrar) contraseña/,
     reason: 'Known remaining shared password input aria/title copy.',

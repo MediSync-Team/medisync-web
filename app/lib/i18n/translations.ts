@@ -185,6 +185,21 @@ const translations = {
       next: 'Siguiente →',
       finish: '¡Entendido!',
     },
+    chat: {
+      ariaLabel: 'Chats',
+      title: 'Tus chats',
+      loading: 'Cargando chats...',
+      emptyHub: 'No tenés chats activos.',
+      lastAppointment: 'Último turno',
+      preAppointment: 'Chat pre-turno',
+      emptyTitle: 'Sin mensajes aún.',
+      emptyDescription: 'Mandá un mensaje a {{name}} antes del turno.',
+      placeholder: 'Escribí tu mensaje... (Enter para enviar)',
+      loadError: 'Error al cargar mensajes',
+      sendError: 'No se pudo enviar el mensaje',
+      professionalFallback: 'Profesional',
+      patientFallback: 'Paciente',
+    },
     widget: {
       steps: {
         date: 'Fecha',
@@ -1971,6 +1986,21 @@ const translations = {
       previous: 'Previous',
       next: 'Next',
       finish: 'Got it',
+    },
+    chat: {
+      ariaLabel: 'Chats',
+      title: 'Your chats',
+      loading: 'Loading chats...',
+      emptyHub: 'You have no active chats.',
+      lastAppointment: 'Last appointment',
+      preAppointment: 'Pre-appointment chat',
+      emptyTitle: 'No messages yet.',
+      emptyDescription: 'Send a message to {{name}} before the appointment.',
+      placeholder: 'Write your message... (Enter to send)',
+      loadError: 'Error loading messages',
+      sendError: 'Could not send the message',
+      professionalFallback: 'Professional',
+      patientFallback: 'Patient',
     },
     widget: {
       steps: {
