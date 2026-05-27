@@ -16,10 +16,10 @@ export default function CertificadoCard({
   const d = t('dashboard');
   const locale = getLocale(lang);
   const tipoLabel: Record<string, string> = {
-    REPOSO: lang === 'en' ? 'Rest' : 'Reposo',
-    CONSULTA: lang === 'en' ? 'Consultation' : 'Consulta',
-    APTITUD: lang === 'en' ? 'Fitness' : 'Aptitud',
-    LIBRE: lang === 'en' ? 'Free form' : 'Libre',
+    REPOSO: p.certificateTypeRest,
+    CONSULTA: p.certificateTypeConsultation,
+    APTITUD: p.certificateTypeFitness,
+    LIBRE: p.certificateTypeGeneric,
   };
 
   const tipoColor: Record<string, string> = {
@@ -41,7 +41,7 @@ export default function CertificadoCard({
           </p>
         </div>
         <span className={`badge border text-[10px] font-bold whitespace-nowrap ${tipoColor[certificado.certificado.tipo]}`}>
-          {tipoLabel[certificado.certificado.tipo]}
+          {tipoLabel[certificado.certificado.tipo] ?? p.certificateTypeGeneric}
         </span>
       </div>
 
