@@ -57,11 +57,6 @@ const ternaryAllowlist: AllowlistEntry[] = [
     pattern: /lang\s*={2,3}\s*['"]es['"]\s*\?\s*['"]EN['"]\s*:\s*['"]ES['"]/,
     reason: 'Compact target-language indicator for the language switcher.',
   },
-  {
-    file: 'app/dashboard/page.tsx',
-    pattern: /lang\s*={2,3}\s*['"]es['"]\s*\?\s*['"]Historial['"]\s*:\s*['"]History['"]/,
-    reason: 'Known remaining fallback pending dashboard audit tab cleanup.',
-  },
 ];
 
 const spanishPhraseAllowlist: AllowlistEntry[] = [

@@ -6,4 +6,9 @@ describe('dashboard i18n', () => {
     expect(translations.es.dashboard.shareProfile).toBe('Compartir perfil');
     expect(translations.en.dashboard.shareProfile).toBe('Share profile');
   });
+
+  it('has professional dashboard history tab labels in both languages', () => {
+    expect(translations.es.dashboard.history).toBe('Historial');
+    expect(translations.en.dashboard.history).toBe('History');
+  });
 });
