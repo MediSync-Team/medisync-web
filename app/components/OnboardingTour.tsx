@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import { useLang } from '../lib/i18n/context';
 
 export interface TourStep {
   /** CSS selector for the element to highlight. Use [data-onboarding="id"] format. */
@@ -21,6 +22,8 @@ interface Props {
 }
 
 export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props) {
+  const { t } = useLang();
+  const tour = t('onboardingTour');
   const [mounted, setMounted] = useState(false);
   const [active, setActive] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
@@ -137,9 +140,12 @@ export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props
   ty = Math.max(8, ty);
 
   const isLast = stepIndex === steps.length - 1;
+  const stepProgress = tour.stepProgress
+    .replace('{{current}}', String(stepIndex + 1))
+    .replace('{{total}}', String(steps.length));
 
   const overlay = (
-    <div className="fixed inset-0 z-[9999]" aria-modal="true" role="dialog" aria-label="Tour de introducción">
+    <div className="fixed inset-0 z-[9999]" aria-modal="true" role="dialog" aria-label={tour.dialogLabel}>
       {/* SVG overlay with spotlight hole */}
       <svg
         className="pointer-events-none"
@@ -219,15 +225,15 @@ export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props
           <button
             onClick={dismiss}
             className="text-blue-100 hover:text-white text-xs font-medium transition-colors"
-            aria-label="Cerrar tour"
+            aria-label={tour.closeAria}
           >
-            Saltar tour ×
+            {tour.skip}
           </button>
         </div>
 
         <div className="px-5 py-4">
           <p className="text-xs font-semibold text-blue-600 uppercase tracking-wide mb-1">
-            Paso {stepIndex + 1} de {steps.length}
+            {stepProgress}
           </p>
           <h3 className="font-bold text-slate-800 dark:text-slate-200 text-base mb-2 leading-snug">
             {step.title}
@@ -248,7 +254,7 @@ export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props
                 : 'text-slate-500 hover:text-slate-700 hover:bg-slate-100'
             }`}
           >
-            ← Anterior
+            {tour.previous}
           </button>
 
           <button
@@ -259,7 +265,7 @@ export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props
                 : 'bg-blue-600 hover:bg-blue-700'
             }`}
           >
-            {isLast ? '¡Entendido!' : 'Siguiente →'}
+            {isLast ? tour.finish : tour.next}
           </button>
         </div>
       </div>

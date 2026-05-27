@@ -176,6 +176,15 @@ const translations = {
       email: 'Email',
       phone: 'Teléfono',
     },
+    onboardingTour: {
+      dialogLabel: 'Tour de introducción',
+      closeAria: 'Cerrar tour',
+      skip: 'Saltar tour ×',
+      stepProgress: 'Paso {{current}} de {{total}}',
+      previous: '← Anterior',
+      next: 'Siguiente →',
+      finish: '¡Entendido!',
+    },
     widget: {
       steps: {
         date: 'Fecha',
@@ -1953,6 +1962,15 @@ const translations = {
       name: 'Name',
       email: 'Email',
       phone: 'Phone',
+    },
+    onboardingTour: {
+      dialogLabel: 'Introduction tour',
+      closeAria: 'Close tour',
+      skip: 'Skip tour',
+      stepProgress: 'Step {{current}} of {{total}}',
+      previous: 'Previous',
+      next: 'Next',
+      finish: 'Got it',
     },
     widget: {
       steps: {
