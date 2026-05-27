@@ -61,11 +61,6 @@ const ternaryAllowlist: AllowlistEntry[] = [
 
 const spanishPhraseAllowlist: AllowlistEntry[] = [
   {
-    file: 'app/components/PasswordInput.tsx',
-    pattern: /(Ocultar|Mostrar) contraseña/,
-    reason: 'Known remaining shared password input aria/title copy.',
-  },
-  {
     file: 'app/components/PasswordStrengthIndicator.tsx',
     pattern: /Fortaleza de contraseña:/,
     reason: 'Known remaining password strength aria copy.',

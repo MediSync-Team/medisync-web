@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { EyeIcon, EyeOffIcon } from './icons';
+import { useLang } from '../lib/i18n/context';
 
 interface PasswordInputProps {
   id?: string;
@@ -26,7 +27,10 @@ export default function PasswordInput({
   className = 'field-input',
   ariaLabel,
 }: PasswordInputProps) {
+  const { t } = useLang();
+  const auth = t('auth');
   const [showPassword, setShowPassword] = useState(false);
+  const toggleLabel = showPassword ? auth.hidePassword : auth.showPassword;
 
   return (
     <div className="relative">
@@ -46,8 +50,8 @@ export default function PasswordInput({
         type="button"
         onClick={() => setShowPassword(!showPassword)}
         className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
-        aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-        title={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        aria-label={toggleLabel}
+        title={toggleLabel}
         tabIndex={0}
       >
         {showPassword ? (
