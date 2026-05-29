@@ -62,8 +62,8 @@ const ternaryAllowlist: AllowlistEntry[] = [
 const spanishPhraseAllowlist: AllowlistEntry[] = [
   {
     file: 'app/dashboard/components/DisponibilidadView.tsx',
-    pattern: /(Capacitación|Para bloqueo parcial indicá hora de inicio y fin\.|Error al guardar|Error al eliminar|Eliminar horario)/,
-    reason: 'Known remaining availability dashboard copy/default data pending i18n pass.',
+    pattern: /Capacitación/,
+    reason: 'Persisted backend-facing blocking reason value; displayed label is translated.',
   },
   {
     file: 'app/dashboard/components/CalendarioView.tsx',

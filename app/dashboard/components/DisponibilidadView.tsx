@@ -7,8 +7,6 @@ import { ClockIcon, TrashIcon, MapPinIcon } from '../../components/icons';
 import { getDaysLong } from '../../lib/utils';
 import { formatClinicDateKeyForDisplay, getLocale, todayInputValue } from '../../lib/date';
 
-const MOTIVOS_BLOQUEO = ['Vacaciones', 'Feriado', 'Capacitación', 'Personal', 'Otro'];
-
 export default function DisponibilidadView({
   disponibilidades, nuevaDisp, setNuevaDisp, onAgregar, onEliminar, eliminandoId,
   bloqueos, loadingBloqueos, onReloadBloqueos,
@@ -43,11 +41,11 @@ export default function DisponibilidadView({
     setBloqueoError('');
     setBloqueoOk('');
     if (!nuevoBloqueo.fechaInicio || !nuevoBloqueo.fechaFin) {
-      setBloqueoError('La fecha de inicio y fin son obligatorias.');
+      setBloqueoError(d.availabilitySetup.missingDateRange);
       return;
     }
     if (nuevoBloqueo.esHoraParcial && (!nuevoBloqueo.horaInicio || !nuevoBloqueo.horaFin)) {
-      setBloqueoError('Para bloqueo parcial indicá hora de inicio y fin.');
+      setBloqueoError(d.availabilitySetup.partialTimeRequired);
       return;
     }
     setSavingBloqueo(true);
@@ -59,11 +57,11 @@ export default function DisponibilidadView({
         horaFin: nuevoBloqueo.esHoraParcial ? nuevoBloqueo.horaFin : undefined,
         motivo: nuevoBloqueo.motivo || undefined,
       });
-      setBloqueoOk('Bloqueo guardado correctamente.');
+      setBloqueoOk(d.availabilitySetup.blockingSaved);
       setNuevoBloqueo({ fechaInicio: '', fechaFin: '', horaInicio: '', horaFin: '', motivo: '', esHoraParcial: false });
       onReloadBloqueos();
     } catch (err) {
-      setBloqueoError(err instanceof Error ? err.message : 'Error al guardar');
+      setBloqueoError(err instanceof Error ? err.message : d.availabilitySetup.saveBlockingError);
     } finally {
       setSavingBloqueo(false);
     }
@@ -74,7 +72,7 @@ export default function DisponibilidadView({
       await api.bloqueos.eliminar(id);
       onReloadBloqueos();
     } catch (err) {
-      setBloqueoError(err instanceof Error ? err.message : 'Error al eliminar');
+      setBloqueoError(err instanceof Error ? err.message : d.availabilitySetup.deleteBlockingError);
     }
   };
 
@@ -131,7 +129,7 @@ export default function DisponibilidadView({
                 onClick={() => onEliminar(disp.id)}
                 disabled={eliminandoId === disp.id}
                 className={`ml-auto btn btn-ghost p-1.5 ${eliminandoId === disp.id ? 'text-slate-300 cursor-not-allowed' : 'text-red-400 hover:text-red-600'}`}
-                title="Eliminar horario"
+                title={d.availabilitySetup.deleteSchedule}
               >
                 <TrashIcon size={15} />
               </button>
@@ -146,7 +144,7 @@ export default function DisponibilidadView({
                     <div className="flex items-center gap-2 mb-2">
                       <MapPinIcon size={13} className="text-slate-400 shrink-0" />
                       <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
-                        {mapK === NULL_KEY ? 'Sin lugar asignado' : mapK}
+                        {mapK === NULL_KEY ? d.availabilitySetup.noLocationAssigned : mapK}
                       </p>
                     </div>
                   )}
