@@ -70,11 +70,6 @@ const spanishPhraseAllowlist: AllowlistEntry[] = [
     pattern: /Requiere \$\{horasMinCancelacion\}h de anticipación/,
     reason: 'Known remaining patient appointment cancellation tooltip copy.',
   },
-  {
-    file: 'app/invitacion/[token]/page.tsx',
-    pattern: /(Necesitás tener una cuenta|No se pudo aceptar la invitación|Error al rechazar|Invitación no encontrada|El link no es válido|Invitación expirada|Este link ya no es válido|Ya sos parte de la clínica|Invitación rechazada|Rechazaste la invitación|Aceptar invitación|Iniciar sesión para aceptar)/,
-    reason: 'Invitation acceptance page has not been migrated to i18n yet.',
-  },
 ];
 
 function walkSourceFiles(root: string): string[] {

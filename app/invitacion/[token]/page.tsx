@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { clinicasApi, InvitacionClinica, Clinica } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
+import { useLang } from '../../lib/i18n/context';
+import { getLocale } from '../../lib/date';
 import { ClockIcon, CheckIcon, XIcon, HospitalIcon, MapPinIcon } from '../../components/icons';
 
 type InvitacionConClinica = InvitacionClinica & {
@@ -13,10 +15,20 @@ type InvitacionConClinica = InvitacionClinica & {
 
 type PageState = 'loading' | 'ready' | 'expired' | 'notfound' | 'done' | 'rejected';
 
+function template(value: string, params: Record<string, string>) {
+  return Object.entries(params).reduce(
+    (text, [key, replacement]) => text.replaceAll(`{{${key}}}`, replacement),
+    value
+  );
+}
+
 export default function InvitacionPage() {
   const { token } = useParams() as { token: string };
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
+  const { t, lang } = useLang();
+  const invitation = t('invitation');
+  const locale = getLocale(lang);
 
   const [state, setState]       = useState<PageState>('loading');
   const [inv, setInv]           = useState<InvitacionConClinica | null>(null);
@@ -39,7 +51,7 @@ export default function InvitacionPage() {
       return;
     }
     if (user.rol !== 'PROFESIONAL') {
-      setError('Necesitás tener una cuenta de profesional para aceptar esta invitación.');
+      setError(invitation.professionalAccountRequired);
       return;
     }
     setWorking(true);
@@ -48,7 +60,7 @@ export default function InvitacionPage() {
       await clinicasApi.aceptarInvitacion(token);
       setState('done');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'No se pudo aceptar la invitación');
+      setError(err instanceof Error ? err.message : invitation.acceptError);
     } finally {
       setWorking(false);
     }
@@ -61,7 +73,7 @@ export default function InvitacionPage() {
       await clinicasApi.rechazarInvitacion(token);
       setState('rejected');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error al rechazar');
+      setError(err instanceof Error ? err.message : invitation.rejectError);
     } finally {
       setWorking(false);
     }
@@ -82,9 +94,9 @@ export default function InvitacionPage() {
       <Shell>
         <StatusCard
           icon={<XIcon size={24} className="text-red-600" />}
-          title="Invitación no encontrada"
-          desc="El link no es válido o ya fue procesado."
-          action={<Link href="/dashboard" className="btn btn-primary btn-sm">Ir al dashboard</Link>}
+          title={invitation.notFoundTitle}
+          desc={invitation.notFoundDesc}
+          action={<Link href="/dashboard" className="btn btn-primary btn-sm">{invitation.dashboard}</Link>}
         />
       </Shell>
     );
@@ -95,9 +107,9 @@ export default function InvitacionPage() {
       <Shell>
         <StatusCard
           icon={<ClockIcon size={24} className="text-amber-600" />}
-          title="Invitación expirada"
-          desc="Este link ya no es válido. Pedí al administrador de la clínica que te envíe una nueva invitación."
-          action={<Link href="/dashboard" className="btn btn-secondary btn-sm">Ir al dashboard</Link>}
+          title={invitation.expiredTitle}
+          desc={invitation.expiredDesc}
+          action={<Link href="/dashboard" className="btn btn-secondary btn-sm">{invitation.dashboard}</Link>}
         />
       </Shell>
     );
@@ -108,9 +120,9 @@ export default function InvitacionPage() {
       <Shell>
         <StatusCard
           icon={<CheckIcon size={24} className="text-emerald-600" />}
-          title={`Te uniste a ${inv?.clinica.nombre}`}
-          desc="Ya sos parte de la clínica. Podés ver tus turnos y agenda desde tu dashboard."
-          action={<Link href="/dashboard" className="btn btn-primary btn-sm">Ir al dashboard</Link>}
+          title={template(invitation.acceptedTitle, { clinic: inv?.clinica.nombre ?? '' })}
+          desc={invitation.acceptedDesc}
+          action={<Link href="/dashboard" className="btn btn-primary btn-sm">{invitation.dashboard}</Link>}
         />
       </Shell>
     );
@@ -121,9 +133,9 @@ export default function InvitacionPage() {
       <Shell>
         <StatusCard
           icon={<XIcon size={24} className="text-red-600" />}
-          title="Invitación rechazada"
-          desc="Rechazaste la invitación. Si cambiás de opinión, pedí que te vuelvan a invitar."
-          action={<Link href="/dashboard" className="btn btn-secondary btn-sm">Ir al dashboard</Link>}
+          title={invitation.rejectedTitle}
+          desc={invitation.rejectedDesc}
+          action={<Link href="/dashboard" className="btn btn-secondary btn-sm">{invitation.dashboard}</Link>}
         />
       </Shell>
     );
@@ -131,6 +143,7 @@ export default function InvitacionPage() {
 
   // -- READY --
   const clinicaData = inv!.clinica;
+  const expiresAt = new Date(inv!.expiresAt).toLocaleDateString(locale, { day: 'numeric', month: 'long', year: 'numeric' });
 
   return (
     <Shell>
@@ -158,26 +171,25 @@ export default function InvitacionPage() {
 
         {/* Invitation details */}
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5">
-          <p className="text-sm font-semibold text-amber-800 mb-1">Te invitaron a unirte como profesional</p>
+          <p className="text-sm font-semibold text-amber-800 mb-1">{invitation.readyTitle}</p>
           <p className="text-sm text-amber-700">
-            La invitación fue enviada a <strong>{inv!.email}</strong> y expira el{' '}
-            {new Date(inv!.expiresAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}.
+            {template(invitation.sentToExpires, { email: inv!.email, expiresAt })}
           </p>
         </div>
 
         {/* Auth notice if not logged in */}
         {!user && (
           <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-sm text-blue-700">
-            <p className="font-semibold mb-1">Necesitás iniciar sesión</p>
-            <p>Para aceptar esta invitación, iniciá sesión con la cuenta de profesional asociada al email <strong>{inv!.email}</strong>.</p>
+            <p className="font-semibold mb-1">{invitation.loginRequiredTitle}</p>
+            <p>{template(invitation.loginRequiredDesc, { email: inv!.email })}</p>
           </div>
         )}
 
         {/* Email mismatch warning */}
         {user && user.email !== inv!.email && (
           <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-sm text-red-700">
-            <p className="font-semibold mb-1">Email incorrecto</p>
-            <p>Estás logueado como <strong>{user.email}</strong>, pero la invitación es para <strong>{inv!.email}</strong>. Iniciá sesión con la cuenta correcta.</p>
+            <p className="font-semibold mb-1">{invitation.emailMismatchTitle}</p>
+            <p>{template(invitation.emailMismatchDesc, { currentEmail: user.email, inviteEmail: inv!.email })}</p>
           </div>
         )}
 
@@ -192,14 +204,14 @@ export default function InvitacionPage() {
             disabled={working || (!!user && user.email !== inv!.email)}
             className="btn btn-secondary flex-1"
           >
-            Rechazar
+            {invitation.reject}
           </button>
           <button
             onClick={handleAceptar}
             disabled={working || (!!user && user.email !== inv!.email)}
             className="btn btn-primary flex-1"
           >
-            {working ? 'Procesando...' : user ? 'Aceptar invitación' : 'Iniciar sesión para aceptar'}
+            {working ? invitation.processing : user ? invitation.accept : invitation.loginToAccept}
           </button>
         </div>
 
@@ -213,6 +225,9 @@ export default function InvitacionPage() {
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
+  const { t } = useLang();
+  const invitation = t('invitation');
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center py-12 px-4">
       <div className="w-full max-w-md">
@@ -222,7 +237,7 @@ function Shell({ children }: { children: React.ReactNode }) {
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
             </svg>
           </div>
-          <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">Invitación a clínica</h1>
+          <h1 className="text-xl font-bold text-slate-800 dark:text-slate-200">{invitation.title}</h1>
         </div>
         {children}
       </div>
