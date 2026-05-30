@@ -66,11 +66,6 @@ const spanishPhraseAllowlist: AllowlistEntry[] = [
     reason: 'Persisted backend-facing blocking reason value; displayed label is translated.',
   },
   {
-    file: 'app/dashboard/components/CalendarioView.tsx',
-    pattern: /Buscar paciente en agenda/,
-    reason: 'Known remaining calendar search placeholder pending calendar view i18n pass.',
-  },
-  {
     file: 'app/dashboard/components/EmitirCertificadoModal.tsx',
     pattern: /(El\/la paciente ha sido visto\/a|examen clínico|Reposo Médico|Justificación de Consulta|Aptitud Física)/,
     reason: 'Medical certificate default text and labels pending certificate modal i18n pass.',

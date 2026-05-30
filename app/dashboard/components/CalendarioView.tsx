@@ -30,6 +30,7 @@ export default function CalendarioView({
   const d = t('dashboard');
   const h = t('home');
   const status = t('status');
+  const calendar = d.calendarView;
   const hoy = typeof window !== 'undefined' ? formatClinicDateKey(new Date()) : '';
 
   const [calendarMonth, setCalendarMonth] = useState<Date>(() =>
@@ -88,7 +89,7 @@ export default function CalendarioView({
       .filter((t) => agendaModalidad === 'TODAS' || t.modalidad === agendaModalidad)
       .filter((t) => {
         if (!agendaSearch.trim()) return true;
-        const fullName = t.paciente ? `${t.paciente.nombre} ${t.paciente.apellido}`.toLowerCase() : 'paciente sin cuenta';
+        const fullName = t.paciente ? `${t.paciente.nombre} ${t.paciente.apellido}`.toLowerCase() : calendar.anonymousPatientSearchFallback;
         return fullName.includes(agendaSearch.toLowerCase());
       })
       .filter((t) => !agendaSoloRiesgo || t.preconsultaRiesgo === 'ALTO' || t.preconsultaRiesgo === 'URGENTE')
@@ -104,7 +105,7 @@ export default function CalendarioView({
           <button
             onClick={() => navigateMonth(-1)}
             className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors"
-            aria-label="Mes anterior"
+            aria-label={calendar.previousMonth}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
@@ -114,7 +115,7 @@ export default function CalendarioView({
           <button
             onClick={() => navigateMonth(1)}
             className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors"
-            aria-label="Mes siguiente"
+            aria-label={calendar.nextMonth}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
           </button>
@@ -211,9 +212,9 @@ export default function CalendarioView({
           onChange={(e) => setAgendaSearch(e.target.value)}
           placeholder={`${t('common').search} ${d.patient}...`}
           className="field-input"
-          aria-label="Buscar paciente en agenda"
+          aria-label={calendar.searchPatientAria}
         />
-        <select value={agendaEstado} onChange={(e) => setAgendaEstado(e.target.value as any)} className="field-select" aria-label="Filtrar por estado">
+        <select value={agendaEstado} onChange={(e) => setAgendaEstado(e.target.value as any)} className="field-select" aria-label={calendar.filterStatusAria}>
           <option value="TODOS">{t('status').all}</option>
           <option value="RESERVADO">{t('status').RESERVADO}</option>
           <option value="CONFIRMADO">{t('status').CONFIRMADO}</option>
@@ -221,7 +222,7 @@ export default function CalendarioView({
           <option value="CANCELADO">{t('status').CANCELADO}</option>
           <option value="AUSENTE">{t('status').AUSENTE}</option>
         </select>
-        <select value={agendaModalidad} onChange={(e) => setAgendaModalidad(e.target.value as any)} className="field-select" aria-label="Filtrar por modalidad">
+        <select value={agendaModalidad} onChange={(e) => setAgendaModalidad(e.target.value as any)} className="field-select" aria-label={calendar.filterModalityAria}>
           <option value="TODAS">{h.allModalities}</option>
           <option value="PRESENCIAL">{h.inPerson}</option>
           <option value="VIRTUAL">{h.virtual}</option>
