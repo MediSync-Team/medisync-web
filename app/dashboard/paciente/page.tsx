@@ -19,7 +19,7 @@ import { imprimirHistorial } from '../../lib/historial-pdf';
 import { imprimirCertificado } from '../../lib/certificado-pdf';
 import { getTurnosTabRequest, PacienteDashboardTab } from '../../lib/paciente-dashboard-tabs';
 import Spinner from '../../components/Spinner';
-import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../lib/date';
+import { clinicDateKeyFromDateOnly, formatClinicDateKeyForDisplay, formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../lib/date';
 import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
 import TurnoCard from './components/TurnoCard';
 import HistorialCard from './components/HistorialCard';
@@ -31,33 +31,6 @@ import CalificarModal from './components/CalificarModal';
 import ReprogramarModal from './components/ReprogramarModal';
 import ResumenPacienteView from './components/ResumenPacienteView';
 import EstadisticasPaciente from './components/EstadisticasPaciente';
-
-const PACIENTE_TOUR_STEPS = [
-  {
-    selector: '[data-onboarding="pac-tab-proximos"]',
-    title: 'Tus próximos turnos',
-    description: 'Aquí vas a ver todos tus turnos futuros. Podés pagar, reprogramar o cancelar desde acá.',
-    position: 'bottom' as const,
-  },
-  {
-    selector: '[data-onboarding="pac-tab-lista-espera"]',
-    title: 'Lista de espera',
-    description: 'Si el profesional que querés no tiene turnos disponibles, podés anotarte en lista de espera y te avisamos cuando se libere un lugar.',
-    position: 'bottom' as const,
-  },
-  {
-    selector: '[data-onboarding="pac-buscar-link"]',
-    title: 'Buscá más profesionales',
-    description: 'Desde acá podés volver al buscador para encontrar nuevos especialistas y reservar más turnos.',
-    position: 'bottom' as const,
-  },
-  {
-    selector: '[data-onboarding="pac-profile-btn"]',
-    title: 'Tu perfil',
-    description: 'Actualizá tus datos de contacto y configuraciones personales haciendo clic en tu nombre.',
-    position: 'bottom' as const,
-  },
-];
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, XIcon, SearchIcon, WaitlistIcon, InfoIcon, ClipboardIcon,
@@ -73,6 +46,33 @@ export default function PacienteDashboard() {
   const s = t('status');
   const m = t('modality');
   const locale = getLocale(lang);
+  const pageText = p.page;
+  const pacienteTourSteps = [
+    {
+      selector: '[data-onboarding="pac-tab-proximos"]',
+      title: p.tour.upcomingTitle,
+      description: p.tour.upcomingDesc,
+      position: 'bottom' as const,
+    },
+    {
+      selector: '[data-onboarding="pac-tab-lista-espera"]',
+      title: p.tour.waitlistTitle,
+      description: p.tour.waitlistDesc,
+      position: 'bottom' as const,
+    },
+    {
+      selector: '[data-onboarding="pac-buscar-link"]',
+      title: p.tour.searchTitle,
+      description: p.tour.searchDesc,
+      position: 'bottom' as const,
+    },
+    {
+      selector: '[data-onboarding="pac-profile-btn"]',
+      title: p.tour.profileTitle,
+      description: p.tour.profileDesc,
+      position: 'bottom' as const,
+    },
+  ];
   const translateSpecialty = useTranslateSpecialty();
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [loading, setLoading] = useState(true);
@@ -266,9 +266,9 @@ export default function PacienteDashboard() {
     try {
       await api.listaEspera.cancelar(id);
       await loadListaEspera();
-      setInlineNotice({ type: 'success', text: 'Saliste de la lista de espera.' });
+      setInlineNotice({ type: 'success', text: pageText.waitlistRemoved });
     } catch (err) {
-      setInlineNotice({ type: 'error', text: err instanceof Error ? err.message : 'No se pudo salir de la lista' });
+      setInlineNotice({ type: 'error', text: err instanceof Error ? err.message : pageText.waitlistRemoveError });
     }
   };
 
@@ -282,9 +282,9 @@ export default function PacienteDashboard() {
         loadTurnos(activeTab === 'proximos' || activeTab === 'pasados' ? activeTab : 'proximos', page),
         loadStats(),
       ]);
-      setInlineNotice({ type: 'success', text: 'Turno cancelado correctamente.' });
+      setInlineNotice({ type: 'success', text: pageText.appointmentCancelled });
     } catch {
-      setInlineNotice({ type: 'error', text: 'Error al cancelar turno' });
+      setInlineNotice({ type: 'error', text: pageText.cancelAppointmentError });
     } finally {
       setCancellingTurnoId(null);
     }
@@ -298,7 +298,7 @@ export default function PacienteDashboard() {
       <div className="min-h-screen bg-slate-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
           <Spinner size={32} className="text-blue-600" />
-          <p className="text-slate-500 text-sm">Cargando...</p>
+          <p className="text-slate-500 text-sm">{c.loading}</p>
         </div>
       </div>
     );
@@ -343,10 +343,12 @@ export default function PacienteDashboard() {
             <div className="flex items-center gap-2.5 text-sm">
               <BellIcon size={15} className="shrink-0" />
               <span className="font-medium">
-                {recordatorios.length} turno{recordatorios.length > 1 ? 's' : ''} {d.reminder.next24h}
+                {pageText.reminderNext24h
+                  .replace('{{count}}', String(recordatorios.length))
+                  .replace('{{plural}}', recordatorios.length === 1 ? '' : 's')}
               </span>
               <button onClick={() => setShowRecordatorios(!showRecordatorios)} className="underline underline-offset-2 text-amber-100 hover:text-white text-xs">
-                {showRecordatorios ? 'Ocultar' : 'Ver'}
+                {showRecordatorios ? pageText.reminderToggleHide : pageText.reminderToggleShow}
               </button>
             </div>
             <button onClick={() => setRecordatorios([])} className="text-amber-200 hover:text-white">
@@ -410,7 +412,7 @@ export default function PacienteDashboard() {
           <div className={`alert mb-4 ${inlineNotice.type === 'success' ? 'alert-success' : inlineNotice.type === 'error' ? 'alert-error' : 'alert-info'}`} role="status" aria-live="polite">
             <InfoIcon size={15} className="shrink-0" />
             <span>{inlineNotice.text}</span>
-            <button className="ml-auto text-xs underline" onClick={() => setInlineNotice(null)}>Ocultar</button>
+            <button className="ml-auto text-xs underline" onClick={() => setInlineNotice(null)}>{pageText.hideNotice}</button>
           </div>
         )}
 
@@ -783,7 +785,7 @@ export default function PacienteDashboard() {
                         </p>
                         <p className="text-sm text-blue-600 font-medium">{translateSpecialty(item.profesional?.especialidad?.nombre)}</p>
                         <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
-                          <span className="flex items-center gap-1"><CalendarIcon size={11} />{new Date(item.fecha).toLocaleDateString(locale)}</span>
+                          <span className="flex items-center gap-1"><CalendarIcon size={11} />{formatClinicDateKeyForDisplay(clinicDateKeyFromDateOnly(item.fecha), locale, { year: 'numeric', month: 'numeric', day: 'numeric' })}</span>
                           <span>{item.modalidad}</span>
                         </div>
                         <span className="badge badge-yellow mt-2">{(s as any)[item.estado] || item.estado}</span>
@@ -898,7 +900,7 @@ export default function PacienteDashboard() {
           onClose={() => setTurnoCalificar(null)}
           onSuccess={() => {
             setTurnoCalificar(null);
-            setInlineNotice({ type: 'success', text: '¡Gracias por tu calificación!' });
+            setInlineNotice({ type: 'success', text: p.rateSuccess });
             if (activeTab === 'historial') loadHistorial(historialPage);
           }}
         />
@@ -907,7 +909,7 @@ export default function PacienteDashboard() {
       {turnoVideoCall && (
         <VideoCallModal
           turnoId={turnoVideoCall.id}
-          profesionalNombre={turnoVideoCall.profesional ? `${turnoVideoCall.profesional.nombre} ${turnoVideoCall.profesional.apellido}` : 'Profesional'}
+          profesionalNombre={turnoVideoCall.profesional ? `${turnoVideoCall.profesional.nombre} ${turnoVideoCall.profesional.apellido}` : pageText.professionalFallback}
           fechaHora={turnoVideoCall.fechaHora}
           onClose={() => setTurnoVideoCall(null)}
         />
@@ -917,14 +919,14 @@ export default function PacienteDashboard() {
         <ChatModal
           turnoId={turnoChat.id}
           myUserId={user.id}
-          otherName={turnoChat.profesional ? `${turnoChat.profesional.nombre} ${turnoChat.profesional.apellido}` : 'Profesional'}
+          otherName={turnoChat.profesional ? `${turnoChat.profesional.nombre} ${turnoChat.profesional.apellido}` : pageText.professionalFallback}
           onClose={() => setTurnoChat(null)}
         />
       )}
 
       <OnboardingTour
         storageKey="medisync-paciente-tour-v1"
-        steps={PACIENTE_TOUR_STEPS}
+        steps={pacienteTourSteps}
         delay={1000}
       />
     </div>

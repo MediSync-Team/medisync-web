@@ -71,11 +71,6 @@ const spanishPhraseAllowlist: AllowlistEntry[] = [
     reason: 'Known remaining patient appointment cancellation tooltip copy.',
   },
   {
-    file: 'app/dashboard/paciente/page.tsx',
-    pattern: /(Tus próximos turnos|Aquí vas a ver|Si el profesional que querés|Buscá más profesionales|Desde acá podés|Actualizá tus datos|Turno cancelado correctamente\.|Error al cancelar turno|¡Gracias por tu calificación!)/,
-    reason: 'Known remaining patient dashboard/tour/rating copy pending broader patient page i18n pass.',
-  },
-  {
     file: 'app/profesional/[id]/page.tsx',
     pattern: /(Ubicación|García)/,
     reason: 'Known remaining professional profile copy/test-like sample pending profile page i18n pass.',
