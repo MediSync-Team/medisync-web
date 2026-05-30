@@ -66,11 +66,6 @@ const spanishPhraseAllowlist: AllowlistEntry[] = [
     reason: 'Persisted backend-facing blocking reason value; displayed label is translated.',
   },
   {
-    file: 'app/dashboard/components/EmitirCertificadoModal.tsx',
-    pattern: /(El\/la paciente ha sido visto\/a|examen clínico|Reposo Médico|Justificación de Consulta|Aptitud Física)/,
-    reason: 'Medical certificate default text and labels pending certificate modal i18n pass.',
-  },
-  {
     file: 'app/dashboard/components/PlanView.tsx',
     pattern: /(Turnos ilimitados \+ estadísticas avanzadas|Hasta 20 turnos\/mes)/,
     reason: 'Known remaining subscription plan subtitle fallback copy.',
