@@ -282,8 +282,8 @@ export default function ProfesionalPage() {
       <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
         <div className="text-center card p-10">
           <UserIcon size={40} className="mx-auto mb-3 text-slate-300" />
-          <p className="text-slate-600 font-medium">Profesional no encontrado</p>
-          <Link href="/" className="btn btn-primary btn-sm mt-4"><SearchIcon size={13} /> Buscar otros</Link>
+          <p className="text-slate-600 font-medium">{p.notFound}</p>
+          <Link href="/" className="btn btn-primary btn-sm mt-4"><SearchIcon size={13} /> {p.searchOthers}</Link>
         </div>
       </div>
     );
@@ -384,7 +384,9 @@ export default function ProfesionalPage() {
                   <div className="flex items-center gap-1.5 mt-2">
                     <StarRating value={resenas.stats.promedio ?? 0} size={15} />
                     <span className="text-sm font-semibold text-slate-700">{resenas.stats.promedio}</span>
-                    <span className="text-xs text-slate-400">({resenas.stats.total} reseña{resenas.stats.total !== 1 ? 's' : ''})</span>
+                    <span className="text-xs text-slate-400">
+                      ({(resenas.stats.total === 1 ? p.reviewCountSingular : p.reviewCountPlural).replace('{{count}}', String(resenas.stats.total))})
+                    </span>
                   </div>
                 ) : (
                   <p className="text-xs text-slate-400 mt-2">{p.noRatingsYet}</p>
@@ -448,7 +450,7 @@ export default function ProfesionalPage() {
                       </div>
                       <div className="mt-2 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 h-36">
                         <iframe
-                          title="Ubicación"
+                          title={p.mapTitle}
                           width="100%"
                           height="100%"
                           style={{ border: 0 }}
@@ -499,7 +501,7 @@ export default function ProfesionalPage() {
               <div className="card p-5">
                 <h3 className="text-sm font-semibold text-slate-700 mb-4 flex items-center gap-2">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="#F59E0B" className="shrink-0"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" /></svg>
-                  Calificaciones
+                  {p.reviewsTitle}
                 </h3>
 
                 {/* Summary bar */}
@@ -507,7 +509,9 @@ export default function ProfesionalPage() {
                   <div className="text-center shrink-0">
                     <p className="text-3xl font-extrabold text-slate-800 dark:text-slate-200">{resenas.stats.promedio}</p>
                     <StarRating value={resenas.stats.promedio ?? 0} size={12} />
-                    <p className="text-xs text-slate-400 mt-0.5">{resenas.stats.total} reseña{resenas.stats.total !== 1 ? 's' : ''}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {(resenas.stats.total === 1 ? p.reviewCountSingular : p.reviewCountPlural).replace('{{count}}', String(resenas.stats.total))}
+                    </p>
                   </div>
                   <div className="flex-1 space-y-1">
                     {[5,4,3,2,1].map((star) => {
@@ -545,7 +549,7 @@ export default function ProfesionalPage() {
                         <p className="text-xs text-slate-500 ml-9 leading-relaxed">{r.comentario}</p>
                       )}
                       <p className="text-[10px] text-slate-400 ml-9 mt-1">
-                        {new Date(r.createdAt).toLocaleDateString('es-AR', { day: 'numeric', month: 'long', year: 'numeric' })}
+                        {new Date(r.createdAt).toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', year: 'numeric' })}
                       </p>
                     </div>
                   ))}
@@ -559,7 +563,7 @@ export default function ProfesionalPage() {
                       onClick={() => loadResenas(resenaPage - 1)}
                       className="text-xs text-blue-600 disabled:text-slate-300 disabled:cursor-not-allowed hover:underline"
                     >
-                      ← Anteriores
+                      {p.previousReviews}
                     </button>
                     <span className="text-xs text-slate-400">{resenaPage} / {resenas.pagination.totalPages}</span>
                     <button
@@ -567,7 +571,7 @@ export default function ProfesionalPage() {
                       onClick={() => loadResenas(resenaPage + 1)}
                       className="text-xs text-blue-600 disabled:text-slate-300 disabled:cursor-not-allowed hover:underline"
                     >
-                      Siguientes →
+                      {p.nextReviews}
                     </button>
                   </div>
                 )}
@@ -791,7 +795,7 @@ export default function ProfesionalPage() {
                           <input
                             value={guestForm.apellido}
                             onChange={(e) => setGuestForm((p) => ({ ...p, apellido: e.target.value }))}
-                            placeholder="García"
+                            placeholder={p.lastNamePlaceholder}
                             className="field-input"
                           />
                         </div>
