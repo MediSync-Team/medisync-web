@@ -258,7 +258,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
             >
               {GENERO_OPCIONES.map((opt) => (
                 <option key={opt.value} value={opt.value}>
-                  {p[opt.labelKey as keyof typeof p] || opt.value}
+                  {p[opt.labelKey as keyof Pick<typeof p, 'genderM' | 'genderF' | 'genderO' | 'genderNS'>] || opt.value}
                 </option>
               ))}
             </select>
@@ -442,7 +442,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                           { field: 'notifRecordatorio2h' as const, labelKey: 'reminder2h' },
                         ]
                       : []),
-                  ] as { field: keyof NotificationPreferences; labelKey: keyof typeof p }[]
+                  ] as { field: keyof NotificationPreferences; labelKey: 'notifEmail' | 'notifWhatsapp' | 'reminders' | 'reminder24h' | 'reminder2h' }[]
                 ).map(({ field, labelKey }) =>
                   notifPrefs[field] !== undefined ? (
                     <label key={field} className="flex items-center justify-between cursor-pointer select-none">

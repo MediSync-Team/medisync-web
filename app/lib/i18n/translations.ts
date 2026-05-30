@@ -1954,6 +1954,31 @@ const translations = {
       pushBlocked: 'Notificaciones bloqueadas en el navegador. Habilitá el permiso manualmente desde la configuración del sitio.',
       enablePush: 'Activar notificaciones push',
       disablePush: 'Desactivar notificaciones push',
+      pushTest: 'Enviar prueba',
+      pushTestSent: '✓ Enviada',
+      pushReceiveFor: 'Recibir push para',
+      pushEvents: {
+        pushTurno: {
+          label: 'Nuevos turnos',
+          description: 'Reservas, confirmaciones y reprogramaciones',
+        },
+        pushCancelacion: {
+          label: 'Cancelaciones',
+          description: 'Cuando un turno es cancelado',
+        },
+        pushRecordatorio: {
+          label: 'Recordatorios',
+          description: '24 h y 2 h antes del turno',
+        },
+        pushReceta: {
+          label: 'Recetas',
+          description: 'Cuando el profesional emite una receta',
+        },
+        pushChat: {
+          label: 'Mensajes de chat',
+          description: 'Nuevos mensajes en el chat de un turno',
+        },
+      },
       markAllRead: 'Marcar todas leídas',
       // Field labels
       firstName: 'Nombre',
@@ -3843,6 +3868,31 @@ waitlistDesc: "We'll notify you when a slot becomes available",
       pushBlocked: 'Notifications blocked in browser. Enable permission manually from site settings.',
       enablePush: 'Enable push notifications',
       disablePush: 'Disable push notifications',
+      pushTest: 'Send test',
+      pushTestSent: '✓ Sent',
+      pushReceiveFor: 'Receive push for',
+      pushEvents: {
+        pushTurno: {
+          label: 'New appointments',
+          description: 'Bookings, confirmations, and reschedules',
+        },
+        pushCancelacion: {
+          label: 'Cancellations',
+          description: 'When an appointment is canceled',
+        },
+        pushRecordatorio: {
+          label: 'Reminders',
+          description: '24h and 2h before the appointment',
+        },
+        pushReceta: {
+          label: 'Prescriptions',
+          description: 'When the professional issues a prescription',
+        },
+        pushChat: {
+          label: 'Chat messages',
+          description: 'New messages in an appointment chat',
+        },
+      },
       markAllRead: 'Mark all as read',
       firstName: 'First name',
       lastName: 'Last name',

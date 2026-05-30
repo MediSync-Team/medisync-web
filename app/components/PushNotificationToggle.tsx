@@ -16,12 +16,12 @@ type PushState = 'loading' | 'unsupported' | 'subscribed' | 'unsubscribed' | 'de
 
 type PushPrefKey = 'pushTurno' | 'pushCancelacion' | 'pushRecordatorio' | 'pushReceta' | 'pushChat';
 
-const PUSH_EVENTS: { key: PushPrefKey; label: string; description: string }[] = [
-  { key: 'pushTurno',        label: 'Nuevos turnos',    description: 'Reservas, confirmaciones y reprogramaciones' },
-  { key: 'pushCancelacion',  label: 'Cancelaciones',    description: 'Cuando un turno es cancelado' },
-  { key: 'pushRecordatorio', label: 'Recordatorios',    description: '24 h y 2 h antes del turno' },
-  { key: 'pushReceta',       label: 'Recetas',          description: 'Cuando el profesional emite una receta' },
-  { key: 'pushChat',         label: 'Mensajes de chat', description: 'Nuevos mensajes en el chat de un turno' },
+const PUSH_EVENT_KEYS: PushPrefKey[] = [
+  'pushTurno',
+  'pushCancelacion',
+  'pushRecordatorio',
+  'pushReceta',
+  'pushChat',
 ];
 
 function Toggle({ on, onChange, disabled }: { on: boolean; onChange: (v: boolean) => void; disabled?: boolean }) {
@@ -164,7 +164,7 @@ export default function PushNotificationToggle() {
             disabled={working || testSent}
             className="text-xs text-slate-500 hover:text-slate-700 underline underline-offset-2 disabled:opacity-60"
           >
-            {testSent ? '✓ Enviada' : 'Enviar prueba'}
+            {testSent ? p.pushTestSent : p.pushTest}
           </button>
         )}
       </div>
@@ -173,16 +173,17 @@ export default function PushNotificationToggle() {
       {isSubscribed && (
         <div className="border border-slate-200 rounded-xl overflow-hidden">
           <div className="px-4 py-2.5 bg-slate-50 border-b border-slate-200">
-            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">Recibir push para</p>
+            <p className="text-xs font-semibold text-slate-600 uppercase tracking-wide">{p.pushReceiveFor}</p>
           </div>
           <ul className="divide-y divide-slate-100">
-            {PUSH_EVENTS.map(({ key, label, description }) => {
+            {PUSH_EVENT_KEYS.map((key) => {
               const value = prefs[key] !== false; // default true
+              const event = p.pushEvents[key];
               return (
                 <li key={key} className="flex items-center justify-between gap-4 px-4 py-3">
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{label}</p>
-                    <p className="text-xs text-slate-500">{description}</p>
+                    <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{event.label}</p>
+                    <p className="text-xs text-slate-500">{event.description}</p>
                   </div>
                   <Toggle
                     on={value}
