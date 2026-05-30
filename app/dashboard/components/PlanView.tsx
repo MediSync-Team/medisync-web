@@ -35,7 +35,7 @@ export default function PlanView({
   }
 
   const isPro = suscripcion.plan === 'PRO';
-  const turnosRemainingTemplate = d.turnosRemaining ?? 'You have {{count}} appointment{{plural}} left this month';
+  const turnosRemainingTemplate = d.turnosRemaining;
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -50,7 +50,7 @@ export default function PlanView({
               {isPro ? d.planPro : d.planFree}
             </h2>
             <p className={`text-sm mt-3 ${isPro ? 'text-blue-700' : 'text-slate-600'}`}>
-              {isPro ? (d.planProSubtitle ?? 'Turnos ilimitados + estadísticas avanzadas') : (d.planFreeSubtitle ?? 'Hasta 20 turnos/mes')}
+              {isPro ? d.planProSubtitle : d.planFreeSubtitle}
             </p>
           </div>
           <div className={`text-5xl font-bold opacity-20 ${isPro ? 'text-blue-500' : 'text-slate-400'}`}>

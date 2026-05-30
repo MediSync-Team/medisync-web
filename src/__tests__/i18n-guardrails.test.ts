@@ -66,11 +66,6 @@ const spanishPhraseAllowlist: AllowlistEntry[] = [
     reason: 'Persisted backend-facing blocking reason value; displayed label is translated.',
   },
   {
-    file: 'app/dashboard/components/PlanView.tsx',
-    pattern: /(Turnos ilimitados \+ estadísticas avanzadas|Hasta 20 turnos\/mes)/,
-    reason: 'Known remaining subscription plan subtitle fallback copy.',
-  },
-  {
     file: 'app/dashboard/paciente/components/TurnoCard.tsx',
     pattern: /Requiere \$\{horasMinCancelacion\}h de anticipación/,
     reason: 'Known remaining patient appointment cancellation tooltip copy.',
