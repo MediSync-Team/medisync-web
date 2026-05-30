@@ -1,5 +1,7 @@
 'use client';
 
+import { useLang } from '../lib/i18n/context';
+
 interface StarRatingProps {
   value: number;        // 0-5, supports decimals for display
   onChange?: (v: number) => void; // if provided, interactive
@@ -7,12 +9,15 @@ interface StarRatingProps {
 }
 
 export default function StarRating({ value, onChange, size = 20 }: StarRatingProps) {
+  const { t } = useLang();
+  const ratingText = t('rating');
   const stars = [1, 2, 3, 4, 5];
+  const readOnlyAria = ratingText.readOnlyAria.replace('{{value}}', String(value));
 
   if (!onChange) {
     // Read-only: support half-stars via clip-path
     return (
-      <span className="inline-flex items-center gap-0.5" aria-label={`${value} de 5 estrellas`}>
+      <span className="inline-flex items-center gap-0.5" aria-label={readOnlyAria}>
         {stars.map((s) => {
           const fill = Math.min(1, Math.max(0, value - (s - 1)));
           return (
@@ -47,7 +52,7 @@ export default function StarRating({ value, onChange, size = 20 }: StarRatingPro
           key={s}
           type="button"
           onClick={() => onChange(s)}
-          aria-label={`${s} estrella${s > 1 ? 's' : ''}`}
+          aria-label={(s === 1 ? ratingText.selectStarAriaSingular : ratingText.selectStarAriaPlural).replace('{{value}}', String(s))}
           className="transition-transform hover:scale-110 focus:outline-none"
         >
           <svg width={size} height={size} viewBox="0 0 24 24"

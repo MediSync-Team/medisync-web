@@ -105,7 +105,7 @@ export default function TurnoCard({
         {/* Cancellation reason */}
         {turno.estado === 'CANCELADO' && turno.notasCancelacion && (
           <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-100">
-            <p className="text-xs font-semibold text-red-700 mb-1">Motivo de cancelación</p>
+            <p className="text-xs font-semibold text-red-700 mb-1">{p.cancelReasonLabel}</p>
             <p className="text-sm text-red-600">{turno.notasCancelacion}</p>
           </div>
         )}

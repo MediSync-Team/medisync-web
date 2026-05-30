@@ -40,6 +40,7 @@ const spanishPhrasePattern =
 
 const stringLiteralPattern =
   /(?:'([^'\\]*(?:\\.[^'\\]*)*)'|"([^"\\]*(?:\\.[^"\\]*)*)"|`([^`\\]*(?:\\.[^`\\]*)*)`)/g;
+const jsxTextNodePattern = />\s*([^<>{}\n]*(?:[¿¡ÁÉÍÓÚÑáéíóúñ]|Guardar|Cancelar|Siguiente|Anterior|Cargando|Eliminar|Editar|Buscar|Seleccioná|Selecciona|Contraseña|contraseña|Notificación|notificación|Turno cancelado|Error al|Aceptar invitación|Iniciar sesión)[^<>{}\n]*)\s*</g;
 
 const ternaryAllowlist: AllowlistEntry[] = [
   {
@@ -136,6 +137,33 @@ function findSpanishStringLiterals(files: string[]): Match[] {
   });
 }
 
+function findSpanishJsxTextNodesFromSource(file: string, source: string): Match[] {
+  return source.split(/\r?\n/)
+    .flatMap((line, index) => {
+      const matches: Match[] = [];
+      jsxTextNodePattern.lastIndex = 0;
+      let textMatch: RegExpExecArray | null;
+
+      while ((textMatch = jsxTextNodePattern.exec(line))) {
+        const text = textMatch[1]?.trim() ?? '';
+        if (text) {
+          matches.push({ file, line: index + 1, text });
+        }
+      }
+
+      return matches;
+    });
+}
+
+function findSpanishJsxTextNodes(files: string[]): Match[] {
+  return files.flatMap((file) => {
+    const repoPath = toRepoPath(file);
+    if (ignoredFiles.has(repoPath) || path.extname(file) !== '.tsx') return [];
+
+    return findSpanishJsxTextNodesFromSource(repoPath, fs.readFileSync(file, 'utf8'));
+  });
+}
+
 describe('i18n guardrails', () => {
   it('detects inline ES/EN literal ternaries but ignores behavior-only toggles', () => {
     expect(inlineLiteralTernaryPattern.test("lang === 'es' ? 'Guardar' : 'Save'")).toBe(true);
@@ -151,9 +179,16 @@ describe('i18n guardrails', () => {
   it('flags hardcoded Spanish UI phrases in selected app surfaces unless explicitly allowlisted', () => {
     expect(spanishPhrasePattern.test('Guardar cambios')).toBe(true);
     expect(spanishPhrasePattern.test('Plain English copy')).toBe(false);
+    expect(findSpanishJsxTextNodesFromSource('app/example.tsx', '<p>Guardar cambios</p>')).toEqual([
+      { file: 'app/example.tsx', line: 1, text: 'Guardar cambios' },
+    ]);
+    expect(findSpanishJsxTextNodesFromSource('app/example.tsx', '<p>{p.save}</p>')).toEqual([]);
 
     const selectedFiles = scannedUiRoots.flatMap((dir) => walkSourceFiles(path.join(appRoot, dir)));
-    const violations = findSpanishStringLiterals(selectedFiles)
+    const violations = [
+      ...findSpanishStringLiterals(selectedFiles),
+      ...findSpanishJsxTextNodes(selectedFiles),
+    ]
       .filter((match) => !isAllowed(match, spanishPhraseAllowlist));
 
     expect(formatMatches(violations)).toEqual([]);

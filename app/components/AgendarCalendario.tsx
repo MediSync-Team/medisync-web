@@ -1,6 +1,8 @@
 'use client';
 
 import { urlGoogleCalendar, TurnoCalendarInfo, turnoToCalendarEvent } from '../lib/calendar';
+import { useLang } from '../lib/i18n/context';
+
 interface Props {
   turno: TurnoCalendarInfo;
   /** compact = botones pequeños inline; default = tarjeta con título */
@@ -8,6 +10,8 @@ interface Props {
 }
 
 export default function AgendarCalendario({ turno, variant = 'card' }: Props) {
+  const { t } = useLang();
+  const calendarSave = t('calendarSave');
   const ev = turnoToCalendarEvent(turno);
 
 
@@ -32,10 +36,10 @@ export default function AgendarCalendario({ turno, variant = 'card' }: Props) {
     <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-4">
       <div className="flex items-center gap-2 mb-3">
         <span className="text-lg">📅</span>
-        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">Agregar al calendario</p>
+        <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{calendarSave.title}</p>
       </div>
       <p className="text-xs text-slate-500 dark:text-slate-400 mb-3">
-        Guardá el turno en tu app de calendario favorita para no olvidarlo. Incluye recordatorio 1 hora antes.
+        {calendarSave.description}
       </p>
       <div className="flex flex-wrap gap-2">
         <a
@@ -63,4 +67,3 @@ function GoogleCalIcon() {
     </svg>
   );
 }
-
