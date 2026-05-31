@@ -58,6 +58,7 @@ function Avatar({ p }: { p: Pick<Profesional, 'nombre' | 'apellido' | 'fotoUrl'>
 
 // -- Page ---------------------------------------------------------------------
 type Tab = 'overview' | 'profesionales' | 'agenda' | 'invitaciones' | 'configuracion';
+type Feedback = { type: 'success' | 'error'; text: string };
 
 export default function ClinicaDashboard() {
   const router = useRouter();
@@ -97,7 +98,8 @@ export default function ClinicaDashboard() {
   const [cfgTel, setCfgTel]               = useState('');
   const [cfgWeb, setCfgWeb]               = useState('');
   const [cfgSaving, setCfgSaving]         = useState(false);
-  const [cfgMsg, setCfgMsg]               = useState('');
+  const [cfgFeedback, setCfgFeedback]     = useState<Feedback | null>(null);
+  const [pageError, setPageError]         = useState('');
 
   // Remove prof confirmation
   const [removeTarget, setRemoveTarget] = useState<Profesional | null>(null);
@@ -153,25 +155,40 @@ export default function ClinicaDashboard() {
   };
 
   const handleCancelInvitacion = async (id: string) => {
-    try { await clinicasApi.cancelarInvitacion(id); load(); } catch { /* ignore */ }
+    setPageError('');
+    try {
+      await clinicasApi.cancelarInvitacion(id);
+      load();
+    } catch (err) {
+      setPageError(err instanceof Error ? err.message : c.invitations.cancelError);
+    }
   };
 
   const handleRemoveProfesional = async () => {
     if (!removeTarget) return;
     setRemoving(true);
-    try { await clinicasApi.removerProfesional(removeTarget.id); load(); setRemoveTarget(null); }
-    catch { /* ignore */ }
+    setPageError('');
+    try {
+      await clinicasApi.removerProfesional(removeTarget.id);
+      load();
+      setRemoveTarget(null);
+    }
+    catch (err) {
+      setPageError(err instanceof Error ? err.message : c.removeModal.error);
+    }
     finally { setRemoving(false); }
   };
 
   const handleSaveConfig = async () => {
     setCfgSaving(true);
-    setCfgMsg('');
+    setCfgFeedback(null);
     try {
       await clinicasApi.updateMe({ nombre: cfgNombre, descripcion: cfgDesc, direccion: cfgDir, telefono: cfgTel, website: cfgWeb });
-      setCfgMsg(c.config.saved);
+      setCfgFeedback({ type: 'success', text: c.config.saved });
       load();
-    } catch { setCfgMsg(c.config.saveError); }
+    } catch (err) {
+      setCfgFeedback({ type: 'error', text: err instanceof Error ? err.message : c.config.saveError });
+    }
     finally { setCfgSaving(false); }
   };
 
@@ -241,6 +258,11 @@ export default function ClinicaDashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-6">
+        {pageError && (
+          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            {pageError}
+          </div>
+        )}
 
         {/* -- OVERVIEW -- */}
         {tab === 'overview' && stats && (
@@ -433,7 +455,11 @@ export default function ClinicaDashboard() {
                 <button onClick={handleSaveConfig} disabled={cfgSaving} className="btn btn-primary btn-sm">
                   {cfgSaving ? c.config.saving : c.config.saveChanges}
                 </button>
-                {cfgMsg && <p className="text-xs text-emerald-600">{cfgMsg}</p>}
+                {cfgFeedback && (
+                  <p className={`text-xs ${cfgFeedback.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {cfgFeedback.text}
+                  </p>
+                )}
               </div>
             </div>
           </div>

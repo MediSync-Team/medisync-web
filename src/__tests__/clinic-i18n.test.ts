@@ -39,6 +39,8 @@ describe('clinic dashboard i18n', () => {
     expectNonEmpty(clinic.config.phonePlaceholder);
     expectNonEmpty(clinic.inviteModal.emailRequired);
     expectNonEmpty(clinic.removeModal.confirm);
+    expectNonEmpty(clinic.invitations.cancelError);
+    expectNonEmpty(clinic.removeModal.error);
 
     for (const state of ['PENDIENTE', 'ACEPTADA', 'RECHAZADA', 'EXPIRADA'] as const) {
       expectNonEmpty(clinic.invitations.states[state]);
@@ -66,6 +68,8 @@ describe('clinic dashboard i18n', () => {
     expectNonEmpty(clinic.config.phonePlaceholder);
     expectNonEmpty(clinic.inviteModal.emailRequired);
     expectNonEmpty(clinic.removeModal.confirm);
+    expectNonEmpty(clinic.invitations.cancelError);
+    expectNonEmpty(clinic.removeModal.error);
 
     for (const state of ['PENDIENTE', 'ACEPTADA', 'RECHAZADA', 'EXPIRADA'] as const) {
       expectNonEmpty(clinic.invitations.states[state]);

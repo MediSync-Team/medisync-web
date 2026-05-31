@@ -1569,6 +1569,7 @@ const translations = {
         expired: 'Expiró',
         on: 'el',
         cancel: 'Cancelar',
+        cancelError: 'Error al cancelar invitación',
         states: {
           PENDIENTE: 'Pendiente',
           ACEPTADA: 'Aceptada',
@@ -1609,6 +1610,7 @@ const translations = {
         cancel: 'Cancelar',
         confirm: 'Sí, desvincular',
         removing: 'Desvinculando...',
+        error: 'Error al desvincular profesional',
       },
     },
     paciente: {
@@ -3498,6 +3500,7 @@ waitlistDesc: "We'll notify you when a slot becomes available",
         expired: 'Expired',
         on: 'on',
         cancel: 'Cancel',
+        cancelError: 'Error cancelling invitation',
         states: {
           PENDIENTE: 'Pending',
           ACEPTADA: 'Accepted',
@@ -3538,6 +3541,7 @@ waitlistDesc: "We'll notify you when a slot becomes available",
         cancel: 'Cancel',
         confirm: 'Yes, unlink',
         removing: 'Unlinking...',
+        error: 'Error unlinking professional',
       },
     },
     paciente: {
