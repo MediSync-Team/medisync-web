@@ -156,7 +156,7 @@ export default function WidgetPage() {
             </p>
             <p className="text-xs text-slate-500 inline-flex items-center gap-1">
               {modalidad === 'VIRTUAL' ? <VideoIcon size={11} className="text-blue-600" /> : <MapPinIcon size={11} className="text-slate-500" />}
-              {modalidad === 'VIRTUAL' ? widget.virtualModality : (profesional.lugarAtencion ?? widget.inPersonFallback)}
+              {modalidad === 'VIRTUAL' ? modalityLabels.VIRTUAL : (profesional.lugarAtencion ?? widget.inPersonFallback)}
             </p>
           </div>
 

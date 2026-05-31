@@ -6,6 +6,17 @@ import { api } from '../../app/lib/api';
 import translations from '../../app/lib/i18n/translations';
 
 const mockLanguage = vi.hoisted(() => ({ lang: 'es' as 'es' | 'en' }));
+const testTranslations = {
+  es: translations.es,
+  en: {
+    ...translations.en,
+    modality: {
+      ...translations.en.modality,
+      PRESENCIAL: 'Shared in person',
+      VIRTUAL: 'Shared virtual',
+    },
+  },
+};
 
 vi.mock('next/navigation', () => ({
   useParams: vi.fn(),
@@ -14,7 +25,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('../../app/lib/i18n/context', () => ({
   useLang: () => ({
     lang: mockLanguage.lang,
-    t: (section: keyof typeof translations.es) => translations[mockLanguage.lang][section],
+    t: (section: keyof typeof translations.es) => testTranslations[mockLanguage.lang][section],
   }),
 }));
 
@@ -50,7 +61,7 @@ describe('WidgetPage timezone behavior', () => {
           diaSemana: 0,
           horaInicio: '10:00',
           horaFin: '12:00',
-          modalidad: 'PRESENCIAL',
+          modalidad: 'AMBOS',
           activo: true,
           lugarAtencion: 'Consultorio 1',
         },
@@ -104,6 +115,8 @@ describe('WidgetPage timezone behavior', () => {
     expect(screen.getByText('Date')).toBeInTheDocument();
     expect(screen.getByText('Time')).toBeInTheDocument();
     expect(screen.getByText('Account')).toBeInTheDocument();
+    expect(screen.getByText('Shared in person')).toBeInTheDocument();
+    expect(screen.getByText('Shared virtual')).toBeInTheDocument();
     expect(screen.getByText(/Select a day to see available times/i)).toBeInTheDocument();
   });
 });

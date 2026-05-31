@@ -1916,6 +1916,11 @@ const translations = {
       VIRTUAL: 'Virtual',
       AMBOS: 'Ambos',
     },
+    modalityShort: {
+      PRESENCIAL: 'PRE',
+      VIRTUAL: 'VIR',
+      AMBOS: 'AMB',
+    },
     days: {
       0: 'Domingo',
       1: 'Lunes',
@@ -3839,6 +3844,11 @@ waitlistDesc: "We'll notify you when a slot becomes available",
       PRESENCIAL: 'In person',
       VIRTUAL: 'Virtual',
       AMBOS: 'Both',
+    },
+    modalityShort: {
+      PRESENCIAL: 'IN',
+      VIRTUAL: 'VID',
+      AMBOS: 'BOTH',
     },
     days: {
       0: 'Sunday',

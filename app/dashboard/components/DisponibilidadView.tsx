@@ -23,7 +23,7 @@ export default function DisponibilidadView({
 }) {
   const { t, lang } = useLang();
   const d = t('dashboard');
-  const h = t('home');
+  const modality = t('modality');
 
   const [nuevoBloqueo, setNuevoBloqueo] = useState({
     fechaInicio: '',
@@ -117,7 +117,7 @@ export default function DisponibilidadView({
                 <span>{disp.horaInicio} - {disp.horaFin}</span>
               </div>
               <span className={`ml-1 badge ${disp.modalidad === 'VIRTUAL' ? 'badge-blue' : disp.modalidad === 'PRESENCIAL' ? 'badge-green' : 'badge-purple'}`}>
-                {disp.modalidad === 'VIRTUAL' ? h.virtual : disp.modalidad === 'PRESENCIAL' ? h.inPerson : disp.modalidad}
+                {disp.modalidad === 'VIRTUAL' ? modality.VIRTUAL : disp.modalidad === 'PRESENCIAL' ? modality.PRESENCIAL : modality.AMBOS}
               </span>
               {!multipleLocations && disp.lugarAtencion && (
                 <span className="flex items-center gap-1 text-xs text-slate-500 truncate max-w-[180px]">
@@ -196,8 +196,8 @@ export default function DisponibilidadView({
                 onChange={(e) => setNuevaDisp({ ...nuevaDisp, modalidad: e.target.value as any })}
                 className="field-select"
               >
-                <option value="PRESENCIAL">{h.inPerson}</option>
-                <option value="VIRTUAL">{h.virtual}</option>
+                <option value="PRESENCIAL">{modality.PRESENCIAL}</option>
+                <option value="VIRTUAL">{modality.VIRTUAL}</option>
               </select>
             </div>
           </div>

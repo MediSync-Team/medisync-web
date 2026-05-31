@@ -16,6 +16,7 @@ interface ProfCardProps {
 export default function ProfCard({ prof, showDisponible = false }: ProfCardProps) {
   const { t, lang } = useLang();
   const h = t('home');
+  const modality = t('modality');
   const locale = getLocale(lang);
 
   const modalidades = [...new Set(prof.disponibilidades?.map((d) => d.modalidad) ?? [])];
@@ -66,12 +67,12 @@ export default function ProfCard({ prof, showDisponible = false }: ProfCardProps
         <div className="flex gap-1.5 mt-3">
           {tienePresencial && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 rounded-full text-[11px] font-medium">
-              <BuildingIcon size={12} /> {h.inPerson}
+              <BuildingIcon size={12} /> {modality.PRESENCIAL}
             </span>
           )}
           {tieneVirtual && (
             <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full text-[11px] font-medium">
-              <VideoIcon size={12} /> {h.virtual}
+              <VideoIcon size={12} /> {modality.VIRTUAL}
             </span>
           )}
         </div>

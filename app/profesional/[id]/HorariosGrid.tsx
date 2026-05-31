@@ -13,6 +13,7 @@ type Disponibilidad = {
 export default function HorariosGrid({ disponibilidades }: { disponibilidades: Disponibilidad[] }) {
   const { t } = useLang();
   const p = t('professional');
+  const modalityShort = t('modalityShort');
 
   type Block = { horaInicio: string; horaFin: string; modalidad: string };
   const byDay = new Map<number, Block[]>();
@@ -47,7 +48,7 @@ export default function HorariosGrid({ disponibilidades }: { disponibilidades: D
                 >
                   {b.horaInicio}&ndash;{b.horaFin}
                   <span className="opacity-60 text-[10px]">
-                    {b.modalidad === 'VIRTUAL' ? 'VIR' : b.modalidad === 'AMBOS' ? 'AMB' : 'PRE'}
+                    {b.modalidad === 'VIRTUAL' ? modalityShort.VIRTUAL : b.modalidad === 'AMBOS' ? modalityShort.AMBOS : modalityShort.PRESENCIAL}
                   </span>
                 </span>
               ))}

@@ -28,13 +28,14 @@ export default function ProfesionalPage() {
   const { t, lang } = useLang();
   const h = t('home');
   const p = t('professional');
+  const modalityLabels = t('modality');
   const dateLocale = getLocale(lang);
   const formatBookingDate = (date: Date, options: Intl.DateTimeFormatOptions) =>
     date.toLocaleDateString(dateLocale, options);
   const formatPrice = (value: number) =>
     Number(value).toLocaleString(dateLocale);
   const modalityText = (value: 'PRESENCIAL' | 'VIRTUAL') =>
-    value === 'VIRTUAL' ? h.status.virtual : h.status.presencial;
+    value === 'VIRTUAL' ? modalityLabels.VIRTUAL : modalityLabels.PRESENCIAL;
   const specialtyName = (name?: string | null) => translateSpecialtyName(name ?? '', lang);
   const [profesional, setProfesional] = useState<Profesional | null>(null);
   const [loading, setLoading] = useState(true);
@@ -606,8 +607,8 @@ export default function ProfesionalPage() {
                 <p className="field-label mb-2">{p.appointmentType}</p>
                 <div className="flex gap-3">
                   {[
-                    { value: 'PRESENCIAL' as const, icon: <BuildingIcon size={14} />, label: h.status.presencial },
-                    { value: 'VIRTUAL' as const, icon: <VideoIcon size={14} />, label: h.status.virtual },
+                    { value: 'PRESENCIAL' as const, icon: <BuildingIcon size={14} />, label: modalityLabels.PRESENCIAL },
+                    { value: 'VIRTUAL' as const, icon: <VideoIcon size={14} />, label: modalityLabels.VIRTUAL },
                   ].map(({ value, icon, label }) => (
                     <label key={value} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 cursor-pointer flex-1 justify-center font-medium text-sm transition-all ${
                       modalidad === value
@@ -891,7 +892,7 @@ function GuestConfirmacion({
 }) {
   const { t, lang } = useLang();
   const p = t('professional');
-  const h = t('home');
+  const modalityLabels = t('modality');
   const dateLocale = getLocale(lang);
   const specialtyName = (name?: string | null) => translateSpecialtyName(name ?? '', lang);
   const fechaStr = formatClinicInstantDate(turno.fechaHora, dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -946,7 +947,7 @@ function GuestConfirmacion({
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.modalityLabel}</span>
             <span className={`badge ${modalidad === 'VIRTUAL' ? 'badge-blue' : 'badge-gray'}`}>
-              {modalidad === 'VIRTUAL' ? h.status.virtual : h.status.presencial}
+              {modalidad === 'VIRTUAL' ? modalityLabels.VIRTUAL : modalityLabels.PRESENCIAL}
             </span>
           </div>
         </div>
@@ -1006,7 +1007,7 @@ function ConfirmacionTurno({
 }) {
   const { t, lang } = useLang();
   const p = t('professional');
-  const h = t('home');
+  const modalityLabels = t('modality');
   const dateLocale = getLocale(lang);
   const specialtyName = (name?: string | null) => translateSpecialtyName(name ?? '', lang);
   const fechaStr = formatClinicInstantDate(turno.fechaHora, dateLocale, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
@@ -1054,7 +1055,7 @@ function ConfirmacionTurno({
           <div className="flex items-center gap-2 text-sm">
             <span className="text-slate-400 dark:text-slate-500 w-24 shrink-0">{p.modalityLabel}</span>
             <span className={`badge ${modalidad === 'VIRTUAL' ? 'badge-blue' : 'badge-gray'}`}>
-              {modalidad === 'VIRTUAL' ? h.status.virtual : h.status.presencial}
+              {modalidad === 'VIRTUAL' ? modalityLabels.VIRTUAL : modalityLabels.PRESENCIAL}
             </span>
           </div>
           {(lugarAtencion || profesional.lugarAtencion) && modalidad === 'PRESENCIAL' && (

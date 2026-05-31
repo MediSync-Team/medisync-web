@@ -17,6 +17,7 @@ describe('professional page day labels', () => {
         disponibilidades={[
           { diaSemana: 0, horaInicio: '09:00', horaFin: '10:00', modalidad: 'VIRTUAL' },
           { diaSemana: 1, horaInicio: '10:00', horaFin: '11:00', modalidad: 'PRESENCIAL' },
+          { diaSemana: 1, horaInicio: '11:00', horaFin: '12:00', modalidad: 'AMBOS' },
         ]}
       />
     );
@@ -26,5 +27,11 @@ describe('professional page day labels', () => {
     expect(screen.getByText('Mon')).toBeInTheDocument();
     expect(screen.queryByText('Dom')).not.toBeInTheDocument();
     expect(screen.queryByText('Lun')).not.toBeInTheDocument();
+    expect(screen.getByText('VID')).toBeInTheDocument();
+    expect(screen.getByText('IN')).toBeInTheDocument();
+    expect(screen.getByText('BOTH')).toBeInTheDocument();
+    expect(screen.queryByText('VIR')).not.toBeInTheDocument();
+    expect(screen.queryByText('PRE')).not.toBeInTheDocument();
+    expect(screen.queryByText('AMB')).not.toBeInTheDocument();
   });
 });

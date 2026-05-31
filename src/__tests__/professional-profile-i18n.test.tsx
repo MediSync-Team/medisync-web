@@ -5,6 +5,23 @@ import ProfesionalPage from '../../app/profesional/[id]/page';
 import { api } from '../../app/lib/api';
 import translations from '../../app/lib/i18n/translations';
 
+const englishTranslations = {
+  ...translations.en,
+  home: {
+    ...translations.en.home,
+    status: {
+      ...translations.en.home.status,
+      presencial: 'Legacy in person',
+      virtual: 'Legacy virtual',
+    },
+  },
+  modality: {
+    ...translations.en.modality,
+    PRESENCIAL: 'Shared in person',
+    VIRTUAL: 'Shared virtual',
+  },
+};
+
 vi.mock('next/navigation', () => ({
   useParams: vi.fn(),
   useRouter: () => ({ push: vi.fn(), back: vi.fn() }),
@@ -13,7 +30,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('../../app/lib/i18n/context', () => ({
   useLang: () => ({
     lang: 'en',
-    t: (section: keyof typeof translations.en) => translations.en[section],
+    t: (section: keyof typeof translations.en) => englishTranslations[section],
   }),
 }));
 
@@ -122,6 +139,10 @@ describe('professional profile page i18n', () => {
     expect(screen.getByRole('button', { name: '← Previous' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next →' })).toBeInTheDocument();
     expect(screen.getByText('January 15, 2026')).toBeInTheDocument();
+    expect(screen.getByText('Shared in person')).toBeInTheDocument();
+    expect(screen.getByText('Shared virtual')).toBeInTheDocument();
+    expect(screen.queryByText('Legacy in person')).not.toBeInTheDocument();
+    expect(screen.queryByText('Legacy virtual')).not.toBeInTheDocument();
     expect(screen.queryByText(/Calificaciones|reseñas|Anteriores|Siguientes|enero/i)).not.toBeInTheDocument();
   });
 });

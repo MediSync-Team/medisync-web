@@ -30,6 +30,7 @@ export default function CalendarioView({
   const d = t('dashboard');
   const h = t('home');
   const status = t('status');
+  const modality = t('modality');
   const calendar = d.calendarView;
   const hoy = typeof window !== 'undefined' ? formatClinicDateKey(new Date()) : '';
 
@@ -224,8 +225,8 @@ export default function CalendarioView({
         </select>
         <select value={agendaModalidad} onChange={(e) => setAgendaModalidad(e.target.value as any)} className="field-select" aria-label={calendar.filterModalityAria}>
           <option value="TODAS">{h.allModalities}</option>
-          <option value="PRESENCIAL">{h.inPerson}</option>
-          <option value="VIRTUAL">{h.virtual}</option>
+          <option value="PRESENCIAL">{modality.PRESENCIAL}</option>
+          <option value="VIRTUAL">{modality.VIRTUAL}</option>
         </select>
         <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-lg px-3 bg-white dark:bg-slate-700">
           <input type="checkbox" checked={agendaSoloRiesgo} onChange={(e) => setAgendaSoloRiesgo(e.target.checked)} />
@@ -268,7 +269,7 @@ export default function CalendarioView({
                       <BuildingIcon size={12} className="text-slate-400" />
                     )}
                     <span className="text-xs text-slate-500">
-                      {turno.modalidad === 'VIRTUAL' ? h.virtual : h.inPerson}
+                      {turno.modalidad === 'VIRTUAL' ? modality.VIRTUAL : modality.PRESENCIAL}
                     </span>
                     {turno.modalidad === 'PRESENCIAL' && turno.lugarAtencion && (
                       <span className="flex items-center gap-0.5 text-xs text-slate-400 truncate max-w-[160px]">

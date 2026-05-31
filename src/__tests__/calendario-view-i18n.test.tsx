@@ -3,10 +3,24 @@ import { describe, expect, it, vi } from 'vitest';
 import CalendarioView from '../../app/dashboard/components/CalendarioView';
 import translations from '../../app/lib/i18n/translations';
 
+const englishTranslations = {
+  ...translations.en,
+  home: {
+    ...translations.en.home,
+    inPerson: 'Legacy in person',
+    virtual: 'Legacy virtual',
+  },
+  modality: {
+    ...translations.en.modality,
+    PRESENCIAL: 'Shared in person',
+    VIRTUAL: 'Shared virtual',
+  },
+};
+
 vi.mock('../../app/lib/i18n/context', () => ({
   useLang: () => ({
     lang: 'en',
-    t: (section: keyof typeof translations.en) => translations.en[section],
+    t: (section: keyof typeof translations.en) => englishTranslations[section],
   }),
 }));
 
@@ -45,6 +59,8 @@ describe('CalendarioView i18n', () => {
     expect(screen.getByRole('textbox', { name: 'Search patient in schedule' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Filter by status' })).toBeInTheDocument();
     expect(screen.getByRole('combobox', { name: 'Filter by modality' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Shared in person' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Shared virtual' })).toBeInTheDocument();
   });
 
   it('uses localized anonymous-patient fallback for search without changing rendered no-account label', () => {
@@ -56,6 +72,8 @@ describe('CalendarioView i18n', () => {
     );
 
     expect(screen.getByText('No account')).toBeInTheDocument();
+    expect(screen.getAllByText('Shared virtual').length).toBeGreaterThan(0);
+    expect(screen.queryByText('Legacy virtual')).not.toBeInTheDocument();
     expect(screen.queryByText('No appointments for this day')).not.toBeInTheDocument();
   });
 });

@@ -4,10 +4,24 @@ import DisponibilidadView from '../../app/dashboard/components/DisponibilidadVie
 import { api } from '../../app/lib/api';
 import translations from '../../app/lib/i18n/translations';
 
+const englishTranslations = {
+  ...translations.en,
+  home: {
+    ...translations.en.home,
+    inPerson: 'Legacy in person',
+    virtual: 'Legacy virtual',
+  },
+  modality: {
+    ...translations.en.modality,
+    PRESENCIAL: 'Shared in person',
+    VIRTUAL: 'Shared virtual',
+  },
+};
+
 vi.mock('../../app/lib/i18n/context', () => ({
   useLang: () => ({
     lang: 'en',
-    t: (section: keyof typeof translations.en) => translations.en[section],
+    t: (section: keyof typeof translations.en) => englishTranslations[section],
   }),
 }));
 
@@ -128,5 +142,14 @@ describe('DisponibilidadView', () => {
 
     expect(screen.getAllByTitle('Delete schedule')).toHaveLength(3);
     expect(screen.getByText('No location assigned')).toBeInTheDocument();
+    expect(screen.getAllByText('Shared in person').length).toBeGreaterThanOrEqual(3);
+    expect(screen.queryByText('Legacy in person')).not.toBeInTheDocument();
+  });
+
+  it('uses shared modality labels for availability select options', () => {
+    render(<DisponibilidadView {...defaultProps} />);
+
+    expect(screen.getByRole('option', { name: 'Shared in person' })).toBeInTheDocument();
+    expect(screen.getByRole('option', { name: 'Shared virtual' })).toBeInTheDocument();
   });
 });
