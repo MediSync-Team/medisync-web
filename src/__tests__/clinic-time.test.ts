@@ -13,6 +13,7 @@ import {
   formatClinicInstantTime,
   formatClinicDateKey,
   getClinicCurrentMonthRange,
+  getClinicMonthGridDateKeys,
   getClinicMonthRangeFromDateKey,
   getClinicMonthFetchBounds,
   isSameClinicCalendarDay,
@@ -62,6 +63,7 @@ describe('frontend clinic-time helpers', () => {
     vi.useFakeTimers();
     try {
       vi.setSystemTime(new Date('2026-06-01T02:30:00.000Z'));
+      expect(todayInputValue()).toBe('2026-05-31');
       expect(getClinicCurrentMonthRange()).toEqual({ desde: '2026-05-01', hasta: '2026-05-31' });
 
       vi.setSystemTime(new Date('2026-06-15T15:00:00.000Z'));
@@ -75,6 +77,15 @@ describe('frontend clinic-time helpers', () => {
     expect(getClinicMonthRangeFromDateKey('2024-02-10')).toEqual({ desde: '2024-02-01', hasta: '2024-02-29' });
     expect(getClinicMonthRangeFromDateKey('2026-02-10')).toEqual({ desde: '2026-02-01', hasta: '2026-02-28' });
     expect(getClinicMonthRangeFromDateKey('2026-12-31')).toEqual({ desde: '2026-12-01', hasta: '2026-12-31' });
+  });
+
+  it('builds Monday-first clinic month grids from date keys', () => {
+    const may2026 = getClinicMonthGridDateKeys(2026, 4);
+
+    expect(may2026[0]).toBe('2026-04-27');
+    expect(may2026).toContain('2026-05-31');
+    expect(may2026[may2026.length - 1]).toBe('2026-05-31');
+    expect(may2026).toHaveLength(35);
   });
 
   it('navigates clinic agenda date keys without browser-local Date math', () => {

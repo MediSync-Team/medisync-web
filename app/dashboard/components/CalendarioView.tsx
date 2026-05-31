@@ -5,14 +5,21 @@ import { useLang } from '../../lib/i18n/context';
 import { Turno } from '../../lib/api';
 import { CalendarIcon, VideoIcon, BuildingIcon, MapPinIcon, InfoIcon } from '../../components/icons';
 import { estadoBadge, estadoLabel, estadoCanceladoAusenteLabel, clinicalRiskBadge, getDaysShort } from '../../lib/utils';
-import { calendarDateKey, clinicDateKeyFromInstant, formatClinicDateKey, formatClinicInstantTime, getLocale } from '../../lib/date';
+import {
+  clinicDateKeyFromInstant,
+  formatClinicDateKeyForDisplay,
+  formatClinicInstantTime,
+  getClinicMonthGridDateKeys,
+  getLocale,
+  todayInputValue,
+} from '../../lib/date';
 
 export default function CalendarioView({
-  selectedDate, setSelectedDate, turnos: allTurnos, turnosDelDia, onSelectTurno,
+  selectedDateKey, setSelectedDateKey, turnos: allTurnos, turnosDelDia, onSelectTurno,
   agendaSearch, setAgendaSearch, agendaEstado, setAgendaEstado, agendaModalidad, setAgendaModalidad, agendaSoloRiesgo, setAgendaSoloRiesgo, onFetchMonth,
 }: {
-  selectedDate: Date;
-  setSelectedDate: (d: Date) => void;
+  selectedDateKey: string;
+  setSelectedDateKey: (dateKey: string) => void;
   turnos: Turno[];
   turnosDelDia: Turno[];
   onSelectTurno: (t: Turno) => void;
@@ -32,36 +39,32 @@ export default function CalendarioView({
   const status = t('status');
   const modality = t('modality');
   const calendar = d.calendarView;
-  const hoy = typeof window !== 'undefined' ? formatClinicDateKey(new Date()) : '';
-
-  const [calendarMonth, setCalendarMonth] = useState<Date>(() =>
-    new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1)
-  );
-
-  useEffect(() => {
-    const newMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-    if (newMonth.getTime() !== calendarMonth.getTime()) setCalendarMonth(newMonth);
-  }, [selectedDate]);
-
-  const navigateMonth = (delta: number) => {
-    const next = new Date(calendarMonth.getFullYear(), calendarMonth.getMonth() + delta, 1);
-    setCalendarMonth(next);
-    onFetchMonth(next.getFullYear(), next.getMonth());
+  const hoy = todayInputValue();
+  const selectedMonthParts = selectedDateKey.split('-').map(Number);
+  const selectedMonth = {
+    year: selectedMonthParts[0],
+    month: selectedMonthParts[1] - 1,
   };
 
-  const calendarGrid = useMemo(() => {
-    const year = calendarMonth.getFullYear();
-    const month = calendarMonth.getMonth();
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const startPad = (firstDay.getDay() + 6) % 7; // Mon = 0
-    const days: Date[] = [];
-    for (let i = startPad - 1; i >= 0; i--) days.push(new Date(year, month, -i));
-    for (let day = 1; day <= lastDay.getDate(); day++) days.push(new Date(year, month, day));
-    const remaining = days.length % 7 === 0 ? 0 : 7 - (days.length % 7);
-    for (let day = 1; day <= remaining; day++) days.push(new Date(year, month + 1, day));
-    return days;
-  }, [calendarMonth]);
+  const [calendarMonth, setCalendarMonth] = useState(() => selectedMonth);
+
+  useEffect(() => {
+    if (selectedMonth.year !== calendarMonth.year || selectedMonth.month !== calendarMonth.month) {
+      setCalendarMonth(selectedMonth);
+    }
+  }, [selectedDateKey]);
+
+  const navigateMonth = (delta: number) => {
+    const next = new Date(Date.UTC(calendarMonth.year, calendarMonth.month + delta, 1, 12, 0, 0, 0));
+    const nextMonth = { year: next.getUTCFullYear(), month: next.getUTCMonth() };
+    setCalendarMonth(nextMonth);
+    onFetchMonth(nextMonth.year, nextMonth.month);
+  };
+
+  const calendarGrid = useMemo(
+    () => getClinicMonthGridDateKeys(calendarMonth.year, calendarMonth.month),
+    [calendarMonth]
+  );
 
   const turnosByDay = useMemo(() => {
     const map = new Map<string, Turno[]>();
@@ -111,7 +114,11 @@ export default function CalendarioView({
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
           <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 capitalize">
-            {calendarMonth.toLocaleDateString(getLocale(lang), { month: 'long', year: 'numeric' })}
+            {formatClinicDateKeyForDisplay(
+              `${calendarMonth.year}-${String(calendarMonth.month + 1).padStart(2, '0')}-01`,
+              getLocale(lang),
+              { month: 'long', year: 'numeric' }
+            )}
           </span>
           <button
             onClick={() => navigateMonth(1)}
@@ -133,11 +140,11 @@ export default function CalendarioView({
 
         {/* Day cells */}
         <div className="grid grid-cols-7 gap-0.5">
-          {calendarGrid.map((date, idx) => {
-            const isCurrentMonth = date.getMonth() === calendarMonth.getMonth();
-            const dayKey = calendarDateKey(date);
+          {calendarGrid.map((dayKey, idx) => {
+            const [, month, day] = dayKey.split('-').map(Number);
+            const isCurrentMonth = month - 1 === calendarMonth.month;
             const isToday = dayKey === hoy;
-            const isSelected = dayKey === calendarDateKey(selectedDate);
+            const isSelected = dayKey === selectedDateKey;
             const dayTurnos = isCurrentMonth ? (turnosByDay.get(dayKey) || []) : [];
             const MAX_DOTS = 3;
             const visibleDots = dayTurnos.slice(0, MAX_DOTS);
@@ -146,7 +153,7 @@ export default function CalendarioView({
             return (
               <button
                 key={idx}
-                onClick={() => { if (isCurrentMonth) setSelectedDate(new Date(date)); }}
+                onClick={() => { if (isCurrentMonth) setSelectedDateKey(dayKey); }}
                 disabled={!isCurrentMonth}
                 className={[
                   'flex flex-col items-center justify-start pt-1.5 pb-1.5 rounded-lg min-h-[52px] transition-colors',
@@ -161,7 +168,7 @@ export default function CalendarioView({
                   isToday ? 'text-blue-700 dark:text-blue-300' :
                   'text-slate-700 dark:text-slate-200'
                 }`}>
-                  {date.getDate()}
+                  {day}
                 </span>
                 {dayTurnos.length > 0 && (
                   <div className="flex gap-0.5 mt-1.5 flex-wrap justify-center px-1">
@@ -202,7 +209,7 @@ export default function CalendarioView({
       {/* Day header */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-slate-800 dark:text-slate-100 capitalize">
-          {selectedDate.toLocaleDateString(getLocale(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
+          {formatClinicDateKeyForDisplay(selectedDateKey, getLocale(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
         </h3>
         <span className="badge badge-gray">{filteredTurnos.length}/{turnosDelDia.length} {d.appointments.toLowerCase()}</span>
       </div>

@@ -158,6 +158,17 @@ export function getClinicMonthRangeFromDateKey(dateKey: string): { desde: string
   };
 }
 
+export function getClinicMonthGridDateKeys(year: number, month: number): string[] {
+  const firstDay = new Date(Date.UTC(year, month, 1, 12, 0, 0, 0));
+  const firstDayKey = `${firstDay.getUTCFullYear()}-${String(firstDay.getUTCMonth() + 1).padStart(2, '0')}-01`;
+  const startPad = (firstDay.getUTCDay() + 6) % 7; // Mon = 0
+  const startKey = addDaysToClinicDateKey(firstDayKey, -startPad);
+  const lastDayOfMonth = new Date(Date.UTC(year, month + 1, 0, 12, 0, 0, 0)).getUTCDate();
+  const totalDays = Math.ceil((startPad + lastDayOfMonth) / 7) * 7;
+
+  return Array.from({ length: totalDays }, (_, i) => addDaysToClinicDateKey(startKey, i));
+}
+
 export function getClinicCurrentMonthRange(): { desde: string; hasta: string } {
   return getClinicMonthRangeFromDateKey(todayInputValue());
 }

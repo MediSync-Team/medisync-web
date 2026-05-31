@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Cupon, TipoDescuento, SuscripcionEstado } from '../lib/api';
-import { clinicDateKeyFromInstant, formatClinicDateKey, formatClinicInstantTime, getClinicMonthFetchBounds, getLocale, isSameClinicCalendarDay } from '../lib/date';
+import { clinicDateKeyFromInstant, formatClinicDateKey, formatClinicInstantTime, getClinicMonthFetchBounds, getLocale, todayInputValue } from '../lib/date';
 import StatsPanel from '../components/StatsPanel';
 import ProfileModal from '../components/ProfileModal';
 import OnboardingTour from '../components/OnboardingTour';
@@ -54,7 +54,7 @@ export default function ProfesionalDashboard() {
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas' | 'cupones' | 'plan' | 'auditoria'>('calendario');
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDateKey, setSelectedDateKey] = useState(() => todayInputValue());
   const [turnosDelDia, setTurnosDelDia] = useState<Turno[]>([]);
   const [nuevaDisp, setNuevaDisp] = useState({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL' as const, lugarAtencion: '' });
   const [slotActual, setSlotActual] = useState<Turno | null>(null);
@@ -89,8 +89,6 @@ export default function ProfesionalDashboard() {
   const [redirectingToMP, setRedirectingToMP] = useState(false);
   const loadedMonths = useRef<Set<string>>(new Set());
 
-  useEffect(() => { if (!selectedDate) setSelectedDate(new Date()); }, [selectedDate]);
-
   useEffect(() => {
     if (!authLoading && !user) { router.push('/login'); return; }
     if (!authLoading && user?.rol === 'ADMIN') { router.push('/dashboard/admin'); return; }
@@ -105,10 +103,9 @@ export default function ProfesionalDashboard() {
   }, [user, authLoading, router]);
 
   useEffect(() => {
-    if (!selectedDate) return;
-    const delDia = turnos.filter(t => isSameClinicCalendarDay(t.fechaHora, selectedDate));
+    const delDia = turnos.filter(t => clinicDateKeyFromInstant(t.fechaHora) === selectedDateKey);
     setTurnosDelDia(delDia);
-  }, [turnos, selectedDate]);
+  }, [turnos, selectedDateKey]);
 
   useEffect(() => {
     if (activeTab === 'stats') loadStats();
@@ -136,8 +133,8 @@ export default function ProfesionalDashboard() {
       ]);
       setTurnos(turnosData.turnos);
       [-1, 0, 1].forEach(delta => {
-        const d = new Date(clinicYear, clinicMonth - 1 + delta, 1);
-        loadedMonths.current.add(`${d.getFullYear()}-${d.getMonth()}`);
+        const d = new Date(Date.UTC(clinicYear, clinicMonth - 1 + delta, 1, 12, 0, 0, 0));
+        loadedMonths.current.add(`${d.getUTCFullYear()}-${d.getUTCMonth()}`);
       });
       const disps = dispData.disponibilidades || [];
       setDisponibilidades(disps);
@@ -235,7 +232,7 @@ export default function ProfesionalDashboard() {
   if (!user?.profesional) return null;
 
   const hoyTurnos = turnos.filter(t =>
-    isSameClinicCalendarDay(t.fechaHora, new Date()) && t.estado !== 'CANCELADO'
+    clinicDateKeyFromInstant(t.fechaHora) === todayInputValue() && t.estado !== 'CANCELADO'
   );
   const clinicMonthPrefix = formatClinicDateKey(new Date()).slice(0, 7); // "YYYY-MM"
   const turnosMes = turnos.filter(t =>
@@ -559,8 +556,8 @@ export default function ProfesionalDashboard() {
               <div className="p-6">
                 {activeTab === 'calendario' && (
                   <CalendarioView
-                    selectedDate={selectedDate ?? new Date()}
-                    setSelectedDate={setSelectedDate}
+                    selectedDateKey={selectedDateKey}
+                    setSelectedDateKey={setSelectedDateKey}
                     turnos={turnos}
                     turnosDelDia={turnosDelDia}
                     onSelectTurno={setSlotActual}
