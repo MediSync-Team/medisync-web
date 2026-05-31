@@ -19,6 +19,10 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
     if (stored && stored in translations) setLangState(stored);
   }, []);
 
+  useEffect(() => {
+    document.documentElement.lang = lang;
+  }, [lang]);
+
   const setLang = useCallback((l: Lang) => {
     setLangState(l);
     localStorage.setItem('medisync-lang', l);

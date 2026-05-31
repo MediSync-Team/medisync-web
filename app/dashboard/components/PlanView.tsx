@@ -4,6 +4,16 @@ import { useLang } from '../../lib/i18n/context';
 import { SuscripcionEstado } from '../../lib/api';
 import { getLocale } from '../../lib/date';
 
+const PLAN_PRO_PRICE_ARS = 20000;
+
+function formatPlanPrice(lang: string) {
+  return new Intl.NumberFormat(getLocale(lang), {
+    style: 'currency',
+    currency: 'ARS',
+    maximumFractionDigits: 0,
+  }).format(PLAN_PRO_PRICE_ARS);
+}
+
 export default function PlanView({
   suscripcion,
   loading,
@@ -20,6 +30,7 @@ export default function PlanView({
   const { lang, t } = useLang();
   const c = t('common');
   const d = t('dashboard');
+  const planPrice = formatPlanPrice(lang);
   if (loading) {
     return (
       <div className="space-y-4">
@@ -36,6 +47,8 @@ export default function PlanView({
 
   const isPro = suscripcion.plan === 'PRO';
   const turnosRemainingTemplate = d.turnosRemaining;
+  const updateToProLabel = d.updateToPro.replace('{{price}}', planPrice);
+  const planMonthlyPriceLabel = d.planMonthlyPrice.replace('{{price}}', planPrice);
 
   return (
     <div className="max-w-2xl space-y-6">
@@ -87,7 +100,7 @@ export default function PlanView({
           <div className="text-2xl font-bold text-emerald-700 mt-2">
             {new Date(suscripcion.planVenceAt).toLocaleDateString(getLocale(lang))}
           </div>
-          <p className="text-xs text-emerald-700 mt-2">$20.000 ARS / mes</p>
+          <p className="text-xs text-emerald-700 mt-2">{planMonthlyPriceLabel}</p>
         </div>
       )}
 
@@ -99,7 +112,7 @@ export default function PlanView({
             disabled={redirecting}
             className="btn btn-primary flex-1"
           >
-            {redirecting ? d.redirecting : d.updateToPro}
+            {redirecting ? d.redirecting : updateToProLabel}
           </button>
         )}
 

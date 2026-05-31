@@ -51,7 +51,7 @@ describe('PlanView i18n', () => {
     expect(screen.getByText('Statistics')).toBeInTheDocument();
     expect(screen.getByText('Medical history')).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole('button', { name: 'Upgrade to Pro - $4,990/month' }));
+    fireEvent.click(screen.getByRole('button', { name: /Upgrade to Pro - ARS\s*20,000\/month/ }));
     expect(onIniciarSuscripcion).toHaveBeenCalled();
   });
 
@@ -72,6 +72,7 @@ describe('PlanView i18n', () => {
     expect(screen.getByText('Pro')).toBeInTheDocument();
     expect(screen.getByText('Unlimited appointments + advanced statistics')).toBeInTheDocument();
     expect(screen.getByText('Next billing date')).toBeInTheDocument();
+    expect(screen.getByText(/ARS\s*20,000 \/ month/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Cancel subscription' }));
     expect(onCancelarSuscripcion).toHaveBeenCalled();

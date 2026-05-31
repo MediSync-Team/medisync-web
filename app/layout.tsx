@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "MediSync - Gestión médica integral",
-  description: "Plataforma SaaS para profesionales de la salud independientes",
+  title: "MediSync",
+  description: "Medical scheduling and practice management platform for healthcare professionals. Plataforma de gestión médica para profesionales de la salud.",
 };
 
 export default function RootLayout({
