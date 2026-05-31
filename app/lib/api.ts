@@ -1,5 +1,34 @@
 export const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api').replace(/\/+$/, '');
 
+export type ApiErrorLanguage = 'es' | 'en';
+
+let apiErrorLanguage: ApiErrorLanguage = 'es';
+
+const API_FALLBACK_ERRORS: Record<ApiErrorLanguage, {
+  invalidJson: string;
+  unknownError: string;
+  networkError: string;
+}> = {
+  es: {
+    invalidJson: 'Respuesta inválida del servidor',
+    unknownError: 'Error desconocido',
+    networkError: 'No se pudo conectar con el servidor. Verificá la URL del API y CORS.',
+  },
+  en: {
+    invalidJson: 'Invalid server response',
+    unknownError: 'Unknown error',
+    networkError: 'Could not connect to the server. Check the API URL and CORS.',
+  },
+};
+
+export function setApiLanguage(lang: ApiErrorLanguage) {
+  apiErrorLanguage = lang;
+}
+
+function apiFallbackError(key: keyof typeof API_FALLBACK_ERRORS.es) {
+  return API_FALLBACK_ERRORS[apiErrorLanguage][key];
+}
+
 interface ApiResponse<T> {
   success: boolean;
   data?: T;
@@ -23,7 +52,7 @@ async function parseApiResponse<T>(response: Response): Promise<ApiResponse<T> |
       success: false,
       error: {
         code: 'INVALID_JSON',
-        message: 'Respuesta inválida del servidor',
+        message: apiFallbackError('invalidJson'),
       },
     };
   }
@@ -56,13 +85,13 @@ export async function fetchApi<T>(
     }
 
     if (!data?.success) {
-      throw new Error(data?.error?.message || 'Error desconocido');
+      throw new Error(data?.error?.message || apiFallbackError('unknownError'));
     }
 
     return data.data as T;
   } catch (error) {
     if (error instanceof TypeError) {
-      throw new Error('No se pudo conectar con el servidor. Verificá la URL del API y CORS.');
+      throw new Error(apiFallbackError('networkError'));
     }
     throw error;
   }

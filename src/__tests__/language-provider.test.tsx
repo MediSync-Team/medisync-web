@@ -1,5 +1,6 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as apiModule from '../../app/lib/api';
 import { LanguageProvider, useLang } from '../../app/lib/i18n/context';
 
 function LanguageProbe() {
@@ -59,6 +60,7 @@ describe('LanguageProvider document language sync', () => {
   });
 
   it('updates the document language from stored English preference', async () => {
+    const setApiLanguageSpy = vi.spyOn(apiModule, 'setApiLanguage');
     localStorage.setItem('medisync-lang', 'en');
 
     render(
@@ -70,10 +72,13 @@ describe('LanguageProvider document language sync', () => {
     await waitFor(() => {
       expect(screen.getByTestId('lang')).toHaveTextContent('en');
       expect(document.documentElement.lang).toBe('en');
+      expect(setApiLanguageSpy).toHaveBeenLastCalledWith('en');
     });
   });
 
   it('updates localStorage and document language when language changes', async () => {
+    const setApiLanguageSpy = vi.spyOn(apiModule, 'setApiLanguage');
+
     render(
       <LanguageProvider>
         <LanguageProbe />
@@ -86,6 +91,7 @@ describe('LanguageProvider document language sync', () => {
 
     expect(localStorage.getItem('medisync-lang')).toBe('en');
     expect(document.documentElement.lang).toBe('en');
+    expect(setApiLanguageSpy).toHaveBeenLastCalledWith('en');
     expect(screen.getByTestId('lang')).toHaveTextContent('en');
   });
 });

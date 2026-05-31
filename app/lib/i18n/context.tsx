@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import translations, { Lang, Translations } from './translations';
+import { setApiLanguage } from '../api';
 
 interface LanguageContextType {
   lang: Lang;
@@ -21,6 +22,7 @@ export function LanguageProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     document.documentElement.lang = lang;
+    setApiLanguage(lang);
   }, [lang]);
 
   const setLang = useCallback((l: Lang) => {

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { api, clinicasApi, fetchApi } from '../../app/lib/api';
+import { api, clinicasApi, fetchApi, setApiLanguage } from '../../app/lib/api';
 
 let localStorageStore: Record<string, string>;
 
@@ -20,6 +20,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  setApiLanguage('es');
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -104,6 +105,46 @@ describe('API Client', () => {
       })));
 
       await expect(fetchApi('/bad-json')).rejects.toThrow('Respuesta inválida del servidor');
+    });
+
+    it('localizes malformed JSON fallback errors in English', async () => {
+      setApiLanguage('en');
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('{', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })));
+
+      await expect(fetchApi('/bad-json')).rejects.toThrow('Invalid server response');
+    });
+
+    it('localizes unknown fallback errors in English', async () => {
+      setApiLanguage('en');
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('', {
+        status: 200,
+        headers: { 'content-type': 'application/json' },
+      })));
+
+      await expect(fetchApi('/empty-json')).rejects.toThrow('Unknown error');
+    });
+
+    it('localizes network fallback errors in English', async () => {
+      setApiLanguage('en');
+      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new TypeError('Failed to fetch')));
+
+      await expect(fetchApi('/network-error')).rejects.toThrow('Could not connect to the server. Check the API URL and CORS.');
+    });
+
+    it('keeps backend-provided error messages unchanged', async () => {
+      setApiLanguage('en');
+      vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
+        success: false,
+        error: { code: 'BACKEND_ERROR', message: 'El backend decidió este mensaje' },
+      }), {
+        status: 400,
+        headers: { 'content-type': 'application/json' },
+      })));
+
+      await expect(fetchApi('/backend-error')).rejects.toThrow('El backend decidió este mensaje');
     });
 
     it('adds authorization through the central API client', async () => {
