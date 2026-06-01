@@ -164,7 +164,7 @@ export default function HomePage() {
     ...(filters.modalidad ? [{ key: 'modalidad' as const, label: filters.modalidad === 'PRESENCIAL' ? h.inPerson : h.virtual }] : []),
     ...(filters.fecha ? [{ key: 'fecha' as const, label: `${h.date} ${formatClinicDateKeyForDisplay(filters.fecha, getLocale(lang), { day: 'numeric', month: 'short' })}` }] : []),
     ...(filters.orderBy ? [{ key: 'orderBy' as const, label: { precio_asc: h.priceAsc, precio_desc: h.priceDesc, nombre_asc: h.nameAsc }[filters.orderBy] }] : []),
-    ...(filters.obraSocial ? [{ key: 'obraSocial' as const, label: `${h.obraSocial || 'Obra social'}: ${filters.obraSocial}` }] : []),
+    ...(filters.obraSocial ? [{ key: 'obraSocial' as const, label: `${h.obraSocial}: ${filters.obraSocial}` }] : []),
   ];
 
   return (
