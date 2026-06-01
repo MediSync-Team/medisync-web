@@ -8,6 +8,7 @@
 
 import type { HistoriaClinicaPaciente } from './api';
 import { formatClinicCurrentDate, formatClinicInstantDateTime } from './date';
+import { interpolate, PdfLanguageInput, resolvePdfI18n } from './pdf-i18n';
 
 interface ProfesionalInfo {
   nombre: string;
@@ -26,14 +27,14 @@ function esc(str: string | null | undefined): string {
     .replace(/"/g, '&quot;');
 }
 
-function fmtDate(iso: string | null | undefined, opts?: Intl.DateTimeFormatOptions): string {
+function fmtDate(iso: string | null | undefined, locale = 'es-AR', opts?: Intl.DateTimeFormatOptions): string {
   if (!iso) return '—';
-  return new Date(iso).toLocaleDateString('es-AR', opts ?? { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return new Date(iso).toLocaleDateString(locale, opts ?? { day: '2-digit', month: '2-digit', year: 'numeric' });
 }
 
-function fmtDateTime(iso: string | null | undefined): string {
+function fmtDateTime(iso: string | null | undefined, locale = 'es-AR'): string {
   if (!iso) return '—';
-  return formatClinicInstantDateTime(iso, 'es-AR', {
+  return formatClinicInstantDateTime(iso, locale, {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric',
@@ -42,14 +43,8 @@ function fmtDateTime(iso: string | null | undefined): string {
   });
 }
 
-function estadoLabel(estado: string): string {
-  return {
-    COMPLETADO: 'Completado',
-    RESERVADO:  'Reservado',
-    CONFIRMADO: 'Confirmado',
-    CANCELADO:  'Cancelado',
-    AUSENTE:    'Ausente',
-  }[estado] ?? estado;
+function estadoLabel(estado: string, labels: Record<string, string>): string {
+  return labels[estado] ?? estado;
 }
 
 function sectionRow(label: string, value: string | null | undefined): string {
@@ -64,30 +59,32 @@ function sectionRow(label: string, value: string | null | undefined): string {
 export function exportarHistoriaClinicaPDF(
   historia: HistoriaClinicaPaciente,
   profesional: ProfesionalInfo,
+  langInput: PdfLanguageInput = 'es',
 ): void {
+  const { lang, locale, pdf } = resolvePdfI18n(langInput);
   const { paciente, resumen, timeline } = historia;
-  const hoy = formatClinicCurrentDate('es-AR', { day: '2-digit', month: 'long', year: 'numeric' });
+  const hoy = formatClinicCurrentDate(locale, { day: '2-digit', month: 'long', year: 'numeric' });
 
   // -- Patient info section --------------------------------------------------
   const infoRows = [
-    sectionRow('Nombre', `${paciente.nombre} ${paciente.apellido}`),
+    sectionRow(pdf.clinicalRecord.name, `${paciente.nombre} ${paciente.apellido}`),
     sectionRow('DNI', paciente.dni),
-    sectionRow('Fecha de nacimiento', fmtDate(paciente.fechaNacimiento as string | undefined)),
-    sectionRow('Género', paciente.genero),
+    sectionRow(pdf.clinicalRecord.birthDate, fmtDate(paciente.fechaNacimiento as string | undefined, locale)),
+    sectionRow(pdf.clinicalRecord.gender, paciente.genero),
     sectionRow('Email', paciente.email),
-    sectionRow('Teléfono', paciente.telefono),
-    sectionRow('Obra social', paciente.obraSocial),
+    sectionRow(pdf.clinicalRecord.phone, paciente.telefono),
+    sectionRow(pdf.clinicalRecord.healthInsurance, paciente.obraSocial),
   ].join('');
 
   // -- Clinical antecedents --------------------------------------------------
   const antecedentesRows = [
-    sectionRow('Antecedentes personales',  paciente.antecedentesPersonales),
-    sectionRow('Antecedentes familiares',  paciente.antecedentesFamiliares),
-    sectionRow('Alergias',                 paciente.alergias),
-    sectionRow('Medicación actual',        paciente.medicacionActual),
-    sectionRow('Hábitos',                  paciente.habitos),
-    sectionRow('Diagnósticos previos',     paciente.diagnosticosPrevios),
-    sectionRow('Notas clínicas generales', paciente.notasClinicasGenerales),
+    sectionRow(pdf.clinicalRecord.personalHistory,  paciente.antecedentesPersonales),
+    sectionRow(pdf.clinicalRecord.familyHistory,  paciente.antecedentesFamiliares),
+    sectionRow(pdf.clinicalRecord.allergies,                 paciente.alergias),
+    sectionRow(pdf.clinicalRecord.currentMedication,        paciente.medicacionActual),
+    sectionRow(pdf.clinicalRecord.habits,                  paciente.habitos),
+    sectionRow(pdf.clinicalRecord.previousDiagnoses,     paciente.diagnosticosPrevios),
+    sectionRow(pdf.clinicalRecord.generalClinicalNotes, paciente.notasClinicasGenerales),
   ].join('');
 
   // -- Timeline -------------------------------------------------------------
@@ -96,18 +93,18 @@ export function exportarHistoriaClinicaPDF(
     .map((item, idx) => `
       <div class="consulta ${idx < timeline.length - 1 ? 'not-last' : ''}">
         <div class="consulta-header">
-          <span class="consulta-fecha">${fmtDateTime(item.fechaHora)}</span>
-          <span class="estado estado-${item.estado.toLowerCase()}">${estadoLabel(item.estado)}</span>
-          <span class="modalidad">${item.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}</span>
+          <span class="consulta-fecha">${fmtDateTime(item.fechaHora, locale)}</span>
+          <span class="estado estado-${item.estado.toLowerCase()}">${estadoLabel(item.estado, pdf.common.statuses)}</span>
+          <span class="modalidad">${item.modalidad === 'VIRTUAL' ? pdf.common.virtual : pdf.common.inPerson}</span>
         </div>
         ${item.evolucion?.contenido ? `
           <div class="evolucion">
-            <p class="evolucion-label">Evolución clínica</p>
+            <p class="evolucion-label">${pdf.clinicalRecord.clinicalEvolution}</p>
             <p class="evolucion-text">${esc(item.evolucion.contenido).replace(/\n/g, '<br>')}</p>
           </div>` : ''}
         ${item.archivos.length > 0 ? `
           <div class="archivos">
-            <span class="archivos-label">Archivos adjuntos:</span>
+            <span class="archivos-label">${pdf.clinicalRecord.attachedFiles}</span>
             ${item.archivos.map(a => `<span class="archivo-chip">${esc(a.nombreOriginal)}</span>`).join('')}
           </div>` : ''}
       </div>`)
@@ -115,10 +112,10 @@ export function exportarHistoriaClinicaPDF(
 
   // -- Full HTML document ----------------------------------------------------
   const html = `<!DOCTYPE html>
-<html lang="es">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8" />
-  <title>Historia Clínica — ${esc(paciente.nombre)} ${esc(paciente.apellido)}</title>
+  <title>${interpolate(pdf.clinicalRecord.browserTitle, { patient: `${esc(paciente.nombre)} ${esc(paciente.apellido)}` })}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -301,11 +298,11 @@ export function exportarHistoriaClinicaPDF(
   <div class="no-print" style="position:fixed;top:12px;right:12px;z-index:999;display:flex;gap:8px;">
     <button onclick="window.print()"
       style="background:#2563eb;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-size:11pt;font-weight:600;cursor:pointer;">
-      Imprimir / Guardar PDF
+      ${pdf.common.printSaveShort}
     </button>
     <button onclick="window.close()"
       style="background:#f1f5f9;color:#475569;border:1px solid #e2e8f0;border-radius:8px;padding:9px 16px;font-size:11pt;cursor:pointer;">
-      Cerrar
+      ${pdf.common.close}
     </button>
   </div>
 
@@ -315,20 +312,20 @@ export function exportarHistoriaClinicaPDF(
       <div class="header-logo">M</div>
       <div>
         <div class="header-name">MediSync</div>
-        <div class="header-sub">Plataforma de gestión médica</div>
+        <div class="header-sub">${pdf.clinicalRecord.platformSubtitle}</div>
       </div>
     </div>
     <div class="header-meta">
-      <div><strong>Profesional:</strong> Dr/a. ${esc(profesional.nombre)} ${esc(profesional.apellido)}</div>
-      ${profesional.especialidad ? `<div><strong>Especialidad:</strong> ${esc(profesional.especialidad)}</div>` : ''}
-      ${profesional.matricula ? `<div><strong>Matrícula:</strong> ${esc(profesional.matricula)}</div>` : ''}
-      ${profesional.lugarAtencion ? `<div><strong>Lugar:</strong> ${esc(profesional.lugarAtencion)}</div>` : ''}
-      <div><strong>Fecha:</strong> ${hoy}</div>
+      <div><strong>${pdf.common.doctor}:</strong> Dr/a. ${esc(profesional.nombre)} ${esc(profesional.apellido)}</div>
+      ${profesional.especialidad ? `<div><strong>${pdf.common.specialty}:</strong> ${esc(profesional.especialidad)}</div>` : ''}
+      ${profesional.matricula ? `<div><strong>${pdf.common.licenseAbbr}:</strong> ${esc(profesional.matricula)}</div>` : ''}
+      ${profesional.lugarAtencion ? `<div><strong>${pdf.common.location}:</strong> ${esc(profesional.lugarAtencion)}</div>` : ''}
+      <div><strong>${pdf.common.date}:</strong> ${hoy}</div>
     </div>
   </div>
 
   <!-- Document title -->
-  <p class="doc-title">Historia Clínica</p>
+  <p class="doc-title">${pdf.clinicalRecord.title}</p>
   <p class="doc-subtitle">
     ${esc(paciente.nombre)} ${esc(paciente.apellido)}
     ${paciente.dni ? ` · DNI ${esc(paciente.dni)}` : ''}
@@ -337,46 +334,46 @@ export function exportarHistoriaClinicaPDF(
   <!-- Resumen -->
   <div class="resumen">
     <div class="resumen-pill">
-      <div class="rp-label">Total consultas</div>
+      <div class="rp-label">${pdf.clinicalRecord.totalConsultations}</div>
       <div class="rp-value">${resumen.totalConsultas}</div>
     </div>
     <div class="resumen-pill green">
-      <div class="rp-label">Completadas</div>
+      <div class="rp-label">${pdf.clinicalRecord.completed}</div>
       <div class="rp-value">${resumen.consultasCompletadas}</div>
     </div>
     <div class="resumen-pill">
-      <div class="rp-label">Última consulta</div>
-      <div class="rp-value" style="font-size:10pt;">${fmtDate(resumen.ultimaConsulta)}</div>
+      <div class="rp-label">${pdf.clinicalRecord.lastConsultation}</div>
+      <div class="rp-value" style="font-size:10pt;">${fmtDate(resumen.ultimaConsulta, locale)}</div>
     </div>
   </div>
 
   <!-- Datos del paciente -->
   <div class="section">
-    <div class="section-title">Datos del paciente</div>
+    <div class="section-title">${pdf.clinicalRecord.patientData}</div>
     <table class="info-table">${infoRows}</table>
   </div>
 
   ${antecedentesRows ? `
   <!-- Antecedentes clínicos -->
   <div class="section">
-    <div class="section-title">Antecedentes clínicos</div>
+    <div class="section-title">${pdf.clinicalRecord.clinicalAntecedents}</div>
     <table class="info-table">${antecedentesRows}</table>
   </div>` : ''}
 
   ${timelineHtml ? `
   <!-- Timeline de atenciones -->
   <div class="section">
-    <div class="section-title">Registro de consultas</div>
+    <div class="section-title">${pdf.clinicalRecord.careTimeline}</div>
     ${timelineHtml}
   </div>` : ''}
 
   <!-- Footer -->
   <div class="footer">
-    <span>Documento generado el ${hoy} · MediSync</span>
+    <span>${interpolate(pdf.common.documentGeneratedOn, { date: hoy })} · MediSync</span>
     <div class="signature-box">
       Dr/a. ${esc(profesional.nombre)} ${esc(profesional.apellido)}<br>
       ${profesional.especialidad ? esc(profesional.especialidad) : ''}
-      ${profesional.matricula ? ` · Mat. ${esc(profesional.matricula)}` : ''}
+      ${profesional.matricula ? ` · ${pdf.common.licenseAbbr} ${esc(profesional.matricula)}` : ''}
     </div>
   </div>
 
@@ -385,7 +382,7 @@ export function exportarHistoriaClinicaPDF(
 
   const win = window.open('', '_blank', 'width=900,height=750,scrollbars=yes,resizable=yes');
   if (!win) {
-    alert('El navegador bloqueó la ventana emergente. Permitila para exportar el PDF.');
+    alert(pdf.common.popupBlockedClinicalRecord);
     return;
   }
   win.document.write(html);

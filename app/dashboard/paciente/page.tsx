@@ -258,7 +258,7 @@ export default function PacienteDashboard() {
           habitos: perfil.habitos,
           diagnosticosPrevios: perfil.diagnosticosPrevios,
         },
-      }, getLocale(lang));
+      }, lang);
     } catch (err) { console.error(err); }
   };
 
@@ -616,7 +616,7 @@ export default function PacienteDashboard() {
                           },
                           fechaHora: receta.fechaHora,
                           modalidad: 'VIRTUAL',
-                        });
+                        }, lang);
                       }}
                     />
                   ))}
@@ -676,7 +676,7 @@ export default function PacienteDashboard() {
                               obraSocial: user.paciente.obraSocial || null,
                             } : null,
                           },
-                        });
+                        }, lang);
                       }}
                     />
                   ))}

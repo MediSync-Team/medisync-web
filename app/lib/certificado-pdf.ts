@@ -1,12 +1,20 @@
 import { CertificadoConDatos } from './api';
 import { formatClinicInstantDate } from './date';
+import { interpolate, PdfLanguageInput, resolvePdfI18n } from './pdf-i18n';
 
-export function imprimirCertificado(cert: CertificadoConDatos) {
+export function imprimirCertificado(cert: CertificadoConDatos, langInput: PdfLanguageInput = 'es') {
+  const { lang, locale, pdf } = resolvePdfI18n(langInput);
+  const common = pdf.common;
+  const certificate = pdf.certificate;
   const prof = cert.turno.profesional;
   const pac = cert.turno.paciente;
-  const fechaStr = formatClinicInstantDate(cert.turno.fechaHora, 'es-AR', { day: 'numeric', month: 'long', year: 'numeric' });
+  const fechaStr = formatClinicInstantDate(cert.turno.fechaHora, locale, { day: 'numeric', month: 'long', year: 'numeric' });
   const diasTexto = cert.diasReposo && cert.diasReposo > 0
-    ? `prescribiéndose reposo médico por ${cert.diasReposo} día${cert.diasReposo !== 1 ? 's' : ''} a partir del ${fechaStr}`
+    ? interpolate(certificate.restDays, {
+        count: cert.diasReposo,
+        plural: cert.diasReposo !== 1 ? 's' : '',
+        date: fechaStr,
+      })
     : '';
 
   const codValidacion = cert.id.substring(0, 8).toUpperCase();
@@ -18,19 +26,25 @@ export function imprimirCertificado(cert: CertificadoConDatos) {
     ? `<img src="${prof.fotoUrl}" alt="Foto" style="width:60px; height:60px; border-radius:50%; object-fit:cover; margin-right:15px;" />`
     : `<div style="width:60px; height:60px; background:linear-gradient(135deg, #2563EB, #1e40af); border-radius:50%; display:flex; align-items:center; justify-content:center; color:white; font-weight:bold; margin-right:15px;">${initials}</div>`;
 
-  const tipoLabel = {
-    REPOSO: 'Reposo Médico',
-    CONSULTA: 'Justificación de Consulta',
-    APTITUD: 'Aptitud Física',
-    LIBRE: 'Certificado Médico',
-  }[cert.tipo] || 'Certificado Médico';
+  const tipoLabel = certificate.typeLabels[cert.tipo] || certificate.title;
+  const license = prof.matricula || common.notAvailable;
+  const patientName = pac ? `${pac.nombre} ${pac.apellido}` : common.patientWithoutAccount;
+  const bodyIntro = interpolate(certificate.bodyIntro, {
+    doctor: `${prof.nombre} ${prof.apellido}`,
+    license,
+    specialty: prof.especialidad.nombre,
+    patient: patientName,
+    dni: pac?.dni ? `, DNI ${pac.dni}` : '',
+    date: fechaStr,
+    modality: cert.turno.modalidad === 'VIRTUAL' ? common.virtual : common.inPerson,
+  });
 
   const html = `
     <!DOCTYPE html>
-    <html lang="es">
+    <html lang="${lang}">
     <head>
       <meta charset="UTF-8">
-      <title>Certificado Médico</title>
+      <title>${certificate.title}</title>
       <style>
         * { margin: 0; padding: 0; }
         @page {
@@ -174,7 +188,7 @@ export function imprimirCertificado(cert: CertificadoConDatos) {
               <div class="prof-name">Dr/a. ${prof.nombre} ${prof.apellido}</div>
               <div class="prof-specialty">${prof.especialidad.nombre}</div>
               <div class="prof-details">
-                Mat. ${prof.matricula || 'N/A'} · ${prof.telefono}
+                ${common.licenseAbbr} ${license} · ${prof.telefono}
               </div>
               ${prof.lugarAtencion ? `<div class="prof-details">${prof.lugarAtencion}</div>` : ''}
             </div>
@@ -188,16 +202,15 @@ export function imprimirCertificado(cert: CertificadoConDatos) {
         </div>
 
         <!-- Title -->
-        <div class="title">Certificado Médico</div>
+        <div class="title">${certificate.title}</div>
         <div class="badge">${tipoLabel}</div>
 
         <!-- Content -->
         <div class="content">
-          <p>Quien suscribe, <strong>Dr/a. ${prof.nombre} ${prof.apellido}</strong>, Mat. <strong>${prof.matricula || 'N/A'}</strong>, especialista en <strong>${prof.especialidad.nombre}</strong>, certifica que el/la paciente <strong>${pac?.nombre} ${pac?.apellido}</strong>
-          ${pac?.dni ? `, DNI ${pac.dni}` : ''}, fue atendido/a el <strong>${fechaStr}</strong> en modalidad <strong>${cert.turno.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}</strong>.</p>
+          <p>${bodyIntro}</p>
 
           <p style="margin-top: 15px;">
-            <strong>Diagnóstico:</strong> ${cert.diagnostico}
+            <strong>${certificate.diagnosis}:</strong> ${cert.diagnostico}
           </p>
 
           <p style="margin-top: 15px;">
@@ -210,15 +223,15 @@ export function imprimirCertificado(cert: CertificadoConDatos) {
         <div style="margin-top: 40px;">
           <div class="signature-line"></div>
           <div class="signature-text">Dr/a. ${prof.nombre} ${prof.apellido}</div>
-          <div class="signature-details">Mat. ${prof.matricula || 'N/A'}</div>
-          <div class="signature-details" style="margin-top: 8px;">Buenos Aires, ${fechaStr}</div>
+          <div class="signature-details">${common.licenseAbbr} ${license}</div>
+          <div class="signature-details" style="margin-top: 8px;">${interpolate(certificate.signatureLocation, { date: fechaStr })}</div>
         </div>
 
         <!-- Footer with QR -->
         <div class="footer">
           <div>
-            <div>Certificado emitido a través de MediSync</div>
-            <div>Código: ${codValidacion}</div>
+            <div>${certificate.emittedThrough}</div>
+            <div>${certificate.code}: ${codValidacion}</div>
           </div>
           <div class="qr-code">
             <img src="${qrCodeUrl}" alt="QR" />
@@ -229,7 +242,7 @@ export function imprimirCertificado(cert: CertificadoConDatos) {
 
       <div style="text-align: center; margin-top: 20px;">
         <button class="btn-imprimir" onclick="window.print()" style="padding: 10px 20px; background: #2563EB; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px;">
-          Imprimir o Descargar PDF
+          ${common.printDownloadPdf}
         </button>
       </div>
     </body>
@@ -238,7 +251,7 @@ export function imprimirCertificado(cert: CertificadoConDatos) {
 
   const win = window.open('', '_blank', 'width=900,height=750');
   if (!win) {
-    alert('Por favor, permitir ventanas emergentes para descargar el certificado');
+    alert(common.popupBlockedCertificate);
     return;
   }
   win.document.write(html);

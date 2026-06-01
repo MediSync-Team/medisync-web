@@ -1,5 +1,6 @@
 ﻿import { RecetaIndicacion, Profesional, Paciente } from './api';
 import { formatClinicInstantDate, formatClinicInstantDateTime, formatClinicInstantTime } from './date';
+import { interpolate, PdfLanguageInput, resolvePdfI18n } from './pdf-i18n';
 
 export interface RecetaPDFData {
   receta: RecetaIndicacion;
@@ -29,14 +30,17 @@ function seccion(titulo: string, contenido: string): string {
     </div>`;
 }
 
-export function imprimirReceta(data: RecetaPDFData) {
+export function imprimirReceta(data: RecetaPDFData, langInput: PdfLanguageInput = 'es') {
   const { receta, profesional, paciente, fechaHora, modalidad } = data;
+  const { lang, locale, pdf } = resolvePdfI18n(langInput);
+  const common = pdf.common;
+  const prescription = pdf.prescription;
 
-  const fechaTurno = formatClinicInstantDate(fechaHora, 'es-AR', {
+  const fechaTurno = formatClinicInstantDate(fechaHora, locale, {
     weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
   });
-  const horaTurno = formatClinicInstantTime(fechaHora, 'es-AR');
-  const emitidaAt = formatClinicInstantDateTime(receta.emitidaAt, 'es-AR', {
+  const horaTurno = formatClinicInstantTime(fechaHora, locale);
+  const emitidaAt = formatClinicInstantDateTime(receta.emitidaAt, locale, {
     day: '2-digit', month: 'long', year: 'numeric',
     hour: '2-digit', minute: '2-digit',
   });
@@ -51,22 +55,22 @@ export function imprimirReceta(data: RecetaPDFData) {
     : '';
 
   const secciones = [
-    receta.diagnostico && seccion('Diagnóstico', receta.diagnostico),
-    receta.planTratamiento && seccion('Plan de tratamiento', receta.planTratamiento),
-    receta.medicamentos && seccion('Medicamentos', receta.medicamentos),
-    seccion('Indicaciones', receta.indicaciones),
-    receta.estudiosSolicitados && seccion('Estudios solicitados', receta.estudiosSolicitados),
-    receta.proximoControl && seccion('Próximo control', receta.proximoControl),
-    receta.advertencias && seccion('⚠ Advertencias', receta.advertencias),
-    receta.observaciones && seccion('Observaciones', receta.observaciones),
+    receta.diagnostico && seccion(prescription.diagnosis, receta.diagnostico),
+    receta.planTratamiento && seccion(prescription.treatmentPlan, receta.planTratamiento),
+    receta.medicamentos && seccion(prescription.medicines, receta.medicamentos),
+    seccion(prescription.indications, receta.indicaciones),
+    receta.estudiosSolicitados && seccion(prescription.requestedStudies, receta.estudiosSolicitados),
+    receta.proximoControl && seccion(prescription.nextControl, receta.proximoControl),
+    receta.advertencias && seccion(prescription.warnings, receta.advertencias),
+    receta.observaciones && seccion(prescription.observations, receta.observaciones),
   ].filter(Boolean).join('');
 
   const html = `<!DOCTYPE html>
-<html lang="es">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Receta — Dr/a. ${profesional.nombre} ${profesional.apellido}</title>
+  <title>${interpolate(prescription.browserTitle, { doctor: `${profesional.nombre} ${profesional.apellido}` })}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
@@ -288,7 +292,7 @@ export function imprimirReceta(data: RecetaPDFData) {
 <body>
 
   <button class="btn-imprimir no-print" onclick="window.print()">
-    🖨️ Imprimir / Guardar como PDF
+    🖨️ ${common.printSavePdf}
   </button>
 
   <!-- Membrete -->
@@ -298,7 +302,7 @@ export function imprimirReceta(data: RecetaPDFData) {
       <div>
         <div class="prof-nombre">Dr/a. ${profesional.nombre} ${profesional.apellido}</div>
         <div class="prof-esp">${profesional.especialidad}</div>
-        ${profesional.matricula ? `<div class="prof-mat">Mat. ${profesional.matricula}</div>` : ''}
+        ${profesional.matricula ? `<div class="prof-mat">${common.licenseAbbr} ${profesional.matricula}</div>` : ''}
       </div>
     </div>
     <div class="membrete-der">
@@ -314,23 +318,23 @@ export function imprimirReceta(data: RecetaPDFData) {
   <!-- Datos del turno -->
   <div class="datos-turno">
     <div class="datos-turno-col">
-      <div class="dato-label">Paciente</div>
-      <div class="dato-valor">${paciente ? `${paciente.nombre} ${paciente.apellido}` : 'Paciente sin cuenta'}</div>
+      <div class="dato-label">${common.patient}</div>
+      <div class="dato-valor">${paciente ? `${paciente.nombre} ${paciente.apellido}` : common.patientWithoutAccount}</div>
     </div>
     <div class="datos-turno-col" style="text-align:center">
-      <div class="dato-label">Fecha de consulta</div>
+      <div class="dato-label">${common.consultationDate}</div>
       <div class="dato-valor">${fechaTurno}, ${horaTurno} h</div>
     </div>
     <div class="datos-turno-col" style="text-align:right">
-      <div class="dato-label">Modalidad</div>
-      <span class="badge-modalidad">${modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial'}</span>
+      <div class="dato-label">${common.modality}</div>
+      <span class="badge-modalidad">${modalidad === 'VIRTUAL' ? common.virtual : common.inPerson}</span>
     </div>
   </div>
 
   <hr class="sep">
 
   <!-- Título -->
-  <div class="titulo-receta">Receta e Indicaciones Médicas</div>
+  <div class="titulo-receta">${prescription.title}</div>
 
   <!-- Secciones de la receta -->
   ${secciones}
@@ -338,13 +342,13 @@ export function imprimirReceta(data: RecetaPDFData) {
   <!-- Pie de página -->
   <div class="footer">
     <div class="footer-emisión">
-      Emitida el ${emitidaAt}<br>
-      Documento generado por MediSync
+      ${interpolate(prescription.emittedOn, { date: emitidaAt })}<br>
+      ${common.generatedByMediSync}
     </div>
     <div class="firma-wrap">
       <div class="firma-linea"></div>
       <div class="firma-nombre">Dr/a. ${profesional.nombre} ${profesional.apellido}</div>
-      ${profesional.matricula ? `<div style="font-size:8pt;color:#64748b">Mat. ${profesional.matricula}</div>` : ''}
+      ${profesional.matricula ? `<div style="font-size:8pt;color:#64748b">${common.licenseAbbr} ${profesional.matricula}</div>` : ''}
     </div>
     <div class="footer-medisync">medisync.com.ar</div>
   </div>
@@ -354,7 +358,7 @@ export function imprimirReceta(data: RecetaPDFData) {
 
   const win = window.open('', '_blank', 'width=900,height=750');
   if (!win) {
-    alert('Permitir ventanas emergentes para descargar el PDF.');
+    alert(common.popupBlockedPdf);
     return;
   }
   win.document.write(html);

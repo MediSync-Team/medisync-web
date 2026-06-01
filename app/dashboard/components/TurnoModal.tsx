@@ -281,7 +281,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                 }
               : null,
           },
-        } as CertificadoConDatos);
+        } as CertificadoConDatos, lang);
       }
     } catch (err) {
       setModalNotice({ type: 'error', text: err instanceof Error ? err.message : modal.notices.certificateError });
@@ -738,7 +738,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                         especialidad: translateSpecialty(turno.profesional?.especialidad?.nombre),
                         matricula: turno.profesional?.matricula,
                         lugarAtencion: turno.profesional?.lugarAtencion,
-                      })}
+                      }, lang)}
                       className="btn btn-secondary btn-sm flex items-center gap-1.5"
                       title={modal.history.exportTitle}
                     >
@@ -913,7 +913,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                           : null,
                         fechaHora: turno.fechaHora,
                         modalidad: turno.modalidad,
-                      })}
+                      }, lang)}
                       className="btn btn-primary btn-sm flex items-center gap-1.5"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -977,7 +977,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
                               }
                             : null,
                         },
-                      })}
+                      }, lang)}
                       className="btn btn-primary btn-sm flex items-center gap-1.5"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>

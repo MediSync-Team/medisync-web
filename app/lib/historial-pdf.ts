@@ -1,5 +1,6 @@
 ﻿import { HistorialTurno, Paciente } from './api';
 import { formatClinicCurrentDate, formatClinicInstantDate, formatClinicInstantTime } from './date';
+import { interpolate, PdfLanguageInput, resolvePdfI18n } from './pdf-i18n';
 
 export interface HistorialPDFData {
   paciente: Paciente;
@@ -45,38 +46,38 @@ function renderAntecedente(label: string, valor?: string | null): string {
     </div>`;
 }
 
-function renderConsulta(item: HistorialTurno, idx: number, locale = 'es-AR'): string {
+function renderConsulta(item: HistorialTurno, idx: number, locale = 'es-AR', pdf = resolvePdfI18n('es').pdf): string {
   const prof = item.profesional;
-  const profNombre = prof ? `Dr/a. ${esc(prof.nombre ?? '')} ${esc(prof.apellido ?? '')}` : 'Profesional no disponible';
+  const profNombre = prof ? `Dr/a. ${esc(prof.nombre ?? '')} ${esc(prof.apellido ?? '')}` : pdf.common.professionalUnavailable;
   const especialidad = prof?.especialidad?.nombre ? esc(prof.especialidad.nombre) : '';
-  const modalidadLabel = item.modalidad === 'VIRTUAL' ? 'Virtual' : 'Presencial';
+  const modalidadLabel = item.modalidad === 'VIRTUAL' ? pdf.common.virtual : pdf.common.inPerson;
 
   const evolucionHtml = item.evolucion?.contenido
-    ? `<div class="seccion"><div class="sec-titulo">Evolución clínica</div><div class="sec-cuerpo">${nl2br(item.evolucion.contenido)}</div></div>`
+    ? `<div class="seccion"><div class="sec-titulo">${pdf.history.clinicalEvolution}</div><div class="sec-cuerpo">${nl2br(item.evolucion.contenido)}</div></div>`
     : '';
 
   const recetaHtml = item.recetaIndicacion ? (() => {
     const r = item.recetaIndicacion!;
     const rows = [
-      r.diagnostico       ? `<div class="receta-row"><span class="receta-label">Diagnóstico</span><span>${nl2br(r.diagnostico)}</span></div>` : '',
-      r.planTratamiento   ? `<div class="receta-row"><span class="receta-label">Plan de tratamiento</span><span>${nl2br(r.planTratamiento)}</span></div>` : '',
-      r.medicamentos      ? `<div class="receta-row"><span class="receta-label">Medicamentos</span><span>${nl2br(r.medicamentos)}</span></div>` : '',
-      r.indicaciones      ? `<div class="receta-row"><span class="receta-label">Indicaciones</span><span>${nl2br(r.indicaciones)}</span></div>` : '',
-      r.estudiosSolicitados ? `<div class="receta-row"><span class="receta-label">Estudios solicitados</span><span>${nl2br(r.estudiosSolicitados)}</span></div>` : '',
-      r.proximoControl    ? `<div class="receta-row"><span class="receta-label">Próximo control</span><span>${esc(r.proximoControl)}</span></div>` : '',
-      r.advertencias      ? `<div class="receta-row receta-warning"><span class="receta-label">⚠ Advertencias</span><span>${nl2br(r.advertencias)}</span></div>` : '',
+      r.diagnostico       ? `<div class="receta-row"><span class="receta-label">${pdf.prescription.diagnosis}</span><span>${nl2br(r.diagnostico)}</span></div>` : '',
+      r.planTratamiento   ? `<div class="receta-row"><span class="receta-label">${pdf.prescription.treatmentPlan}</span><span>${nl2br(r.planTratamiento)}</span></div>` : '',
+      r.medicamentos      ? `<div class="receta-row"><span class="receta-label">${pdf.prescription.medicines}</span><span>${nl2br(r.medicamentos)}</span></div>` : '',
+      r.indicaciones      ? `<div class="receta-row"><span class="receta-label">${pdf.prescription.indications}</span><span>${nl2br(r.indicaciones)}</span></div>` : '',
+      r.estudiosSolicitados ? `<div class="receta-row"><span class="receta-label">${pdf.prescription.requestedStudies}</span><span>${nl2br(r.estudiosSolicitados)}</span></div>` : '',
+      r.proximoControl    ? `<div class="receta-row"><span class="receta-label">${pdf.prescription.nextControl}</span><span>${esc(r.proximoControl)}</span></div>` : '',
+      r.advertencias      ? `<div class="receta-row receta-warning"><span class="receta-label">${pdf.prescription.warnings}</span><span>${nl2br(r.advertencias)}</span></div>` : '',
     ].filter(Boolean).join('');
-    return `<div class="seccion seccion-receta"><div class="sec-titulo sec-titulo-green">Receta e indicaciones</div>${rows}</div>`;
+    return `<div class="seccion seccion-receta"><div class="sec-titulo sec-titulo-green">${pdf.prescription.prescriptionAndIndications}</div>${rows}</div>`;
   })() : '';
 
   const archivosHtml = item.archivos?.length
-    ? `<div class="seccion"><div class="sec-titulo">Documentos adjuntos</div><div class="sec-cuerpo">${
+    ? `<div class="seccion"><div class="sec-titulo">${pdf.history.attachedDocuments}</div><div class="sec-cuerpo">${
         item.archivos.map(a => `<span class="archivo-chip">${esc(a.nombreOriginal ?? '')}</span>`).join(' ')
       }</div></div>`
     : '';
 
   const sinDatos = !item.evolucion && !item.recetaIndicacion && !(item.archivos?.length)
-    ? `<p class="sin-datos">Sin evolución clínica registrada para esta consulta.</p>`
+    ? `<p class="sin-datos">${pdf.history.noClinicalEvolution}</p>`
     : '';
 
   return `
@@ -98,24 +99,25 @@ function renderConsulta(item: HistorialTurno, idx: number, locale = 'es-AR'): st
   </div>`;
 }
 
-export function imprimirHistorial(data: HistorialPDFData, locale = 'es-AR') {
+export function imprimirHistorial(data: HistorialPDFData, langOrLocale: PdfLanguageInput = 'es') {
+  const { lang, locale, pdf } = resolvePdfI18n(langOrLocale);
   const { paciente, turnos, antecedentes } = data;
 
   const pacienteNombre = `${paciente.nombre} ${paciente.apellido}`;
   const hoy = formatClinicCurrentDate(locale, { day: '2-digit', month: 'long', year: 'numeric' });
 
   const antecedentesHtml = antecedentes ? [
-    renderAntecedente('Antecedentes personales', antecedentes.antecedentesPersonales),
-    renderAntecedente('Antecedentes familiares', antecedentes.antecedentesFamiliares),
-    renderAntecedente('Alergias', antecedentes.alergias),
-    renderAntecedente('Medicación actual', antecedentes.medicacionActual),
-    renderAntecedente('Hábitos', antecedentes.habitos),
-    renderAntecedente('Diagnósticos previos', antecedentes.diagnosticosPrevios),
+    renderAntecedente(pdf.history.personalHistory, antecedentes.antecedentesPersonales),
+    renderAntecedente(pdf.history.familyHistory, antecedentes.antecedentesFamiliares),
+    renderAntecedente(pdf.history.allergies, antecedentes.alergias),
+    renderAntecedente(pdf.history.currentMedication, antecedentes.medicacionActual),
+    renderAntecedente(pdf.history.habits, antecedentes.habitos),
+    renderAntecedente(pdf.history.previousDiagnoses, antecedentes.diagnosticosPrevios),
   ].filter(Boolean).join('') : '';
 
   const consultasHtml = turnos.length
-    ? turnos.map((t, i) => renderConsulta(t, i, locale)).join('')
-    : '<p class="sin-datos">No hay consultas completadas en el historial.</p>';
+    ? turnos.map((t, i) => renderConsulta(t, i, locale, pdf)).join('')
+    : `<p class="sin-datos">${pdf.history.noCompletedConsultations}</p>`;
 
   const logoSvg = `
     <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#2563EB" stroke-width="1.5" xmlns="http://www.w3.org/2000/svg">
@@ -123,10 +125,10 @@ export function imprimirHistorial(data: HistorialPDFData, locale = 'es-AR') {
     </svg>`;
 
   const html = `<!DOCTYPE html>
-<html lang="es">
+<html lang="${lang}">
 <head>
   <meta charset="UTF-8">
-  <title>Historia Clínica — ${pacienteNombre}</title>
+  <title>${interpolate(pdf.history.browserTitle, { patient: pacienteNombre })}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -277,7 +279,7 @@ export function imprimirHistorial(data: HistorialPDFData, locale = 'es-AR') {
 </head>
 <body>
 
-  <button class="btn-imprimir" onclick="window.print()">🖨️ Imprimir / Guardar como PDF</button>
+  <button class="btn-imprimir" onclick="window.print()">🖨️ ${pdf.common.printSavePdf}</button>
 
   <!-- Header -->
   <div class="header">
@@ -286,38 +288,38 @@ export function imprimirHistorial(data: HistorialPDFData, locale = 'es-AR') {
       <span class="logo-text">MediSync</span>
     </div>
     <div class="header-right">
-      <strong>Historia Clínica Digital</strong>
-      Generado el ${hoy}<br>
-      Documento confidencial — uso médico
+      <strong>${pdf.history.title}</strong>
+      ${interpolate(pdf.common.generatedOn, { date: hoy })}<br>
+      ${pdf.common.confidentialMedicalUse}
     </div>
   </div>
 
   <!-- Datos del paciente -->
   <div class="paciente-box">
-    <div class="paciente-titulo">Datos del paciente</div>
+    <div class="paciente-titulo">${pdf.history.patientData}</div>
     <div class="paciente-grid">
-      <div class="paciente-row"><span class="paciente-label">Nombre completo</span><br>${esc(pacienteNombre)}</div>
+      <div class="paciente-row"><span class="paciente-label">${pdf.history.fullName}</span><br>${esc(pacienteNombre)}</div>
       ${paciente.dni ? `<div class="paciente-row"><span class="paciente-label">DNI</span><br>${esc(paciente.dni)}</div>` : ''}
-      ${paciente.fechaNacimiento ? `<div class="paciente-row"><span class="paciente-label">Fecha de nacimiento</span><br>${new Date(paciente.fechaNacimiento).toLocaleDateString(locale)}</div>` : ''}
-      ${paciente.telefono ? `<div class="paciente-row"><span class="paciente-label">Teléfono</span><br>${esc(paciente.telefono)}</div>` : ''}
+      ${paciente.fechaNacimiento ? `<div class="paciente-row"><span class="paciente-label">${pdf.history.birthDate}</span><br>${new Date(paciente.fechaNacimiento).toLocaleDateString(locale)}</div>` : ''}
+      ${paciente.telefono ? `<div class="paciente-row"><span class="paciente-label">${pdf.history.phone}</span><br>${esc(paciente.telefono)}</div>` : ''}
       ${paciente.email ? `<div class="paciente-row"><span class="paciente-label">Email</span><br>${esc(paciente.email)}</div>` : ''}
-      ${paciente.obraSocial ? `<div class="paciente-row"><span class="paciente-label">Obra social / Prepaga</span><br>${esc(paciente.obraSocial)}</div>` : ''}
+      ${paciente.obraSocial ? `<div class="paciente-row"><span class="paciente-label">${pdf.history.healthInsurance}</span><br>${esc(paciente.obraSocial)}</div>` : ''}
     </div>
   </div>
 
   ${antecedentesHtml ? `
   <!-- Antecedentes -->
-  <div class="bloque-titulo">Antecedentes médicos</div>
+  <div class="bloque-titulo">${pdf.history.medicalAntecedents}</div>
   <div>${antecedentesHtml}</div>
   ` : ''}
 
   <!-- Consultas -->
-  <div class="bloque-titulo">Historial de consultas (${turnos.length})</div>
+  <div class="bloque-titulo">${interpolate(pdf.history.consultations, { count: turnos.length })}</div>
   ${consultasHtml}
 
   <!-- Footer -->
   <div class="footer">
-    <div>Historia clínica de ${esc(pacienteNombre)} · Generada el ${hoy}</div>
+    <div>${interpolate(pdf.history.generatedFooter, { patient: esc(pacienteNombre), date: hoy })}</div>
     <div class="footer-medisync">MediSync · medisync.com.ar</div>
   </div>
 
@@ -326,7 +328,7 @@ export function imprimirHistorial(data: HistorialPDFData, locale = 'es-AR') {
 
   const win = window.open('', '_blank', 'width=960,height=800');
   if (!win) {
-    alert('Permitir ventanas emergentes para descargar el PDF.');
+    alert(pdf.common.popupBlockedPdf);
     return;
   }
   win.document.write(html);
