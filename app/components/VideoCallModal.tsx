@@ -12,7 +12,8 @@ function getWsBase(): string {
   return base.replace(/^https/, 'wss').replace(/^http/, 'ws');
 }
 
-const ICE_SERVERS: RTCIceServer[] = [
+/** Fallback ICE servers (STUN-only) when the backend doesn't supply any. */
+const FALLBACK_ICE_SERVERS: RTCIceServer[] = [
   { urls: 'stun:stun.l.google.com:19302' },
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:stun2.l.google.com:19302' },
@@ -46,6 +47,8 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
   const timerRef       = useRef<ReturnType<typeof setInterval> | null>(null);
   // Queue ICE candidates received before remote description is set
   const iceCandidateQueue = useRef<RTCIceCandidateInit[]>([]);
+  // ICE servers (STUN + TURN) supplied by the backend video-token endpoint
+  const iceServersRef = useRef<RTCIceServer[]>(FALLBACK_ICE_SERVERS);
 
   const fecha = formatClinicInstantDateTime(fechaHora, dateLocale, { dateStyle: 'short', timeStyle: 'short' });
 
@@ -60,7 +63,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
   }, []);
 
   const createPC = useCallback((stream: MediaStream): RTCPeerConnection => {
-    const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+    const pc = new RTCPeerConnection({ iceServers: iceServersRef.current });
 
     stream.getTracks().forEach(track => pc.addTrack(track, stream));
 
@@ -100,6 +103,9 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
         const data = await api.turnos.getVideoToken(turnoId);
         if (cancelled) return;
         const { ticket } = data;
+        if (data.iceServers && data.iceServers.length > 0) {
+          iceServersRef.current = data.iceServers;
+        }
 
         // 2. Request camera + microphone
         let stream: MediaStream;
