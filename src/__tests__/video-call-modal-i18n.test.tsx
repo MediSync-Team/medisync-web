@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import type { ComponentProps } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import VideoCallModal from '../../app/components/VideoCallModal';
 import { api } from '../../app/lib/api';
@@ -37,6 +38,7 @@ class MockWebSocket {
 }
 
 class MockRTCPeerConnection {
+  static instances: MockRTCPeerConnection[] = [];
   onicecandidate: ((event: { candidate: null }) => void) | null = null;
   ontrack: ((event: { streams: unknown[] }) => void) | null = null;
   onconnectionstatechange: (() => void) | null = null;
@@ -50,34 +52,57 @@ class MockRTCPeerConnection {
   createAnswer = vi.fn(async () => ({}));
   setLocalDescription = vi.fn(async () => undefined);
   setRemoteDescription = vi.fn(async () => undefined);
+
+  constructor() {
+    MockRTCPeerConnection.instances.push(this);
+  }
 }
 
 const audioTrack = { enabled: true, stop: vi.fn() };
 const videoTrack = { enabled: true, stop: vi.fn() };
+const audioOnlyTrack = { enabled: true, stop: vi.fn() };
 const stream = {
   getTracks: () => [audioTrack, videoTrack],
   getAudioTracks: () => [audioTrack],
   getVideoTracks: () => [videoTrack],
 };
+const audioOnlyStream = {
+  getTracks: () => [audioOnlyTrack],
+  getAudioTracks: () => [audioOnlyTrack],
+  getVideoTracks: () => [],
+};
 
-const renderModal = () => render(
+const renderModal = (props?: Partial<ComponentProps<typeof VideoCallModal>>) => render(
   <VideoCallModal
     turnoId="turno-1"
-    profesionalNombre="Ana Garcia"
+    participantName="Ana Garcia"
+    participantRoleLabel="Dr/a."
     fechaHora="2026-06-01T13:00:00.000Z"
     onClose={vi.fn()}
+    {...props}
   />
 );
+
+const expectDocumentText = (text: string) => {
+  expect(document.body.textContent).toContain(text);
+};
+
+const expectDocumentTextNot = (text: string) => {
+  expect(document.body.textContent).not.toContain(text);
+};
 
 describe('VideoCallModal i18n', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
     vi.clearAllMocks();
     MockWebSocket.instances = [];
+    MockRTCPeerConnection.instances = [];
     audioTrack.enabled = true;
     videoTrack.enabled = true;
+    audioOnlyTrack.enabled = true;
     audioTrack.stop.mockClear();
     videoTrack.stop.mockClear();
+    audioOnlyTrack.stop.mockClear();
     (api.turnos.getVideoToken as any).mockResolvedValue({ ticket: 'ticket-1' });
     Object.defineProperty(navigator, 'mediaDevices', {
       configurable: true,
@@ -109,12 +134,35 @@ describe('VideoCallModal i18n', () => {
   });
 
   it('shows translated media permission fallback error', async () => {
-    (navigator.mediaDevices.getUserMedia as any).mockRejectedValueOnce(new Error('denied'));
+    (navigator.mediaDevices.getUserMedia as any)
+      .mockRejectedValueOnce(new Error('no camera'))
+      .mockRejectedValueOnce(new Error('denied'));
 
     renderModal();
 
     expect(await screen.findByText('Could not connect')).toBeInTheDocument();
     expect(screen.getByText('Could not access the camera or microphone. Check your browser permissions.')).toBeInTheDocument();
+  });
+
+  it('falls back to audio-only when camera access fails', async () => {
+    (navigator.mediaDevices.getUserMedia as any)
+      .mockRejectedValueOnce(new Error('no camera'))
+      .mockResolvedValueOnce(audioOnlyStream);
+
+    renderModal();
+
+    await waitFor(() => {
+      expect(MockWebSocket.instances.length).toBe(1);
+    });
+    act(() => {
+      MockWebSocket.instances[0].onopen?.();
+    });
+
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenNthCalledWith(1, { video: true, audio: true });
+    expect(navigator.mediaDevices.getUserMedia).toHaveBeenNthCalledWith(2, { audio: true, video: false });
+    expect(await screen.findByText('Waiting for the other participant...')).toBeInTheDocument();
+    expect(screen.getByTitle('Mute microphone')).toBeInTheDocument();
+    expect(screen.getByTitle('Turn camera on')).toBeInTheDocument();
   });
 
   it('shows translated signaling fallback error', async () => {
@@ -170,5 +218,59 @@ describe('VideoCallModal i18n', () => {
       expect(screen.getAllByText('Call ended').length).toBeGreaterThanOrEqual(1);
     });
     expect(screen.getAllByRole('button', { name: 'Close' }).length).toBeGreaterThanOrEqual(1);
+  });
+
+  it('renders a neutral participant label when supplied by the call site', async () => {
+    renderModal({ participantRoleLabel: 'Patient', participantName: 'Juan Perez' });
+
+    await waitFor(() => {
+      expect(MockWebSocket.instances.length).toBe(1);
+    });
+    act(() => {
+      MockWebSocket.instances[0].onopen?.();
+    });
+
+    expect(await screen.findByText('Video call · Patient Juan Perez')).toBeInTheDocument();
+    expect(screen.queryByText('Video call · Dr/a. Juan Perez')).not.toBeInTheDocument();
+  });
+
+  it('starts only one timer and stops it after hanging up', async () => {
+    renderModal();
+
+    await waitFor(() => {
+      expect(MockWebSocket.instances.length).toBe(1);
+    });
+    act(() => {
+      MockWebSocket.instances[0].onopen?.();
+    });
+    await act(async () => {
+      MockWebSocket.instances[0].onmessage?.({ data: JSON.stringify({ type: 'start-call' }) });
+    });
+
+    expect(MockRTCPeerConnection.instances.length).toBe(1);
+
+    vi.useFakeTimers();
+    try {
+      act(() => {
+        MockRTCPeerConnection.instances[0].ontrack?.({ streams: [{}] });
+        MockRTCPeerConnection.instances[0].ontrack?.({ streams: [{}] });
+      });
+      act(() => {
+        vi.advanceTimersByTime(3000);
+      });
+
+      expectDocumentText('00:03');
+      expectDocumentTextNot('00:06');
+
+      fireEvent.click(screen.getByTitle('Hang up'));
+      act(() => {
+        vi.advanceTimersByTime(2000);
+      });
+
+      expectDocumentText('00:03');
+      expectDocumentTextNot('00:05');
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

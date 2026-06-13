@@ -1146,7 +1146,8 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
     {showVideoCall && (
       <VideoCallModal
         turnoId={turno.id}
-        profesionalNombre={turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : modal.fallbackPatient}
+        participantName={turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : modal.fallbackPatient}
+        participantRoleLabel={modal.fallbackPatient}
         fechaHora={turno.fechaHora}
         onClose={() => setShowVideoCall(false)}
       />

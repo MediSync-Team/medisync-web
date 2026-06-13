@@ -909,7 +909,8 @@ export default function PacienteDashboard() {
       {turnoVideoCall && (
         <VideoCallModal
           turnoId={turnoVideoCall.id}
-          profesionalNombre={turnoVideoCall.profesional ? `${turnoVideoCall.profesional.nombre} ${turnoVideoCall.profesional.apellido}` : pageText.professionalFallback}
+          participantName={turnoVideoCall.profesional ? `${turnoVideoCall.profesional.nombre} ${turnoVideoCall.profesional.apellido}` : pageText.professionalFallback}
+          participantRoleLabel="Dr/a."
           fechaHora={turnoVideoCall.fechaHora}
           onClose={() => setTurnoVideoCall(null)}
         />

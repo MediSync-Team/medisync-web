@@ -23,12 +23,13 @@ type CallState = 'connecting' | 'waiting' | 'calling' | 'in-call' | 'ended' | 'e
 
 interface VideoCallModalProps {
   turnoId: string;
-  profesionalNombre: string;
+  participantName: string;
+  participantRoleLabel: string;
   fechaHora: string;
   onClose: () => void;
 }
 
-export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, onClose }: VideoCallModalProps) {
+export default function VideoCallModal({ turnoId, participantName, participantRoleLabel, fechaHora, onClose }: VideoCallModalProps) {
   const { t, lang } = useLang();
   const vc = t('videoCall');
   const dateLocale = getLocale(lang);
@@ -52,15 +53,45 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
 
   const fecha = formatClinicInstantDateTime(fechaHora, dateLocale, { dateStyle: 'short', timeStyle: 'short' });
 
+  const stopCallTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+  }, []);
+
+  const startCallTimer = useCallback(() => {
+    if (timerRef.current) return;
+    timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
+  }, []);
+
   const cleanup = useCallback(() => {
-    if (timerRef.current) clearInterval(timerRef.current);
+    stopCallTimer();
     wsRef.current?.close();
     pcRef.current?.close();
     streamRef.current?.getTracks().forEach(t => t.stop());
     wsRef.current = null;
     pcRef.current = null;
     streamRef.current = null;
-  }, []);
+  }, [stopCallTimer]);
+
+  const acquireMediaStream = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      setCameraOn(Boolean(stream.getVideoTracks()[0]?.enabled ?? true));
+      setMicOn(Boolean(stream.getAudioTracks()[0]?.enabled ?? true));
+      return stream;
+    } catch {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+        setCameraOn(false);
+        setMicOn(Boolean(stream.getAudioTracks()[0]?.enabled ?? true));
+        return stream;
+      } catch {
+        throw new Error(vc.mediaPermissionError);
+      }
+    }
+  }, [vc.mediaPermissionError]);
 
   const createPC = useCallback((stream: MediaStream): RTCPeerConnection => {
     const pc = new RTCPeerConnection({ iceServers: iceServersRef.current });
@@ -79,20 +110,19 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
       }
       setHasRemote(true);
       setState('in-call');
-      // Start call timer
-      timerRef.current = setInterval(() => setDuration(d => d + 1), 1000);
+      startCallTimer();
     };
 
     pc.onconnectionstatechange = () => {
       if (['disconnected', 'failed', 'closed'].includes(pc.connectionState)) {
         setState('ended');
-        if (timerRef.current) clearInterval(timerRef.current);
+        stopCallTimer();
       }
     };
 
     pcRef.current = pc;
     return pc;
-  }, []);
+  }, [startCallTimer, stopCallTimer]);
 
   useEffect(() => {
     let cancelled = false;
@@ -107,13 +137,8 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
           iceServersRef.current = data.iceServers;
         }
 
-        // 2. Request camera + microphone
-        let stream: MediaStream;
-        try {
-          stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-        } catch {
-          throw new Error(vc.mediaPermissionError);
-        }
+        // 2. Request camera + microphone, falling back to microphone-only
+        const stream = await acquireMediaStream();
         if (cancelled) { stream.getTracks().forEach(t => t.stop()); return; }
 
         streamRef.current = stream;
@@ -131,6 +156,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
 
         ws.onerror = () => {
           if (!cancelled) {
+            stopCallTimer();
             setErrorMsg(vc.signalingError);
             setState('error');
           }
@@ -138,6 +164,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
 
         ws.onclose = (e) => {
           if (!cancelled && e.code !== 1000) {
+            stopCallTimer();
             setState(s => (s === 'in-call' ? 'ended' : s === 'error' ? 'error' : 'ended'));
           }
         };
@@ -214,10 +241,11 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
 
             case 'peer-left':
               setState('ended');
-              if (timerRef.current) clearInterval(timerRef.current);
+              stopCallTimer();
               break;
 
             case 'error':
+              stopCallTimer();
               setErrorMsg(String(msg.message ?? vc.unknownError));
               setState('error');
               break;
@@ -237,7 +265,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
       cancelled = true;
       cleanup();
     };
-  }, [turnoId, createPC, cleanup, vc.mediaPermissionError, vc.signalingError, vc.startError, vc.unknownError]);
+  }, [turnoId, createPC, cleanup, acquireMediaStream, stopCallTimer, vc.signalingError, vc.startError, vc.unknownError]);
 
   const toggleMic = () => {
     const track = streamRef.current?.getAudioTracks()[0];
@@ -283,7 +311,7 @@ export default function VideoCallModal({ turnoId, profesionalNombre, fechaHora, 
           }`} />
           <span className="text-white font-medium text-sm truncate">
             {state === 'in-call' || state === 'calling' || state === 'waiting'
-              ? `${vc.title} · Dr/a. ${profesionalNombre}`
+              ? `${vc.title} · ${participantRoleLabel} ${participantName}`
               : statusLabel}
           </span>
           {state === 'in-call' && (
