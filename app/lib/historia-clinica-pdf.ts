@@ -9,6 +9,7 @@
 import type { HistoriaClinicaPaciente } from './api';
 import { formatClinicCurrentDate, formatClinicInstantDateTime } from './date';
 import { interpolate, PdfLanguageInput, resolvePdfI18n } from './pdf-i18n';
+import { openPrintDocument } from './pdf/print-document';
 
 interface ProfesionalInfo {
   nombre: string;
@@ -380,13 +381,8 @@ export function exportarHistoriaClinicaPDF(
 </body>
 </html>`;
 
-  const win = window.open('', '_blank', 'width=900,height=750,scrollbars=yes,resizable=yes');
-  if (!win) {
-    alert(pdf.common.popupBlockedClinicalRecord);
-    return;
-  }
-  win.document.write(html);
-  win.document.close();
-  // Small delay to let the browser render before triggering print
-  win.setTimeout(() => win.print(), 600);
+  openPrintDocument(html, {
+    popupBlockedMessage: pdf.common.popupBlockedClinicalRecord,
+    features: 'width=900,height=750,scrollbars=yes,resizable=yes',
+  });
 }

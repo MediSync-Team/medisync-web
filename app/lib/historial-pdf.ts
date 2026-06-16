@@ -1,6 +1,7 @@
 ﻿import { HistorialTurno, Paciente } from './api';
 import { formatClinicCurrentDate, formatClinicInstantDate, formatClinicInstantTime } from './date';
 import { interpolate, PdfLanguageInput, resolvePdfI18n } from './pdf-i18n';
+import { openPrintDocument } from './pdf/print-document';
 
 export interface HistorialPDFData {
   paciente: Paciente;
@@ -326,12 +327,9 @@ export function imprimirHistorial(data: HistorialPDFData, langOrLocale: PdfLangu
 </body>
 </html>`;
 
-  const win = window.open('', '_blank', 'width=960,height=800');
-  if (!win) {
-    alert(pdf.common.popupBlockedPdf);
-    return;
-  }
-  win.document.write(html);
-  win.document.close();
-  setTimeout(() => win.print(), 700);
+  openPrintDocument(html, {
+    popupBlockedMessage: pdf.common.popupBlockedPdf,
+    features: 'width=960,height=800',
+    printDelayMs: 700,
+  });
 }

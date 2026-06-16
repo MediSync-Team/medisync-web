@@ -1,6 +1,7 @@
 ﻿import { RecetaIndicacion, Profesional, Paciente } from './api';
 import { formatClinicInstantDate, formatClinicInstantDateTime, formatClinicInstantTime } from './date';
 import { interpolate, PdfLanguageInput, resolvePdfI18n } from './pdf-i18n';
+import { openPrintDocument } from './pdf/print-document';
 
 export interface RecetaPDFData {
   receta: RecetaIndicacion;
@@ -356,13 +357,5 @@ export function imprimirReceta(data: RecetaPDFData, langInput: PdfLanguageInput 
 </body>
 </html>`;
 
-  const win = window.open('', '_blank', 'width=900,height=750');
-  if (!win) {
-    alert(common.popupBlockedPdf);
-    return;
-  }
-  win.document.write(html);
-  win.document.close();
-  // Small delay so images load before print dialog
-  setTimeout(() => win.print(), 600);
+  openPrintDocument(html, { popupBlockedMessage: common.popupBlockedPdf });
 }

@@ -1,6 +1,7 @@
 import { CertificadoConDatos } from './api';
 import { formatClinicInstantDate } from './date';
 import { interpolate, PdfLanguageInput, resolvePdfI18n } from './pdf-i18n';
+import { openPrintDocument } from './pdf/print-document';
 
 export function imprimirCertificado(cert: CertificadoConDatos, langInput: PdfLanguageInput = 'es') {
   const { lang, locale, pdf } = resolvePdfI18n(langInput);
@@ -249,12 +250,5 @@ export function imprimirCertificado(cert: CertificadoConDatos, langInput: PdfLan
     </html>
   `;
 
-  const win = window.open('', '_blank', 'width=900,height=750');
-  if (!win) {
-    alert(common.popupBlockedCertificate);
-    return;
-  }
-  win.document.write(html);
-  win.document.close();
-  setTimeout(() => win.print(), 600);
+  openPrintDocument(html, { popupBlockedMessage: common.popupBlockedCertificate });
 }
