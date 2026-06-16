@@ -147,9 +147,9 @@ describe('patient modal i18n', () => {
           },
         } as any}
         onCalificar={vi.fn()}
-        d={{ clinicalEvolution: 'Clinical evolution', noClinicalEvolution: 'No evolution', rateConsultation: 'Rate consultation' }}
-        m={{ PRESENCIAL: 'In person', VIRTUAL: 'Virtual' }}
-        s={{ COMPLETADO: 'Completed' }}
+        d={{ clinicalEvolution: 'Clinical evolution', noClinicalEvolution: 'No evolution', rateConsultation: 'Rate consultation' } as any}
+        m={{ PRESENCIAL: 'In person', VIRTUAL: 'Virtual' } as any}
+        s={{ COMPLETADO: 'Completed' } as any}
         translateSpecialty={(name) => name ?? ''}
       />
     );

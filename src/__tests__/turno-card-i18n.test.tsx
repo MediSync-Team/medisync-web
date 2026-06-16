@@ -71,8 +71,8 @@ describe('TurnoCard i18n', () => {
         onCalificar={vi.fn()}
         onVideoCall={vi.fn()}
         onChat={vi.fn()}
-        d={{}}
-        s={{ CANCELADO: 'Cancelled' }}
+        d={{} as any}
+        s={{ CANCELADO: 'Cancelled' } as any}
         translateSpecialty={(name) => name ?? ''}
       />
     );

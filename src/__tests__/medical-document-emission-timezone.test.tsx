@@ -59,9 +59,9 @@ describe('medical document emission timezone display', () => {
           archivos: [],
         } as any}
         onCalificar={vi.fn()}
-        d={{ clinicalEvolution: 'Evolucion', noClinicalEvolution: 'Sin evolucion' }}
-        m={{ PRESENCIAL: 'Presencial', VIRTUAL: 'Virtual' }}
-        s={{ COMPLETADO: 'Completado' }}
+        d={{ clinicalEvolution: 'Evolucion', noClinicalEvolution: 'Sin evolucion' } as any}
+        m={{ PRESENCIAL: 'Presencial', VIRTUAL: 'Virtual' } as any}
+        s={{ COMPLETADO: 'Completado' } as any}
         translateSpecialty={(name) => name ?? ''}
       />
     );

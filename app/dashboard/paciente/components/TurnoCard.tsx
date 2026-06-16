@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { api, Turno } from '../../../lib/api';
+import { Translations } from '../../../lib/i18n/translations';
 import { useLang } from '../../../lib/i18n/context';
 import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../../lib/date';
 import {
@@ -24,8 +25,8 @@ interface TurnoCardProps {
   onCalificar: () => void;
   onVideoCall: () => void;
   onChat: () => void;
-  d: any;
-  s: any;
+  d: Translations['dashboard'];
+  s: Translations['status'];
   translateSpecialty: (name?: string) => string;
 }
 

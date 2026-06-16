@@ -3,9 +3,10 @@
 import { useLang } from '../../../lib/i18n/context';
 import { getLocale } from '../../../lib/date';
 import { PacienteStats } from '../../../lib/api';
+import { Translations } from '../../../lib/i18n/translations';
 
 /* -- Patient statistics panel ---------------------------------------------- */
-function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats: PacienteStats | null; loading: boolean; d: any; translateSpecialty: (name?: string) => string }) {
+function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats: PacienteStats | null; loading: boolean; d: Translations['dashboard']; translateSpecialty: (name?: string) => string }) {
   const { lang } = useLang();
   const locale = getLocale(lang);
 

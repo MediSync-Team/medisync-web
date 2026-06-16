@@ -18,6 +18,7 @@ import { imprimirReceta } from '../../lib/receta-pdf';
 import { imprimirHistorial } from '../../lib/historial-pdf';
 import { imprimirCertificado } from '../../lib/certificado-pdf';
 import { getTurnosTabRequest, PacienteDashboardTab } from '../../lib/paciente-dashboard-tabs';
+import { Notice } from '../../lib/ui-notice';
 import Spinner from '../../components/Spinner';
 import { clinicDateKeyFromDateOnly, formatClinicDateKeyForDisplay, formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../lib/date';
 import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
@@ -109,7 +110,7 @@ export default function PacienteDashboard() {
   const [turnoCalificar, setTurnoCalificar] = useState<Turno | null>(null);
   const [turnoVideoCall, setTurnoVideoCall] = useState<Turno | null>(null);
   const [turnoChat, setTurnoChat] = useState<Turno | null>(null);
-  const [inlineNotice, setInlineNotice] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [inlineNotice, setInlineNotice] = useState<Notice | null>(null);
   const [cancellingTurnoId, setCancellingTurnoId] = useState<string | null>(null);
 
   // Datos médicos

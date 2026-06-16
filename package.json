@@ -12,9 +12,12 @@
     "purge:build-trash": "node scripts/purge-build-trash.mjs",
     "purge:build-trash:dry": "node scripts/purge-build-trash.mjs --dry-run",
     "lint": "eslint",
+    "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:ui": "vitest --ui",
-    "test:watch": "vitest --watch"
+    "test:watch": "vitest --watch",
+    "test:coverage": "vitest run --coverage",
+    "check": "npm run typecheck && vitest run && npm run build"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.2.4",
@@ -32,6 +35,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^6.0.1",
+    "@vitest/coverage-v8": "^4.1.9",
     "autoprefixer": "^10.4.27",
     "esbuild": "^0.27.7",
     "eslint": "^9",

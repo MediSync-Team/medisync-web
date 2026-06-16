@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Cupon, TipoDescuento, SuscripcionEstado } from '../lib/api';
+import { Notice } from '../lib/ui-notice';
 import { clinicDateKeyFromInstant, formatClinicDateKey, formatClinicInstantTime, getClinicMonthFetchBounds, getLocale, todayInputValue } from '../lib/date';
 import StatsPanel from '../components/StatsPanel';
 import ProfileModal from '../components/ProfileModal';
@@ -63,7 +64,7 @@ export default function ProfesionalDashboard() {
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [inlineFeedback, setInlineFeedback] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+  const [inlineFeedback, setInlineFeedback] = useState<Notice | null>(null);
   const [agendaSearch, setAgendaSearch] = useState('');
   const [agendaEstado, setAgendaEstado] = useState<'TODOS' | 'RESERVADO' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO' | 'AUSENTE'>('TODOS');
   const [agendaModalidad, setAgendaModalidad] = useState<'TODAS' | 'PRESENCIAL' | 'VIRTUAL'>('TODAS');

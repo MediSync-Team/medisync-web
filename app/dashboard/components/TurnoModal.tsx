@@ -24,6 +24,7 @@ import { estadoBadge, estadoLabel } from '../../lib/utils';
 import { imprimirReceta } from '../../lib/receta-pdf';
 import { imprimirCertificado } from '../../lib/certificado-pdf';
 import { exportarHistoriaClinicaPDF } from '../../lib/historia-clinica-pdf';
+import { Notice } from '../../lib/ui-notice';
 import {
   CalendarIcon,
   TrashIcon,
@@ -66,7 +67,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
   const [loadingReceta, setLoadingReceta] = useState(true);
   const [savingReceta, setSavingReceta] = useState(false);
   const [shareText, setShareText] = useState('');
-  const [modalNotice, setModalNotice] = useState<{ type: 'error' | 'success' | 'info'; text: string } | null>(null);
+  const [modalNotice, setModalNotice] = useState<Notice | null>(null);
   const [showVideoCall, setShowVideoCall] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showReprogramar, setShowReprogramar] = useState(false);

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { api, HistorialTurno, CertificadoConDatos } from '../../../lib/api';
+import { Translations } from '../../../lib/i18n/translations';
 import { useLang } from '../../../lib/i18n/context';
 import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../../lib/date';
 import { imprimirReceta } from '../../../lib/receta-pdf';
@@ -31,9 +32,9 @@ export default function HistorialCard({
 }: {
   item: HistorialTurno;
   onCalificar: (turno: HistorialTurno) => void;
-  d: any;
-  m: any;
-  s: any;
+  d: Translations['dashboard'];
+  m: Translations['modality'];
+  s: Translations['status'];
   translateSpecialty: (name?: string) => string;
 }) {
   const [expanded, setExpanded] = useState(false);

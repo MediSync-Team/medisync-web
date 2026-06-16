@@ -6,6 +6,7 @@ import { api, Resena, ResenasStats } from '../../lib/api';
 import { InfoIcon } from '../../components/icons';
 import StarRating from '../../components/StarRating';
 import { formatClinicInstantDate, getLocale } from '../../lib/date';
+import { Notice } from '../../lib/ui-notice';
 
 export default function ResenasView() {
   const { lang, t } = useLang();
@@ -19,7 +20,7 @@ export default function ResenasView() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [respuestaText, setRespuestaText] = useState('');
   const [saving, setSaving] = useState(false);
-  const [notice, setNotice] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
 
   const load = async (p = 1, rating?: number) => {
     setLoading(true);

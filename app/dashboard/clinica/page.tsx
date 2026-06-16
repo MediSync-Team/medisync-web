@@ -13,6 +13,7 @@ import {
   Profesional,
 } from '../../lib/api';
 import { BuildingIcon, VideoIcon, CheckIcon } from '../../components/icons';
+import { Notice } from '../../lib/ui-notice';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { estadoLabel, invitacionEstadoLabel } from '../../lib/utils';
 import {
@@ -58,7 +59,7 @@ function Avatar({ p }: { p: Pick<Profesional, 'nombre' | 'apellido' | 'fotoUrl'>
 
 // -- Page ---------------------------------------------------------------------
 type Tab = 'overview' | 'profesionales' | 'agenda' | 'invitaciones' | 'configuracion';
-type Feedback = { type: 'success' | 'error'; text: string };
+type Feedback = Notice;
 
 export default function ClinicaDashboard() {
   const router = useRouter();

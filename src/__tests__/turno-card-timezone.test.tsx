@@ -69,8 +69,8 @@ describe('TurnoCard timezone display', () => {
         onCalificar={vi.fn()}
         onVideoCall={vi.fn()}
         onChat={vi.fn()}
-        d={{}}
-        s={{ CANCELADO: 'Cancelado' }}
+        d={{} as any}
+        s={{ CANCELADO: 'Cancelado' } as any}
         translateSpecialty={(name) => name ?? ''}
       />
     );
