@@ -2,10 +2,21 @@ import { getObrasSociales } from './obras-sociales';
 
 const AUTO_COVERAGE_DISABLED_PREFIX = 'medisync:auto-coverage-filter-disabled';
 
+/** Trim, collapse internal whitespace, and upper-case for case/spacing-safe matching. */
+function normaliseCoverage(value: string): string {
+  return value.trim().replace(/\s+/g, ' ').toUpperCase();
+}
+
+/**
+ * Resolve a free-form coverage string to its canonical obra-social name, or `''`
+ * when it is empty/unknown. Matching is whitespace- and case-insensitive; the
+ * returned value preserves the canonical casing/accents from the known list.
+ */
 export function getSavedCoverageFilter(obraSocial?: string | null): string {
-  const normalised = obraSocial?.trim().toUpperCase() ?? '';
-  const list = getObrasSociales();
-  return list.includes(normalised) ? normalised : '';
+  const normalised = normaliseCoverage(obraSocial ?? '');
+  if (!normalised) return '';
+  const match = getObrasSociales().find((item) => normaliseCoverage(item) === normalised);
+  return match ?? '';
 }
 
 export function getAutoCoverageDisabledKey(userId?: string | null): string | null {
