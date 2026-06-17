@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
-import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Cupon, TipoDescuento, SuscripcionEstado } from '../lib/api';
+import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Cupon, SuscripcionEstado } from '../lib/api';
 import { Notice } from '../lib/ui-notice';
 import { clinicDateKeyFromInstant, formatClinicDateKey, formatClinicInstantTime, getClinicMonthFetchBounds, getLocale, todayInputValue } from '../lib/date';
 import StatsPanel from '../components/StatsPanel';
@@ -18,7 +18,7 @@ import { GlobalChatHub } from '../components/GlobalChatHub';
 import ProfesionalOnboardingWizard from '../components/ProfesionalOnboardingWizard';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
-  BellIcon, ChartIcon, ClipboardIcon, StarIcon, CheckIcon, XIcon, InfoIcon,
+  BellIcon, ChartIcon, StarIcon, CheckIcon, XIcon, InfoIcon,
 } from '../components/icons';
 
 import CalendarioView from './components/CalendarioView';
@@ -31,6 +31,8 @@ import AuditoriaView from './components/AuditoriaView';
 import EmbedWidgetSection from './components/EmbedWidgetSection';
 import TurnoModal from './components/TurnoModal';
 import UpgradePrompt from './components/UpgradePrompt';
+import NuevoCuponModal, { CuponFormState } from './components/NuevoCuponModal';
+import ProfesionalStatCards from './components/ProfesionalStatCards';
 
 interface StatsData {
   turnosPorMes: any[];
@@ -76,9 +78,9 @@ export default function ProfesionalDashboard() {
   const [cupones, setCupones] = useState<Cupon[]>([]);
   const [loadingCupones, setLoadingCupones] = useState(false);
   const [showNuevoCupon, setShowNuevoCupon] = useState(false);
-  const [nuevosCuponForm, setNuevosCuponForm] = useState({
+  const [nuevosCuponForm, setNuevosCuponForm] = useState<CuponFormState>({
     codigo: '',
-    tipo: 'PORCENTAJE' as TipoDescuento,
+    tipo: 'PORCENTAJE',
     valor: '',
     descripcion: '',
     maxUsos: '',
@@ -491,44 +493,12 @@ export default function ProfesionalDashboard() {
           </>
         ) : (
           <>
-            <div data-onboarding="stat-cards" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-              <div className="stat-card">
-                <div className="flex items-start justify-between">
-                  <p className="stat-label">{d.appointments} - {d.today}</p>
-                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
-                    <CalendarIcon size={15} className="text-blue-600" />
-                  </div>
-                </div>
-                <p className="stat-value text-blue-600">{hoyTurnos.length}</p>
-                <p className="stat-desc">
-                  {hoyTurnos.filter(t => t.estado === 'CONFIRMADO').length} {d.confirmed}
-                </p>
-              </div>
-
-              <div className="stat-card">
-                <div className="flex items-start justify-between">
-                  <p className="stat-label">{d.appointments} - {d.thisMonth}</p>
-                  <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center">
-                    <ChartIcon size={15} className="text-emerald-600" />
-                  </div>
-                </div>
-                <p className="stat-value text-emerald-600">{turnosMes.length}</p>
-                <p className="stat-desc">{new Date().toLocaleString(getLocale(lang), { month: 'long' })}</p>
-              </div>
-
-              <div className="stat-card">
-                <div className="flex items-start justify-between">
-                  <p className="stat-label">{d.specialtyLabel}</p>
-                  <div className="w-8 h-8 rounded-lg bg-purple-100 flex items-center justify-center">
-                    <ClipboardIcon size={15} className="text-purple-600" />
-                  </div>
-                </div>
-                <p className="text-lg font-bold text-slate-800 dark:text-slate-200 mt-1 leading-tight">
-                  {translateSpecialty(user.profesional.especialidad?.nombre || '')}
-                </p>
-                <p className="stat-desc">{d.title}</p>
-              </div>
-            </div>
+            <ProfesionalStatCards
+              todayCount={hoyTurnos.length}
+              todayConfirmed={hoyTurnos.filter(t => t.estado === 'CONFIRMADO').length}
+              monthCount={turnosMes.length}
+              especialidadNombre={user.profesional.especialidad?.nombre || ''}
+            />
 
             <div className="card overflow-hidden">
               <div className="tab-nav px-1 pt-1">
@@ -648,102 +618,13 @@ export default function ProfesionalDashboard() {
       )}
 
       {showNuevoCupon && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-              <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">{d.couponModal.title}</h3>
-              <button onClick={() => setShowNuevoCupon(false)} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
-                <XIcon size={18} />
-              </button>
-            </div>
-            <div className="px-6 py-5 space-y-4">
-              <div>
-                <label className="field-label">{d.couponModal.codeLabel}</label>
-                <input
-                  type="text"
-                  value={nuevosCuponForm.codigo}
-                  onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, codigo: e.target.value.toUpperCase() })}
-                  placeholder={d.couponModal.codePlaceholder}
-                  className="field-input"
-                  disabled={savingCupon}
-                />
-              </div>
-              <div>
-                <label className="field-label mb-2">{d.couponModal.discountType}</label>
-                <div className="flex gap-2">
-                  {(['PORCENTAJE', 'MONTO_FIJO'] as TipoDescuento[]).map((tipo) => (
-                    <button
-                      key={tipo}
-                      onClick={() => setNuevosCuponForm({ ...nuevosCuponForm, tipo })}
-                      className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
-                        nuevosCuponForm.tipo === tipo
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-300'
-                      }`}
-                    >
-                      {tipo === 'PORCENTAJE' ? '%' : '$'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <label className="field-label">
-                  {d.couponModal.amountLabel} {nuevosCuponForm.tipo === 'PORCENTAJE' ? '(%)' : '($ARS)'}
-                </label>
-                <input
-                  type="number"
-                  value={nuevosCuponForm.valor}
-                  onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, valor: e.target.value })}
-                  placeholder={d.couponModal.amountPlaceholder}
-                  className="field-input"
-                  disabled={savingCupon}
-                />
-              </div>
-              <div>
-                <label className="field-label">{d.couponModal.descriptionLabel}</label>
-                <input
-                  type="text"
-                  value={nuevosCuponForm.descripcion}
-                  onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, descripcion: e.target.value })}
-                  placeholder={d.couponModal.descriptionPlaceholder}
-                  className="field-input"
-                  disabled={savingCupon}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="field-label">{d.couponModal.maxUsesLabel}</label>
-                  <input
-                    type="number"
-                    value={nuevosCuponForm.maxUsos}
-                    onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, maxUsos: e.target.value })}
-                    placeholder={d.couponModal.maxUsesPlaceholder}
-                    className="field-input"
-                    disabled={savingCupon}
-                  />
-                </div>
-                <div>
-                  <label className="field-label">{d.couponModal.expiresLabel}</label>
-                  <input
-                    type="date"
-                    value={nuevosCuponForm.expiresAt}
-                    onChange={(e) => setNuevosCuponForm({ ...nuevosCuponForm, expiresAt: e.target.value })}
-                    className="field-input"
-                    disabled={savingCupon}
-                  />
-                </div>
-              </div>
-            </div>
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3 rounded-b-2xl">
-              <button onClick={() => setShowNuevoCupon(false)} className="btn btn-secondary flex-1" disabled={savingCupon}>
-                {d.couponModal.cancel}
-              </button>
-              <button onClick={handleCrearCupon} className="btn btn-primary flex-1" disabled={savingCupon}>
-                {savingCupon ? d.couponModal.creating : d.couponModal.create}
-              </button>
-            </div>
-          </div>
-        </div>
+        <NuevoCuponModal
+          form={nuevosCuponForm}
+          setForm={setNuevosCuponForm}
+          onClose={() => setShowNuevoCupon(false)}
+          onSave={handleCrearCupon}
+          saving={savingCupon}
+        />
       )}
 
       <OnboardingTour storageKey="medisync-prof-tour-v1" steps={profTourSteps} delay={1000} />

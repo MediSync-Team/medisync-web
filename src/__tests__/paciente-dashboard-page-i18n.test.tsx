@@ -88,7 +88,7 @@ vi.mock('../../app/components/ChatModal', () => ({
 }));
 
 vi.mock('../../app/components/VideoCallModal', () => ({
-  default: ({ profesionalNombre }: any) => <div>Video call with {profesionalNombre}</div>,
+  default: ({ participantName }: any) => <div>Video call with {participantName}</div>,
 }));
 
 vi.mock('../../app/components/ProfileModal', () => ({ default: () => null }));

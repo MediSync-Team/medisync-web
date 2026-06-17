@@ -8,30 +8,29 @@ import { api, Turno, ListaEsperaItem, HistorialTurno, PacienteStats, RecetaPacie
 import ChatModal from '../../components/ChatModal';
 import ProfileModal from '../../components/ProfileModal';
 import OnboardingTour from '../../components/OnboardingTour';
-import Pagination from '../../components/Pagination';
 import VideoCallModal from '../../components/VideoCallModal';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { useLang } from '../../lib/i18n/context';
 import { NotificationBell } from '../../components/NotificationBell';
 import { GlobalChatHub } from '../../components/GlobalChatHub';
-import { imprimirReceta } from '../../lib/receta-pdf';
 import { imprimirHistorial } from '../../lib/historial-pdf';
-import { imprimirCertificado } from '../../lib/certificado-pdf';
 import { getTurnosTabRequest, PacienteDashboardTab } from '../../lib/paciente-dashboard-tabs';
 import { Notice } from '../../lib/ui-notice';
 import Spinner from '../../components/Spinner';
-import { clinicDateKeyFromDateOnly, formatClinicDateKeyForDisplay, formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../lib/date';
+import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../lib/date';
 import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
-import TurnoCard from './components/TurnoCard';
-import HistorialCard from './components/HistorialCard';
-import RecetaCard from './components/RecetaCard';
-import CertificadoCard from './components/CertificadoCard';
 import RecetaModal from './components/RecetaModal';
 import PreconsultaModal from './components/PreconsultaModal';
 import CalificarModal from './components/CalificarModal';
 import ReprogramarModal from './components/ReprogramarModal';
 import ResumenPacienteView from './components/ResumenPacienteView';
 import EstadisticasPaciente from './components/EstadisticasPaciente';
+import DatosMedicosView, { DatosMedicos } from './components/DatosMedicosView';
+import RecetasView from './components/RecetasView';
+import CertificadosView from './components/CertificadosView';
+import ListaEsperaView from './components/ListaEsperaView';
+import HistorialView from './components/HistorialView';
+import TurnosTabView from './components/TurnosTabView';
 import {
   MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, XIcon, SearchIcon, WaitlistIcon, InfoIcon, ClipboardIcon,
@@ -44,8 +43,6 @@ export default function PacienteDashboard() {
   const p = t('paciente');
   const d = t('dashboard');
   const c = t('common');
-  const s = t('status');
-  const m = t('modality');
   const locale = getLocale(lang);
   const pageText = p.page;
   const pacienteTourSteps = [
@@ -114,10 +111,7 @@ export default function PacienteDashboard() {
   const [cancellingTurnoId, setCancellingTurnoId] = useState<string | null>(null);
 
   // Datos médicos
-  const [datosMedicos, setDatosMedicos] = useState<{
-    antecedentesPersonales: string; antecedentesFamiliares: string;
-    alergias: string; medicacionActual: string; habitos: string; diagnosticosPrevios: string;
-  }>({ antecedentesPersonales: '', antecedentesFamiliares: '', alergias: '', medicacionActual: '', habitos: '', diagnosticosPrevios: '' });
+  const [datosMedicos, setDatosMedicos] = useState<DatosMedicos>({ antecedentesPersonales: '', antecedentesFamiliares: '', alergias: '', medicacionActual: '', habitos: '', diagnosticosPrevios: '' });
   const [savingDatos, setSavingDatos] = useState(false);
   const [datosSaved, setDatosSaved] = useState(false);
 
@@ -214,21 +208,6 @@ export default function PacienteDashboard() {
       setMisCertificados(data.certificados);
     } catch (err) { console.error(err); }
     finally { setLoadingCertificados(false); }
-  };
-
-  const loadDatosMedicos = async () => {
-    if (!user?.paciente?.id) return;
-    try {
-      const paciente = await api.pacientes.getPerfil();
-      setDatosMedicos({
-        antecedentesPersonales: paciente.antecedentesPersonales ?? '',
-        antecedentesFamiliares: paciente.antecedentesFamiliares ?? '',
-        alergias: paciente.alergias ?? '',
-        medicacionActual: paciente.medicacionActual ?? '',
-        habitos: paciente.habitos ?? '',
-        diagnosticosPrevios: paciente.diagnosticosPrevios ?? '',
-      });
-    } catch (err) { console.error(err); }
   };
 
   const saveDatosMedicos = async () => {
@@ -528,335 +507,56 @@ export default function PacienteDashboard() {
             ) : activeTab === 'estadisticas' ? (
               <EstadisticasPaciente stats={pacienteStats} loading={loadingStats} d={d} translateSpecialty={translateSpecialty} />
             ) : activeTab === 'historial' ? (
-              /* -- Historial clínico ------------------ */
-              loadingHistorial ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="border border-slate-200 rounded-xl p-4 space-y-2">
-                      <div className="skeleton h-4 w-40 rounded" />
-                      <div className="skeleton h-3 w-56 rounded" />
-                      <div className="skeleton h-16 w-full rounded-lg mt-2" />
-                    </div>
-                  ))}
-                </div>
-              ) : historial.length === 0 ? (
-                <div className="py-12 text-center">
-                  <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                  <p className="text-slate-500 text-sm font-medium">{d.noCompletedConsultations}</p>
-                </div>
-              ) : (
-                <>
-                  <div className="flex justify-end mb-3">
-                    <button
-                      onClick={downloadHistorialPDF}
-                      className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 border border-blue-200 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
-                    >
-<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                {d.downloadFullHistory}
-              </button>
-                  </div>
-                  <div className="space-y-4">
-                    {historial.map(item => (
-                      <HistorialCard key={item.id} item={item} onCalificar={(t) => setTurnoCalificar(t as any)} d={d} m={m} s={s} translateSpecialty={translateSpecialty} />
-                    ))}
-                  </div>
-                  <Pagination
-                    page={historialPage}
-                    totalPages={historialPagination.totalPages}
-                    total={historialPagination.total}
-                    limit={HISTORIAL_LIMIT}
-                    onPageChange={(p) => { setHistorialPage(p); loadHistorial(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
-                  />
-                </>
-              )
+              <HistorialView
+                historial={historial}
+                loading={loadingHistorial}
+                page={historialPage}
+                totalPages={historialPagination.totalPages}
+                total={historialPagination.total}
+                limit={HISTORIAL_LIMIT}
+                onPageChange={(p) => { setHistorialPage(p); loadHistorial(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                onDownloadPDF={downloadHistorialPDF}
+                onCalificar={(turno) => setTurnoCalificar(turno as any)}
+                translateSpecialty={translateSpecialty}
+              />
             ) : activeTab === 'recetas' ? (
-              /* -- Recetas ------------------------------ */
-              loadingRecetas ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="border border-slate-200 rounded-xl p-4 space-y-2">
-                      <div className="skeleton h-4 w-40 rounded" />
-                      <div className="skeleton h-3 w-56 rounded" />
-                      <div className="skeleton h-16 w-full rounded-lg mt-2" />
-                    </div>
-                  ))}
-                </div>
-              ) : misRecetas.length === 0 ? (
-                <div className="py-12 text-center">
-                  <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                  <p className="text-slate-500 text-sm font-medium">{p.noRecipes}</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {misRecetas.map((receta) => (
-                    <RecetaCard
-                      key={receta.turnoId}
-                      receta={receta}
-                      onDescargar={() => {
-                        imprimirReceta({
-                          receta: {
-                            id: receta.turnoId,
-                            turnoId: receta.turnoId,
-                            diagnostico: receta.receta.diagnostico,
-                            medicamentos: receta.receta.medicamentos,
-                            indicaciones: receta.receta.indicaciones,
-                            planTratamiento: receta.receta.planTratamiento,
-                            estudiosSolicitados: receta.receta.estudiosSolicitados,
-                            proximoControl: receta.receta.proximoControl,
-                            advertencias: receta.receta.advertencias,
-                            observaciones: receta.receta.observaciones,
-                            emitidaAt: receta.receta.emitidaAt,
-                            createdAt: receta.receta.emitidaAt,
-                            updatedAt: receta.receta.emitidaAt,
-                          },
-                          profesional: {
-                            nombre: receta.profesional.nombre,
-                            apellido: receta.profesional.apellido,
-                            especialidad: receta.profesional.especialidad,
-                            fotoUrl: receta.profesional.fotoUrl || undefined,
-                          },
-                          fechaHora: receta.fechaHora,
-                          modalidad: 'VIRTUAL',
-                        }, lang);
-                      }}
-                    />
-                  ))}
-                </div>
-              )
+              <RecetasView recetas={misRecetas} loading={loadingRecetas} />
             ) : activeTab === 'certificados' ? (
-              /* -- Certificados ------------------------- */
-              loadingCertificados ? (
-                <div className="space-y-3">
-                  {[1, 2, 3].map(i => (
-                    <div key={i} className="border border-slate-200 rounded-xl p-4 space-y-2">
-                      <div className="skeleton h-4 w-40 rounded" />
-                      <div className="skeleton h-3 w-56 rounded" />
-                      <div className="skeleton h-16 w-full rounded-lg mt-2" />
-                    </div>
-                  ))}
-                </div>
-              ) : misCertificados.length === 0 ? (
-                <div className="py-12 text-center">
-                  <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                  <p className="text-slate-500 text-sm font-medium">{p.noCertificates}</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {misCertificados.map((cert) => (
-                    <CertificadoCard
-                      key={cert.turnoId}
-                      certificado={cert}
-                      onDescargar={() => {
-                        imprimirCertificado({
-                          id: cert.certificado.id,
-                          turnoId: cert.certificado.turnoId,
-                          tipo: cert.certificado.tipo,
-                          diagnostico: cert.certificado.diagnostico,
-                          texto: cert.certificado.texto,
-                          diasReposo: cert.certificado.diasReposo,
-                          emitidaAt: cert.certificado.emitidaAt,
-                          createdAt: cert.certificado.createdAt,
-                          turno: {
-                            fechaHora: cert.fechaHora,
-                            modalidad: 'VIRTUAL',
-                            profesional: {
-                              nombre: cert.profesional.nombre,
-                              apellido: cert.profesional.apellido,
-                              matricula: null,
-                              fotoUrl: null,
-                              lugarAtencion: null,
-                              telefono: '',
-                              especialidad: { nombre: '' },
-                            },
-                            paciente: user.paciente ? {
-                              nombre: user.paciente.nombre,
-                              apellido: user.paciente.apellido,
-                              email: user.paciente.email,
-                              dni: user.paciente.dni || null,
-                              fechaNacimiento: user.paciente.fechaNacimiento || null,
-                              obraSocial: user.paciente.obraSocial || null,
-                            } : null,
-                          },
-                        }, lang);
-                      }}
-                    />
-                  ))}
-                </div>
-              )
+              <CertificadosView certificados={misCertificados} loading={loadingCertificados} paciente={user.paciente} />
             ) : activeTab === 'datosMedicos' ? (
-              /* -- Mis datos médicos ---------------- */
-              <div className="space-y-5">
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.personalHistory}</h3>
-                  <p className="text-xs text-slate-400 mb-2">{d.personalHistoryDesc}</p>
-                  <textarea
-                    value={datosMedicos.antecedentesPersonales}
-                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, antecedentesPersonales: e.target.value }))}
-                    rows={3}
-                    placeholder={d.placeholder.personalHistory}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.familyHistory}</h3>
-                  <p className="text-xs text-slate-400 mb-2">{d.familyHistoryDesc}</p>
-                  <textarea
-                    value={datosMedicos.antecedentesFamiliares}
-                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, antecedentesFamiliares: e.target.value }))}
-                    rows={3}
-                    placeholder={d.placeholder.familyHistory}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.allergies}</h3>
-                  <p className="text-xs text-slate-400 mb-2">{d.allergiesDesc}</p>
-                  <textarea
-                    value={datosMedicos.alergias}
-                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, alergias: e.target.value }))}
-                    rows={2}
-                    placeholder={d.placeholder.allergies}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.currentMedication}</h3>
-                  <p className="text-xs text-slate-400 mb-2">{d.currentMedicationDesc}</p>
-                  <textarea
-                    value={datosMedicos.medicacionActual}
-                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, medicacionActual: e.target.value }))}
-                    rows={3}
-                    placeholder={d.placeholder.currentMedication}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.habits}</h3>
-                  <p className="text-xs text-slate-400 mb-2">{d.habitsDesc}</p>
-                  <textarea
-                    value={datosMedicos.habitos}
-                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, habitos: e.target.value }))}
-                    rows={2}
-                    placeholder={d.placeholder.habits}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                  />
-                </div>
-                <div>
-                  <h3 className="text-sm font-semibold text-slate-700 mb-1">{d.previousDiagnoses}</h3>
-                  <p className="text-xs text-slate-400 mb-2">{d.previousDiagnosesDesc}</p>
-                  <textarea
-                    value={datosMedicos.diagnosticosPrevios}
-                    onChange={(e) => setDatosMedicos(prev => ({ ...prev, diagnosticosPrevios: e.target.value }))}
-                    rows={2}
-                    placeholder={d.placeholder.previousDiagnoses}
-                    className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
-                  />
-                </div>
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    onClick={saveDatosMedicos}
-                    disabled={savingDatos}
-                    className="btn btn-primary text-sm"
-                  >
-                    {savingDatos ? d.saving : d.saveMedicalData}
-                  </button>
-                  {datosSaved && (
-                    <span className="text-emerald-600 text-sm font-medium flex items-center gap-1">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
-                      {d.savedMedicalData}
-                    </span>
-                  )}
-                </div>
-                <p className="text-xs text-slate-400">{d.medicalDataVisibility}</p>
-              </div>
+              <DatosMedicosView
+                datos={datosMedicos}
+                onChange={(patch) => setDatosMedicos(prev => ({ ...prev, ...patch }))}
+                onSave={saveDatosMedicos}
+                saving={savingDatos}
+                saved={datosSaved}
+              />
             ) : activeTab === 'listaEspera' ? (
-              /* -- Lista de espera ------------------ */
-              listaEspera.length === 0 ? (
-                <div className="py-12 text-center">
-                  <WaitlistIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                  <p className="text-slate-500 text-sm font-medium">{p.noWaitlist}</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {listaEspera.map((item) => (
-                    <div key={item.id} className="border border-slate-200 rounded-xl p-4 flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <p className="font-semibold text-slate-800 dark:text-slate-200">
-                          {item.profesional?.nombre} {item.profesional?.apellido}
-                        </p>
-                        <p className="text-sm text-blue-600 font-medium">{translateSpecialty(item.profesional?.especialidad?.nombre)}</p>
-                        <div className="flex items-center gap-3 mt-1.5 text-xs text-slate-500">
-                          <span className="flex items-center gap-1"><CalendarIcon size={11} />{formatClinicDateKeyForDisplay(clinicDateKeyFromDateOnly(item.fecha), locale, { year: 'numeric', month: 'numeric', day: 'numeric' })}</span>
-                          <span>{item.modalidad}</span>
-                        </div>
-                        <span className="badge badge-yellow mt-2">{(s as any)[item.estado] || item.estado}</span>
-                      </div>
-                      <button onClick={() => cancelarListaEspera(item.id)} className="btn btn-secondary btn-sm">
-                        {p.cancel}
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )
-            ) : (activeTab === 'proximos' || activeTab === 'pasados') && loading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map(i => (
-                  <div key={i} className="border border-slate-200 rounded-xl p-4 space-y-2">
-                    <div className="skeleton h-4 w-40 rounded" />
-                    <div className="skeleton h-3 w-28 rounded" />
-                    <div className="skeleton h-8 w-32 rounded-lg mt-2" />
-                  </div>
-                ))}
-              </div>
-            ) : activeTab === 'proximos' && turnos.length === 0 ? (
-              <div className="py-12 text-center">
-                <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                <p className="text-slate-500 text-sm font-medium mb-2">{p.noUpcoming}</p>
-                <p className="text-xs text-slate-400 mb-5 max-w-sm mx-auto">
-                  {d.firstAppointment}
-                </p>
-                <Link href="/" className="btn btn-primary btn-sm">
-                  <SearchIcon size={13} /> {p.searchProfessional}
-                </Link>
-              </div>
-            ) : activeTab === 'pasados' && turnos.length === 0 ? (
-              <div className="py-12 text-center">
-                <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
-                <p className="text-slate-500 text-sm font-medium">{p.noPast}</p>
-              </div>
+              <ListaEsperaView items={listaEspera} onCancelar={cancelarListaEspera} translateSpecialty={translateSpecialty} />
             ) : (activeTab === 'proximos' || activeTab === 'pasados') ? (
-              <>
-                <div className="space-y-3">
-                  {turnos.map((turno) => (
-                    <TurnoCard
-                      key={turno.id}
-                      turno={turno}
-                      pagoInfo={pagosPendientes[turno.id]}
-                      horasMinCancelacion={horasMinCancelacion}
-                      canCancel={canCancel(turno.fechaHora)}
-                      isCancelling={cancellingTurnoId === turno.id}
-                      onPagar={() => router.push(`/pago?turno=${turno.id}`)}
-                      onCancelar={() => handleCancelar(turno.id)}
-                      onReprogramar={() => setTurnoReprogramar(turno)}
-                      onCompletarPreconsulta={() => setTurnoPreconsulta(turno)}
-                      onVerReceta={() => setTurnoReceta(turno)}
-                      onCalificar={() => setTurnoCalificar(turno)}
-                      onVideoCall={() => setTurnoVideoCall(turno)}
-                      onChat={() => setTurnoChat(turno)}
-                      d={d}
-                      s={s}
-                      translateSpecialty={translateSpecialty}
-                    />
-                  ))}
-                </div>
-                <Pagination
-                  page={page}
-                  totalPages={paginationMeta.totalPages}
-                  total={paginationMeta.total}
-                  limit={TURNOS_LIMIT}
-                  onPageChange={handlePageChange}
-                />
-              </>
+              <TurnosTabView
+                turnos={turnos}
+                loading={loading}
+                tab={activeTab}
+                page={page}
+                totalPages={paginationMeta.totalPages}
+                total={paginationMeta.total}
+                limit={TURNOS_LIMIT}
+                pagosPendientes={pagosPendientes}
+                horasMinCancelacion={horasMinCancelacion}
+                cancellingTurnoId={cancellingTurnoId}
+                canCancel={canCancel}
+                onPageChange={handlePageChange}
+                translateSpecialty={translateSpecialty}
+                onPagar={(turno) => router.push(`/pago?turno=${turno.id}`)}
+                onCancelar={(turno) => handleCancelar(turno.id)}
+                onReprogramar={setTurnoReprogramar}
+                onCompletarPreconsulta={setTurnoPreconsulta}
+                onVerReceta={setTurnoReceta}
+                onCalificar={setTurnoCalificar}
+                onVideoCall={setTurnoVideoCall}
+                onChat={setTurnoChat}
+              />
             ) : null}
           </div>
         </div>
