@@ -3,12 +3,19 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { Info } from 'lucide-react';
 import { api } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
-import ThemeLangToggle from '../components/ThemeLangToggle';
 import PasswordInput from '../components/PasswordInput';
 import PasswordStrengthIndicator, { getRequirements } from '../components/PasswordStrengthIndicator';
-import { InfoIcon } from '../components/icons';
+import { Logo } from '@/components/logo';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { LanguageToggle } from '@/components/language-toggle';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function ForgotPasswordContent() {
   const router = useRouter();
@@ -74,119 +81,114 @@ function ForgotPasswordContent() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col">
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 py-4">
-        <div className="page-container flex items-center justify-between">
-          <Link href="/" className="text-sm font-bold text-slate-800 dark:text-slate-100">
-            MediSync
-          </Link>
-          <ThemeLangToggle compact />
+    <div className="flex min-h-screen flex-col bg-muted/30">
+      <header className="border-b bg-background/80 py-4 backdrop-blur-md">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <Logo />
+          <div className="flex items-center gap-1">
+            <LanguageToggle />
+            <ThemeToggle />
+          </div>
         </div>
       </header>
 
-      <main className="flex-1 flex items-center justify-center px-4 py-8">
+      <main className="flex flex-1 items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-2">
-              {step === 'request' ? fp.requestTitle : fp.resetTitle}
-            </h1>
-            <p className="text-slate-500 dark:text-slate-400 text-sm mb-6">
-              {step === 'request'
-                ? fp.requestSubtitle
-                : fp.resetSubtitle}
-            </p>
+          <Card className="rounded-2xl">
+            <CardContent className="p-8">
+              <h1 className="mb-2 font-heading text-2xl font-bold">
+                {step === 'request' ? fp.requestTitle : fp.resetTitle}
+              </h1>
+              <p className="mb-6 text-sm text-muted-foreground">
+                {step === 'request' ? fp.requestSubtitle : fp.resetSubtitle}
+              </p>
 
-            {error && (
-              <div
-                className="alert alert-error text-sm mb-4"
-                role="alert"
-                aria-live="polite"
-                aria-atomic="true"
-              >
-                <InfoIcon size={15} className="shrink-0" />
-                <span>{error}</span>
-              </div>
-            )}
+              {error && (
+                <Alert variant="destructive" className="mb-4" aria-live="polite">
+                  <Info />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-            {success && (
-              <div className="alert alert-success text-sm mb-4" role="status" aria-live="polite">
-                <InfoIcon size={15} className="shrink-0" />
-                <span>{success}</span>
-              </div>
-            )}
+              {success && (
+                <Alert className="mb-4 border-success/40 text-success" role="status" aria-live="polite">
+                  <Info />
+                  <AlertDescription className="text-success/90">{success}</AlertDescription>
+                </Alert>
+              )}
 
-            {step === 'request' ? (
-              <form onSubmit={handleRequestReset} className="space-y-4">
-                <div>
-                  <label htmlFor="email" className="field-label">{a.email}</label>
-                  <input
-                    id="email"
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="field-input"
-                    placeholder="tu@email.com"
-                  />
-                </div>
+              {step === 'request' ? (
+                <form onSubmit={handleRequestReset} className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="email">{a.email}</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="tu@email.com"
+                    />
+                  </div>
 
-                <button type="submit" disabled={loading} className="btn btn-primary w-full">
-                  {loading ? fp.requestLoading : fp.requestSubmit}
-                </button>
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? fp.requestLoading : fp.requestSubmit}
+                  </Button>
 
-                <div className="text-center pt-4">
-                  <Link href="/login" className="text-sm text-blue-600 hover:text-blue-500 font-medium">
-                    {fp.backToLogin}
-                  </Link>
-                </div>
-              </form>
-            ) : (
-              <form onSubmit={handleResetPassword} className="space-y-4">
-                <div>
-                  <label htmlFor="newPassword" className="field-label">{fp.newPasswordLabel}</label>
-                  <PasswordInput
-                    id="newPassword"
-                    name="newPassword"
-                    value={newPassword}
-                    onChange={setNewPassword}
-                    placeholder="••••••••"
-                    required
-                    autoComplete="new-password"
-                    ariaLabel={fp.newPasswordLabel}
-                  />
-                  <PasswordStrengthIndicator password={newPassword} />
-                </div>
+                  <div className="pt-2 text-center">
+                    <Link href="/login" className="text-sm font-medium text-primary hover:underline">
+                      {fp.backToLogin}
+                    </Link>
+                  </div>
+                </form>
+              ) : (
+                <form onSubmit={handleResetPassword} className="flex flex-col gap-4">
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="newPassword">{fp.newPasswordLabel}</Label>
+                    <PasswordInput
+                      id="newPassword"
+                      name="newPassword"
+                      value={newPassword}
+                      onChange={setNewPassword}
+                      placeholder="••••••••"
+                      required
+                      autoComplete="new-password"
+                      ariaLabel={fp.newPasswordLabel}
+                    />
+                    <PasswordStrengthIndicator password={newPassword} />
+                  </div>
 
-                <div>
-                  <label htmlFor="confirmPassword" className="field-label">{a.confirmPassword}</label>
-                  <PasswordInput
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    value={confirmPassword}
-                    onChange={setConfirmPassword}
-                    placeholder="••••••••"
-                    required
-                    autoComplete="new-password"
-                    ariaLabel={a.confirmPassword}
-                  />
-                </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="confirmPassword">{a.confirmPassword}</Label>
+                    <PasswordInput
+                      id="confirmPassword"
+                      name="confirmPassword"
+                      value={confirmPassword}
+                      onChange={setConfirmPassword}
+                      placeholder="••••••••"
+                      required
+                      autoComplete="new-password"
+                      ariaLabel={a.confirmPassword}
+                    />
+                  </div>
 
-                <button type="submit" disabled={loading} className="btn btn-primary w-full">
-                  {loading ? fp.resetLoading : fp.resetSubmit}
-                </button>
+                  <Button type="submit" disabled={loading} className="w-full">
+                    {loading ? fp.resetLoading : fp.resetSubmit}
+                  </Button>
 
-                <div className="text-center pt-4">
-                  <Link href="/login" className="text-sm text-blue-600 hover:text-blue-500 font-medium">
-                    {fp.backToLogin}
-                  </Link>
-                </div>
-              </form>
-            )}
-          </div>
+                  <div className="pt-2 text-center">
+                    <Link href="/login" className="text-sm font-medium text-primary hover:underline">
+                      {fp.backToLogin}
+                    </Link>
+                  </div>
+                </form>
+              )}
+            </CardContent>
+          </Card>
 
-          <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-6">
+          <p className="mt-6 text-center text-xs text-muted-foreground">
             {fp.supportPrefix}{' '}
-            <a href="mailto:support@medisync.com" className="text-blue-600 hover:text-blue-500 font-medium">
+            <a href="mailto:support@medisync.com" className="font-medium text-primary hover:underline">
               {fp.supportLink}
             </a>
           </p>
@@ -202,8 +204,8 @@ export default function ForgotPasswordPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
-          <div className="text-slate-500 dark:text-slate-400">{t('common').loading}</div>
+        <div className="flex min-h-screen flex-col items-center justify-center bg-muted/30">
+          <div className="text-muted-foreground">{t('common').loading}</div>
         </div>
       }
     >

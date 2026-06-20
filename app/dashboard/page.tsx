@@ -17,9 +17,10 @@ import { NotificationBell } from '../components/NotificationBell';
 import { GlobalChatHub } from '../components/GlobalChatHub';
 import ProfesionalOnboardingWizard from '../components/ProfesionalOnboardingWizard';
 import {
-  MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
+  CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, ChartIcon, StarIcon, CheckIcon, XIcon, InfoIcon,
 } from '../components/icons';
+import { Logo } from '@/components/logo';
 
 import CalendarioView from './components/CalendarioView';
 import DisponibilidadView from './components/DisponibilidadView';
@@ -394,11 +395,8 @@ export default function ProfesionalDashboard() {
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              <MediSyncLogo size={28} />
-              <div className="hidden sm:block">
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-none">MediSync</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 leading-none mt-0.5">{d.title}</p>
-              </div>
+              <Logo href="/dashboard" />
+              <span className="hidden text-xs text-muted-foreground sm:block">{d.title}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <GlobalChatHub user={user} />

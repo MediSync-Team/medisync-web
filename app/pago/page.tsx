@@ -2,10 +2,15 @@
 
 import { Suspense, useState, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { CreditCard, X } from 'lucide-react';
 import { api, CuponValidado } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
 import { getLocale } from '../lib/date';
-import { CreditCardIcon } from '../components/icons';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function PagoContent() {
   const searchParams = useSearchParams();
@@ -91,96 +96,100 @@ function PagoContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <div className="card p-8">{p.loading}</div>
+      <div className="flex min-h-screen items-center justify-center bg-muted/30">
+        <Card><CardContent className="p-8 text-muted-foreground">{p.loading}</CardContent></Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 py-6">
-      <div className="card p-8 max-w-md w-full">
-        <div className="text-4xl mb-4 text-center text-blue-700 flex items-center justify-center"><CreditCardIcon size={30} /></div>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-slate-200 mb-6 text-center">{p.checkoutTitle}</h1>
-
-        {errorMessage && (
-          <div className="alert alert-error text-left mb-4" role="status" aria-live="polite">
-            <span>{errorMessage}</span>
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 px-4 py-6">
+      <Card className="w-full max-w-md rounded-2xl">
+        <CardContent className="p-8">
+          <div className="mb-4 flex justify-center text-primary">
+            <CreditCard className="size-8" />
           </div>
-        )}
+          <h1 className="mb-6 text-center font-heading text-xl font-bold">{p.checkoutTitle}</h1>
 
-        {/* Coupon section */}
-        <div className="mb-6 pb-6 border-b border-slate-200">
-          <label className="field-label mb-2">{p.couponPrompt}</label>
-          <div className="flex gap-2 mb-3">
-            <input
-              type="text"
-              value={couponCode}
-              onChange={(e) => {
-                setCouponCode(e.target.value.toUpperCase());
-                setCouponError('');
-                setValidatedCoupon(null);
-              }}
-              placeholder={p.couponPlaceholder}
-              className="field-input flex-1"
-              disabled={validatingCoupon || redirecting}
-            />
-            <button
-              onClick={handleValidateCoupon}
-              disabled={validatingCoupon || redirecting || !couponCode.trim()}
-              className="btn btn-secondary btn-sm"
-            >
-              {validatingCoupon ? p.couponValidating : p.couponApply}
-            </button>
-          </div>
-
-          {couponError && (
-            <p className="text-xs text-red-600 mb-2">{couponError}</p>
+          {errorMessage && (
+            <Alert variant="destructive" className="mb-4" role="status" aria-live="polite">
+              <AlertDescription>{errorMessage}</AlertDescription>
+            </Alert>
           )}
 
-          {validatedCoupon && (
-            <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <p className="text-xs text-emerald-700 font-semibold">{p.couponApplied}</p>
-                  {validatedCoupon.descripcion && (
-                    <p className="text-sm text-emerald-800 font-medium mt-1">{validatedCoupon.descripcion}</p>
-                  )}
-                  <div className="text-xs text-emerald-600 mt-2 space-y-1">
-                    <p>{p.originalPrice}: ${validatedCoupon.montoOriginal.toLocaleString(getLocale(lang))}</p>
-                    <p className="font-semibold">{p.savings}: -${validatedCoupon.montoDescuento.toLocaleString(getLocale(lang))}</p>
-                    <p className="font-bold text-emerald-700">{p.total}: ${validatedCoupon.montoFinal.toLocaleString(getLocale(lang))}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={handleRemoveCoupon}
-                  className="text-emerald-600 hover:text-emerald-700 text-xl"
-                  disabled={redirecting}
-                >
-                  ✕
-                </button>
-              </div>
+          {/* Coupon section */}
+          <div className="mb-6 border-b pb-6">
+            <Label className="mb-2 block">{p.couponPrompt}</Label>
+            <div className="mb-3 flex gap-2">
+              <Input
+                type="text"
+                value={couponCode}
+                onChange={(e) => {
+                  setCouponCode(e.target.value.toUpperCase());
+                  setCouponError('');
+                  setValidatedCoupon(null);
+                }}
+                placeholder={p.couponPlaceholder}
+                disabled={validatingCoupon || redirecting}
+                className="flex-1"
+              />
+              <Button
+                variant="outline"
+                onClick={handleValidateCoupon}
+                disabled={validatingCoupon || redirecting || !couponCode.trim()}
+              >
+                {validatingCoupon ? p.couponValidating : p.couponApply}
+              </Button>
             </div>
-          )}
-        </div>
 
-        {/* Payment button */}
-        <button
-          onClick={crearPreferenciaYRedirigir}
-          disabled={redirecting}
-          className="btn btn-primary w-full"
-        >
-          {redirecting ? p.processing : validatedCoupon !== null && validatedCoupon.montoFinal <= 0 ? p.confirmAppointment : p.continueToPayment}
-        </button>
+            {couponError && <p className="mb-2 text-xs text-destructive">{couponError}</p>}
 
-        <button
-          onClick={() => router.push('/dashboard/paciente?tab=proximos')}
-          disabled={redirecting}
-          className="btn btn-secondary w-full mt-3"
-        >
-          {c.cancel}
-        </button>
-      </div>
+            {validatedCoupon && (
+              <div className="rounded-lg border border-success/30 bg-success/5 p-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <p className="text-xs font-semibold text-success">{p.couponApplied}</p>
+                    {validatedCoupon.descripcion && (
+                      <p className="mt-1 text-sm font-medium text-success">{validatedCoupon.descripcion}</p>
+                    )}
+                    <div className="mt-2 space-y-1 text-xs text-success/90">
+                      <p>{p.originalPrice}: ${validatedCoupon.montoOriginal.toLocaleString(getLocale(lang))}</p>
+                      <p className="font-semibold">{p.savings}: -${validatedCoupon.montoDescuento.toLocaleString(getLocale(lang))}</p>
+                      <p className="font-bold text-success">{p.total}: ${validatedCoupon.montoFinal.toLocaleString(getLocale(lang))}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleRemoveCoupon}
+                    className="text-success hover:text-success/80"
+                    disabled={redirecting}
+                    aria-label="Quitar cupón"
+                  >
+                    <X className="size-4" />
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Payment button */}
+          <Button onClick={crearPreferenciaYRedirigir} disabled={redirecting} className="w-full">
+            {redirecting
+              ? p.processing
+              : validatedCoupon !== null && validatedCoupon.montoFinal <= 0
+                ? p.confirmAppointment
+                : p.continueToPayment}
+          </Button>
+
+          <Button
+            variant="outline"
+            onClick={() => router.push('/dashboard/paciente?tab=proximos')}
+            disabled={redirecting}
+            className="mt-3 w-full"
+          >
+            {c.cancel}
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -189,7 +198,7 @@ export default function PagoPage() {
   const { t } = useLang();
 
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50">{t('common').loading}</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-muted/30 p-8 text-muted-foreground">{t('common').loading}</div>}>
       <PagoContent />
     </Suspense>
   );

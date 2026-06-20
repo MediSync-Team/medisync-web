@@ -8,8 +8,15 @@ import { API_BASE } from '../lib/api';
 import { getPostAuthRedirect } from '../lib/auth-redirects';
 import { useLang } from '../lib/i18n/context';
 import { GoogleIcon } from '../components/icons';
-import ThemeLangToggle from '../components/ThemeLangToggle';
 import PasswordInput from '../components/PasswordInput';
+import { Logo } from '@/components/logo';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { LanguageToggle } from '@/components/language-toggle';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 function LoginContent() {
   const router = useRouter();
@@ -38,92 +45,94 @@ function LoginContent() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 px-4">
-      {/* Top-right toggles */}
-      <div className="fixed top-4 right-4">
-        <ThemeLangToggle />
+    <div className="flex min-h-screen flex-col items-center justify-center bg-muted/30 px-4">
+      <div className="fixed top-4 right-4 flex items-center gap-1">
+        <LanguageToggle />
+        <ThemeToggle />
       </div>
 
       <div className="w-full max-w-md">
-        {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-blue-600 mb-4 shadow-lg">
-            <svg className="w-8 h-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">MediSync</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm mt-1">{a.subtitle}</p>
+        <div className="mb-8 flex flex-col items-center gap-3 text-center">
+          <Logo />
+          <p className="text-sm text-muted-foreground">{a.subtitle}</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-6">{a.welcomeBack}</h2>
+        <Card className="rounded-2xl">
+          <CardContent className="p-8">
+            <h2 className="mb-6 font-heading text-lg font-semibold">{a.welcomeBack}</h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
-              <div className="alert alert-error text-sm" role="alert" aria-live="polite" aria-atomic="true">{error}</div>
-            )}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {error && (
+                <Alert variant="destructive" aria-live="polite">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-            <div>
-              <label htmlFor="email" className="field-label">{a.email}</label>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="field-input"
-                placeholder="tu@email.com"
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="field-label">{a.password}</label>
-              <PasswordInput
-                id="password"
-                name="password"
-                value={password}
-                onChange={setPassword}
-                placeholder="••••••••"
-                required
-                autoComplete="current-password"
-              />
-            </div>
-
-            <button type="submit" disabled={loading} className="btn btn-primary w-full mt-2">
-              {loading ? a.loggingIn : a.loginBtn}
-            </button>
-
-            <div className="text-center pt-3">
-              <Link href="/forgot-password" className="text-sm text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 underline">
-                {a.forgotPassword}
-              </Link>
-            </div>
-
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-slate-200 dark:border-slate-600" />
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="email">{a.email}</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="tu@email.com"
+                />
               </div>
-              <div className="relative flex justify-center text-xs text-slate-400 dark:text-slate-500">
-                <span className="bg-white dark:bg-slate-800 px-3">{a.orContinueWith}</span>
-              </div>
-            </div>
 
-            <div className="flex gap-2">
-              <a href={`${API_BASE}/auth/google`} className="btn btn-secondary flex-1 justify-center gap-2">
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="password">{a.password}</Label>
+                <PasswordInput
+                  id="password"
+                  name="password"
+                  value={password}
+                  onChange={setPassword}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+
+              <Button type="submit" disabled={loading} className="mt-2 w-full">
+                {loading ? a.loggingIn : a.loginBtn}
+              </Button>
+
+              <div className="pt-1 text-center">
+                <Link
+                  href="/forgot-password"
+                  className="text-sm text-muted-foreground underline underline-offset-2 hover:text-foreground"
+                >
+                  {a.forgotPassword}
+                </Link>
+              </div>
+
+              <div className="relative my-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs text-muted-foreground">
+                  <span className="bg-card px-3">{a.orContinueWith}</span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                render={<a href={`${API_BASE}/auth/google`} />}
+              >
                 <GoogleIcon size={16} />
                 Google
-              </a>
-            </div>
+              </Button>
 
-            <p className="text-center text-sm text-slate-500 dark:text-slate-400 pt-4">
-              {a.noAccount}{' '}
-              <Link href="/register" className="text-blue-600 hover:text-blue-500 font-medium">
-                {a.registerBtn}
-              </Link>
-            </p>
-          </form>
-        </div>
+              <p className="pt-2 text-center text-sm text-muted-foreground">
+                {a.noAccount}{' '}
+                <Link href="/register" className="font-medium text-primary hover:underline">
+                  {a.registerBtn}
+                </Link>
+              </p>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
@@ -134,11 +143,13 @@ export default function LoginPage() {
   const a = t('auth');
 
   return (
-    <Suspense fallback={
-      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900">
-        <div className="text-slate-500 dark:text-slate-400">{a.loginLoading}</div>
-      </div>
-    }>
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen flex-col items-center justify-center bg-muted/30">
+          <div className="text-muted-foreground">{a.loginLoading}</div>
+        </div>
+      }
+    >
       <LoginContent />
     </Suspense>
   );

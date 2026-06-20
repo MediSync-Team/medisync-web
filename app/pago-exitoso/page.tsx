@@ -3,11 +3,13 @@
 import { Suspense, useEffect, useState, useCallback, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { Check, TriangleAlert, Loader2 } from 'lucide-react';
 import AgendarCalendario from '../components/AgendarCalendario';
-import Spinner from '../components/Spinner';
 import { TurnoCalendarInfo } from '../lib/calendar';
 import { api } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 const PAYMENT_POLL_INTERVAL_MS = 3000;
 const PAYMENT_POLL_TIMEOUT_MS = 2 * 60 * 1000;
@@ -18,7 +20,7 @@ function PagoExitosoContent() {
   const { t } = useLang();
   const labels = t('auth').paymentResult.success;
   const turnoId = searchParams.get('turno');
-  
+
   const [confirming, setConfirming] = useState(true);
   const [confirmed, setConfirmed] = useState(false);
   const [calInfo, setCalInfo] = useState<TurnoCalendarInfo | null>(null);
@@ -63,12 +65,10 @@ function PagoExitosoContent() {
   }, [turnoId]);
 
   useEffect(() => {
-    // Read calendar info persisted before the redirect to Mercado Pago
     try {
       const raw = localStorage.getItem('medisync_last_turno_cal');
       if (raw) {
         const parsed: TurnoCalendarInfo = JSON.parse(raw);
-        // Only use it if it matches the current turnoId
         if (!turnoId || parsed.turnoId === turnoId) {
           setCalInfo(parsed);
         }
@@ -87,7 +87,6 @@ function PagoExitosoContent() {
   }, [turnoId, checkPaymentStatus]);
 
   useEffect(() => {
-    // Redirect only if the payment is successfully confirmed
     if (!confirming && confirmed) {
       const timer = setTimeout(() => {
         router.push('/dashboard/paciente?tab=proximos');
@@ -97,88 +96,64 @@ function PagoExitosoContent() {
   }, [confirming, confirmed, router]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 p-4">
-      <div className="max-w-md w-full space-y-4">
-
-        {/* Main card */}
-        <div className="bg-white rounded-2xl shadow-lg p-8 text-center space-y-4">
-          <div className="flex justify-center">
-            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${
-              confirming ? 'bg-blue-100' : confirmed ? 'bg-emerald-100' : 'bg-orange-100'
-            }`}>
-              {confirming ? (
-                <Spinner size={32} className="text-blue-500" />
-              ) : confirmed ? (
-                <svg className="w-8 h-8 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-              ) : (
-                <svg className="w-8 h-8 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-              )}
-            </div>
-          </div>
-
-          <div>
-            <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-200">
-              {confirming 
-                ? labels.confirmingTitle
-                : confirmed 
-                  ? labels.confirmedTitle
-                  : labels.pendingTitle}
-            </h1>
-            <p className="text-slate-500 mt-1 text-sm">
-              {confirming
-                ? labels.confirmingDescription
-                : confirmed
-                  ? labels.confirmedDescription
-                  : labels.pendingDescription}
-            </p>
-          </div>
-
-          {!confirming && (
-            <div className="flex flex-col gap-2 pt-2">
-              <Link
-                href="/dashboard/paciente?tab=proximos"
-                className="btn btn-primary w-full"
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+      <div className="w-full max-w-md space-y-4">
+        <Card className="rounded-2xl">
+          <CardContent className="space-y-4 p-8 text-center">
+            <div className="flex justify-center">
+              <div
+                className={`flex size-16 items-center justify-center rounded-full ${
+                  confirming ? 'bg-info/10 text-info' : confirmed ? 'bg-success/10 text-success' : 'bg-warning/10 text-warning'
+                }`}
               >
-                {labels.viewAppointments}
-              </Link>
-              {!confirmed ? (
-                <button
-                  onClick={checkPaymentStatus}
-                  className="btn btn-ghost w-full text-slate-500"
-                >
-                  {labels.retry}
-                </button>
-              ) : (
-                <Link
-                  href="/"
-                  className="btn btn-ghost w-full text-slate-500"
-                >
-                  {labels.home}
-                </Link>
-              )}
+                {confirming ? (
+                  <Loader2 className="size-8 animate-spin" />
+                ) : confirmed ? (
+                  <Check className="size-8" strokeWidth={2.5} />
+                ) : (
+                  <TriangleAlert className="size-8" />
+                )}
+              </div>
             </div>
-          )}
 
-          {confirming && (
-            <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-500 rounded-full animate-pulse" style={{ width: '60%' }} />
+            <div>
+              <h1 className="font-heading text-2xl font-bold">
+                {confirming ? labels.confirmingTitle : confirmed ? labels.confirmedTitle : labels.pendingTitle}
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {confirming ? labels.confirmingDescription : confirmed ? labels.confirmedDescription : labels.pendingDescription}
+              </p>
             </div>
-          )}
-        </div>
 
-        {/* Calendar card — shown once payment is confirmed and we have turno info */}
-        {!confirming && confirmed && calInfo && (
-          <AgendarCalendario turno={calInfo} />
-        )}
+            {!confirming && (
+              <div className="flex flex-col gap-2 pt-2">
+                <Button className="w-full" render={<Link href="/dashboard/paciente?tab=proximos" />}>
+                  {labels.viewAppointments}
+                </Button>
+                {!confirmed ? (
+                  <Button variant="ghost" className="w-full" onClick={checkPaymentStatus}>
+                    {labels.retry}
+                  </Button>
+                ) : (
+                  <Button variant="ghost" className="w-full" render={<Link href="/" />}>
+                    {labels.home}
+                  </Button>
+                )}
+              </div>
+            )}
+
+            {confirming && (
+              <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                <div className="h-full animate-pulse rounded-full bg-info" style={{ width: '60%' }} />
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {!confirming && confirmed && calInfo && <AgendarCalendario turno={calInfo} />}
 
         {!confirming && confirmed && (
-          <p className="text-center text-xs text-slate-400">
-            {labels.redirecting}
-          </p>
+          <p className="text-center text-xs text-muted-foreground">{labels.redirecting}</p>
         )}
       </div>
     </div>
@@ -187,7 +162,7 @@ function PagoExitosoContent() {
 
 export default function PagoExitosoPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-slate-50" />}>
+    <Suspense fallback={<div className="min-h-screen bg-muted/30" />}>
       <PagoExitosoContent />
     </Suspense>
   );

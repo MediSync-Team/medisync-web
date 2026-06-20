@@ -38,8 +38,8 @@ describe('payment result page i18n', () => {
 
     expect(screen.getByText('Payment pending')).toBeInTheDocument();
     expect(screen.getByText(/Your payment is being processed/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'View my appointments' })).toHaveAttribute('href', '/dashboard/paciente');
-    expect(screen.getByRole('link', { name: 'Back to home' })).toHaveAttribute('href', '/');
+    expect(screen.getByRole('button', { name: 'View my appointments' })).toHaveAttribute('href', '/dashboard/paciente');
+    expect(screen.getByRole('button', { name: 'Back to home' })).toHaveAttribute('href', '/');
 
     await act(async () => {
       vi.advanceTimersByTime(5000);
@@ -55,8 +55,8 @@ describe('payment result page i18n', () => {
 
     expect(screen.getByText('Payment rejected')).toBeInTheDocument();
     expect(screen.getByText(/could not be processed/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Try again' })).toHaveAttribute('href', '/pago?turno=turno-123');
-    expect(screen.getByRole('link', { name: 'View my appointments' })).toHaveAttribute('href', '/dashboard/paciente?tab=proximos');
+    expect(screen.getByRole('button', { name: 'Try again' })).toHaveAttribute('href', '/pago?turno=turno-123');
+    expect(screen.getByRole('button', { name: 'View my appointments' })).toHaveAttribute('href', '/dashboard/paciente?tab=proximos');
 
     await act(async () => {
       vi.advanceTimersByTime(5000);
@@ -70,7 +70,7 @@ describe('payment result page i18n', () => {
 
     render(<PagoFallidoPage />);
 
-    expect(screen.getByRole('link', { name: 'Try again' })).toHaveAttribute('href', '/dashboard/paciente?tab=proximos');
+    expect(screen.getByRole('button', { name: 'Try again' })).toHaveAttribute('href', '/dashboard/paciente?tab=proximos');
 
     await act(async () => {
       vi.advanceTimersByTime(5000);

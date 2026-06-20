@@ -3,8 +3,10 @@
 import { Suspense, useEffect } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { XIcon } from '../components/icons';
+import { X } from 'lucide-react';
 import { useLang } from '../lib/i18n/context';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 
 function PagoFallidoContent() {
   const searchParams = useSearchParams();
@@ -22,36 +24,34 @@ function PagoFallidoContent() {
   }, [router, turnoId]);
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50">
-      <div className="max-w-md w-full p-8 bg-white rounded-lg shadow-lg text-center">
-        <div className="text-6xl mb-4 flex items-center justify-center"><XIcon size={48} className="text-red-600" /></div>
-        <h1 className="text-2xl font-bold text-red-600 mb-4">{labels.title}</h1>
-        <p className="text-gray-600 mb-6">
-          {labels.description}
-        </p>
-        <div className="space-y-3">
-          <Link 
-            href={turnoId ? `/pago?turno=${turnoId}` : "/dashboard/paciente?tab=proximos"}
-            className="block w-full py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            {labels.retry}
-          </Link>
-          <Link 
-            href="/dashboard/paciente?tab=proximos"
-            className="block w-full py-3 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
-          >
-            {labels.viewAppointments}
-          </Link>
-        </div>
-        <p className="text-sm text-gray-400 mt-4">{labels.redirecting}</p>
-      </div>
+    <div className="flex min-h-screen items-center justify-center bg-muted/30 p-4">
+      <Card className="w-full max-w-md rounded-2xl">
+        <CardContent className="p-8 text-center">
+          <div className="mb-4 flex justify-center">
+            <div className="flex size-16 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+              <X className="size-8" strokeWidth={2.5} />
+            </div>
+          </div>
+          <h1 className="mb-3 font-heading text-2xl font-bold text-destructive">{labels.title}</h1>
+          <p className="mb-6 text-muted-foreground">{labels.description}</p>
+          <div className="flex flex-col gap-3">
+            <Button className="w-full" render={<Link href={turnoId ? `/pago?turno=${turnoId}` : '/dashboard/paciente?tab=proximos'} />}>
+              {labels.retry}
+            </Button>
+            <Button variant="outline" className="w-full" render={<Link href="/dashboard/paciente?tab=proximos" />}>
+              {labels.viewAppointments}
+            </Button>
+          </div>
+          <p className="mt-4 text-sm text-muted-foreground">{labels.redirecting}</p>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 export default function PagoFallidoPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-gray-50" />}>
+    <Suspense fallback={<div className="min-h-screen bg-muted/30" />}>
       <PagoFallidoContent />
     </Suspense>
   );

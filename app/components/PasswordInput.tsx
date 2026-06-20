@@ -1,8 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { EyeIcon, EyeOffIcon } from './icons';
+import { Eye, EyeOff } from 'lucide-react';
 import { useLang } from '../lib/i18n/context';
+import { Input } from '@/components/ui/input';
+import { cn } from '@/lib/utils';
 
 interface PasswordInputProps {
   id?: string;
@@ -24,7 +26,7 @@ export default function PasswordInput({
   placeholder,
   required = false,
   autoComplete = 'current-password',
-  className = 'field-input',
+  className,
   ariaLabel,
 }: PasswordInputProps) {
   const { t } = useLang();
@@ -34,7 +36,7 @@ export default function PasswordInput({
 
   return (
     <div className="relative">
-      <input
+      <Input
         id={id}
         name={name}
         type={showPassword ? 'text' : 'password'}
@@ -43,22 +45,18 @@ export default function PasswordInput({
         required={required}
         autoComplete={autoComplete}
         placeholder={placeholder}
-        className={className}
         aria-label={ariaLabel}
+        className={cn('pr-10', className)}
       />
       <button
         type="button"
         onClick={() => setShowPassword(!showPassword)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
+        className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-muted-foreground transition-colors hover:text-foreground"
         aria-label={toggleLabel}
         title={toggleLabel}
         tabIndex={0}
       >
-        {showPassword ? (
-          <EyeOffIcon size={18} />
-        ) : (
-          <EyeIcon size={18} />
-        )}
+        {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
       </button>
     </div>
   );

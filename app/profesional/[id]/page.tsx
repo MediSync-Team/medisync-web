@@ -6,9 +6,12 @@ import Link from 'next/link';
 import { api, Profesional, Slot, ListaEsperaItem, ResenasResponse } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { useLang } from '../../lib/i18n/context';
+import { ArrowLeft } from 'lucide-react';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
+import { Logo } from '@/components/logo';
+import { Button } from '@/components/ui/button';
 import {
-  MediSyncLogo, ArrowLeftIcon, MapPinIcon, PhoneIcon, VideoIcon,
+  MapPinIcon, PhoneIcon, VideoIcon,
   BuildingIcon, CalendarIcon, ClockIcon, CheckIcon, XIcon, UserIcon, InfoIcon,
   SearchIcon,
 } from '../../components/icons';
@@ -300,25 +303,28 @@ export default function ProfesionalPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* -- Navbar ---------------------------------------- */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
-        <div className="page-container">
-          <div className="flex items-center justify-between h-14">
-            <button onClick={() => window.history.length > 1 ? router.back() : router.push('/')} className="flex items-center gap-2 text-slate-600 dark:text-slate-300 hover:text-blue-600 transition-colors">
-              <ArrowLeftIcon size={16} />
-              <span className="text-sm font-medium">{t('common').back}</span>
-            </button>
-            <div className="flex items-center gap-2">
-              <MediSyncLogo size={24} />
-              <span className="text-sm font-bold text-slate-700 dark:text-slate-200">MediSync</span>
-            </div>
-            <div className="flex items-center gap-2">
+      <header className="sticky top-0 z-30 border-b border-border/80 bg-background/80 backdrop-blur-md">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+          <div className="flex h-14 items-center justify-between">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => (window.history.length > 1 ? router.back() : router.push('/'))}
+            >
+              <ArrowLeft className="size-4" />
+              {t('common').back}
+            </Button>
+            <Logo />
+            <div className="flex items-center gap-1">
               <ThemeLangToggle compact />
               {user ? (
-                <Link href={getDashboardPath(user)} className="btn btn-ghost text-sm text-slate-600 dark:text-slate-300">
+                <Button variant="ghost" size="sm" render={<Link href={getDashboardPath(user)} />}>
                   {t('nav').dashboard}
-                </Link>
+                </Button>
               ) : (
-                <Link href="/login" className="btn btn-primary btn-sm">{t('auth').login}</Link>
+                <Button size="sm" render={<Link href="/login" />}>
+                  {t('auth').login}
+                </Button>
               )}
             </div>
           </div>

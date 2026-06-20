@@ -3,14 +3,30 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { User, Stethoscope, Building2 } from 'lucide-react';
 import { useAuth } from '../lib/auth-context';
 import { api, API_BASE, Especialidad, Genero } from '../lib/api';
 import { getDashboardPath } from '../lib/auth-redirects';
 import { useLang } from '../lib/i18n/context';
-import { GoogleIcon, UserIcon, StethoscopeIcon, HospitalIcon } from '../components/icons';
-import ThemeLangToggle from '../components/ThemeLangToggle';
+import { GoogleIcon } from '../components/icons';
 import PasswordInput from '../components/PasswordInput';
 import PasswordStrengthIndicator, { getRequirements } from '../components/PasswordStrengthIndicator';
+import { Logo } from '@/components/logo';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { LanguageToggle } from '@/components/language-toggle';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -32,8 +48,9 @@ export default function RegisterPage() {
 
   useEffect(() => { api.especialidades.getAll().then(setEspecialidades).catch(console.error); }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const setField = (name: string, value: string) => setFormData((f) => ({ ...f, [name]: value }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setField(e.target.name, e.target.value);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -67,190 +84,195 @@ export default function RegisterPage() {
     }
   };
 
-  const inp = 'field-input mt-1';
+  const roles = [
+    { value: 'PACIENTE', icon: User, title: a.patient, desc: a.roleDescPatient },
+    { value: 'PROFESIONAL', icon: Stethoscope, title: a.professional, desc: a.roleDescProfessional },
+    { value: 'CLINICA', icon: Building2, title: a.clinic, desc: a.roleDescClinic },
+  ] as const;
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 dark:bg-slate-900 py-12 px-4">
-      <div className="fixed top-4 right-4"><ThemeLangToggle /></div>
+    <div className="flex min-h-screen flex-col items-center justify-center bg-muted/30 px-4 py-12">
+      <div className="fixed top-4 right-4 flex items-center gap-1">
+        <LanguageToggle />
+        <ThemeToggle />
+      </div>
 
       <div className="w-full max-w-md">
-        <div className="text-center mb-6">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-blue-600 mb-3 shadow-lg">
-            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">MediSync</h1>
-          <p className="text-slate-500 dark:text-slate-400 text-sm">{a.logoSubtitle}</p>
+        <div className="mb-6 flex flex-col items-center gap-3 text-center">
+          <Logo />
+          <p className="text-sm text-muted-foreground">{a.logoSubtitle}</p>
         </div>
 
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-8">
-          <h2 className="text-lg font-semibold text-slate-800 dark:text-slate-100 mb-6">{a.createAccount}</h2>
+        <Card className="rounded-2xl">
+          <CardContent className="p-8">
+            <h2 className="mb-6 font-heading text-lg font-semibold">{a.createAccount}</h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <div className="alert alert-error text-sm" role="alert" aria-live="polite" aria-atomic="true">{error}</div>}
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              {error && (
+                <Alert variant="destructive" aria-live="polite">
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
 
-            {/* Role */}
-            <div>
-              <label className="field-label mb-2 block">{a.role}</label>
-              <div className="grid grid-cols-3 gap-2">
-                {([
-                  { value: 'PACIENTE', icon: <UserIcon size={22} className="text-blue-700" />, title: a.patient, desc: a.roleDescPatient },
-                  { value: 'PROFESIONAL', icon: <StethoscopeIcon size={22} className="text-blue-700" />, title: a.professional, desc: a.roleDescProfessional },
-                  { value: 'CLINICA', icon: <HospitalIcon size={22} className="text-blue-700" />, title: a.clinic, desc: a.roleDescClinic },
-                ] as const).map(({ value, icon, title, desc }) => (
-                  <button
-                    key={value}
-                    type="button"
-                    onClick={() => setFormData(f => ({ ...f, rol: value }))}
-                    className={`flex flex-col items-center text-center gap-1 p-3 rounded-xl border-2 transition-all cursor-pointer ${
-                      formData.rol === value
-                        ? 'border-blue-600 bg-blue-50 dark:bg-blue-950'
-                        : 'border-slate-200 dark:border-slate-600 hover:border-blue-300 hover:bg-slate-50 dark:hover:bg-slate-700'
-                    }`}
-                  >
-                    <span className="text-2xl" aria-hidden>{icon}</span>
-                    <span className={`text-xs font-semibold ${formData.rol === value ? 'text-blue-700 dark:text-blue-300' : 'text-slate-700 dark:text-slate-300'}`}>{title}</span>
-                    <span className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">{desc}</span>
-                  </button>
-                ))}
+              {/* Role */}
+              <div>
+                <Label className="mb-2 block">{a.role}</Label>
+                <div className="grid grid-cols-3 gap-2">
+                  {roles.map(({ value, icon: Icon, title, desc }) => {
+                    const active = formData.rol === value;
+                    return (
+                      <button
+                        key={value}
+                        type="button"
+                        onClick={() => setFormData((f) => ({ ...f, rol: value }))}
+                        className={`flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 p-3 text-center transition-all ${
+                          active
+                            ? 'border-primary bg-accent'
+                            : 'border-border hover:border-primary/40 hover:bg-muted'
+                        }`}
+                      >
+                        <Icon className={`size-5 ${active ? 'text-primary' : 'text-muted-foreground'}`} />
+                        <span className={`text-xs font-semibold ${active ? 'text-primary' : 'text-foreground'}`}>{title}</span>
+                        <span className="text-[10px] leading-tight text-muted-foreground">{desc}</span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
 
-            {/* Name grid */}
-            {formData.rol === 'CLINICA' ? (
+              {/* Name grid */}
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="nombre" className="field-label">{a.managerFirstName}</label>
-                  <input id="nombre" name="nombre" required value={formData.nombre} onChange={handleChange} className={inp} placeholder="Juan" />
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="nombre">{formData.rol === 'CLINICA' ? a.managerFirstName : a.firstName}</Label>
+                  <Input id="nombre" name="nombre" required value={formData.nombre} onChange={handleChange} placeholder={formData.rol === 'CLINICA' ? 'Juan' : undefined} />
                 </div>
-                <div>
-                  <label htmlFor="apellido" className="field-label">{a.lastName}</label>
-                  <input id="apellido" name="apellido" required value={formData.apellido} onChange={handleChange} className={inp} placeholder="García" />
-                </div>
-              </div>
-            ) : (
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label htmlFor="nombre" className="field-label">{a.firstName}</label>
-                  <input id="nombre" name="nombre" required value={formData.nombre} onChange={handleChange} className={inp} />
-                </div>
-                <div>
-                  <label htmlFor="apellido" className="field-label">{a.lastName}</label>
-                  <input id="apellido" name="apellido" required value={formData.apellido} onChange={handleChange} className={inp} />
+                <div className="flex flex-col gap-1.5">
+                  <Label htmlFor="apellido">{a.lastName}</Label>
+                  <Input id="apellido" name="apellido" required value={formData.apellido} onChange={handleChange} placeholder={formData.rol === 'CLINICA' ? 'García' : undefined} />
                 </div>
               </div>
-            )}
 
-            <div>
-              <label htmlFor="email" className="field-label">{a.email}</label>
-              <input id="email" name="email" type="email" required value={formData.email} onChange={handleChange} className={inp} />
-            </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="email">{a.email}</Label>
+                <Input id="email" name="email" type="email" required value={formData.email} onChange={handleChange} />
+              </div>
 
-            <div>
-              <label htmlFor="telefono" className="field-label">{a.phone} <span className="text-slate-400 text-xs">({t('common').optional})</span></label>
-              <input id="telefono" name="telefono" type="tel" value={formData.telefono} onChange={handleChange} className={inp} placeholder="+54 11 1234 5678" />
-            </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="telefono">
+                  {a.phone} <span className="text-xs text-muted-foreground">({t('common').optional})</span>
+                </Label>
+                <Input id="telefono" name="telefono" type="tel" value={formData.telefono} onChange={handleChange} placeholder="+54 11 1234 5678" />
+              </div>
 
-            <div>
-              <label htmlFor="genero" className="field-label">{a.gender}</label>
-              <select id="genero" name="genero" value={formData.genero} onChange={handleChange} className="field-select mt-1">
-                <option value="NO_ESPECIFICADO">{a.genderNS}</option>
-                <option value="MASCULINO">{a.genderM}</option>
-                <option value="FEMENINO">{a.genderF}</option>
-                <option value="OTRO">{a.genderO}</option>
-              </select>
-            </div>
+              <div className="flex flex-col gap-1.5">
+                <Label>{a.gender}</Label>
+                <Select value={formData.genero} onValueChange={(val) => val && setField('genero', val)}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="NO_ESPECIFICADO">{a.genderNS}</SelectItem>
+                    <SelectItem value="MASCULINO">{a.genderM}</SelectItem>
+                    <SelectItem value="FEMENINO">{a.genderF}</SelectItem>
+                    <SelectItem value="OTRO">{a.genderO}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
 
-            {formData.rol === 'PROFESIONAL' && (
-              <>
-                <div>
-                  <label htmlFor="matricula" className="field-label">{a.license}</label>
-                  <input id="matricula" name="matricula" required value={formData.matricula} onChange={handleChange} className={inp} placeholder="MP 12345" />
-                </div>
-                <div>
-                  <label htmlFor="especialidadId" className="field-label">{a.specialty}</label>
-                  <select id="especialidadId" name="especialidadId" required value={formData.especialidadId} onChange={handleChange} className="field-select mt-1">
-                    <option value="">—</option>
-                    {especialidades.map(e => <option key={e.id} value={e.id}>{e.nombre}</option>)}
-                  </select>
-                </div>
-                <div>
-                  <label htmlFor="precioConsulta" className="field-label">{a.price}</label>
-                  <input id="precioConsulta" name="precioConsulta" type="number" value={formData.precioConsulta} onChange={handleChange} className={inp} placeholder="5000" />
-                </div>
-                <div>
-                  <label htmlFor="lugarAtencion" className="field-label">{a.location}</label>
-                  <input id="lugarAtencion" name="lugarAtencion" value={formData.lugarAtencion} onChange={handleChange} className={inp} />
-                </div>
-                <div>
-                  <label htmlFor="fotoUrl" className="field-label">{t('profile').photoUrl}</label>
-                  <input id="fotoUrl" name="fotoUrl" type="url" value={formData.fotoUrl} onChange={handleChange} className={inp} placeholder="https://..." />
-                </div>
-                <div>
-                  <label htmlFor="bio" className="field-label">{a.bio}</label>
-                  <textarea id="bio" name="bio" value={formData.bio} onChange={handleChange} rows={3} className="field-input mt-1 resize-none" />
-                </div>
-              </>
-            )}
-
-            <div>
-              <label htmlFor="password" className="field-label">{a.password}</label>
-              <PasswordInput
-                id="password"
-                name="password"
-                value={formData.password}
-                onChange={(value) => handleChange({ target: { name: 'password', value } } as any)}
-                placeholder="••••••••"
-                required
-                autoComplete="new-password"
-              />
-              <PasswordStrengthIndicator password={formData.password} />
-            </div>
-
-            <div>
-              <label htmlFor="confirmPassword" className="field-label">{a.confirmPassword}</label>
-              <PasswordInput
-                id="confirmPassword"
-                name="confirmPassword"
-                value={formData.confirmPassword}
-                onChange={(value) => handleChange({ target: { name: 'confirmPassword', value } } as any)}
-                placeholder="••••••••"
-                required
-                autoComplete="new-password"
-              />
-            </div>
-
-            <button type="submit" disabled={loading} className="btn btn-primary w-full mt-2">
-              {loading ? a.registering : a.registerBtn}
-            </button>
-
-            {formData.rol && (
-              <>
-                <div className="relative my-4">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-slate-200 dark:border-slate-600" />
+              {formData.rol === 'PROFESIONAL' && (
+                <>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="matricula">{a.license}</Label>
+                    <Input id="matricula" name="matricula" required value={formData.matricula} onChange={handleChange} placeholder="MP 12345" />
                   </div>
-                  <div className="relative flex justify-center text-xs text-slate-400 dark:text-slate-500">
-                    <span className="bg-white dark:bg-slate-800 px-3">{a.orContinueWith}</span>
+                  <div className="flex flex-col gap-1.5">
+                    <Label>{a.specialty}</Label>
+                    <Select value={formData.especialidadId} onValueChange={(val) => val && setField('especialidadId', val)}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="—" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {especialidades.map((e) => (
+                          <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
-                </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="precioConsulta">{a.price}</Label>
+                    <Input id="precioConsulta" name="precioConsulta" type="number" value={formData.precioConsulta} onChange={handleChange} placeholder="5000" />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="lugarAtencion">{a.location}</Label>
+                    <Input id="lugarAtencion" name="lugarAtencion" value={formData.lugarAtencion} onChange={handleChange} />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="fotoUrl">{t('profile').photoUrl}</Label>
+                    <Input id="fotoUrl" name="fotoUrl" type="url" value={formData.fotoUrl} onChange={handleChange} placeholder="https://..." />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <Label htmlFor="bio">{a.bio}</Label>
+                    <Textarea id="bio" name="bio" value={formData.bio} onChange={handleChange} rows={3} className="resize-none" />
+                  </div>
+                </>
+              )}
 
-                <div className="flex gap-2">
-                  <a href={`${API_BASE}/auth/google?rol=${formData.rol}`} className="btn btn-secondary flex-1 justify-center gap-2">
-                    <GoogleIcon size={16} />
-                    Google
-                  </a>
-                </div>
-              </>
-            )}
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="password">{a.password}</Label>
+                <PasswordInput
+                  id="password"
+                  name="password"
+                  value={formData.password}
+                  onChange={(value) => setField('password', value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="new-password"
+                />
+                <PasswordStrengthIndicator password={formData.password} />
+              </div>
 
-            <p className="text-center text-sm text-slate-500 dark:text-slate-400 pt-2">
-              {a.haveAccount}{' '}
-              <Link href="/login" className="text-blue-600 hover:text-blue-500 font-medium">{a.loginBtn}</Link>
-            </p>
-          </form>
-        </div>
+              <div className="flex flex-col gap-1.5">
+                <Label htmlFor="confirmPassword">{a.confirmPassword}</Label>
+                <PasswordInput
+                  id="confirmPassword"
+                  name="confirmPassword"
+                  value={formData.confirmPassword}
+                  onChange={(value) => setField('confirmPassword', value)}
+                  placeholder="••••••••"
+                  required
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <Button type="submit" disabled={loading} className="mt-2 w-full">
+                {loading ? a.registering : a.registerBtn}
+              </Button>
+
+              <div className="relative my-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs text-muted-foreground">
+                  <span className="bg-card px-3">{a.orContinueWith}</span>
+                </div>
+              </div>
+
+              <Button
+                variant="outline"
+                className="w-full"
+                render={<a href={`${API_BASE}/auth/google?rol=${formData.rol}`} />}
+              >
+                <GoogleIcon size={16} />
+                Google
+              </Button>
+
+              <p className="pt-2 text-center text-sm text-muted-foreground">
+                {a.haveAccount}{' '}
+                <Link href="/login" className="font-medium text-primary hover:underline">{a.loginBtn}</Link>
+              </p>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

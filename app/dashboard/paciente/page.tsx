@@ -32,9 +32,10 @@ import ListaEsperaView from './components/ListaEsperaView';
 import HistorialView from './components/HistorialView';
 import TurnosTabView from './components/TurnosTabView';
 import {
-  MediSyncLogo, CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
+  CalendarIcon, ClockIcon, UserIcon, LogOutIcon,
   BellIcon, XIcon, SearchIcon, WaitlistIcon, InfoIcon, ClipboardIcon,
 } from '../../components/icons';
+import { Logo } from '@/components/logo';
 
 export default function PacienteDashboard() {
   const router = useRouter();
@@ -360,11 +361,8 @@ export default function PacienteDashboard() {
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              <MediSyncLogo size={28} />
-              <div className="hidden sm:block">
-                <p className="text-sm font-bold text-slate-800 dark:text-slate-100 leading-none">MediSync</p>
-                <p className="text-xs text-slate-400 dark:text-slate-500 leading-none mt-0.5">{d.title}</p>
-              </div>
+              <Logo href="/dashboard/paciente" />
+              <span className="hidden text-xs text-muted-foreground sm:block">{d.title}</span>
             </div>
             <div className="flex items-center gap-1.5">
               <GlobalChatHub user={user} />

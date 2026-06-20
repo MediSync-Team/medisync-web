@@ -111,7 +111,7 @@ describe('invitation acceptance page i18n', () => {
 
     expect(await screen.findByText('You joined Central Clinic')).toBeInTheDocument();
     expect(screen.getByText(/You are now part of the clinic/i)).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: 'Go to dashboard' })).toHaveAttribute('href', '/dashboard');
+    expect(screen.getByRole('button', { name: 'Go to dashboard' })).toHaveAttribute('href', '/dashboard');
 
     vi.clearAllMocks();
     (useParams as any).mockReturnValue({ token: 'token-456' });
