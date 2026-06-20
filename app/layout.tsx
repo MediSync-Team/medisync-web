@@ -5,6 +5,8 @@ import { AuthProvider } from "./lib/auth-context";
 import { ThemeProvider } from "./lib/theme-context";
 import { LanguageProvider } from "./lib/i18n/context";
 import { NotificationProvider } from "./lib/notification-context";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { Toaster } from "@/components/ui/sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -35,7 +37,10 @@ export default function RootLayout({
         <ThemeProvider>
           <LanguageProvider>
             <AuthProvider>
-              <NotificationProvider>{children}</NotificationProvider>
+              <NotificationProvider>
+                <TooltipProvider>{children}</TooltipProvider>
+                <Toaster richColors position="top-right" />
+              </NotificationProvider>
             </AuthProvider>
           </LanguageProvider>
         </ThemeProvider>
