@@ -131,14 +131,14 @@ export default function PagosView() {
       {data && (
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: payments.billedGross, value: fmt(data.totales.bruto), sub: payments.approvedPayments, color: 'emerald' },
-            { label: payments.netReceived, value: fmt(data.totales.neto), sub: payments.commission, color: 'blue' },
-            { label: payments.pendingCollection, value: fmt(data.totales.pendiente), sub: `${data.totales.pendientes} ${data.totales.pendientes !== 1 ? payments.payments : payments.payment}`, color: 'amber' },
-            { label: payments.transactions, value: String(data.totales.aprobados + data.totales.pendientes), sub: `${data.totales.aprobados} ${payments.approvedShort}`, color: 'purple' },
+            { label: payments.billedGross, value: fmt(data.totales.bruto), sub: payments.approvedPayments, colorClass: 'text-emerald-600 dark:text-emerald-400' },
+            { label: payments.netReceived, value: fmt(data.totales.neto), sub: payments.commission, colorClass: 'text-blue-600 dark:text-blue-400' },
+            { label: payments.pendingCollection, value: fmt(data.totales.pendiente), sub: `${data.totales.pendientes} ${data.totales.pendientes !== 1 ? payments.payments : payments.payment}`, colorClass: 'text-amber-600 dark:text-amber-400' },
+            { label: payments.transactions, value: String(data.totales.aprobados + data.totales.pendientes), sub: `${data.totales.aprobados} ${payments.approvedShort}`, colorClass: 'text-purple-600 dark:text-purple-400' },
           ].map(card => (
             <div key={card.label} className="stat-card">
               <p className="stat-label">{card.label}</p>
-              <p className={`text-xl font-bold mt-1 text-${card.color}-600 dark:text-${card.color}-400`}>{card.value}</p>
+              <p className={`text-xl font-bold mt-1 ${card.colorClass}`}>{card.value}</p>
               <p className="stat-desc">{card.sub}</p>
             </div>
           ))}

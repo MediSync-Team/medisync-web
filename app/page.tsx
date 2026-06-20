@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { api, Especialidad, Profesional } from './lib/api';
 import { useAuth } from './lib/auth-context';
@@ -55,12 +55,12 @@ export default function HomePage() {
   const h = t('home');
   const nav = t('nav');
   const a = t('auth');
-  const homeTourSteps = [
+  const homeTourSteps = useMemo(() => [
     { selector: '[data-onboarding="hero"]', title: h.tour.welcomeTitle, description: h.tour.welcomeDesc, position: 'bottom' as const },
     { selector: '[data-onboarding="search-bar"]', title: h.tour.searchTitle, description: h.tour.searchDesc, position: 'bottom' as const },
     { selector: '[data-onboarding="prof-list"]', title: h.tour.listTitle, description: h.tour.listDesc, position: 'top' as const },
     { selector: '[data-onboarding="nav-register"]', title: h.tour.registerTitle, description: h.tour.registerDesc, position: 'bottom' as const },
-  ];
+  ], [h]);
 
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
   const [profesionales, setProfesionales] = useState<Profesional[]>([]);

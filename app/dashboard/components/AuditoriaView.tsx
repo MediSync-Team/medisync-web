@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useLang } from '../../lib/i18n/context';
 import { api, AuditoriaDisponibilidad } from '../../lib/api';
 import Spinner from '../../components/Spinner';
-import { getLocale } from '../../lib/date';
+import { getLocale, formatClinicInstantDate, formatClinicInstantTime } from '../../lib/date';
 
 export default function AuditoriaView({ profesionalId }: { profesionalId: string }) {
   const [auditoria, setAuditoria] = useState<any[]>([]);
@@ -77,7 +77,7 @@ export default function AuditoriaView({ profesionalId }: { profesionalId: string
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-semibold text-sm">{getEventoLabel(event.tipoEvento)}</span>
                   <span className="text-xs text-slate-500">
-                    {new Date(event.creadoAt).toLocaleDateString(getLocale(lang))} {new Date(event.creadoAt).toLocaleTimeString(getLocale(lang))}
+                    {formatClinicInstantDate(event.creadoAt, getLocale(lang))} {formatClinicInstantTime(event.creadoAt, getLocale(lang))}
                   </span>
                 </div>
                 {event.detalle && (

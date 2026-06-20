@@ -176,7 +176,10 @@ export function getClinicCurrentMonthRange(): { desde: string; hasta: string } {
 export function buildUpcomingClinicDays(count: number): Date[] {
   const todayKey = todayInputValue();
   const [year, month, day] = todayKey.split('-').map(Number);
-  return Array.from({ length: count }, (_, i) => new Date(year, month - 1, day + i, 12, 0, 0, 0));
+  // Anchor each clinic day at 12:00 UTC so the calendar day is stable regardless of
+  // the browser timezone. Derive keys with clinicDateKeyFromDateOnly and display with
+  // timeZone 'UTC' to stay consistent with the clinic day these represent.
+  return Array.from({ length: count }, (_, i) => new Date(Date.UTC(year, month - 1, day + i, 12, 0, 0, 0)));
 }
 
 export function buildUpcomingClinicDateKeys(count: number): string[] {

@@ -6,6 +6,7 @@ import { api } from '../../lib/api';
 import { useLang } from '../../lib/i18n/context';
 import { MediSyncLogo } from '../../components/icons';
 import { persistSsoToken } from '../../lib/sso-callback';
+import { getSafeRedirectPath } from '../../lib/auth-redirects';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -36,7 +37,7 @@ function AuthCallbackContent() {
     api.auth.exchangeCode(code)
       .then(({ token, dest }) => {
         persistSsoToken(token, typeof window !== 'undefined' ? window.localStorage : null);
-        router.push(dest);
+        router.push(getSafeRedirectPath(dest) ?? '/dashboard');
       })
       .catch(() => {
         router.push('/login?ssoError=' + encodeURIComponent(sso.linkExpired));

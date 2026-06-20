@@ -72,8 +72,10 @@ export default function ClinicaDashboard() {
   const translateSpecialty = useTranslateSpecialty();
   const locale = getLocale(lang);
   const dayLabel = (day: number) => {
-    const base = new Date(2026, 4, 10 + day);
-    return base.toLocaleDateString(locale, { weekday: 'short' }).replace(/\.$/, '');
+    // diaSemana follows JS getDay(): 0 = Sunday … 6 = Saturday.
+    // 2024-01-07 (UTC) is a Sunday; format in UTC so the weekday is timezone-stable.
+    const base = new Date(Date.UTC(2024, 0, 7 + day, 12, 0, 0, 0));
+    return base.toLocaleDateString(locale, { weekday: 'short', timeZone: 'UTC' }).replace(/\.$/, '');
   };
   const cancellationsLabel = (count: number) =>
     interpolate(count === 1 ? c.stats.cancellationThisMonth : c.stats.cancellationsThisMonth, { count });

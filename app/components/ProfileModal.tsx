@@ -174,8 +174,9 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
       setSuccess(p.saveSuccess);
       setTimeout(() => {
         onClose();
+        // onUpdate owns the refresh (callers reload); fall back to a reload only if absent.
         if (onUpdate) onUpdate();
-        window.location.reload();
+        else window.location.reload();
       }, 1500);
     } catch (err) {
       setError(err instanceof Error ? err.message : p.saveError);

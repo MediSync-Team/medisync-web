@@ -449,10 +449,10 @@ export type AuditoriaDisponibilidad = {
   tipoEvento: string;
   profesionalId: string;
   disponibilidadId?: string;
+  bloqueoId?: string;
   turnoId?: string;
-  datosAnteriores?: Record<string, unknown>;
-  datosNuevos?: Record<string, unknown>;
-  createdAt: string;
+  detalle?: Record<string, unknown>;
+  creadoAt: string;
 };
 
 export type AuditoriaPaginatedResponse = {

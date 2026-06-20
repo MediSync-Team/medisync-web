@@ -63,7 +63,7 @@ export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props
     } else {
       setRect(null);
     }
-  }, [active, stepIndex]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [active, stepIndex, steps, updateRect]);
 
   useEffect(() => {
     if (!active) return;

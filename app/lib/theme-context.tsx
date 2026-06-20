@@ -15,7 +15,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light');
 
   useEffect(() => {
-    const stored = localStorage.getItem('medisync-theme') as Theme | null;
+    const storedRaw = localStorage.getItem('medisync-theme');
+    const stored: Theme | null = storedRaw === 'light' || storedRaw === 'dark' ? storedRaw : null;
     const preferred = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     const initial = stored ?? preferred;
     setTheme(initial);

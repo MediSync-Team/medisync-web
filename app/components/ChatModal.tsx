@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { api, ChatMensaje } from '../lib/api';
 import { XIcon, SendIcon } from './icons';
 import Spinner from './Spinner';
-import { getLocale } from '../lib/date';
+import { getLocale, formatClinicInstantTime, formatClinicInstantDate } from '../lib/date';
 import { useLang } from '../lib/i18n/context';
 
 interface Props {
@@ -74,11 +74,11 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
   }
 
   function formatTime(iso: string) {
-    return new Date(iso).toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
+    return formatClinicInstantTime(iso, locale);
   }
 
   function formatDate(iso: string) {
-    return new Date(iso).toLocaleDateString(locale, { day: '2-digit', month: 'short' });
+    return formatClinicInstantDate(iso, locale, { day: '2-digit', month: 'short' });
   }
 
   // Group messages by date

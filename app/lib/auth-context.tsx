@@ -6,7 +6,7 @@ import { setAutoCoverageDisabled } from './home-filters';
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => Promise<void>;
+  login: (email: string, password: string) => Promise<User>;
   register: (data: Parameters<typeof api.auth.register>[0]) => Promise<void>;
   logout: () => Promise<void>;
   loading: boolean;
@@ -41,20 +41,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
+  const loadCurrentUser = async (): Promise<User> => {
+    try {
+      const userData = await api.auth.me();
+      setAutoCoverageDisabled(userData.id, false);
+      setUser(userData);
+      return userData;
+    } catch (err) {
+      // Keep token/user consistent: a failed me() must not leave a token with user=null.
+      localStorage.removeItem('token');
+      setUser(null);
+      throw err;
+    }
+  };
+
   const login = async (email: string, password: string) => {
     const result = await api.auth.login({ email, password });
     if (result.token) localStorage.setItem('token', result.token);
-    const userData = await api.auth.me();
-    setAutoCoverageDisabled(userData.id, false);
-    setUser(userData);
+    return loadCurrentUser();
   };
 
   const register = async (data: Parameters<typeof api.auth.register>[0]) => {
     const result = await api.auth.register(data);
     if (result.token) localStorage.setItem('token', result.token);
-    const userData = await api.auth.me();
-    setAutoCoverageDisabled(userData.id, false);
-    setUser(userData);
+    await loadCurrentUser();
   };
 
   const logout = async () => {

@@ -202,6 +202,9 @@ export default function VideoCallModal({ turnoId, participantName, participantRo
     wsRef.current?.close();
     pcRef.current?.close();
     streamRef.current?.getTracks().forEach(t => t.stop());
+    // Detach streams from the <video> elements so they don't hold stale media on reopen.
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
     wsRef.current = null;
     pcRef.current = null;
     streamRef.current = null;

@@ -511,7 +511,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                   {
                     icon: <UserIcon size={15} />,
                     label: labels.done.profilePhoto,
-                    value: fotoUrl.trim() ? labels.done.configured : labels.done.licenseMissing,
+                    value: fotoUrl.trim() ? labels.done.configured : labels.done.photoMissing,
                     ok: !!fotoUrl.trim(),
                   },
                 ].map(item => (

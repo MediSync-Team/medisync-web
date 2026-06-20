@@ -18,7 +18,7 @@ import AgendarCalendario from '../../components/AgendarCalendario';
 import { estadoBadge } from '../../lib/utils';
 import { translateSpecialtyName } from '../../lib/i18n/translations';
 import { getDashboardPath, getProfessionalBookingLoginPath } from '../../lib/auth-redirects';
-import { buildUpcomingClinicDays, clinicDateKeyFromDateOnly, clinicDateTimeToIso, formatClinicInstantDate, formatClinicInstantTime, getLocale, localDateKey, todayInputValue } from '../../lib/date';
+import { buildUpcomingClinicDays, clinicDateKeyFromDateOnly, clinicDateTimeToIso, formatClinicInstantDate, formatClinicInstantTime, getLocale, todayInputValue } from '../../lib/date';
 import HorariosGrid from './HorariosGrid';
 
 export default function ProfesionalPage() {
@@ -30,8 +30,10 @@ export default function ProfesionalPage() {
   const p = t('professional');
   const modalityLabels = t('modality');
   const dateLocale = getLocale(lang);
+  // Dates here come from buildUpcomingClinicDays (anchored at 12:00 UTC of each clinic day),
+  // so format in UTC to render the clinic day regardless of the browser timezone.
   const formatBookingDate = (date: Date, options: Intl.DateTimeFormatOptions) =>
-    date.toLocaleDateString(dateLocale, options);
+    date.toLocaleDateString(dateLocale, { ...options, timeZone: 'UTC' });
   const formatPrice = (value: number) =>
     Number(value).toLocaleString(dateLocale);
   const modalityText = (value: 'PRESENCIAL' | 'VIRTUAL') =>
@@ -85,7 +87,7 @@ export default function ProfesionalPage() {
     setSlotsLoading(true);
     setSlotsError(null);
     try {
-      const fecha = localDateKey(date);
+      const fecha = clinicDateKeyFromDateOnly(date);
       const data = await api.profesionales.getSlots(params.id as string, fecha, modalidad);
       setSlots(data);
     } catch (err) {
@@ -106,7 +108,7 @@ export default function ProfesionalPage() {
   };
 
   const selectedDateKey = selectedDate ? (() => {
-    return localDateKey(selectedDate);
+    return clinicDateKeyFromDateOnly(selectedDate);
   })() : null;
   const selectedWaitlistItem = selectedDateKey
     ? suscripcionesLista.find(x => x.modalidad === modalidad && clinicDateKeyFromDateOnly(x.fecha) === selectedDateKey)
@@ -130,7 +132,7 @@ export default function ProfesionalPage() {
 
     setSuscribiendoLista(true);
     try {
-      const fecha = localDateKey(selectedDate);
+      const fecha = clinicDateKeyFromDateOnly(selectedDate);
       await api.listaEspera.suscribirme({ profesionalId: params.id as string, fecha, modalidad });
       setSuccessMessage(p.waitlistJoinedMessage);
       setTimeout(() => setSuccessMessage(''), 4000);
@@ -170,7 +172,7 @@ export default function ProfesionalPage() {
 
   const buildFechaHora = () => {
     if (!selectedDate || !selectedSlot) return null;
-    return clinicDateTimeToIso(localDateKey(selectedDate), selectedSlot);
+    return clinicDateTimeToIso(clinicDateKeyFromDateOnly(selectedDate), selectedSlot);
   };
 
   const doReservar = async () => {
@@ -628,8 +630,8 @@ export default function ProfesionalPage() {
                 <p className="field-label mb-2">{p.chooseDay}</p>
                 <div className="flex gap-1.5 flex-wrap">
                   {getProximosDias().map((fecha) => {
-                    const fechaKey = localDateKey(fecha);
-                    const isSelected = selectedDate ? localDateKey(selectedDate) === fechaKey : false;
+                    const fechaKey = clinicDateKeyFromDateOnly(fecha);
+                    const isSelected = selectedDate ? clinicDateKeyFromDateOnly(selectedDate) === fechaKey : false;
                     const isToday = fechaKey === todayInputValue();
                     return (
                       <button

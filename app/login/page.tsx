@@ -4,7 +4,7 @@ import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
-import { api, API_BASE } from '../lib/api';
+import { API_BASE } from '../lib/api';
 import { getPostAuthRedirect } from '../lib/auth-redirects';
 import { useLang } from '../lib/i18n/context';
 import { GoogleIcon } from '../components/icons';
@@ -28,8 +28,7 @@ function LoginContent() {
     setError('');
     setLoading(true);
     try {
-      await login(email, password);
-      const me = await api.auth.me();
+      const me = await login(email, password);
       router.push(getPostAuthRedirect(me, redirect));
     } catch (err) {
       setError(err instanceof Error ? err.message : a.loginBtn);

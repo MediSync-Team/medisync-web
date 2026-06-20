@@ -34,18 +34,7 @@ function ForgotPasswordContent() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error?.message || data?.message || fp.requestError);
-      }
-
+      await api.auth.forgotPassword(email);
       setSuccess(fp.requestSuccess);
       setEmail('');
     } catch (err) {
@@ -66,7 +55,7 @@ function ForgotPasswordContent() {
     }
 
     const reqs = getRequirements(newPassword);
-    if (!reqs.minLength || !reqs.hasUppercase || !reqs.hasLowercase || !reqs.hasNumber) {
+    if (!reqs.minLength || !reqs.hasUppercase || !reqs.hasLowercase || !reqs.hasNumber || !reqs.hasSpecial) {
       setError(v.passwordRequirements);
       return;
     }
@@ -74,18 +63,7 @@ function ForgotPasswordContent() {
     setLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'}/auth/reset-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data?.error?.message || data?.message || fp.resetError);
-      }
-
+      await api.auth.resetPassword(token!, newPassword);
       setSuccess(fp.resetSuccess);
       setTimeout(() => router.push('/login'), 3000);
     } catch (err) {

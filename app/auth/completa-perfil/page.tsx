@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { api, Especialidad } from '../../lib/api';
+import { api, clinicasApi, Especialidad } from '../../lib/api';
 import { useLang } from '../../lib/i18n/context';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { MediSyncLogo } from '../../components/icons';
@@ -26,6 +26,10 @@ export default function CompletaPerfilPage() {
     lugarAtencion: '',
     bio: '',
     fotoUrl: '',
+    nombre: '',
+    descripcion: '',
+    direccion: '',
+    website: '',
   });
 
   useEffect(() => {
@@ -37,6 +41,10 @@ export default function CompletaPerfilPage() {
           ...prev,
           telefono: me.paciente?.telefono || me.clinica?.telefono || '',
           genero: me.paciente?.genero || 'NO_ESPECIFICADO',
+          nombre: me.clinica?.nombre || '',
+          descripcion: me.clinica?.descripcion || '',
+          direccion: me.clinica?.direccion || '',
+          website: me.clinica?.website || '',
         }));
 
         if (me.rol === 'PROFESIONAL') {
@@ -68,7 +76,8 @@ export default function CompletaPerfilPage() {
         }
         await api.profesional.updatePerfil(user.profesional.id, {
           matricula: formData.matricula,
-          precioConsulta: formData.precioConsulta ? Number(formData.precioConsulta) : 0,
+          especialidadId: formData.especialidadId,
+          precioConsulta: formData.precioConsulta ? Number(formData.precioConsulta) : undefined,
           lugarAtencion: formData.lugarAtencion || undefined,
           bio: formData.bio || undefined,
           fotoUrl: formData.fotoUrl || undefined,
@@ -77,6 +86,18 @@ export default function CompletaPerfilPage() {
         await api.pacientes.updatePerfil({
           telefono: formData.telefono || undefined,
           genero: formData.genero as any,
+        });
+      } else if (user.rol === 'CLINICA') {
+        if (!formData.nombre.trim()) {
+          setError(cp.clinicNameRequired);
+          return;
+        }
+        await clinicasApi.updateMe({
+          nombre: formData.nombre.trim(),
+          descripcion: formData.descripcion || undefined,
+          direccion: formData.direccion || undefined,
+          telefono: formData.telefono || undefined,
+          website: formData.website || undefined,
         });
       }
       router.push('/dashboard');
@@ -245,18 +266,68 @@ export default function CompletaPerfilPage() {
             )}
 
             {user?.rol === 'CLINICA' && (
-              <div>
-                <label htmlFor="telefono" className="field-label">{a.phone}</label>
-                <input
-                  id="telefono"
-                  name="telefono"
-                  type="tel"
-                  value={formData.telefono}
-                  onChange={handleChange}
-                  className={inp}
-                  placeholder={cp.phonePlaceholder}
-                />
-              </div>
+              <>
+                <div>
+                  <label htmlFor="nombre" className="field-label">{cp.clinicNameLabel}</label>
+                  <input
+                    id="nombre"
+                    name="nombre"
+                    required
+                    value={formData.nombre}
+                    onChange={handleChange}
+                    className={inp}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="direccion" className="field-label">{cp.clinicAddressLabel}</label>
+                  <input
+                    id="direccion"
+                    name="direccion"
+                    value={formData.direccion}
+                    onChange={handleChange}
+                    className={inp}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="telefono" className="field-label">{a.phone}</label>
+                  <input
+                    id="telefono"
+                    name="telefono"
+                    type="tel"
+                    value={formData.telefono}
+                    onChange={handleChange}
+                    className={inp}
+                    placeholder={cp.phonePlaceholder}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="website" className="field-label">{cp.clinicWebsiteLabel}</label>
+                  <input
+                    id="website"
+                    name="website"
+                    type="url"
+                    value={formData.website}
+                    onChange={handleChange}
+                    className={inp}
+                    placeholder="https://..."
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="descripcion" className="field-label">{cp.clinicDescriptionLabel}</label>
+                  <textarea
+                    id="descripcion"
+                    name="descripcion"
+                    value={formData.descripcion}
+                    onChange={handleChange}
+                    rows={3}
+                    className="field-input mt-1 resize-none"
+                  />
+                </div>
+              </>
             )}
 
             <div className="flex gap-3 pt-4">

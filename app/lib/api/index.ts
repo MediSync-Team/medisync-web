@@ -75,6 +75,16 @@ const authApi = {
       body: JSON.stringify(data),
     }),
   me: () => fetchApi<User>('/auth/me'),
+  forgotPassword: (email: string) =>
+    fetchApi<{ message: string }>('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+  resetPassword: (token: string, newPassword: string) =>
+    fetchApi<{ message: string }>('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, newPassword }),
+    }),
   exchangeCode: (code: string) =>
     fetchApi<{ token?: string; dest: string }>('/auth/exchange-code', {
       method: 'POST',
