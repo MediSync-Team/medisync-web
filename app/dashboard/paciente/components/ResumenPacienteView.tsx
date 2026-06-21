@@ -34,60 +34,60 @@ function ResumenPacienteView({
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 gap-3">
-        <div className="border border-blue-200 bg-blue-50 rounded-xl p-4">
-          <p className="text-xs text-blue-600 font-semibold mb-1 flex items-center gap-1">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+          <p className="mb-1 flex items-center gap-1 text-xs font-semibold text-primary">
             <CalendarIcon size={12} /> {d.nextAppointment}
           </p>
           {proximoTurno ? (
             <>
-              <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">
+              <p className="font-heading text-sm font-bold text-foreground">
                 {proximoTurno.profesional?.nombre} {proximoTurno.profesional?.apellido}
               </p>
-              <p className="text-xs text-slate-600 mt-1">
+              <p className="mt-1 text-xs text-muted-foreground">
                 {formatClinicInstantDate(proximoTurno.fechaHora, locale, { day: 'numeric', month: 'short' })} {p.atTime}{' '}
                 {formatClinicInstantTime(proximoTurno.fechaHora, locale)}
               </p>
             </>
           ) : (
-            <p className="text-xs text-slate-500 font-medium">{d.noScheduledAppointments}</p>
+            <p className="text-xs font-medium text-muted-foreground">{d.noScheduledAppointments}</p>
           )}
         </div>
 
-        <div className="border border-emerald-200 bg-emerald-50 rounded-xl p-4">
-          <p className="text-xs text-emerald-600 font-semibold mb-1 flex items-center gap-1">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+          <p className="mb-1 flex items-center gap-1 text-xs font-semibold text-success">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/></svg> {d.activeRecipes}
           </p>
-          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{recetasActivas.length}</p>
+          <p className="font-heading text-2xl font-bold text-foreground">{recetasActivas.length}</p>
           {recetasActivas.length > 0 && (
-            <p className="text-xs text-slate-600 mt-1">{d.latest}: {recetasActivas[0].profesional.nombre}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{d.latest}: {recetasActivas[0].profesional.nombre}</p>
           )}
         </div>
 
-        <div className="border border-amber-200 bg-amber-50 rounded-xl p-4">
-          <p className="text-xs text-amber-600 font-semibold mb-1 flex items-center gap-1">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+          <p className="mb-1 flex items-center gap-1 text-xs font-semibold text-warning">
             <CreditCardIcon size={12} /> {d.spendingThisMonth}
           </p>
-          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">
+          <p className="font-heading text-2xl font-bold text-foreground">
             ${(pacienteStats?.totalGastado || 0).toLocaleString(locale)}
           </p>
         </div>
 
-        <div className="border border-slate-200 bg-slate-50 rounded-xl p-4">
-          <p className="text-xs text-slate-600 font-semibold mb-1 flex items-center gap-1">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+          <p className="mb-1 flex items-center gap-1 text-xs font-semibold text-muted-foreground">
             <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/></svg> {d.certificates_}
           </p>
-          <p className="font-bold text-slate-800 dark:text-slate-200 text-sm">{misCertificados.length}</p>
+          <p className="font-heading text-2xl font-bold text-foreground">{misCertificados.length}</p>
         </div>
       </div>
 
       {recordatorios.length > 0 && (
-        <div className="border border-amber-200 bg-amber-50 rounded-xl p-4">
-          <p className="text-sm font-semibold text-amber-800 mb-2 flex items-center gap-1">
+        <div className="rounded-2xl border border-warning/30 bg-warning/10 p-4">
+          <p className="mb-2 flex items-center gap-1 text-sm font-semibold text-warning">
             <BellIcon size={14} /> {d.remindersActive}
           </p>
           <div className="space-y-2">
             {recordatorios.map(r => (
-              <p key={r.id} className="text-xs text-amber-700">
+              <p key={r.id} className="text-xs text-muted-foreground">
                 • Turno {formatClinicInstantDate(r.fechaHora, locale)} {p.atTime}{' '}
                 {formatClinicInstantTime(r.fechaHora, locale)} {p.withProfessional}{' '}
                 {r.turno?.profesional?.nombre || 'profesional'}
@@ -98,14 +98,14 @@ function ResumenPacienteView({
       )}
 
       {(pacienteStats?.topProfesionales || []).length > 0 && (
-        <div className="border border-slate-200 rounded-xl p-4">
-          <p className="text-sm font-semibold text-slate-700 mb-3">{d.mostVisitedProfessionals}</p>
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+          <p className="mb-3 text-sm font-semibold text-foreground">{d.mostVisitedProfessionals}</p>
           <div className="flex flex-wrap gap-3">
             {pacienteStats!.topProfesionales.map((prof) => (
               prof.profesional && (
                 <div
                   key={prof.profesional.id}
-                  className="flex items-center gap-2 border border-slate-200 rounded-lg px-3 py-2"
+                  className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2"
                 >
                   {prof.profesional.fotoUrl ? (
                     <img
@@ -114,15 +114,15 @@ function ResumenPacienteView({
                       className="w-8 h-8 rounded-full object-cover"
                     />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-200 flex items-center justify-center">
-                      <UserIcon size={12} className="text-blue-600" />
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10">
+                      <UserIcon size={12} className="text-primary" />
                     </div>
                   )}
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold text-slate-700 truncate">
+                    <p className="truncate text-xs font-semibold text-foreground">
                       {prof.profesional.nombre}
                     </p>
-                    <p className="text-xs text-slate-500">{prof.totalTurnos} {prof.totalTurnos === 1 ? d.appointment : d.appointments}</p>
+                    <p className="text-xs text-muted-foreground">{prof.totalTurnos} {prof.totalTurnos === 1 ? d.appointment : d.appointments}</p>
                   </div>
                 </div>
               )

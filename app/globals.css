@@ -35,16 +35,6 @@
   --color-text-muted:   #64748b;
   --color-text-subtle:  #94a3b8;
 
-  /* Clinical state tokens */
-  --color-clinical-stable-bg: #ecfdf5;
-  --color-clinical-stable-fg: #065f46;
-  --color-clinical-watch-bg: #eff6ff;
-  --color-clinical-watch-fg: #1e40af;
-  --color-clinical-alert-bg: #fef3c7;
-  --color-clinical-alert-fg: #92400e;
-  --color-clinical-critical-bg: #fee2e2;
-  --color-clinical-critical-fg: #991b1b;
-
   /* Font */
   --font-sans: var(--font-geist-sans), system-ui, sans-serif;
 }
@@ -115,15 +105,6 @@
   --color-text-primary: #f1f5f9;
   --color-text-muted:   #94a3b8;
   --color-text-subtle:  #64748b;
-
-  --color-clinical-stable-bg: #064e3b;
-  --color-clinical-stable-fg: #6ee7b7;
-  --color-clinical-watch-bg:  #1e3a8a;
-  --color-clinical-watch-fg:  #93c5fd;
-  --color-clinical-alert-bg:  #78350f;
-  --color-clinical-alert-fg:  #fcd34d;
-  --color-clinical-critical-bg: #7f1d1d;
-  --color-clinical-critical-fg: #fca5a5;
 }
 
 /* ============================================================
@@ -324,13 +305,6 @@
     border-radius: 0.75rem;
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05), 0 1px 2px -1px rgb(0 0 0 / 0.05);
   }
-  .card-hover { cursor: pointer; }
-  .card-hover:hover {
-    border-color: #bfdbfe;
-    box-shadow: 0 4px 12px 0 rgb(37 99 235 / 0.08), 0 2px 4px -1px rgb(37 99 235 / 0.06);
-    transform: translateY(-1px);
-  }
-  .dark .card-hover:hover { border-color: #1d4ed8; }
 
   /* --- Form fields --- */
   .field-label {
@@ -425,51 +399,8 @@
   .dark .alert-warning { background-color: #78350f; border-color: #d97706; color: #fcd34d; }
   .dark .alert-error   { background-color: #7f1d1d; border-color: #dc2626; color: #fca5a5; }
 
-  .clinical-state-stable   { background: var(--color-clinical-stable-bg);   color: var(--color-clinical-stable-fg); }
-  .clinical-state-watch    { background: var(--color-clinical-watch-bg);    color: var(--color-clinical-watch-fg); }
-  .clinical-state-alert    { background: var(--color-clinical-alert-bg);    color: var(--color-clinical-alert-fg); }
-  .clinical-state-critical { background: var(--color-clinical-critical-bg); color: var(--color-clinical-critical-fg); }
-
   /* --- Section heading --- */
   .section-title { font-size: 1.25rem; font-weight: 700; color: var(--color-text-primary); letter-spacing: -0.01em; }
-
-  /* --- Tab navigation --- */
-  .tab-nav {
-    display: flex;
-    border-bottom: 1px solid var(--color-border);
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: thin;
-    scrollbar-color: #cbd5e1 transparent;
-  }
-  .tab-nav::-webkit-scrollbar { 
-    height: 6px; 
-  }
-  .tab-nav::-webkit-scrollbar-track { 
-    background: transparent; 
-  }
-  .tab-nav::-webkit-scrollbar-thumb { 
-    background-color: #cbd5e1; 
-    border-radius: 20px; 
-  }
-  .dark .tab-nav {
-    scrollbar-color: #475569 transparent;
-  }
-  .dark .tab-nav::-webkit-scrollbar-thumb {
-    background-color: #475569;
-  }
-  .tab-btn {
-    padding: 0.75rem 1.25rem;
-    font-size: 0.875rem;
-    font-weight: 500;
-    color: var(--color-text-muted);
-    border-bottom: 2px solid transparent;
-    margin-bottom: -1px;
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-  .tab-btn:hover { color: var(--color-text-primary); background-color: var(--color-surface-2); }
-  .tab-btn-active { color: #2563eb; border-bottom-color: #2563eb; }
 
   /* --- Loading skeleton --- */
   .skeleton {
@@ -493,20 +424,6 @@
   }
   @media (min-width: 640px)  { .page-container { padding-left: 1.5rem; padding-right: 1.5rem; } }
   @media (min-width: 1024px) { .page-container { padding-left: 2rem;   padding-right: 2rem; } }
-
-  /* --- Stat card --- */
-  .stat-card {
-    background-color: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: 0.75rem;
-    padding: 1.25rem 1.5rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-  .stat-label  { font-size: 0.75rem; font-weight: 600; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
-  .stat-value  { font-size: 1.875rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1; margin-top: 0.25rem; }
-  .stat-desc   { font-size: 0.75rem; color: var(--color-text-subtle); margin-top: 0.125rem; }
 }
 
   /* --- Embeddable widget --- */

@@ -92,10 +92,10 @@ export default function CertificadoPanel({ turno, translateSpecialty, onNotice }
 
   return (
     <>
-      <div className="border border-slate-200 rounded-xl p-4">
+      <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
         <div className="flex items-center gap-2 mb-3">
-          <ClipboardIcon size={15} className="text-slate-400" />
-          <h4 className="font-semibold text-slate-700 text-sm">{modal.certificate.title}</h4>
+          <ClipboardIcon size={15} className="text-slate-400 dark:text-slate-500" />
+          <h4 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{modal.certificate.title}</h4>
           {certificado?.emitidaAt && (
             <span className="badge badge-blue ml-auto text-xs">
               {modal.certificate.emitted} {formatClinicInstantDate(certificado.emitidaAt, getLocale(lang))}
@@ -107,9 +107,9 @@ export default function CertificadoPanel({ turno, translateSpecialty, onNotice }
           <div className="skeleton h-24 rounded-lg" />
         ) : certificado ? (
           <div className="space-y-3">
-            <div className="bg-slate-50 rounded-lg p-3">
-              <p className="text-xs text-slate-500 uppercase tracking-wide mb-1">{modal.certificate.type}</p>
-              <p className="font-semibold text-slate-700">
+            <div className="bg-slate-50 dark:bg-slate-800 rounded-lg p-3">
+              <p className="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-1">{modal.certificate.type}</p>
+              <p className="font-semibold text-slate-700 dark:text-slate-200">
                 {certificateTypeLabel(certificado.tipo)}
               </p>
             </div>

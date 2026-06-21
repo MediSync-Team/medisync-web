@@ -47,7 +47,7 @@ export default function TurnosTabView(props: TurnosTabViewProps) {
     return (
       <div className="space-y-3">
         {[1, 2, 3].map((i) => (
-          <div key={i} className="border border-slate-200 rounded-xl p-4 space-y-2">
+          <div key={i} className="border border-slate-200 dark:border-slate-700 rounded-xl p-4 space-y-2">
             <div className="skeleton h-4 w-40 rounded" />
             <div className="skeleton h-3 w-28 rounded" />
             <div className="skeleton h-8 w-32 rounded-lg mt-2" />
@@ -60,9 +60,9 @@ export default function TurnosTabView(props: TurnosTabViewProps) {
   if (tab === 'proximos' && turnos.length === 0) {
     return (
       <div className="py-12 text-center">
-        <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
-        <p className="text-slate-500 text-sm font-medium mb-2">{p.noUpcoming}</p>
-        <p className="text-xs text-slate-400 mb-5 max-w-sm mx-auto">
+        <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium mb-2">{p.noUpcoming}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 mb-5 max-w-sm mx-auto">
           {d.firstAppointment}
         </p>
         <Link href="/" className="btn btn-primary btn-sm">
@@ -75,8 +75,8 @@ export default function TurnosTabView(props: TurnosTabViewProps) {
   if (tab === 'pasados' && turnos.length === 0) {
     return (
       <div className="py-12 text-center">
-        <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300" />
-        <p className="text-slate-500 text-sm font-medium">{p.noPast}</p>
+        <CalendarIcon size={32} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{p.noPast}</p>
       </div>
     );
   }

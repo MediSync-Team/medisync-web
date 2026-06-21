@@ -9,6 +9,8 @@ import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../
 import {
   VideoIcon, BuildingIcon, MapPinIcon, CreditCardIcon, RefreshIcon, XIcon, ChatIcon, ClipboardIcon,
 } from '../../../components/icons';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import AgendarCalendario from '../../../components/AgendarCalendario';
 
 interface TurnoCardProps {
@@ -46,14 +48,16 @@ export default function TurnoCard({
     api.chat.getUnread(turno.id).then(d => setUnreadCount(d.count)).catch(() => {});
   }, [turno.id, isActive]);
 
+  const pagado = pagoInfo?.necesitaPago === false;
+
   return (
-    <div className="border border-slate-200 rounded-xl overflow-hidden">
+    <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
       {/* Status bar */}
-      <div className={`px-4 py-1.5 text-xs font-semibold flex items-center justify-between ${
-        turno.estado === 'CONFIRMADO' ? 'bg-emerald-50 text-emerald-700' :
-        turno.estado === 'RESERVADO' ? 'bg-amber-50 text-amber-700' :
-        turno.estado === 'CANCELADO' ? 'bg-red-50 text-red-700' :
-        'bg-blue-50 text-blue-700'
+      <div className={`flex items-center justify-between px-4 py-1.5 text-xs font-semibold ${
+        turno.estado === 'CONFIRMADO' ? 'bg-success/12 text-success' :
+        turno.estado === 'RESERVADO' ? 'bg-warning/12 text-warning' :
+        turno.estado === 'CANCELADO' ? 'bg-destructive/12 text-destructive' :
+        'bg-primary/12 text-primary'
       }`}>
         <span className="flex items-center gap-1.5">
           {(s as any)[turno.estado] || turno.estado}
@@ -69,17 +73,17 @@ export default function TurnoCard({
         <div className="flex items-start justify-between gap-3">
           {/* Professional info */}
           <div className="flex-1">
-            <p className="font-semibold text-slate-800 dark:text-slate-200">
+            <p className="font-semibold text-foreground">
               {turno.profesional?.nombre} {turno.profesional?.apellido}
             </p>
-            <p className="text-xs text-blue-600 font-medium mt-0.5">{translateSpecialty(turno.profesional?.especialidad?.nombre)}</p>
+            <p className="mt-0.5 text-xs font-medium text-primary">{translateSpecialty(turno.profesional?.especialidad?.nombre)}</p>
           </div>
           {/* Date/time */}
-          <div className="text-right shrink-0">
-            <p className="text-sm font-bold text-slate-700">
+          <div className="shrink-0 text-right">
+            <p className="text-sm font-bold text-foreground">
               {formatClinicInstantDate(turno.fechaHora, locale, { day: 'numeric', month: 'short' })}
             </p>
-            <p className="text-xs text-slate-500">
+            <p className="text-xs text-muted-foreground">
               {formatClinicInstantTime(turno.fechaHora, locale)}
             </p>
           </div>
@@ -87,7 +91,7 @@ export default function TurnoCard({
 
         {/* Location (PRESENCIAL only) */}
         {turno.modalidad === 'PRESENCIAL' && (turno.lugarAtencion || turno.profesional?.lugarAtencion) && (
-          <div className="flex items-center gap-1.5 mt-2 text-xs text-slate-500">
+          <div className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
             <MapPinIcon size={11} className="shrink-0" />
             <span className="truncate">{turno.lugarAtencion ?? turno.profesional?.lugarAtencion}</span>
           </div>
@@ -95,103 +99,111 @@ export default function TurnoCard({
 
         {/* Video call */}
         {turno.modalidad === 'VIRTUAL' && (turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO') && (
-          <button
+          <Button
+            size="sm"
             onClick={onVideoCall}
-            className="btn btn-success btn-sm mt-3 w-full"
+            className="mt-3 w-full bg-success text-white hover:bg-success/90"
           >
             <VideoIcon size={13} /> {p.joinVideoCall}
-          </button>
+          </Button>
         )}
 
         {/* Cancellation reason */}
         {turno.estado === 'CANCELADO' && turno.notasCancelacion && (
-          <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-100">
-            <p className="text-xs font-semibold text-red-700 mb-1">{p.cancelReasonLabel}</p>
-            <p className="text-sm text-red-600">{turno.notasCancelacion}</p>
+          <div className="mt-3 rounded-lg border border-destructive/20 bg-destructive/10 p-3">
+            <p className="mb-1 text-xs font-semibold text-destructive">{p.cancelReasonLabel}</p>
+            <p className="text-sm text-destructive/90">{turno.notasCancelacion}</p>
           </div>
         )}
 
         {/* Actions */}
         {isActive && isFuture && (
-          <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-slate-100">
+          <div className="mt-3 flex flex-wrap gap-2 border-t pt-3">
             {/* Pay button */}
             {turno.profesional?.precioConsulta && Number(turno.profesional.precioConsulta) > 0 && (
-              <button
+              <Button
+                size="sm"
                 onClick={onPagar}
-                disabled={pagoInfo?.necesitaPago === false}
-                className={`btn btn-sm flex-1 ${pagoInfo?.necesitaPago === false ? 'btn-secondary opacity-60 cursor-not-allowed' : 'btn-success'}`}
+                disabled={pagado}
+                variant={pagado ? 'secondary' : 'default'}
+                className={`flex-1 ${pagado ? '' : 'bg-success text-white hover:bg-success/90'}`}
               >
                 <CreditCardIcon size={13} />
-                {pagoInfo?.necesitaPago === false
+                {pagado
                   ? p.paid
                   : `${p.pay} $${Number(turno.profesional.precioConsulta).toLocaleString(locale)}`}
-              </button>
+              </Button>
             )}
 
             {/* Reschedule */}
-            <button
+            <Button
+              size="sm"
+              variant="secondary"
               onClick={onReprogramar}
               disabled={!canCancel}
-              className="btn btn-secondary btn-sm"
               title={!canCancel ? `Requiere ${horasMinCancelacion}h de anticipación` : undefined}
             >
               <RefreshIcon size={13} /> {p.reschedule}
-            </button>
+            </Button>
 
             {/* Cancel */}
-            <button
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={onCancelar}
               disabled={!canCancel || isCancelling}
-              className={`btn btn-sm ${canCancel && !isCancelling ? 'btn-ghost text-red-500 hover:bg-red-50' : 'btn-ghost text-slate-400 cursor-not-allowed'}`}
+              className={canCancel && !isCancelling ? 'text-destructive hover:bg-destructive/10' : 'text-muted-foreground'}
               title={!canCancel ? `Requiere ${horasMinCancelacion}h de anticipación` : undefined}
             >
               <XIcon size={13} /> {isCancelling ? t('common').saving : p.cancel}
-            </button>
+            </Button>
 
-            <Link href={`/profesional/${turno.profesional?.id}`} className="btn btn-ghost btn-sm text-slate-500">
+            <Button size="sm" variant="ghost" className="text-muted-foreground" render={<Link href={`/profesional/${turno.profesional?.id}`} />}>
               {p.viewProfessional}
-            </Link>
+            </Button>
 
             {/* Chat button */}
-            <button
+            <Button
+              size="sm"
+              variant="ghost"
               onClick={() => { onChat(); setUnreadCount(0); }}
-              className="btn btn-ghost btn-sm text-blue-600 hover:bg-blue-50 relative"
+              className="relative text-primary hover:bg-primary/10"
             >
               <ChatIcon size={13} />
               {p.chatLabel}
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white text-[9px] font-bold rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[9px] font-bold text-destructive-foreground">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
-            </button>
+            </Button>
 
             {!preconsultaCompletada ? (
-              <button onClick={onCompletarPreconsulta} className="btn btn-primary btn-sm">
+              <Button size="sm" onClick={onCompletarPreconsulta}>
                 <ClipboardIcon size={13} /> {p.preconsulta}
-              </button>
+              </Button>
             ) : (
-              <span className="badge badge-green">{t('dashboard').preconsulta}</span>
+              <Badge className="bg-success/12 text-success">{t('dashboard').preconsulta}</Badge>
             )}
 
             {(turno.estado === 'COMPLETADO' || turno.estado === 'CONFIRMADO') && (
-              <button onClick={onVerReceta} className="btn btn-secondary btn-sm">
+              <Button size="sm" variant="secondary" onClick={onVerReceta}>
                 <ClipboardIcon size={13} /> {p.viewPrescription}
-              </button>
+              </Button>
             )}
 
             {turno.estado === 'COMPLETADO' && (
-              <button onClick={onCalificar} className="btn btn-ghost btn-sm text-amber-600 hover:bg-amber-50">
+              <Button size="sm" variant="ghost" onClick={onCalificar} className="text-warning hover:bg-warning/10">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" /></svg>
                 {p.rate}
-              </button>
+              </Button>
             )}
           </div>
         )}
 
         {/* Calendar buttons for active future turnos */}
         {isActive && isFuture && turno.profesional && (
-          <div className="mt-3 pt-3 border-t border-slate-100">
+          <div className="mt-3 border-t pt-3">
             <AgendarCalendario
               variant="compact"
               turno={{

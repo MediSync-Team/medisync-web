@@ -18,33 +18,33 @@ export default function RecetaCard({
   const isActive = !receta.receta.proximoControl || new Date(receta.receta.proximoControl) >= new Date();
 
   return (
-    <div className="border border-slate-200 rounded-xl p-4">
+    <div className="rounded-2xl border bg-card p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1">
-          <p className="font-semibold text-slate-800 dark:text-slate-200">
+          <p className="font-semibold text-foreground">
             Dr/a. {receta.profesional.nombre} {receta.profesional.apellido}
           </p>
-          <p className="text-xs text-blue-600 font-medium">{receta.profesional.especialidad}</p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-primary font-medium">{receta.profesional.especialidad}</p>
+          <p className="text-xs text-muted-foreground mt-1">
             {formatClinicInstantDate(receta.fechaHora, locale, { day: 'numeric', month: 'short', year: 'numeric' })}
           </p>
         </div>
         {isActive && (
-          <span className="badge bg-emerald-50 text-emerald-700 text-[10px] font-bold whitespace-nowrap">
+          <span className="badge bg-success/12 text-success text-[10px] font-bold whitespace-nowrap">
             {s.ACTIVA}
           </span>
         )}
       </div>
 
-      <div className="border-t border-slate-100 pt-3 mb-3 space-y-2">
+      <div className="border-t pt-3 mb-3 space-y-2">
         <div>
-          <p className="text-xs font-semibold text-slate-600">{p.diagnosisLabel}</p>
-          <p className="text-sm text-slate-700 line-clamp-2">{receta.receta.diagnostico}</p>
+          <p className="text-xs font-semibold text-muted-foreground">{p.diagnosisLabel}</p>
+          <p className="text-sm text-foreground line-clamp-2">{receta.receta.diagnostico}</p>
         </div>
         {receta.receta.medicamentos && (
           <div>
-            <p className="text-xs font-semibold text-slate-600">{p.medicinesLabel}</p>
-            <p className="text-sm text-slate-700 line-clamp-2">{receta.receta.medicamentos}</p>
+            <p className="text-xs font-semibold text-muted-foreground">{p.medicinesLabel}</p>
+            <p className="text-sm text-foreground line-clamp-2">{receta.receta.medicamentos}</p>
           </div>
         )}
       </div>

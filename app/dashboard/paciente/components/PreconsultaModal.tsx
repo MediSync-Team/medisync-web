@@ -87,10 +87,10 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white">
-          <h3 className="font-bold text-slate-800 dark:text-slate-200">{p.preconsultaTitle}</h3>
-          <button aria-label={p.closeModal} onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+      <div className="w-full max-w-2xl bg-card rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-card z-10">
+          <h3 className="font-bold text-foreground">{p.preconsultaTitle}</h3>
+          <button aria-label={p.closeModal} onClick={onClose} className="btn btn-ghost p-2 text-muted-foreground"><XIcon size={16} /></button>
         </div>
 
         <div className="px-6 py-5 space-y-4">
@@ -101,7 +101,7 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
             </div>
           )}
 
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             {p.preconsultaIntro}
           </p>
 
@@ -166,7 +166,7 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+        <div className="px-6 py-4 border-t bg-muted/30 flex gap-3">
           <button onClick={onClose} className="btn btn-secondary flex-1">{common.cancel}</button>
           <button onClick={handleGuardar} disabled={guardando || loading} className="btn btn-primary flex-1">
             {guardando ? common.saving : p.savePreconsulta}

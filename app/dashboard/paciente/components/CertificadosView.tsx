@@ -32,8 +32,8 @@ export default function CertificadosView({ certificados, loading, paciente }: Ce
   if (certificados.length === 0) {
     return (
       <div className="py-12 text-center">
-        <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300" />
-        <p className="text-slate-500 text-sm font-medium">{p.noCertificates}</p>
+        <ClipboardIcon size={32} className="mx-auto mb-3 text-slate-300 dark:text-slate-600" />
+        <p className="text-slate-500 dark:text-slate-400 text-sm font-medium">{p.noCertificates}</p>
       </div>
     );
   }

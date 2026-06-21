@@ -37,14 +37,14 @@ export default function DatosMedicosView({ datos, onChange, onSave, saving, save
     <div className="space-y-5">
       {fields.map((field) => (
         <div key={field.key}>
-          <h3 className="text-sm font-semibold text-slate-700 mb-1">{field.title}</h3>
-          <p className="text-xs text-slate-400 mb-2">{field.desc}</p>
+          <h3 className="text-sm font-semibold text-foreground mb-1">{field.title}</h3>
+          <p className="text-xs text-muted-foreground mb-2">{field.desc}</p>
           <textarea
             value={datos[field.key]}
             onChange={(e) => onChange({ [field.key]: e.target.value })}
             rows={field.rows}
             placeholder={field.placeholder}
-            className="w-full border border-slate-200 rounded-lg px-3 py-2 text-sm text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+            className="w-full border bg-background rounded-lg px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring resize-none"
           />
         </div>
       ))}
@@ -53,13 +53,13 @@ export default function DatosMedicosView({ datos, onChange, onSave, saving, save
           {saving ? d.saving : d.saveMedicalData}
         </button>
         {saved && (
-          <span className="text-emerald-600 text-sm font-medium flex items-center gap-1">
+          <span className="text-success text-sm font-medium flex items-center gap-1">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
             {d.savedMedicalData}
           </span>
         )}
       </div>
-      <p className="text-xs text-slate-400">{d.medicalDataVisibility}</p>
+      <p className="text-xs text-muted-foreground">{d.medicalDataVisibility}</p>
     </div>
   );
 }

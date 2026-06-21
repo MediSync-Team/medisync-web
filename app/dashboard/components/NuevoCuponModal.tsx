@@ -28,10 +28,10 @@ export default function NuevoCuponModal({ form, setForm, onClose, onSave, saving
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-md shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">{d.couponModal.title}</h3>
-          <button onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
+      <div className="bg-card rounded-2xl w-full max-w-md shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <h3 className="font-bold text-foreground text-lg">{d.couponModal.title}</h3>
+          <button onClick={onClose} className="btn btn-ghost p-2 text-muted-foreground hover:text-foreground">
             <XIcon size={18} />
           </button>
         </div>
@@ -56,8 +56,8 @@ export default function NuevoCuponModal({ form, setForm, onClose, onSave, saving
                   onClick={() => setForm({ ...form, tipo })}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
                     form.tipo === tipo
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-300'
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted/30 text-foreground border hover:border-primary/40'
                   }`}
                 >
                   {tipo === 'PORCENTAJE' ? '%' : '$'}
@@ -113,7 +113,7 @@ export default function NuevoCuponModal({ form, setForm, onClose, onSave, saving
             </div>
           </div>
         </div>
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3 rounded-b-2xl">
+        <div className="px-6 py-4 border-t bg-muted/30 flex gap-3 rounded-b-2xl">
           <button onClick={onClose} className="btn btn-secondary flex-1" disabled={saving}>
             {d.couponModal.cancel}
           </button>

@@ -36,6 +36,7 @@ import {
   BellIcon, XIcon, SearchIcon, WaitlistIcon, InfoIcon, ClipboardIcon,
 } from '../../components/icons';
 import { Logo } from '@/components/logo';
+import { Button } from '@/components/ui/button';
 
 export default function PacienteDashboard() {
   const router = useRouter();
@@ -276,10 +277,10 @@ export default function PacienteDashboard() {
 
   if (authLoading || !user || !user.paciente) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Spinner size={32} className="text-blue-600" />
-          <p className="text-slate-500 text-sm">{c.loading}</p>
+          <Spinner size={32} className="text-primary" />
+          <p className="text-muted-foreground text-sm">{c.loading}</p>
         </div>
       </div>
     );
@@ -316,10 +317,10 @@ export default function PacienteDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-muted/30">
       {/* -- Reminder banner ------------------------------- */}
       {recordatorios.length > 0 && (
-        <div className="bg-amber-500 text-white">
+        <div className="bg-warning text-warning-foreground">
           <div className="page-container py-2.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-sm">
               <BellIcon size={15} className="shrink-0" />
@@ -328,20 +329,20 @@ export default function PacienteDashboard() {
                   .replace('{{count}}', String(recordatorios.length))
                   .replace('{{plural}}', recordatorios.length === 1 ? '' : 's')}
               </span>
-              <button onClick={() => setShowRecordatorios(!showRecordatorios)} className="underline underline-offset-2 text-amber-100 hover:text-white text-xs">
+              <button onClick={() => setShowRecordatorios(!showRecordatorios)} className="underline underline-offset-2 text-warning-foreground/80 hover:text-warning-foreground text-xs">
                 {showRecordatorios ? pageText.reminderToggleHide : pageText.reminderToggleShow}
               </button>
             </div>
-            <button onClick={() => setRecordatorios([])} className="text-amber-200 hover:text-white">
+            <button onClick={() => setRecordatorios([])} className="text-warning-foreground/70 hover:text-warning-foreground">
               <XIcon size={14} />
             </button>
           </div>
           {showRecordatorios && (
             <div className="page-container pb-3">
-              <div className="bg-amber-600/50 rounded-lg p-3 space-y-1.5">
+              <div className="bg-warning-foreground/10 rounded-lg p-3 space-y-1.5">
                 {recordatorios.map((rec: any) => (
-                  <div key={rec.id} className="flex items-center gap-3 text-sm text-amber-50">
-                    <CalendarIcon size={13} className="shrink-0 text-amber-200" />
+                  <div key={rec.id} className="flex items-center gap-3 text-sm text-warning-foreground/90">
+                    <CalendarIcon size={13} className="shrink-0 text-warning-foreground/70" />
                     <span>
                       {formatClinicInstantDate(rec.fechaHora, locale)} {p.atTime}{' '}
                       {formatClinicInstantTime(rec.fechaHora, locale)}
@@ -357,29 +358,29 @@ export default function PacienteDashboard() {
       )}
 
       {/* -- Navbar ---------------------------------------- */}
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
+      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
               <Logo href="/dashboard/paciente" />
               <span className="hidden text-xs text-muted-foreground sm:block">{d.title}</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <GlobalChatHub user={user} />
               <NotificationBell />
               <ThemeLangToggle compact />
-              <Link href="/" data-onboarding="pac-buscar-link" className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm hidden sm:inline-flex">
+              <Button variant="ghost" size="sm" className="hidden sm:inline-flex" render={<Link href="/" data-onboarding="pac-buscar-link" />}>
                 <SearchIcon size={15} />
                 {d.searchProfessionals}
-              </Link>
-              <button data-onboarding="pac-profile-btn" onClick={() => setShowProfileModal(true)} className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm">
+              </Button>
+              <Button variant="ghost" size="sm" data-onboarding="pac-profile-btn" onClick={() => setShowProfileModal(true)}>
                 <UserIcon size={15} />
                 <span className="hidden sm:inline">{user.paciente.nombre} {user.paciente.apellido}</span>
-              </button>
-              <button onClick={() => { logout(); router.push('/'); }} className="btn btn-secondary text-sm">
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => { logout(); router.push('/'); }}>
                 <LogOutIcon size={15} />
                 <span className="hidden sm:inline">{d.logout}</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -403,11 +404,11 @@ export default function PacienteDashboard() {
         </div>
 
         {/* -- Tabs -------------------------------------- */}
-        <div className="card overflow-hidden">
-          <div className="tab-nav px-1 pt-1">
+        <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+          <div className="flex gap-1 overflow-x-auto border-b px-2 pt-1.5">
             <button
               onClick={() => handleTabChange('resumen')}
-              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'resumen' ? 'tab-btn-active' : ''}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='resumen' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
 {p.summary}
@@ -415,24 +416,24 @@ export default function PacienteDashboard() {
             <button
               data-onboarding="pac-tab-proximos"
               onClick={() => handleTabChange('proximos')}
-              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'proximos' ? 'tab-btn-active' : ''}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='proximos' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
             >
               <CalendarIcon size={13} />
               {p.upcoming}
               {activeTab === 'proximos' && paginationMeta.total > 0 && (
-                <span className="ml-1 bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                <span className="ml-1 bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {paginationMeta.total}
                 </span>
               )}
             </button>
             <button
               onClick={() => handleTabChange('pasados')}
-              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'pasados' ? 'tab-btn-active' : ''}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='pasados' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
             >
               <ClockIcon size={13} />
               {p.past}
               {activeTab === 'pasados' && paginationMeta.total > 0 && (
-                <span className="ml-1 bg-slate-100 text-slate-600 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                <span className="ml-1 bg-muted text-muted-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {paginationMeta.total}
                 </span>
               )}
@@ -440,52 +441,52 @@ export default function PacienteDashboard() {
             <button
               data-onboarding="pac-tab-lista-espera"
               onClick={() => handleTabChange('listaEspera')}
-              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'listaEspera' ? 'tab-btn-active' : ''}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='listaEspera' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
             >
               <WaitlistIcon size={13} />
               {p.waitlist}
               {listaEspera.length > 0 && (
-                <span className="ml-1 bg-amber-100 text-amber-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                <span className="ml-1 bg-warning/15 text-warning text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {listaEspera.length}
                 </span>
               )}
             </button>
             <button
               onClick={() => handleTabChange('historial')}
-              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'historial' ? 'tab-btn-active' : ''}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='historial' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
             >
 <ClipboardIcon size={13} />
               {d.medicalHistory}
             </button>
             <button
               onClick={() => handleTabChange('recetas')}
-              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'recetas' ? 'tab-btn-active' : ''}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='recetas' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
               {d.recipes}
             </button>
             <button
               onClick={() => handleTabChange('certificados')}
-              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'certificados' ? 'tab-btn-active' : ''}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='certificados' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="19" x2="12" y2="13"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
               {d.certificates_}
               {misCertificados.length > 0 && (
-                <span className="ml-1 bg-blue-100 text-blue-700 text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                <span className="ml-1 bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {misCertificados.length}
                 </span>
               )}
             </button>
             <button
               onClick={() => handleTabChange('datosMedicos')}
-              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'datosMedicos' ? 'tab-btn-active' : ''}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='datosMedicos' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
               {d.myMedicalData}
             </button>
             <button
               onClick={() => handleTabChange('estadisticas')}
-              className={`tab-btn flex items-center gap-1.5 ${activeTab === 'estadisticas' ? 'tab-btn-active' : ''}`}
+              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='estadisticas' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
             >
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
               {d.statistics}

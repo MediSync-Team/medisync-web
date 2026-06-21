@@ -92,7 +92,7 @@ export default function ResenasView() {
 
       {/* -- Stats header ------------------------------------------- */}
       {data?.stats && data.stats.total > 0 && (
-        <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 rounded-xl p-5">
+        <div className="rounded-2xl border bg-card p-5 shadow-sm">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-5">
             {/* Promedio grande */}
             <div className="text-center shrink-0">
@@ -119,9 +119,9 @@ export default function ResenasView() {
                     >
                       <span className="text-xs text-slate-500 dark:text-slate-400 w-4 text-right shrink-0">{star}</span>
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="#F59E0B"><polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26" /></svg>
-                      <div className="flex-1 h-2.5 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+                      <div className="flex-1 h-2.5 bg-muted rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full transition-all ${ratingFilter === star ? 'bg-amber-500' : 'bg-amber-400 dark:bg-amber-500'}`}
+                          className={`h-full rounded-full transition-all ${ratingFilter === star ? 'bg-warning' : 'bg-warning/70'}`}
                           style={{ width: `${pct}%` }}
                         />
                       </div>
@@ -165,13 +165,13 @@ export default function ResenasView() {
       ) : (
         <div className="space-y-4">
           {data.resenas.map((resena) => (
-            <div key={resena.id} className="border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden">
+            <div key={resena.id} className="overflow-hidden rounded-2xl border bg-card shadow-sm">
               {/* Review header */}
               <div className="p-4">
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-3">
                     {/* Avatar */}
-                    <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/40 flex items-center justify-center text-sm font-bold text-blue-600 dark:text-blue-400 shrink-0 overflow-hidden">
+                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary shrink-0 overflow-hidden">
                       {resena.paciente?.fotoUrl
                         ? <img src={resena.paciente.fotoUrl} alt="" className="w-full h-full object-cover" />
                         : `${resena.paciente?.nombre?.[0] ?? '?'}${resena.paciente?.apellido?.[0] ?? ''}`}
@@ -199,17 +199,17 @@ export default function ResenasView() {
 
                 {/* Comment */}
                 {resena.comentario && (
-                  <p className="mt-3 text-slate-700 dark:text-slate-300 text-sm leading-relaxed bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-100 dark:border-slate-700">
+                  <p className="mt-3 text-foreground text-sm leading-relaxed bg-muted/30 rounded-lg p-3 border">
                     &quot;{resena.comentario}&quot;
                   </p>
                 )}
               </div>
 
               {/* Response section */}
-              <div className="border-t border-slate-100 dark:border-slate-700 bg-blue-50/50 dark:bg-blue-900/10 px-4 py-3">
+              <div className="border-t bg-primary/5 px-4 py-3">
                 {editingId === resena.id ? (
                   <div className="space-y-2">
-                    <p className="text-xs font-semibold text-blue-700 dark:text-blue-400">{reviews.publicReply}</p>
+                    <p className="text-xs font-semibold text-primary">{reviews.publicReply}</p>
                     <textarea
                       value={respuestaText}
                       onChange={(e) => setRespuestaText(e.target.value)}
@@ -234,7 +234,7 @@ export default function ResenasView() {
                 ) : resena.respuesta ? (
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-1.5">
-                      <p className="text-xs font-semibold text-blue-700 dark:text-blue-400 flex items-center gap-1.5">
+                      <p className="text-xs font-semibold text-primary flex items-center gap-1.5">
                         <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                         {reviews.yourReply}
                         {resena.respondidaAt && (
@@ -242,8 +242,8 @@ export default function ResenasView() {
                         )}
                       </p>
                       <div className="flex gap-2">
-                        <button onClick={() => startEdit(resena)} className="text-xs text-blue-600 hover:underline">{reviews.edit}</button>
-                        <button onClick={() => handleBorrarRespuesta(resena.id)} disabled={saving} className="text-xs text-red-400 hover:text-red-600 hover:underline">{reviews.delete}</button>
+                        <button onClick={() => startEdit(resena)} className="text-xs text-primary hover:underline">{reviews.edit}</button>
+                        <button onClick={() => handleBorrarRespuesta(resena.id)} disabled={saving} className="text-xs text-destructive hover:text-destructive/80 hover:underline">{reviews.delete}</button>
                       </div>
                     </div>
                     <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed">{resena.respuesta}</p>
@@ -251,7 +251,7 @@ export default function ResenasView() {
                 ) : (
                   <button
                     onClick={() => startEdit(resena)}
-                    className="text-xs text-blue-600 dark:text-blue-400 hover:underline font-medium flex items-center gap-1.5"
+                    className="text-xs text-primary hover:underline font-medium flex items-center gap-1.5"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     {reviews.replyAction}

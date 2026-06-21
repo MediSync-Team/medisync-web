@@ -21,6 +21,7 @@ import {
   BellIcon, ChartIcon, StarIcon, CheckIcon, XIcon, InfoIcon,
 } from '../components/icons';
 import { Logo } from '@/components/logo';
+import { Button } from '@/components/ui/button';
 
 import CalendarioView from './components/CalendarioView';
 import DisponibilidadView from './components/DisponibilidadView';
@@ -224,10 +225,10 @@ export default function ProfesionalDashboard() {
 
   if (authLoading || loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="flex flex-col items-center gap-3">
-          <Spinner size={32} className="text-blue-600" />
-          <p className="text-slate-500 text-sm">{d.loadingPanel}</p>
+          <Spinner size={32} className="text-primary" />
+          <p className="text-muted-foreground text-sm">{d.loadingPanel}</p>
         </div>
       </div>
     );
@@ -340,7 +341,7 @@ export default function ProfesionalDashboard() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-screen bg-muted/30">
       {showOnboarding && (
         <ProfesionalOnboardingWizard
           profesionalId={user.profesional.id}
@@ -351,7 +352,7 @@ export default function ProfesionalDashboard() {
       )}
 
       {recordatorios.length > 0 && (
-        <div className="bg-blue-600 text-white">
+        <div className="bg-primary text-primary-foreground">
           <div className="page-container py-2.5 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 text-sm">
               <BellIcon size={15} className="shrink-0" />
@@ -360,21 +361,21 @@ export default function ProfesionalDashboard() {
               </span>
               <button
                 onClick={() => setShowRecordatorios(!showRecordatorios)}
-                className="underline underline-offset-2 text-blue-100 hover:text-white text-xs"
+                className="underline underline-offset-2 text-primary-foreground/80 hover:text-primary-foreground text-xs"
               >
                 {showRecordatorios ? d.reminder.hide : d.reminder.detail}
               </button>
             </div>
-            <button onClick={() => setRecordatorios([])} className="text-blue-200 hover:text-white">
+            <button onClick={() => setRecordatorios([])} className="text-primary-foreground/70 hover:text-primary-foreground">
               <XIcon size={14} />
             </button>
           </div>
           {showRecordatorios && (
             <div className="page-container pb-3">
-              <div className="bg-blue-700/50 rounded-lg p-3 space-y-1.5">
+              <div className="bg-primary-foreground/10 rounded-lg p-3 space-y-1.5">
                 {recordatorios.map((rec: any) => (
-                  <div key={rec.id} className="flex items-center gap-3 text-sm text-blue-50">
-                    <ClockIcon size={13} className="shrink-0 text-blue-300" />
+                  <div key={rec.id} className="flex items-center gap-3 text-sm text-primary-foreground/90">
+                    <ClockIcon size={13} className="shrink-0 text-primary-foreground/70" />
                     <span>
                       {formatClinicInstantTime(rec.fechaHora, getLocale(lang))}
                       {' - '}
@@ -391,18 +392,20 @@ export default function ProfesionalDashboard() {
         </div>
       )}
 
-      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-30">
+      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
               <Logo href="/dashboard" />
               <span className="hidden text-xs text-muted-foreground sm:block">{d.title}</span>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1">
               <GlobalChatHub user={user} />
               <NotificationBell />
               <ThemeLangToggle compact />
-              <button
+              <Button
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   const url = `${window.location.origin}/profesional/${user.profesional!.id}`;
                   navigator.clipboard.writeText(url).then(() => {
@@ -411,12 +414,12 @@ export default function ProfesionalDashboard() {
                   });
                 }}
                 title={d.shareProfileTitle}
-                className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm relative"
+                className="relative"
               >
                 {profileCopied ? (
                   <>
-                    <CheckIcon size={15} className="text-emerald-500" />
-                    <span className="hidden sm:inline text-emerald-600 text-xs">{d.copied}</span>
+                    <CheckIcon size={15} className="text-success" />
+                    <span className="hidden sm:inline text-success text-xs">{d.copied}</span>
                   </>
                 ) : (
                   <>
@@ -427,24 +430,26 @@ export default function ProfesionalDashboard() {
                     <span className="hidden sm:inline">{d.shareProfile}</span>
                   </>
                 )}
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
                 data-onboarding="profile-btn"
                 onClick={() => setShowProfileModal(true)}
-                className="btn btn-ghost text-slate-600 dark:text-slate-300 text-sm"
               >
                 <UserIcon size={15} />
                 <span className="hidden sm:inline">
                   Dr/a. {user.profesional.nombre} {user.profesional.apellido}
                 </span>
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
                 onClick={() => { logout(); router.push('/'); }}
-                className="btn btn-secondary text-sm"
               >
                 <LogOutIcon size={15} />
                 <span className="hidden sm:inline">{d.logout}</span>
-              </button>
+              </Button>
             </div>
           </div>
         </div>
@@ -463,18 +468,16 @@ export default function ProfesionalDashboard() {
           <>
             <div data-onboarding="stat-cards" className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
               {[1, 2, 3].map(i => (
-                <div key={i} className="stat-card">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="skeleton h-4 w-32 rounded" />
-                    <div className="skeleton w-8 h-8 rounded-lg" />
-                  </div>
+                <div key={i} className="rounded-2xl border bg-card p-5 shadow-sm">
+                  <div className="skeleton w-10 h-10 rounded-xl mb-3" />
                   <div className="skeleton h-7 w-16 rounded mb-2" />
+                  <div className="skeleton h-4 w-32 rounded mb-1" />
                   <div className="skeleton h-3 w-24 rounded" />
                 </div>
               ))}
             </div>
-            <div className="card overflow-hidden">
-              <div className="tab-nav px-1 pt-1">
+            <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+              <div className="flex gap-1 overflow-x-auto border-b px-2 pt-1.5">
                 {[1, 2, 3, 4].map(i => (
                   <div key={i} className="skeleton h-9 w-24 rounded mx-1" />
                 ))}
@@ -498,8 +501,8 @@ export default function ProfesionalDashboard() {
               especialidadNombre={user.profesional.especialidad?.nombre || ''}
             />
 
-            <div className="card overflow-hidden">
-              <div className="tab-nav px-1 pt-1">
+            <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+              <div className="flex gap-1 overflow-x-auto border-b px-2 pt-1.5">
                 {([
                   { id: 'calendario', label: d.agenda, icon: <CalendarIcon size={14} />, onboarding: 'tab-calendario' },
                   { id: 'disponibilidad', label: d.availability, icon: <ClockIcon size={14} />, onboarding: 'tab-disponibilidad' },
@@ -514,7 +517,11 @@ export default function ProfesionalDashboard() {
                     key={tab.id}
                     data-onboarding={tab.onboarding}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`tab-btn flex items-center gap-1.5 ${activeTab === tab.id ? 'tab-btn-active' : ''}`}
+                    className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${
+                      activeTab === tab.id
+                        ? 'border-primary text-primary'
+                        : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'
+                    }`}
                   >
                     {tab.icon}
                     {tab.label}

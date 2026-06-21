@@ -117,8 +117,8 @@ export default function PagosView() {
 
   const modalidadIcon = (m: string) => (
     m === 'VIRTUAL'
-      ? <VideoIcon size={13} className="text-blue-600" />
-      : <BuildingIcon size={13} className="text-emerald-600" />
+      ? <VideoIcon size={13} className="text-primary" />
+      : <BuildingIcon size={13} className="text-success" />
   );
 
   // Bar chart helpers
@@ -136,10 +136,10 @@ export default function PagosView() {
             { label: payments.pendingCollection, value: fmt(data.totales.pendiente), sub: `${data.totales.pendientes} ${data.totales.pendientes !== 1 ? payments.payments : payments.payment}`, colorClass: 'text-amber-600 dark:text-amber-400' },
             { label: payments.transactions, value: String(data.totales.aprobados + data.totales.pendientes), sub: `${data.totales.aprobados} ${payments.approvedShort}`, colorClass: 'text-purple-600 dark:text-purple-400' },
           ].map(card => (
-            <div key={card.label} className="stat-card">
-              <p className="stat-label">{card.label}</p>
+            <div key={card.label} className="rounded-2xl border bg-card p-4 shadow-sm">
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{card.label}</p>
               <p className={`text-xl font-bold mt-1 ${card.colorClass}`}>{card.value}</p>
-              <p className="stat-desc">{card.sub}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">{card.sub}</p>
             </div>
           ))}
         </div>
@@ -163,7 +163,7 @@ export default function PagosView() {
                 </div>
                 {/* Bar */}
                 <div
-                  className={`w-full rounded-t transition-all ${m.bruto > 0 ? 'bg-emerald-500 dark:bg-emerald-400' : 'bg-slate-200 dark:bg-slate-600'}`}
+                  className={`w-full rounded-t transition-all ${m.bruto > 0 ? 'bg-success' : 'bg-muted'}`}
                   style={{ height: `${Math.max(4, (m.bruto / maxBruto) * 96)}px` }}
                 />
                 <span className="text-[9px] text-slate-400 dark:text-slate-500 leading-none">{m.mes}</span>
@@ -274,7 +274,7 @@ export default function PagosView() {
           {/* Mobile cards */}
           <div className="sm:hidden space-y-3">
             {data.pagos.map(p => (
-              <div key={p.id} className="card p-4 space-y-2">
+              <div key={p.id} className="rounded-2xl border bg-card p-4 shadow-sm space-y-2">
                 <div className="flex items-start justify-between">
                   <div>
                     <p className="font-medium text-slate-800 dark:text-slate-100 text-sm">

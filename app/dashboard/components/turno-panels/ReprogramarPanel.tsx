@@ -39,17 +39,17 @@ export default function ReprogramarPanel({ turno, onNotice, onClose, onReschedul
   };
 
   return (
-    <div className="mx-6 mb-4 border border-blue-200 bg-blue-50 rounded-xl p-4 space-y-3">
+    <div className="mx-6 mb-4 border border-blue-200 dark:border-blue-900 bg-blue-50 dark:bg-blue-950/40 rounded-xl p-4 space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="font-semibold text-blue-800 text-sm flex items-center gap-2">
-          <CalendarIcon size={15} className="text-blue-600" />
+        <h4 className="font-semibold text-blue-800 dark:text-blue-200 text-sm flex items-center gap-2">
+          <CalendarIcon size={15} className="text-blue-600 dark:text-blue-400" />
           {modal.reschedule.title}
         </h4>
-        <button onClick={onClose} className="text-blue-400 hover:text-blue-600">
+        <button onClick={onClose} className="text-blue-400 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-200">
           <XIcon size={15} />
         </button>
       </div>
-      <p className="text-xs text-blue-700">
+      <p className="text-xs text-blue-700 dark:text-blue-300">
         {modal.reschedule.patientNotified}
       </p>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -69,12 +69,12 @@ export default function ReprogramarPanel({ turno, onNotice, onClose, onReschedul
         <div>
           <label className="field-label">{modal.reschedule.availableTime}</label>
           {cargandoSlots ? (
-            <div className="field-input flex items-center gap-2 text-slate-400 text-sm">
+            <div className="field-input flex items-center gap-2 text-slate-400 dark:text-slate-500 text-sm">
               <Spinner size={16} />
               {modal.reschedule.loadingSlots}
             </div>
           ) : slots.length === 0 ? (
-            <div className="field-input text-slate-400 text-sm">
+            <div className="field-input text-slate-400 dark:text-slate-500 text-sm">
               {fecha ? modal.reschedule.noAvailability : modal.reschedule.selectDate}
             </div>
           ) : (

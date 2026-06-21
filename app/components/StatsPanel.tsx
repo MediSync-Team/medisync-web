@@ -32,9 +32,9 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
 
   if (!stats) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4">{statsText.title}</h3>
-        <p className="text-gray-500">{statsText.loading}</p>
+        <p className="text-gray-500 dark:text-gray-400">{statsText.loading}</p>
       </div>
     );
   }
@@ -58,7 +58,7 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4">{statsText.appointmentsByMonth}</h3>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
@@ -76,7 +76,7 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4">{statsText.appointmentStatus}</h3>
           {estadoData.length > 0 ? (
             <div className="h-64">
@@ -101,11 +101,11 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
               </ResponsiveContainer>
             </div>
           ) : (
-            <p className="text-gray-500 text-center py-8">{statsText.noData}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-center py-8">{statsText.noData}</p>
           )}
         </div>
 
-        <div className="bg-white rounded-lg shadow p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
           <h3 className="text-lg font-semibold mb-4">{statsText.appointmentsTrend}</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
@@ -121,7 +121,7 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white dark:bg-slate-800 rounded-lg shadow p-6">
         <h3 className="text-lg font-semibold mb-4">{statsText.revenueByMonth}</h3>
         {stats.ingresosPorMes.some(i => i.bruto > 0) ? (
           <div className="h-64">
@@ -138,7 +138,7 @@ export default function StatsPanel({ stats }: { stats: StatsData | null }) {
           </div>
         ) : (
           <div className="text-center py-8">
-            <p className="text-gray-500">{statsText.connectMercadoPago}</p>
+            <p className="text-gray-500 dark:text-gray-400">{statsText.connectMercadoPago}</p>
           </div>
         )}
       </div>

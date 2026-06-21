@@ -47,10 +47,10 @@ export default function ReprogramarModal({ turno, onClose, onSuccess }: { turno:
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-md bg-white rounded-2xl shadow-2xl overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800 dark:text-slate-200">{p.rescheduleTitle}</h3>
-          <button aria-label={p.closeModal} onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+      <div className="w-full max-w-md bg-card rounded-2xl shadow-2xl overflow-hidden">
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <h3 className="font-bold text-foreground">{p.rescheduleTitle}</h3>
+          <button aria-label={p.closeModal} onClick={onClose} className="btn btn-ghost p-2 text-muted-foreground"><XIcon size={16} /></button>
         </div>
 
         <div className="px-6 py-5 space-y-4">
@@ -61,8 +61,8 @@ export default function ReprogramarModal({ turno, onClose, onSuccess }: { turno:
             </div>
           )}
 
-          <p className="text-sm text-slate-600">
-            {p.rescheduleIntro} <strong>{turno.profesional?.nombre} {turno.profesional?.apellido}</strong>.
+          <p className="text-sm text-muted-foreground">
+            {p.rescheduleIntro} <strong className="text-foreground">{turno.profesional?.nombre} {turno.profesional?.apellido}</strong>.
             {' '}{p.rescheduleIntroSuffix}
           </p>
 
@@ -85,7 +85,7 @@ export default function ReprogramarModal({ turno, onClose, onSuccess }: { turno:
                   {[1,2,3,4].map(i => <div key={i} className="skeleton h-8 w-16 rounded-lg" />)}
                 </div>
               ) : slots.length === 0 ? (
-                <p className="text-sm text-slate-500 text-center py-4">{p.noAvailableTimesForDate}</p>
+                <p className="text-sm text-muted-foreground text-center py-4">{p.noAvailableTimesForDate}</p>
               ) : (
                 <div className="flex flex-wrap gap-2">
                   {slots.map((slot) => (
@@ -94,8 +94,8 @@ export default function ReprogramarModal({ turno, onClose, onSuccess }: { turno:
                       onClick={() => setHoraSeleccionada(slot.hora)}
                       className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
                         horaSeleccionada === slot.hora
-                          ? 'bg-blue-600 text-white border-blue-600'
-                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-300 hover:bg-blue-50'
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-muted/30 text-foreground border hover:border-primary/40 hover:bg-accent'
                       }`}
                     >
                       {slot.hora}
@@ -107,7 +107,7 @@ export default function ReprogramarModal({ turno, onClose, onSuccess }: { turno:
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+        <div className="px-6 py-4 border-t bg-muted/30 flex gap-3">
           <button onClick={onClose} className="btn btn-secondary flex-1">{common.cancel}</button>
           <button
             onClick={handleGuardar}

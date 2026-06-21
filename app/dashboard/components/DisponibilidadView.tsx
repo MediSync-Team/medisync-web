@@ -89,7 +89,7 @@ export default function DisponibilidadView({
       <div>
         <h3 className="section-title mb-3">{d.availability}</h3>
         {disponibilidades.length === 0 ? (
-          <div className="py-8 text-center text-slate-400 border-2 border-dashed border-slate-200 rounded-xl">
+          <div className="py-8 text-center text-slate-400 dark:text-slate-500 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-xl">
             <ClockIcon size={28} className="mx-auto mb-2 opacity-30" />
             <p className="text-sm">{t('common').noResults}</p>
           </div>
@@ -108,27 +108,27 @@ export default function DisponibilidadView({
           const multipleLocations = uniqueKeys.filter(k => k !== NULL_KEY).length >= 2;
 
           const DispRow = ({ disp }: { disp: Disponibilidad }) => (
-            <div key={disp.id} className="flex items-center gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
+            <div key={disp.id} className="flex items-center gap-3 p-3.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl">
               <div className="w-24 shrink-0">
-                <p className="font-semibold text-slate-700 text-sm">{getDaysLong(lang)[disp.diaSemana]}</p>
+                <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{getDaysLong(lang)[disp.diaSemana]}</p>
               </div>
-              <div className="flex items-center gap-1.5 text-slate-600 text-sm">
-                <ClockIcon size={13} className="text-slate-400" />
+              <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300 text-sm">
+                <ClockIcon size={13} className="text-slate-400 dark:text-slate-500" />
                 <span>{disp.horaInicio} - {disp.horaFin}</span>
               </div>
               <span className={`ml-1 badge ${disp.modalidad === 'VIRTUAL' ? 'badge-blue' : disp.modalidad === 'PRESENCIAL' ? 'badge-green' : 'badge-purple'}`}>
                 {disp.modalidad === 'VIRTUAL' ? modality.VIRTUAL : disp.modalidad === 'PRESENCIAL' ? modality.PRESENCIAL : modality.AMBOS}
               </span>
               {!multipleLocations && disp.lugarAtencion && (
-                <span className="flex items-center gap-1 text-xs text-slate-500 truncate max-w-[180px]">
-                  <MapPinIcon size={11} className="shrink-0 text-slate-400" />
+                <span className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400 truncate max-w-[180px]">
+                  <MapPinIcon size={11} className="shrink-0 text-slate-400 dark:text-slate-500" />
                   {disp.lugarAtencion}
                 </span>
               )}
               <button
                 onClick={() => onEliminar(disp.id)}
                 disabled={eliminandoId === disp.id}
-                className={`ml-auto btn btn-ghost p-1.5 ${eliminandoId === disp.id ? 'text-slate-300 cursor-not-allowed' : 'text-red-400 hover:text-red-600'}`}
+                className={`ml-auto btn btn-ghost p-1.5 ${eliminandoId === disp.id ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed' : 'text-red-400 hover:text-red-600 dark:hover:text-red-300'}`}
                 title={d.availabilitySetup.deleteSchedule}
               >
                 <TrashIcon size={15} />
@@ -142,8 +142,8 @@ export default function DisponibilidadView({
                 <div key={mapK}>
                   {multipleLocations && (
                     <div className="flex items-center gap-2 mb-2">
-                      <MapPinIcon size={13} className="text-slate-400 shrink-0" />
-                      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+                      <MapPinIcon size={13} className="text-slate-400 dark:text-slate-500 shrink-0" />
+                      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
                         {mapK === NULL_KEY ? d.availabilitySetup.noLocationAssigned : mapK}
                       </p>
                     </div>
@@ -161,7 +161,7 @@ export default function DisponibilidadView({
       {/* -- Agregar horario -- */}
       <div>
         <h3 className="section-title mb-3">{d.addAvailability}</h3>
-        <div className="bg-slate-50 border border-slate-200 rounded-xl p-4">
+        <div className="bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             <div>
               <label className="field-label">{d.day}</label>
@@ -204,9 +204,9 @@ export default function DisponibilidadView({
           {/* Lugar de atención por horario */}
           <div className="mt-3">
             <label className="field-label flex items-center gap-1">
-              <MapPinIcon size={12} className="text-slate-400" />
+              <MapPinIcon size={12} className="text-slate-400 dark:text-slate-500" />
               {d.availabilitySetup.location}
-              <span className="text-slate-400 font-normal ml-1">- {d.availabilitySetup.optional}</span>
+              <span className="text-slate-400 dark:text-slate-500 font-normal ml-1">- {d.availabilitySetup.optional}</span>
             </label>
             <input
               type="text"
@@ -223,7 +223,7 @@ export default function DisponibilidadView({
       </div>
 
       {/* ══ Bloqueos de días ══ */}
-      <div className="border-t border-slate-200 pt-6">
+      <div className="border-t border-slate-200 dark:border-slate-700 pt-6">
         <div className="flex items-center gap-2 mb-1">
           {/* Calendar-off icon */}
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-amber-500">
@@ -231,13 +231,13 @@ export default function DisponibilidadView({
           </svg>
           <h3 className="section-title">{d.availabilitySetup.blockingsTitle}</h3>
         </div>
-        <p className="text-xs text-slate-500 mb-4">{d.availabilitySetup.blockingsDesc}</p>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">{d.availabilitySetup.blockingsDesc}</p>
 
         {/* Lista de bloqueos activos */}
         {loadingBloqueos ? (
-          <div className="py-6 flex justify-center text-slate-400 text-sm">{t('common').loading}</div>
+          <div className="py-6 flex justify-center text-slate-400 dark:text-slate-500 text-sm">{t('common').loading}</div>
         ) : bloqueos.length === 0 ? (
-          <div className="py-6 text-center text-slate-400 border-2 border-dashed border-amber-100 rounded-xl mb-4">
+          <div className="py-6 text-center text-slate-400 dark:text-slate-500 border-2 border-dashed border-amber-100 dark:border-amber-900/40 rounded-xl mb-4">
             <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-2 opacity-30 text-amber-400">
               <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
             </svg>
@@ -246,13 +246,13 @@ export default function DisponibilidadView({
         ) : (
           <div className="space-y-2 mb-4">
             {bloqueos.map((b) => (
-              <div key={b.id} className="flex items-center gap-3 p-3.5 bg-amber-50 border border-amber-200 rounded-xl">
+              <div key={b.id} className="flex items-center gap-3 p-3.5 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl">
                 <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="shrink-0 text-amber-500">
                   <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
                 </svg>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-slate-700 text-sm">{formatFechaBloqueo(b)}</p>
-                  <p className="text-xs text-slate-500">
+                  <p className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{formatFechaBloqueo(b)}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
                     {b.horaInicio && b.horaFin ? `${b.horaInicio}–${b.horaFin}` : d.availabilitySetup.fullDay}
                     {b.motivo ? ` · ${
                       b.motivo === 'Vacaciones' ? d.availabilitySetup.reasons.vacations :
@@ -277,10 +277,10 @@ export default function DisponibilidadView({
         )}
 
         {/* Formulario nuevo bloqueo */}
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
-          <h4 className="text-sm font-semibold text-amber-800 mb-3">{d.availabilitySetup.addBlocking}</h4>
-          {bloqueoError && <p className="text-xs text-red-600 mb-2">{bloqueoError}</p>}
-          {bloqueoOk && <p className="text-xs text-emerald-600 mb-2">{bloqueoOk}</p>}
+        <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900 rounded-xl p-4">
+          <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300 mb-3">{d.availabilitySetup.addBlocking}</h4>
+          {bloqueoError && <p className="text-xs text-red-600 dark:text-red-400 mb-2">{bloqueoError}</p>}
+          {bloqueoOk && <p className="text-xs text-emerald-600 dark:text-emerald-400 mb-2">{bloqueoOk}</p>}
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-3">
             <div>
@@ -326,9 +326,9 @@ export default function DisponibilidadView({
               type="checkbox"
               checked={nuevoBloqueo.esHoraParcial}
               onChange={(e) => setNuevoBloqueo({ ...nuevoBloqueo, esHoraParcial: e.target.checked })}
-              className="rounded border-slate-300 text-amber-600 focus:ring-amber-500"
+              className="rounded border-slate-300 dark:border-slate-600 text-amber-600 focus:ring-amber-500"
             />
-            <span className="text-sm text-slate-600">{d.availabilitySetup.partialBlock}</span>
+            <span className="text-sm text-slate-600 dark:text-slate-300">{d.availabilitySetup.partialBlock}</span>
           </label>
 
           {nuevoBloqueo.esHoraParcial && (

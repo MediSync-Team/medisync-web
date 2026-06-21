@@ -46,10 +46,10 @@ export default function RecetaPanel({ turno, translateSpecialty, onNotice, flash
   };
 
   return (
-    <div className="border border-slate-200 rounded-xl p-4">
+    <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
-        <ClipboardIcon size={15} className="text-slate-400" />
-        <h4 className="font-semibold text-slate-700 text-sm">{modal.prescription.title}</h4>
+        <ClipboardIcon size={15} className="text-slate-400 dark:text-slate-500" />
+        <h4 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{modal.prescription.title}</h4>
         {receta?.emitidaAt && (
           <span className="badge badge-blue ml-auto text-xs">
             {modal.prescription.emitted} {formatClinicInstantDate(receta.emitidaAt, getLocale(lang))}

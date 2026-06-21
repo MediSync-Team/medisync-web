@@ -35,10 +35,10 @@ export default function RecetaModal({ turno, onClose }: { turno: Turno; onClose:
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white">
-          <h3 className="font-bold text-slate-800 dark:text-slate-200">{p.prescriptionModalTitle}</h3>
-          <button aria-label={p.closeModal} onClick={onClose} className="btn btn-ghost p-2 text-slate-400"><XIcon size={16} /></button>
+      <div className="w-full max-w-2xl bg-card rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
+        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-card z-10">
+          <h3 className="font-bold text-foreground">{p.prescriptionModalTitle}</h3>
+          <button aria-label={p.closeModal} onClick={onClose} className="btn btn-ghost p-2 text-muted-foreground"><XIcon size={16} /></button>
         </div>
 
         <div className="px-6 py-5">
@@ -54,56 +54,56 @@ export default function RecetaModal({ turno, onClose }: { turno: Turno; onClose:
             </div>
           ) : (
             <div className="space-y-3 text-sm">
-              <p className="text-xs text-slate-500">{p.issued}: {formatClinicInstantDateTime(receta.emitidaAt ?? receta.createdAt, getLocale(lang))}</p>
+              <p className="text-xs text-muted-foreground">{p.issued}: {formatClinicInstantDateTime(receta.emitidaAt ?? receta.createdAt, getLocale(lang))}</p>
               <div>
-                <p className="font-semibold text-slate-700">{p.diagnosis}</p>
-                <p className="text-slate-600 whitespace-pre-wrap">{receta.diagnostico}</p>
+                <p className="font-semibold text-foreground">{p.diagnosis}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap">{receta.diagnostico}</p>
               </div>
               {receta.planTratamiento && (
                 <div>
-                  <p className="font-semibold text-slate-700">{p.treatmentPlan}</p>
-                  <p className="text-slate-600 whitespace-pre-wrap">{receta.planTratamiento}</p>
+                  <p className="font-semibold text-foreground">{p.treatmentPlan}</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{receta.planTratamiento}</p>
                 </div>
               )}
               {receta.medicamentos && (
                 <div>
-                  <p className="font-semibold text-slate-700">{p.medicines}</p>
-                  <p className="text-slate-600 whitespace-pre-wrap">{receta.medicamentos}</p>
+                  <p className="font-semibold text-foreground">{p.medicines}</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{receta.medicamentos}</p>
                 </div>
               )}
               <div>
-                <p className="font-semibold text-slate-700">{p.indications}</p>
-                <p className="text-slate-600 whitespace-pre-wrap">{receta.indicaciones}</p>
+                <p className="font-semibold text-foreground">{p.indications}</p>
+                <p className="text-muted-foreground whitespace-pre-wrap">{receta.indicaciones}</p>
               </div>
               {receta.estudiosSolicitados && (
                 <div>
-                  <p className="font-semibold text-slate-700">{p.requestedStudies}</p>
-                  <p className="text-slate-600 whitespace-pre-wrap">{receta.estudiosSolicitados}</p>
+                  <p className="font-semibold text-foreground">{p.requestedStudies}</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{receta.estudiosSolicitados}</p>
                 </div>
               )}
               {receta.proximoControl && (
                 <div>
-                  <p className="font-semibold text-slate-700">{p.nextControl}</p>
-                  <p className="text-slate-600">{receta.proximoControl}</p>
+                  <p className="font-semibold text-foreground">{p.nextControl}</p>
+                  <p className="text-muted-foreground">{receta.proximoControl}</p>
                 </div>
               )}
               {receta.advertencias && (
                 <div>
-                  <p className="font-semibold text-slate-700">{p.warnings}</p>
-                  <p className="text-slate-600 whitespace-pre-wrap">{receta.advertencias}</p>
+                  <p className="font-semibold text-foreground">{p.warnings}</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{receta.advertencias}</p>
                 </div>
               )}
               {receta.observaciones && (
                 <div>
-                  <p className="font-semibold text-slate-700">{p.observations}</p>
-                  <p className="text-slate-600 whitespace-pre-wrap">{receta.observaciones}</p>
+                  <p className="font-semibold text-foreground">{p.observations}</p>
+                  <p className="text-muted-foreground whitespace-pre-wrap">{receta.observaciones}</p>
                 </div>
               )}
             </div>
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3">
+        <div className="px-6 py-4 border-t bg-muted/30 flex gap-3">
           {receta && turno.profesional && (
             <button
               onClick={() => imprimirReceta({

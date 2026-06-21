@@ -23,20 +23,20 @@ export default function CertificadoCard({
   };
 
   const tipoColor: Record<string, string> = {
-    REPOSO: 'bg-red-50 text-red-700 border-red-100',
-    CONSULTA: 'bg-blue-50 text-blue-700 border-blue-100',
-    APTITUD: 'bg-emerald-50 text-emerald-700 border-emerald-100',
-    LIBRE: 'bg-slate-50 text-slate-700 border-slate-100',
+    REPOSO: 'bg-destructive/10 text-destructive border-destructive/20',
+    CONSULTA: 'bg-primary/10 text-primary border-primary/20',
+    APTITUD: 'bg-success/10 text-success border-success/20',
+    LIBRE: 'bg-muted text-muted-foreground border-border',
   };
 
   return (
-    <div className="border border-slate-200 rounded-xl p-4">
+    <div className="rounded-2xl border bg-card p-4 shadow-sm">
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex-1">
-          <p className="font-semibold text-slate-800 dark:text-slate-200">
+          <p className="font-semibold text-foreground">
             Dr/a. {certificado.profesional.nombre} {certificado.profesional.apellido}
           </p>
-          <p className="text-xs text-slate-500 mt-1">
+          <p className="text-xs text-muted-foreground mt-1">
             {formatClinicInstantDate(certificado.fechaHora, locale, { day: 'numeric', month: 'short', year: 'numeric' })}
           </p>
         </div>
@@ -45,14 +45,14 @@ export default function CertificadoCard({
         </span>
       </div>
 
-      <div className="border-t border-slate-100 pt-3 mb-3 space-y-2">
+      <div className="border-t pt-3 mb-3 space-y-2">
         <div>
-          <p className="text-xs font-semibold text-slate-600">{d.certificate.diagnosisLabel}</p>
-          <p className="text-sm text-slate-700">{certificado.certificado.diagnostico}</p>
+          <p className="text-xs font-semibold text-muted-foreground">{d.certificate.diagnosisLabel}</p>
+          <p className="text-sm text-foreground">{certificado.certificado.diagnostico}</p>
         </div>
         {certificado.certificado.diasReposo && (
-          <div className="bg-red-50 rounded px-2 py-1.5 border border-red-100">
-            <p className="text-xs font-semibold text-red-700">{d.certificate.restLabel}: {certificado.certificado.diasReposo}</p>
+          <div className="bg-destructive/10 rounded px-2 py-1.5 border border-destructive/20">
+            <p className="text-xs font-semibold text-destructive">{d.certificate.restLabel}: {certificado.certificado.diasReposo}</p>
           </div>
         )}
       </div>

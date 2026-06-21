@@ -45,10 +45,10 @@ export default function ArchivosPanel({ turnoId, onNotice }: ArchivosPanelProps)
   };
 
   return (
-    <div className="border border-slate-200 rounded-xl p-4">
+    <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
-        <PaperclipIcon size={15} className="text-slate-400" />
-        <h4 className="font-semibold text-slate-700 text-sm">{d.files}</h4>
+        <PaperclipIcon size={15} className="text-slate-400 dark:text-slate-500" />
+        <h4 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{d.files}</h4>
       </div>
 
       <div className="flex gap-2 mb-3">
@@ -69,23 +69,23 @@ export default function ArchivosPanel({ turnoId, onNotice }: ArchivosPanelProps)
       {archivos.length > 0 ? (
         <div className="space-y-2">
           {archivos.map((archivo) => (
-            <div key={archivo.id} className="flex items-center gap-3 p-2.5 bg-slate-50 rounded-lg border border-slate-100">
+            <div key={archivo.id} className="flex items-center gap-3 p-2.5 bg-slate-50 dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
               <span className="text-2xl shrink-0">
                 {archivo.mimeType?.includes('pdf') ? '📄' : '🖼️'}
               </span>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-slate-700 truncate">{archivo.nombreOriginal}</p>
-                <p className="text-xs text-slate-400">{fileTypeLabel(archivo.tipo)} · {formatFileSize(archivo.tamanoBytes ?? 0)}</p>
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200 truncate">{archivo.nombreOriginal}</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500">{fileTypeLabel(archivo.tipo)} · {formatFileSize(archivo.tamanoBytes ?? 0)}</p>
               </div>
-              <a href={archivo.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost p-1.5 text-blue-500 hover:text-blue-700 text-xs">{modal.files.view}</a>
-              <button onClick={() => handleDelete(archivo.id)} className="btn btn-ghost p-1.5 text-red-400 hover:text-red-600">
+              <a href={archivo.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost p-1.5 text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs">{modal.files.view}</a>
+              <button onClick={() => handleDelete(archivo.id)} className="btn btn-ghost p-1.5 text-red-400 hover:text-red-600 dark:hover:text-red-300">
                 <TrashIcon size={13} />
               </button>
             </div>
           ))}
         </div>
       ) : (
-        <p className="text-xs text-slate-400 text-center py-3">{d.noFiles}</p>
+        <p className="text-xs text-slate-400 dark:text-slate-500 text-center py-3">{d.noFiles}</p>
       )}
     </div>
   );

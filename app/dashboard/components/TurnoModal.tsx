@@ -63,11 +63,11 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
   return (
     <>
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-card rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 sticky top-0 bg-white rounded-t-2xl">
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">{d.appointmentDetail}</h3>
-          <button aria-label={modal.closeModal} onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
+        <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-card rounded-t-2xl z-10">
+          <h3 className="font-bold text-foreground text-lg">{d.appointmentDetail}</h3>
+          <button aria-label={modal.closeModal} onClick={onClose} className="btn btn-ghost p-2 text-muted-foreground hover:text-foreground">
             <XIcon size={18} />
           </button>
         </div>
@@ -83,44 +83,44 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
 
           {/* Info grid */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-50 rounded-xl p-3.5">
-              <p className="text-xs text-slate-500 mb-1">{d.dateTime}</p>
-              <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+            <div className="bg-muted/30 rounded-xl p-3.5">
+              <p className="text-xs text-muted-foreground mb-1">{d.dateTime}</p>
+              <p className="font-semibold text-foreground text-sm">
                 {formatClinicInstantDate(turno.fechaHora, getLocale(lang), { weekday: 'short', day: 'numeric', month: 'short' })}
               </p>
-              <p className="text-blue-600 font-bold">
+              <p className="text-primary font-bold">
                 {formatClinicInstantTime(turno.fechaHora, getLocale(lang))}
               </p>
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-3.5">
-              <p className="text-xs text-slate-500 mb-1">{d.status}</p>
+            <div className="bg-muted/30 rounded-xl p-3.5">
+              <p className="text-xs text-muted-foreground mb-1">{d.status}</p>
               <span className={estadoBadge(turno.estado)}>{estadoLabel(turno.estado, status)}</span>
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-3.5">
-              <p className="text-xs text-slate-500 mb-1">{d.patient}</p>
-              <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
+            <div className="bg-muted/30 rounded-xl p-3.5">
+              <p className="text-xs text-muted-foreground mb-1">{d.patient}</p>
+              <p className="font-semibold text-foreground text-sm">
                 {turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : modal.noAccount}
               </p>
               {turno.paciente?.telefono && (
-                <p className="text-xs text-slate-500 mt-0.5">{turno.paciente.telefono}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{turno.paciente.telefono}</p>
               )}
             </div>
 
-            <div className="bg-slate-50 rounded-xl p-3.5">
-              <p className="text-xs text-slate-500 mb-1">{t('professional').modality}</p>
+            <div className="bg-muted/30 rounded-xl p-3.5">
+              <p className="text-xs text-muted-foreground mb-1">{t('professional').modality}</p>
               <div className="flex items-center gap-1.5">
                 {turno.modalidad === 'VIRTUAL' ? (
-                  <><VideoIcon size={14} className="text-blue-500" /><span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{t('home').virtual}</span></>
+                  <><VideoIcon size={14} className="text-primary" /><span className="font-semibold text-sm text-foreground">{t('home').virtual}</span></>
                 ) : (
-                  <><BuildingIcon size={14} className="text-emerald-500" /><span className="font-semibold text-sm text-slate-800 dark:text-slate-200">{t('home').inPerson}</span></>
+                  <><BuildingIcon size={14} className="text-success" /><span className="font-semibold text-sm text-foreground">{t('home').inPerson}</span></>
                 )}
               </div>
               {turno.modalidad === 'VIRTUAL' && (turno.estado === 'RESERVADO' || turno.estado === 'CONFIRMADO') && (
                 <button
                   onClick={() => setShowVideoCall(true)}
-                  className="mt-2 w-full flex items-center justify-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium py-1.5 rounded-lg transition-colors"
+                  className="mt-2 w-full flex items-center justify-center gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium py-1.5 rounded-lg transition-colors"
                 >
                   <VideoIcon size={12} /> {d.startVideoCall}
                 </button>
@@ -132,12 +132,12 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
           {turno.estado !== 'CANCELADO' && turno.paciente && (
             <button
               onClick={() => { setShowChat(true); setUnreadChat(0); }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-xl text-sm font-medium transition-colors relative"
+              className="w-full flex items-center justify-center gap-2 py-2.5 border border-primary/20 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-sm font-medium transition-colors relative"
             >
               <ChatIcon size={15} />
               {modal.chatWith} {turno.paciente.nombre} {turno.paciente.apellido}
               {unreadChat > 0 && (
-                <span className="ml-1 bg-red-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                <span className="ml-1 bg-destructive text-destructive-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                   {unreadChat} {unreadChat === 1 ? modal.unreadSingular : modal.unreadPlural}
                 </span>
               )}
@@ -184,7 +184,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
         )}
 
         {/* Footer actions */}
-        <div className="px-6 py-4 border-t border-slate-100 flex flex-wrap gap-3 bg-slate-50 rounded-b-2xl">
+        <div className="px-6 py-4 border-t flex flex-wrap gap-3 bg-muted/30 rounded-b-2xl">
           {canReprogramTurno(turno.estado) && (
             <button
               onClick={() => { setShowReprogramar((v) => !v); setModalNotice(null); }}

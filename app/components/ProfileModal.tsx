@@ -188,13 +188,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="sticky top-0 bg-white border-b px-6 py-4 flex justify-between items-center">
-          <h2 className="text-xl font-bold text-gray-900 dark:text-slate-200">{p.title}</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-card rounded-2xl shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-card border-b px-6 py-4 flex justify-between items-center z-10">
+          <h2 className="text-xl font-bold text-foreground">{p.title}</h2>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl leading-none"
+            className="text-muted-foreground hover:text-foreground text-2xl leading-none"
           >
             &times;
           </button>
@@ -202,20 +202,20 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           {error && (
-            <div className="bg-red-50 text-red-600 p-3 rounded-md text-sm">
+            <div className="bg-destructive/10 text-destructive p-3 rounded-md text-sm">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="bg-green-50 text-green-600 p-3 rounded-md text-sm">
+            <div className="bg-success/10 text-success p-3 rounded-md text-sm">
               {success}
             </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 {p.firstName}
               </label>
               <input
@@ -226,11 +226,11 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                 required
                 minLength={2}
                 maxLength={50}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
+                className="field-input"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-medium text-foreground mb-1">
                 {p.lastName}
               </label>
               <input
@@ -241,21 +241,20 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                 required
                 minLength={2}
                 maxLength={50}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
+                className="field-input"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1" style={{ color: '#374151' }}>
+            <label className="block text-sm font-medium text-foreground mb-1">
               {p.gender}
             </label>
             <select
               name="genero"
               value={formData.genero}
               onChange={handleChange}
-              className="field-select !bg-white"
-              style={{ color: '#374151' }}
+              className="field-select"
             >
               {GENERO_OPCIONES.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -266,7 +265,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               {p.phone}
             </label>
             <input
@@ -276,13 +275,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
               onChange={handleChange}
               pattern="[\d\s\-\+\(\)]{8,20}"
               title={p.phoneInputTitle}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
+              className="field-input"
               placeholder="+54 11 1234 5678"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-foreground mb-1">
               {p.photoUrl}
             </label>
             <input
@@ -290,7 +289,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
               name="fotoUrl"
               value={formData.fotoUrl}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
+              className="field-input"
               placeholder={p.photoUrlPlaceholder}
             />
           </div>
@@ -298,7 +297,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
           {userType === 'profesional' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   {p.consultationFee}
                 </label>
                 <input
@@ -308,13 +307,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   onChange={handleChange}
                   min="0"
                   max="999999"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
+                  className="field-input"
                   placeholder="5000"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   {p.practiceLocation}
                 </label>
                 <input
@@ -323,13 +322,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   value={formData.lugarAtencion}
                   onChange={handleChange}
                   maxLength={200}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
+                  className="field-input"
                   placeholder={p.practiceLocationPlaceholder}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   {p.biography}
                 </label>
                 <textarea
@@ -338,23 +337,23 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   onChange={handleChange}
                   rows={3}
                   maxLength={500}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
+                  className="field-input"
                   placeholder={p.biographyPlaceholder}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   {p.acceptedInsurance}
                 </label>
-                <p className="text-xs text-gray-500 mb-2">
+                <p className="text-xs text-muted-foreground mb-2">
                   {p.acceptedInsuranceHelp}
                 </p>
-                <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto border rounded-lg p-3">
                   {getObrasSociales().map((os) => {
                     const checked = obrasSociales.includes(os);
                     return (
-                      <label key={os} className="flex items-center gap-2.5 cursor-pointer hover:bg-gray-50 rounded px-1 py-0.5">
+                      <label key={os} className="flex items-center gap-2.5 cursor-pointer hover:bg-muted rounded px-1 py-0.5">
                         <input
                           type="checkbox"
                           checked={checked}
@@ -363,15 +362,15 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                               ? obrasSociales.filter((o) => o !== os)
                               : [...obrasSociales, os]
                           )}
-                          className="w-4 h-4 accent-blue-600 shrink-0"
+                          className="w-4 h-4 accent-primary shrink-0"
                         />
-                        <span className="text-sm text-gray-700">{os}</span>
+                        <span className="text-sm text-foreground">{os}</span>
                       </label>
                     );
                   })}
                 </div>
                 {obrasSociales.length > 0 && (
-                  <p className="text-xs text-blue-600 mt-1.5 font-medium">
+                  <p className="text-xs text-primary mt-1.5 font-medium">
                     {fill(obrasSociales.length === 1 ? p.coverageSelectedSingular : p.coverageSelectedPlural, { count: obrasSociales.length })}
                   </p>
                 )}
@@ -382,7 +381,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
           {userType === 'paciente' && (
             <>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   {p.birthday}
                 </label>
                 <input
@@ -391,12 +390,12 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   value={formData.fechaNacimiento}
                   onChange={handleChange}
                   max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
+                  className="field-input"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   {p.dni}
                 </label>
                 <input
@@ -406,13 +405,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   onChange={handleChange}
                   pattern="\d{7,8}"
                   title={p.dniInputTitle}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
+                  className="field-input"
                   placeholder="12345678"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-foreground mb-1">
                   {p.obraSocial}
                 </label>
                 <input
@@ -421,7 +420,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                   value={formData.obraSocial}
                   onChange={handleChange}
                   maxLength={100}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-slate-200"
+                  className="field-input"
                   placeholder={p.patientInsurancePlaceholder}
                 />
               </div>
@@ -429,8 +428,8 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
           )}
 
           {notifPrefs && (
-            <div className="pt-4 border-t border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">{p.notifications_}</h3>
+            <div className="pt-4 border-t">
+              <h3 className="text-sm font-semibold text-foreground mb-3">{p.notifications_}</h3>
               <div className="space-y-3">
                 {(
                   [
@@ -447,14 +446,14 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                 ).map(({ field, labelKey }) =>
                   notifPrefs[field] !== undefined ? (
                     <label key={field} className="flex items-center justify-between cursor-pointer select-none">
-                      <span className="text-sm text-gray-600">{p[labelKey]}</span>
+                      <span className="text-sm text-muted-foreground">{p[labelKey]}</span>
                       <button
                         type="button"
                         role="switch"
                         aria-checked={!!notifPrefs[field]}
                         onClick={() => toggleNotif(field)}
                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          notifPrefs[field] ? 'bg-blue-600' : 'bg-gray-300'
+                          notifPrefs[field] ? 'bg-primary' : 'bg-muted-foreground/40'
                         }`}
                       >
                         <span
@@ -469,7 +468,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
               </div>
 
               {notifMsg && (
-                <p className={`mt-2 text-xs ${notifMsg.startsWith('Error') ? 'text-red-500' : 'text-emerald-600'}`}>
+                <p className={`mt-2 text-xs ${notifMsg.startsWith('Error') ? 'text-destructive' : 'text-success'}`}>
                   {notifMsg}
                 </p>
               )}
@@ -479,8 +478,8 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
           )}
 
           {(userType === 'profesional' || userType === 'paciente') && (
-            <div className="pt-4 border-t border-gray-200">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3">{p.integrations}</h3>
+            <div className="pt-4 border-t">
+              <h3 className="text-sm font-semibold text-foreground mb-3">{p.integrations}</h3>
               <GoogleCalendarConnect />
             </div>
           )}
@@ -489,14 +488,14 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+              className="flex-1 px-4 py-2 border rounded-md text-foreground hover:bg-muted"
             >
                 {c.cancel}
               </button>
             <button
               type="submit"
               disabled={loading}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+              className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50"
             >
               {loading ? c.saving : p.save}
             </button>

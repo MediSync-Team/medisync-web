@@ -103,17 +103,17 @@ export default function CalendarioView({
   return (
     <div>
       {/* Monthly calendar */}
-      <div className="mb-6 bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 p-4">
+      <div className="mb-6 rounded-2xl border bg-card p-4">
         {/* Month navigation */}
         <div className="flex items-center justify-between mb-3">
           <button
             onClick={() => navigateMonth(-1)}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
             aria-label={calendar.previousMonth}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
           </button>
-          <span className="text-sm font-semibold text-slate-700 dark:text-slate-200 capitalize">
+          <span className="text-sm font-semibold text-foreground capitalize">
             {formatClinicDateKeyForDisplay(
               `${calendarMonth.year}-${String(calendarMonth.month + 1).padStart(2, '0')}-01`,
               getLocale(lang),
@@ -122,7 +122,7 @@ export default function CalendarioView({
           </span>
           <button
             onClick={() => navigateMonth(1)}
-            className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-500 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-muted text-muted-foreground transition-colors"
             aria-label={calendar.nextMonth}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
@@ -132,7 +132,7 @@ export default function CalendarioView({
         {/* Weekday headers */}
         <div className="grid grid-cols-7 mb-1">
           {weekDayLabels.map((label) => (
-            <div key={label} className="text-center text-[10px] font-semibold text-slate-400 uppercase tracking-wide py-1">
+            <div key={label} className="text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wide py-1">
               {label}
             </div>
           ))}
@@ -157,16 +157,16 @@ export default function CalendarioView({
                 disabled={!isCurrentMonth}
                 className={[
                   'flex flex-col items-center justify-start pt-1.5 pb-1.5 rounded-lg min-h-[52px] transition-colors',
-                  isSelected ? 'bg-blue-600' : '',
-                  !isSelected && isToday ? 'ring-2 ring-blue-400 ring-inset bg-blue-50 dark:bg-blue-950' : '',
-                  !isSelected && !isToday && isCurrentMonth ? 'hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer' : '',
+                  isSelected ? 'bg-primary' : '',
+                  !isSelected && isToday ? 'ring-2 ring-primary/50 ring-inset bg-accent' : '',
+                  !isSelected && !isToday && isCurrentMonth ? 'hover:bg-muted cursor-pointer' : '',
                   !isCurrentMonth ? 'cursor-default opacity-25' : '',
                 ].join(' ')}
               >
                 <span className={`text-sm font-semibold leading-none ${
-                  isSelected ? 'text-white' :
-                  isToday ? 'text-blue-700 dark:text-blue-300' :
-                  'text-slate-700 dark:text-slate-200'
+                  isSelected ? 'text-primary-foreground' :
+                  isToday ? 'text-primary' :
+                  'text-foreground'
                 }`}>
                   {day}
                 </span>
@@ -175,11 +175,11 @@ export default function CalendarioView({
                     {visibleDots.map((turno, i) => (
                       <span
                         key={i}
-                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-white/80' : dotColor(turno.estado)}`}
+                        className={`w-1.5 h-1.5 rounded-full shrink-0 ${isSelected ? 'bg-primary-foreground/80' : dotColor(turno.estado)}`}
                       />
                     ))}
                     {extra > 0 && (
-                      <span className={`text-[9px] font-bold leading-[6px] ${isSelected ? 'text-white/70' : 'text-slate-400'}`}>
+                      <span className={`text-[9px] font-bold leading-[6px] ${isSelected ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
                         +{extra}
                       </span>
                     )}
@@ -191,7 +191,7 @@ export default function CalendarioView({
         </div>
 
         {/* Dot legend */}
-        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100 dark:border-slate-700 flex-wrap">
+        <div className="flex items-center gap-4 mt-3 pt-3 border-t flex-wrap">
           {([
             [estadoLabel('RESERVADO', status), 'bg-amber-400'],
             [estadoLabel('CONFIRMADO', status), 'bg-blue-500'],
@@ -200,7 +200,7 @@ export default function CalendarioView({
           ] as [string, string][]).map(([label, color]) => (
             <div key={label} className="flex items-center gap-1.5">
               <span className={`w-2 h-2 rounded-full ${color}`} />
-              <span className="text-[10px] text-slate-500 dark:text-slate-400">{label}</span>
+              <span className="text-[10px] text-muted-foreground">{label}</span>
             </div>
           ))}
         </div>
@@ -208,13 +208,13 @@ export default function CalendarioView({
 
       {/* Day header */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-slate-800 dark:text-slate-100 capitalize">
+        <h3 className="font-semibold text-foreground capitalize">
           {formatClinicDateKeyForDisplay(selectedDateKey, getLocale(lang), { weekday: 'long', day: 'numeric', month: 'long' })}
         </h3>
         <span className="badge badge-gray">{filteredTurnos.length}/{turnosDelDia.length} {d.appointments.toLowerCase()}</span>
       </div>
 
-      <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 mb-4 grid grid-cols-1 sm:grid-cols-4 gap-2.5">
+      <div className="bg-muted/30 border rounded-xl p-3 mb-4 grid grid-cols-1 sm:grid-cols-4 gap-2.5">
         <input
           value={agendaSearch}
           onChange={(e) => setAgendaSearch(e.target.value)}
@@ -235,7 +235,7 @@ export default function CalendarioView({
           <option value="PRESENCIAL">{modality.PRESENCIAL}</option>
           <option value="VIRTUAL">{modality.VIRTUAL}</option>
         </select>
-        <label className="inline-flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-600 rounded-lg px-3 bg-white dark:bg-slate-700">
+        <label className="inline-flex items-center gap-2 text-sm text-foreground border rounded-lg px-3 bg-card">
           <input type="checkbox" checked={agendaSoloRiesgo} onChange={(e) => setAgendaSoloRiesgo(e.target.checked)} />
           {t('status').highRisk}
         </label>
@@ -243,7 +243,7 @@ export default function CalendarioView({
 
       {/* Appointment list */}
       {filteredTurnos.length === 0 ? (
-        <div className="py-10 text-center text-slate-400">
+        <div className="py-10 text-center text-muted-foreground">
           <CalendarIcon size={32} className="mx-auto mb-2 opacity-30" />
           <p className="text-sm">{d.noAppointments}</p>
         </div>
@@ -253,33 +253,33 @@ export default function CalendarioView({
               <button
                 key={turno.id}
                 onClick={() => onSelectTurno(turno)}
-                className="w-full flex items-center gap-4 p-4 bg-slate-50 hover:bg-blue-50 rounded-xl border border-transparent hover:border-blue-200 transition-all text-left group"
+                className="w-full flex items-center gap-4 p-4 bg-muted/30 hover:bg-accent rounded-xl border border-transparent hover:border-primary/20 transition-all text-left group"
               >
                 {/* Time */}
                 <div className="shrink-0 text-center w-14">
-                  <p className="text-lg font-bold text-slate-700 group-hover:text-blue-700 leading-none">
+                  <p className="text-lg font-bold text-foreground group-hover:text-primary leading-none">
                     {formatClinicInstantTime(turno.fechaHora, getLocale(lang))}
                   </p>
                 </div>
 
-                <div className="w-px h-8 bg-slate-200 group-hover:bg-blue-200" />
+                <div className="w-px h-8 bg-border group-hover:bg-primary/30" />
 
                 {/* Patient */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-medium text-slate-800 dark:text-slate-200 group-hover:text-blue-700 truncate">
+                  <p className="font-medium text-foreground group-hover:text-primary truncate">
                     {turno.paciente ? `${turno.paciente.nombre} ${turno.paciente.apellido}` : d.noAccount}
                   </p>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     {turno.modalidad === 'VIRTUAL' ? (
-                      <VideoIcon size={12} className="text-blue-400" />
+                      <VideoIcon size={12} className="text-primary" />
                     ) : (
-                      <BuildingIcon size={12} className="text-slate-400" />
+                      <BuildingIcon size={12} className="text-muted-foreground" />
                     )}
-                    <span className="text-xs text-slate-500">
+                    <span className="text-xs text-muted-foreground">
                       {turno.modalidad === 'VIRTUAL' ? modality.VIRTUAL : modality.PRESENCIAL}
                     </span>
                     {turno.modalidad === 'PRESENCIAL' && turno.lugarAtencion && (
-                      <span className="flex items-center gap-0.5 text-xs text-slate-400 truncate max-w-[160px]">
+                      <span className="flex items-center gap-0.5 text-xs text-muted-foreground truncate max-w-[160px]">
                         <MapPinIcon size={10} className="shrink-0" />
                         {turno.lugarAtencion}
                       </span>

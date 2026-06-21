@@ -24,7 +24,7 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
 
   if (!stats) {
     return (
-      <div className="py-12 text-center text-slate-400">
+      <div className="py-12 text-center text-muted-foreground">
         <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 opacity-40"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
         <p className="text-sm">{d.noStatsYet}</p>
       </div>
@@ -55,8 +55,8 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
       </div>
 
       {turnosPorMes.length > 0 && (
-        <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-4 flex items-center gap-2">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+          <p className="text-sm font-semibold text-foreground mb-4 flex items-center gap-2">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
             {d.appointmentsPerMonth}
           </p>
@@ -66,15 +66,15 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
               const pct = Math.round((total / maxMes) * 100);
               return (
                 <div key={mes} className="flex-1 min-w-0 flex flex-col items-center gap-1 group">
-                  <span className="text-[10px] text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">{total}</span>
+                  <span className="text-[10px] text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">{total}</span>
                   <div className="w-full flex-1 flex items-end">
                     <div
-                      className="w-full bg-blue-500 dark:bg-blue-600 rounded-t-sm transition-all min-h-1"
+                      className="w-full bg-primary rounded-t-sm transition-all min-h-1"
                       style={{ height: `${Math.max(pct, 4)}%` }}
                       title={`${MES_LABELS[mm] ?? mm}: ${total}`}
                     />
                   </div>
-                  <span className="text-[9px] text-slate-400 truncate max-w-full">{MES_LABELS[mm] ?? mm}</span>
+                  <span className="text-[9px] text-muted-foreground truncate max-w-full">{MES_LABELS[mm] ?? mm}</span>
                 </div>
               );
             })}
@@ -83,24 +83,24 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
       )}
 
       {stats.topProfesionales.length > 0 && (
-        <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{d.mostVisitedProfessionals}</p>
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+          <p className="text-sm font-semibold text-foreground mb-3">{d.mostVisitedProfessionals}</p>
           <div className="space-y-3">
             {stats.topProfesionales.map(({ profesional, totalTurnos }, i) => profesional && (
               <div key={profesional.id} className="flex items-center gap-3">
-                <span className="text-xs font-bold text-slate-400 w-4 text-center">{i + 1}</span>
+                <span className="text-xs font-bold text-muted-foreground w-4 text-center">{i + 1}</span>
                 {profesional.fotoUrl ? (
                   <img src={profesional.fotoUrl} alt="" className="w-8 h-8 rounded-full object-cover shrink-0" />
                 ) : (
-                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-600 shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-xs font-bold text-primary shrink-0">
                     {profesional.nombre[0]}{profesional.apellido[0]}
                   </div>
                 )}
                 <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">Dr/a. {profesional.nombre} {profesional.apellido}</p>
-                  <p className="text-xs text-slate-500 truncate">{translateSpecialty(profesional.especialidad.nombre)}</p>
+                  <p className="text-sm font-medium text-foreground truncate">Dr/a. {profesional.nombre} {profesional.apellido}</p>
+                  <p className="text-xs text-muted-foreground truncate">{translateSpecialty(profesional.especialidad.nombre)}</p>
                 </div>
-                <span className="text-xs font-semibold text-blue-600 shrink-0">{totalTurnos} {totalTurnos === 1 ? d.appointment : d.appointments}</span>
+                <span className="text-xs font-semibold text-primary shrink-0">{totalTurnos} {totalTurnos === 1 ? d.appointment : d.appointments}</span>
               </div>
             ))}
           </div>
@@ -108,20 +108,20 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
       )}
 
       {stats.pagos.length > 0 && (
-        <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
-          <p className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3 flex items-center justify-between">
+        <div className="rounded-2xl border bg-card p-4 shadow-sm">
+          <p className="text-sm font-semibold text-foreground mb-3 flex items-center justify-between">
             <span>{d.paymentHistory}</span>
-            <span className="text-xs font-normal text-slate-400">{stats.pagos.length} {d.payment}{stats.pagos.length !== 1 ? 's' : ''}</span>
+            <span className="text-xs font-normal text-muted-foreground">{stats.pagos.length} {d.payment}{stats.pagos.length !== 1 ? 's' : ''}</span>
           </p>
           <div className="space-y-2">
             {stats.pagos.map((pago) => (
-              <div key={pago.id} className="flex items-center justify-between gap-3 py-2 border-b border-slate-100 dark:border-slate-700 last:border-0">
+              <div key={pago.id} className="flex items-center justify-between gap-3 py-2 border-b last:border-0">
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-slate-800 dark:text-slate-100 truncate">Dr/a. {pago.profesional}</p>
-                  <p className="text-xs text-slate-500 truncate">{translateSpecialty(pago.especialidad)} · {new Date(pago.fecha).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+                  <p className="text-sm font-medium text-foreground truncate">Dr/a. {pago.profesional}</p>
+                  <p className="text-xs text-muted-foreground truncate">{translateSpecialty(pago.especialidad)} · {new Date(pago.fecha).toLocaleDateString(locale, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                 </div>
                 <div className="text-right shrink-0">
-                  <p className="text-sm font-bold text-emerald-600">${pago.monto.toLocaleString(locale)}</p>
+                  <p className="text-sm font-bold text-success">${pago.monto.toLocaleString(locale)}</p>
                   <span className="badge badge-green text-[10px]">{d.approved}</span>
                 </div>
               </div>
@@ -131,7 +131,7 @@ function EstadisticasPaciente({ stats, loading, d, translateSpecialty }: { stats
       )}
 
       {stats.totalTurnos === 0 && (
-        <div className="py-12 text-center text-slate-400">
+        <div className="py-12 text-center text-muted-foreground">
           <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto mb-3 opacity-40"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
           <p className="text-sm">{d.noStatsYet} {d.bookFirstAppointmentStats}</p>
         </div>

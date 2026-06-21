@@ -42,7 +42,7 @@ export default function PlanView({
   }
 
   if (!suscripcion) {
-    return <div className="text-center text-slate-600">{t('common').loading}</div>;
+    return <div className="text-center text-muted-foreground">{t('common').loading}</div>;
   }
 
   const isPro = suscripcion.plan === 'PRO';
@@ -53,20 +53,20 @@ export default function PlanView({
   return (
     <div className="max-w-2xl space-y-6">
       {/* Plan Banner */}
-      <div className={`rounded-xl p-6 border-2 ${isPro ? 'bg-gradient-to-br from-blue-50 to-emerald-50 border-blue-200' : 'bg-slate-100 border-slate-300'}`}>
+      <div className={`rounded-2xl p-6 border-2 ${isPro ? 'bg-gradient-to-br from-primary/10 to-success/10 border-primary/20' : 'bg-muted border-border'}`}>
         <div className="flex items-start justify-between">
           <div>
-            <div className={`text-sm font-bold uppercase tracking-wider ${isPro ? 'text-blue-700' : 'text-slate-700'}`}>
+            <div className={`text-sm font-bold uppercase tracking-wider ${isPro ? 'text-primary' : 'text-muted-foreground'}`}>
               {d.planCurrent}
             </div>
-            <h2 className={`text-3xl font-bold mt-2 ${isPro ? 'text-blue-900' : 'text-slate-900 dark:text-slate-200'}`}>
+            <h2 className={`text-3xl font-bold mt-2 ${isPro ? 'text-primary' : 'text-foreground'}`}>
               {isPro ? d.planPro : d.planFree}
             </h2>
-            <p className={`text-sm mt-3 ${isPro ? 'text-blue-700' : 'text-slate-600'}`}>
+            <p className={`text-sm mt-3 ${isPro ? 'text-primary/80' : 'text-muted-foreground'}`}>
               {isPro ? d.planProSubtitle : d.planFreeSubtitle}
             </p>
           </div>
-          <div className={`text-5xl font-bold opacity-20 ${isPro ? 'text-blue-500' : 'text-slate-400'}`}>
+          <div className={`text-5xl font-bold opacity-20 ${isPro ? 'text-primary' : 'text-muted-foreground'}`}>
             {isPro ? '∞' : '20'}
           </div>
         </div>
@@ -74,18 +74,18 @@ export default function PlanView({
 
       {/* Turno Counter (for FREE) */}
       {!isPro && (
-        <div className="rounded-xl bg-white border border-slate-200 p-6">
+        <div className="rounded-2xl bg-card border p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
-            <span className="text-sm font-medium text-slate-700">{d.turnosThisMonth}</span>
-            <span className="text-sm text-slate-500">{suscripcion.turnosEsteMes} / {suscripcion.limiteTurnos}</span>
+            <span className="text-sm font-medium text-foreground">{d.turnosThisMonth}</span>
+            <span className="text-sm text-muted-foreground">{suscripcion.turnosEsteMes} / {suscripcion.limiteTurnos}</span>
           </div>
-          <div className="w-full bg-slate-200 rounded-full h-3 overflow-hidden">
+          <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
             <div
-              className="bg-blue-600 h-full transition-all duration-300"
+              className="bg-primary h-full transition-all duration-300"
               style={{ width: `${(suscripcion.turnosEsteMes / suscripcion.limiteTurnos) * 100}%` }}
             />
           </div>
-          <p className="text-xs text-slate-500 mt-3">
+          <p className="text-xs text-muted-foreground mt-3">
             {turnosRemainingTemplate
               .replace('{{count}}', String(suscripcion.turnosRestantes))
               .replace('{{plural}}', suscripcion.turnosRestantes !== 1 ? 's' : '')}
@@ -95,12 +95,12 @@ export default function PlanView({
 
       {/* Billing Info */}
       {isPro && suscripcion.planVenceAt && (
-        <div className="rounded-xl bg-emerald-50 border border-emerald-200 p-6">
-          <div className="text-sm font-medium text-emerald-900">{d.nextCollection}</div>
-          <div className="text-2xl font-bold text-emerald-700 mt-2">
+        <div className="rounded-2xl bg-success/10 border border-success/20 p-6">
+          <div className="text-sm font-medium text-success">{d.nextCollection}</div>
+          <div className="text-2xl font-bold text-success mt-2">
             {new Date(suscripcion.planVenceAt).toLocaleDateString(getLocale(lang))}
           </div>
-          <p className="text-xs text-emerald-700 mt-2">{planMonthlyPriceLabel}</p>
+          <p className="text-xs text-success/80 mt-2">{planMonthlyPriceLabel}</p>
         </div>
       )}
 
@@ -128,8 +128,8 @@ export default function PlanView({
       </div>
 
       {/* Features comparison */}
-      <div className="rounded-xl bg-white border border-slate-200 p-6">
-        <h3 className="font-bold text-slate-900 dark:text-slate-200 mb-4">{d.planCompare}</h3>
+      <div className="rounded-2xl bg-card border p-6 shadow-sm">
+        <h3 className="font-bold text-foreground mb-4">{d.planCompare}</h3>
         <div className="space-y-3">
           {[
             { feature: d.features.appointments, free: d.planFreeLimit, pro: d.planUnlimited },
@@ -138,11 +138,11 @@ export default function PlanView({
             { feature: d.features.onlinePayments, free: c.yes, pro: c.yes },
             { feature: d.features.medicalHistory, free: c.yes, pro: c.yes },
           ].map((row, i) => (
-            <div key={i} className="flex items-center justify-between py-2 border-b border-slate-100 last:border-0">
-              <span className="text-sm font-medium text-slate-700">{row.feature}</span>
+            <div key={i} className="flex items-center justify-between py-2 border-b last:border-0">
+              <span className="text-sm font-medium text-foreground">{row.feature}</span>
               <div className="flex gap-4 text-sm">
-                <span className={isPro ? 'text-slate-500' : 'font-bold text-blue-600'}>{row.free}</span>
-                <span className={isPro ? 'font-bold text-blue-600' : 'text-slate-500'}>{row.pro}</span>
+                <span className={isPro ? 'text-muted-foreground' : 'font-bold text-primary'}>{row.free}</span>
+                <span className={isPro ? 'font-bold text-primary' : 'text-muted-foreground'}>{row.pro}</span>
               </div>
             </div>
           ))}

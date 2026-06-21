@@ -27,10 +27,10 @@ export default function EmitirCertificadoModal({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <h3 className="font-bold text-slate-800 dark:text-slate-200 text-lg">{certificate.title}</h3>
-          <button aria-label={certificate.closeAria} onClick={onClose} className="btn btn-ghost p-2 text-slate-400 hover:text-slate-600">
+      <div className="bg-card rounded-2xl w-full max-w-2xl shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b">
+          <h3 className="font-bold text-foreground text-lg">{certificate.title}</h3>
+          <button aria-label={certificate.closeAria} onClick={onClose} className="btn btn-ghost p-2 text-muted-foreground hover:text-foreground">
             <XIcon size={18} />
           </button>
         </div>
@@ -38,7 +38,7 @@ export default function EmitirCertificadoModal({
         <div className="px-6 py-5 space-y-4 max-h-[70vh] overflow-y-auto">
           {/* Tipo de certificado */}
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-2">{certificate.typeLabel}</label>
+            <label className="block text-sm font-semibold text-foreground mb-2">{certificate.typeLabel}</label>
             <div className="flex flex-wrap gap-2">
               {(['CONSULTA', 'REPOSO', 'APTITUD', 'LIBRE'] as TipoCertificado[]).map((tipo) => (
                 <button
@@ -48,8 +48,8 @@ export default function EmitirCertificadoModal({
                   }}
                   className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
                     form.tipo === tipo
-                      ? 'bg-blue-600 text-white border-blue-600'
-                      : 'bg-slate-50 text-slate-700 border-slate-200 hover:border-blue-300'
+                      ? 'bg-primary text-primary-foreground border-primary'
+                      : 'bg-muted/30 text-foreground border hover:border-primary/40'
                   }`}
                 >
                   {certificate.types[tipo]}
@@ -97,7 +97,7 @@ export default function EmitirCertificadoModal({
           )}
         </div>
 
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex gap-3 rounded-b-2xl">
+        <div className="px-6 py-4 border-t bg-muted/30 flex gap-3 rounded-b-2xl">
           <button onClick={onClose} className="btn btn-secondary flex-1" disabled={loading}>
             {certificate.cancel}
           </button>

@@ -28,10 +28,10 @@ export default function EvolucionNotasPanel({ turnoId, savedMessage, flashSaved,
   };
 
   return (
-    <div className="border border-slate-200 rounded-xl p-4">
+    <div className="border border-slate-200 dark:border-slate-700 rounded-xl p-4">
       <div className="flex items-center gap-2 mb-3">
-        <ClipboardIcon size={15} className="text-slate-400" />
-        <h4 className="font-semibold text-slate-700 text-sm">{d.evolution}</h4>
+        <ClipboardIcon size={15} className="text-slate-400 dark:text-slate-500" />
+        <h4 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{d.evolution}</h4>
         {savedMessage && (
           <span className="badge badge-green ml-auto text-xs flex items-center gap-1">
             <CheckIcon size={10} /> {savedMessage}
