@@ -5,8 +5,11 @@ import { api, HistorialTurno, CertificadoConDatos } from '../../../lib/api';
 import { Translations } from '../../../lib/i18n/translations';
 import { useLang } from '../../../lib/i18n/context';
 import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../../lib/date';
-import { imprimirReceta } from '../../../lib/receta-pdf';
-import { imprimirCertificado } from '../../../lib/certificado-pdf';
+// Lazy-load the PDF generators so they ship only when the user actually prints.
+const imprimirReceta = (...args: Parameters<typeof import('../../../lib/receta-pdf').imprimirReceta>) =>
+  import('../../../lib/receta-pdf').then((m) => m.imprimirReceta(...args));
+const imprimirCertificado = (...args: Parameters<typeof import('../../../lib/certificado-pdf').imprimirCertificado>) =>
+  import('../../../lib/certificado-pdf').then((m) => m.imprimirCertificado(...args));
 import { BuildingIcon, CalendarIcon, UserIcon, VideoIcon } from '../../../components/icons';
 
 function StarDisplay({ rating, size = 13 }: { rating: number; size?: number }) {

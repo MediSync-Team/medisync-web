@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { Turno, HistoriaClinicaEditableFields } from '../../../lib/api';
 import { useLang } from '../../../lib/i18n/context';
 import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../../lib/date';
-import { exportarHistoriaClinicaPDF } from '../../../lib/historia-clinica-pdf';
+// Lazy-load the PDF generator so it ships only when the user actually exports.
+const exportarHistoriaClinicaPDF = (...args: Parameters<typeof import('../../../lib/historia-clinica-pdf').exportarHistoriaClinicaPDF>) =>
+  import('../../../lib/historia-clinica-pdf').then((m) => m.exportarHistoriaClinicaPDF(...args));
 import { estadoBadge, estadoLabel } from '../../../lib/utils';
 import { InfoIcon, CheckIcon } from '../../../components/icons';
 import { Notice } from '../../../lib/ui-notice';

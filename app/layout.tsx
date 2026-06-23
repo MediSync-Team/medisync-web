@@ -7,6 +7,7 @@ import { LanguageProvider } from "./lib/i18n/context";
 import { NotificationProvider } from "./lib/notification-context";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Toaster } from "@/components/ui/sonner";
+import { WebVitals } from "./_components/web-vitals";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -40,6 +41,7 @@ export default function RootLayout({
               <NotificationProvider>
                 <TooltipProvider>{children}</TooltipProvider>
                 <Toaster richColors position="top-right" />
+                <WebVitals />
               </NotificationProvider>
             </AuthProvider>
           </LanguageProvider>

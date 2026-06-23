@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { api, Turno } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { useLang } from '../../lib/i18n/context';
@@ -17,15 +18,18 @@ import {
   InfoIcon,
   ChatIcon,
 } from '../../components/icons';
-import VideoCallModal from '../../components/VideoCallModal';
-import ChatModal from '../../components/ChatModal';
 import RecetaPanel from './turno-panels/RecetaPanel';
 import ArchivosPanel from './turno-panels/ArchivosPanel';
 import CertificadoPanel from './turno-panels/CertificadoPanel';
 import HistoriaClinicaPanel from './turno-panels/HistoriaClinicaPanel';
 import PreconsultaPanel from './turno-panels/PreconsultaPanel';
 import EvolucionNotasPanel from './turno-panels/EvolucionNotasPanel';
-import ReprogramarPanel from './turno-panels/ReprogramarPanel';
+
+// Heavy, only rendered on user action — keep them out of the modal's initial chunk.
+// WebRTC has no SSR value, so disable SSR for the video call.
+const VideoCallModal = dynamic(() => import('../../components/VideoCallModal'), { ssr: false });
+const ChatModal = dynamic(() => import('../../components/ChatModal'), { ssr: false });
+const ReprogramarPanel = dynamic(() => import('./turno-panels/ReprogramarPanel'));
 
 function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: Turno; onClose: () => void; onUpdate: () => void; translateSpecialty: (name?: string) => string }) {
   const [savedMessage, setSavedMessage] = useState('');

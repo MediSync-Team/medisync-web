@@ -1,19 +1,17 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
 import { api, Turno, ListaEsperaItem, HistorialTurno, PacienteStats, RecetaPaciente, CertificadoPaciente } from '../../lib/api';
-import ChatModal from '../../components/ChatModal';
 import ProfileModal from '../../components/ProfileModal';
 import OnboardingTour from '../../components/OnboardingTour';
-import VideoCallModal from '../../components/VideoCallModal';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { useLang } from '../../lib/i18n/context';
 import { NotificationBell } from '../../components/NotificationBell';
 import { GlobalChatHub } from '../../components/GlobalChatHub';
-import { imprimirHistorial } from '../../lib/historial-pdf';
 import { getTurnosTabRequest, PacienteDashboardTab } from '../../lib/paciente-dashboard-tabs';
 import { Notice } from '../../lib/ui-notice';
 import Spinner from '../../components/Spinner';
@@ -24,7 +22,14 @@ import PreconsultaModal from './components/PreconsultaModal';
 import CalificarModal from './components/CalificarModal';
 import ReprogramarModal from './components/ReprogramarModal';
 import ResumenPacienteView from './components/ResumenPacienteView';
-import EstadisticasPaciente from './components/EstadisticasPaciente';
+
+// Conditionally-rendered heavy children — keep out of the dashboard's initial chunk.
+const ChatModal = dynamic(() => import('../../components/ChatModal'), { ssr: false });
+const VideoCallModal = dynamic(() => import('../../components/VideoCallModal'), { ssr: false });
+// Recharts-backed stats tab; only mounts when the user opens "Estadísticas".
+const EstadisticasPaciente = dynamic(() => import('./components/EstadisticasPaciente'), {
+  loading: () => <Spinner />,
+});
 import DatosMedicosView, { DatosMedicos } from './components/DatosMedicosView';
 import RecetasView from './components/RecetasView';
 import CertificadosView from './components/CertificadosView';
@@ -225,9 +230,10 @@ export default function PacienteDashboard() {
   const downloadHistorialPDF = async () => {
     if (!user?.paciente) return;
     try {
-      const [data, perfil] = await Promise.all([
+      const [data, perfil, { imprimirHistorial }] = await Promise.all([
         api.turnos.miHistorial({ page: 1, limit: 100 }),
         api.pacientes.getPerfil(),
+        import('../../lib/historial-pdf'),
       ]);
       imprimirHistorial({
         paciente: perfil,

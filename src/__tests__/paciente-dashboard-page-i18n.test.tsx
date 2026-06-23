@@ -238,7 +238,8 @@ describe('patient dashboard page i18n', () => {
     renderDashboard('?tab=proximos');
 
     fireEvent.click(await screen.findByRole('button', { name: 'Video call' }));
-    expect(screen.getByText('Video call with Professional')).toBeInTheDocument();
+    // VideoCallModal is loaded via next/dynamic(ssr:false) — await its lazy mount.
+    expect(await screen.findByText('Video call with Professional')).toBeInTheDocument();
   });
 
   it('uses translated professional fallback for chat', async () => {
@@ -250,6 +251,7 @@ describe('patient dashboard page i18n', () => {
     renderDashboard('?tab=proximos');
 
     fireEvent.click(await screen.findByRole('button', { name: 'Chat' }));
-    expect(screen.getByText('Chat with Professional')).toBeInTheDocument();
+    // ChatModal is loaded via next/dynamic(ssr:false) — await its lazy mount.
+    expect(await screen.findByText('Chat with Professional')).toBeInTheDocument();
   });
 });

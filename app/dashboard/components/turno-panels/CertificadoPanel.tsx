@@ -4,7 +4,9 @@ import { useState } from 'react';
 import { Turno, CertificadoConDatos, TipoCertificado } from '../../../lib/api';
 import { useLang } from '../../../lib/i18n/context';
 import { formatClinicInstantDate, getLocale } from '../../../lib/date';
-import { imprimirCertificado } from '../../../lib/certificado-pdf';
+// Lazy-load the PDF generator so it ships only when the user actually prints.
+const imprimirCertificado = (...args: Parameters<typeof import('../../../lib/certificado-pdf').imprimirCertificado>) =>
+  import('../../../lib/certificado-pdf').then((m) => m.imprimirCertificado(...args));
 import { ClipboardIcon } from '../../../components/icons';
 import { Notice } from '../../../lib/ui-notice';
 import EmitirCertificadoModal from '../EmitirCertificadoModal';

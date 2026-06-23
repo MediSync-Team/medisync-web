@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Cupon, SuscripcionEstado } from '../lib/api';
@@ -31,10 +32,13 @@ import CuponesView from './components/CuponesView';
 import PlanView from './components/PlanView';
 import AuditoriaView from './components/AuditoriaView';
 import EmbedWidgetSection from './components/EmbedWidgetSection';
-import TurnoModal from './components/TurnoModal';
 import UpgradePrompt from './components/UpgradePrompt';
 import NuevoCuponModal, { CuponFormState } from './components/NuevoCuponModal';
 import ProfesionalStatCards from './components/ProfesionalStatCards';
+
+// Appointment detail modal pulls in clinical panels + (lazily) WebRTC video & chat.
+// Only mounts when a turno is selected, so keep it out of the dashboard's initial chunk.
+const TurnoModal = dynamic(() => import('./components/TurnoModal'));
 
 interface StatsData {
   turnosPorMes: any[];

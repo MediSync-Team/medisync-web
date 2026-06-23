@@ -5,7 +5,9 @@ import { useLang } from '../../../lib/i18n/context';
 import { api, Turno, RecetaIndicacion } from '../../../lib/api';
 import { formatClinicInstantDateTime, getLocale } from '../../../lib/date';
 import { useTranslateSpecialty } from '../../../lib/i18n/use-translate-specialty';
-import { imprimirReceta } from '../../../lib/receta-pdf';
+// Lazy-load the PDF generator so it ships only when the user actually prints.
+const imprimirReceta = (...args: Parameters<typeof import('../../../lib/receta-pdf').imprimirReceta>) =>
+  import('../../../lib/receta-pdf').then((m) => m.imprimirReceta(...args));
 import { InfoIcon, XIcon } from '../../../components/icons';
 
 export default function RecetaModal({ turno, onClose }: { turno: Turno; onClose: () => void }) {

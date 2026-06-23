@@ -3,7 +3,9 @@
 import { Turno } from '../../../lib/api';
 import { useLang } from '../../../lib/i18n/context';
 import { formatClinicInstantDate, getLocale } from '../../../lib/date';
-import { imprimirReceta } from '../../../lib/receta-pdf';
+// Lazy-load the PDF generator so it ships only when the user actually prints.
+const imprimirReceta = (...args: Parameters<typeof import('../../../lib/receta-pdf').imprimirReceta>) =>
+  import('../../../lib/receta-pdf').then((m) => m.imprimirReceta(...args));
 import { ClipboardIcon } from '../../../components/icons';
 import { Notice } from '../../../lib/ui-notice';
 import { useRecetaPanel } from './useRecetaPanel';

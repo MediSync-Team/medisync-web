@@ -2,7 +2,9 @@
 
 import { CertificadoPaciente } from '../../../lib/api';
 import { useLang } from '../../../lib/i18n/context';
-import { imprimirCertificado } from '../../../lib/certificado-pdf';
+// Lazy-load the PDF generator so it ships only when the user actually prints.
+const imprimirCertificado = (...args: Parameters<typeof import('../../../lib/certificado-pdf').imprimirCertificado>) =>
+  import('../../../lib/certificado-pdf').then((m) => m.imprimirCertificado(...args));
 import CertificadoCard from './CertificadoCard';
 import CardListSkeleton from './CardListSkeleton';
 import { ClipboardIcon } from '../../../components/icons';
