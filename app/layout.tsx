@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "./lib/auth-context";
 import { ThemeProvider } from "./lib/theme-context";
@@ -19,6 +19,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Display accent (serif óptico) para saludos y números grandes de los dashboards.
+const newsreader = Newsreader({
+  variable: "--font-display",
+  subsets: ["latin"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   title: "MediSync",
   description: "Medical scheduling and practice management platform for healthcare professionals. Plataforma de gestión médica para profesionales de la salud.",
@@ -32,7 +41,7 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${newsreader.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <ThemeProvider>

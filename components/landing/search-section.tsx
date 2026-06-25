@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { Search, SlidersHorizontal, X, Check } from "lucide-react"
+import { Search, SlidersHorizontal, X, Check, MapPin, LocateFixed } from "lucide-react"
+import { toast } from "sonner"
 import { api, type Especialidad, type Profesional } from "@/app/lib/api"
 import { useAuth } from "@/app/lib/auth-context"
 import { useLang } from "@/app/lib/i18n/context"
@@ -49,9 +50,23 @@ const LIMIT = 9
 const ALL = "todas"
 const REL = "relevancia"
 const PRICE_MAX = 25000
+const DIST_DEFAULT_KM = 10
+
+// Coordenadas aproximadas (centro) de ciudades AR principales — fallback cuando
+// el paciente no comparte su geolocalización (evita un round-trip de geocoding).
+const CITIES: { value: string; lat: number; lng: number }[] = [
+  { value: "Capital Federal (CABA)", lat: -34.6037, lng: -58.3816 },
+  { value: "La Plata", lat: -34.9215, lng: -57.9545 },
+  { value: "Córdoba", lat: -31.4201, lng: -64.1888 },
+  { value: "Rosario", lat: -32.9442, lng: -60.6505 },
+  { value: "Mendoza", lat: -32.8895, lng: -68.8458 },
+  { value: "Mar del Plata", lat: -38.0055, lng: -57.5426 },
+  { value: "San Miguel de Tucumán", lat: -26.8083, lng: -65.2176 },
+  { value: "Salta", lat: -24.7821, lng: -65.4232 },
+]
 
 type Modalidad = "PRESENCIAL" | "VIRTUAL" | ""
-type OrderBy = "precio_asc" | "precio_desc" | "nombre_asc" | ""
+type OrderBy = "precio_asc" | "precio_desc" | "nombre_asc" | "distancia" | ""
 
 interface Filters {
   search: string
@@ -62,6 +77,8 @@ interface Filters {
   fecha: string
   orderBy: OrderBy
   disponibleEstaSemana: boolean
+  coords: { lat: number; lng: number; label?: string } | null
+  distanciaKm: number
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -73,6 +90,8 @@ const EMPTY_FILTERS: Filters = {
   fecha: "",
   orderBy: "",
   disponibleEstaSemana: false,
+  coords: null,
+  distanciaKm: DIST_DEFAULT_KM,
 }
 
 export function SearchSection() {
@@ -108,6 +127,12 @@ export function SearchSection() {
       if (f.orderBy) params.orderBy = f.orderBy
       if (f.disponibleEstaSemana) params.disponibleEstaSemana = "true"
       if (f.obraSocial) params.obraSocial = f.obraSocial.trim().toUpperCase()
+      // La distancia sólo aplica a búsquedas presenciales.
+      if (f.coords && f.modalidad !== "VIRTUAL") {
+        params.lat = String(f.coords.lat)
+        params.lng = String(f.coords.lng)
+        params.distanciaKm = String(f.distanciaKm)
+      }
 
       const data = await api.profesionales.getAll(params)
       setProfesionales(data.profesionales)
@@ -157,6 +182,42 @@ export function SearchSection() {
 
   const patch = (p: Partial<Filters>) => apply({ ...filters, ...p })
 
+  const [geoLoading, setGeoLoading] = React.useState(false)
+
+  const useMyLocation = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      toast.error(l.locationUnsupported)
+      return
+    }
+    setGeoLoading(true)
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        setGeoLoading(false)
+        patch({
+          coords: { lat: pos.coords.latitude, lng: pos.coords.longitude, label: l.myLocation },
+          orderBy: "distancia",
+        })
+      },
+      () => {
+        setGeoLoading(false)
+        toast.error(l.locationDenied)
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    )
+  }
+
+  const selectCity = (value: string | null) => {
+    if (!value || value === ALL) {
+      patch({ coords: null, orderBy: filters.orderBy === "distancia" ? "" : filters.orderBy })
+      return
+    }
+    const city = CITIES.find((c) => c.value === value)
+    if (city) patch({ coords: { lat: city.lat, lng: city.lng, label: city.value }, orderBy: "distancia" })
+  }
+
+  const clearLocation = () =>
+    patch({ coords: null, orderBy: filters.orderBy === "distancia" ? "" : filters.orderBy })
+
   const handleSearch = () => patch({ search: searchInput, especialidad: "" })
 
   const handlePageChange = (next: number) => {
@@ -178,6 +239,7 @@ export function SearchSection() {
     filters.fecha !== "" ||
     filters.orderBy !== "" ||
     filters.disponibleEstaSemana ||
+    filters.coords !== null ||
     filters.precio[0] !== 0 ||
     filters.precio[1] !== PRICE_MAX
 
@@ -202,8 +264,11 @@ export function SearchSection() {
     ...(filters.fecha
       ? [{ key: "fecha", label: `${h.date}: ${formatClinicDateKeyForDisplay(filters.fecha, locale, { day: "numeric", month: "short" })}`, clear: () => patch({ fecha: "" }) }]
       : []),
+    ...(filters.coords
+      ? [{ key: "dist", label: `${filters.coords.label ?? l.myLocation} · ${filters.distanciaKm} km`, clear: clearLocation }]
+      : []),
     ...(filters.orderBy
-      ? [{ key: "order", label: { precio_asc: h.priceAsc, precio_desc: h.priceDesc, nombre_asc: h.nameAsc }[filters.orderBy], clear: () => patch({ orderBy: "" }) }]
+      ? [{ key: "order", label: { precio_asc: h.priceAsc, precio_desc: h.priceDesc, nombre_asc: h.nameAsc, distancia: l.sortByDistance }[filters.orderBy], clear: () => patch({ orderBy: "" }) }]
       : []),
   ]
 
@@ -343,6 +408,70 @@ export function SearchSection() {
               />
             </div>
 
+            {/* Cerca tuyo (filtro por distancia) */}
+            <div className="flex flex-col gap-2">
+              <Label className="inline-flex items-center gap-1.5">
+                <MapPin className="size-3.5 text-primary" /> {l.distanceTitle}
+              </Label>
+              {filters.modalidad === "VIRTUAL" ? (
+                <p className="text-xs text-muted-foreground">{l.distanceVirtualNote}</p>
+              ) : filters.coords ? (
+                <>
+                  <div className="flex items-center justify-between rounded-lg border bg-muted/30 px-3 py-2">
+                    <span className="inline-flex min-w-0 items-center gap-1.5 text-xs font-medium">
+                      <LocateFixed className="size-3.5 shrink-0 text-primary" />
+                      <span className="truncate">{filters.coords.label ?? l.myLocation}</span>
+                    </span>
+                    <button
+                      type="button"
+                      onClick={clearLocation}
+                      aria-label={l.clearLocation}
+                      className="shrink-0 text-muted-foreground hover:text-foreground"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs">{l.distanceWithin}</Label>
+                    <span className="text-xs font-medium text-muted-foreground">{filters.distanciaKm} km</span>
+                  </div>
+                  <Slider
+                    value={[filters.distanciaKm]}
+                    onValueChange={(v) => {
+                      const a = Array.isArray(v) ? v : [v]
+                      setFilters((f) => ({ ...f, distanciaKm: a[0] }))
+                    }}
+                    onValueCommitted={(v) => {
+                      const a = Array.isArray(v) ? v : [v]
+                      patch({ distanciaKm: a[0] })
+                    }}
+                    min={1}
+                    max={50}
+                    step={1}
+                  />
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" size="sm" onClick={useMyLocation} disabled={geoLoading}>
+                    <LocateFixed data-icon="inline-start" /> {l.useMyLocation}
+                  </Button>
+                  <Select value={ALL} onValueChange={selectCity}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder={l.selectCity} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value={ALL}>{l.selectCity}</SelectItem>
+                        {CITIES.map((ct) => (
+                          <SelectItem key={ct.value} value={ct.value}>{ct.value}</SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
+            </div>
+
             <div className="flex flex-col gap-1.5">
               <Label>{h.orderBy}</Label>
               <Select
@@ -358,6 +487,9 @@ export function SearchSection() {
                     <SelectItem value="precio_asc">{h.priceAsc}</SelectItem>
                     <SelectItem value="precio_desc">{h.priceDesc}</SelectItem>
                     <SelectItem value="nombre_asc">{h.nameAsc}</SelectItem>
+                    {filters.coords && filters.modalidad !== "VIRTUAL" && (
+                      <SelectItem value="distancia">{l.sortByDistance}</SelectItem>
+                    )}
                   </SelectGroup>
                 </SelectContent>
               </Select>

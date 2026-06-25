@@ -27,7 +27,6 @@ export function Navbar() {
     { label: nav.search, href: "/#buscar" },
     { label: nav.howItWorks, href: "/#como-funciona" },
     { label: nav.forProfessionals, href: "/register" },
-    { label: nav.pricing, href: "/#precios" },
   ]
 
   return (

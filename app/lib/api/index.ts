@@ -110,6 +110,9 @@ const profesionalesApi = {
     orderBy?: string;
     page?: string;
     limit?: string;
+    lat?: string;
+    lng?: string;
+    distanciaKm?: string;
   }) => {
     const query = buildQuery(params ?? {});
     return fetchApi<ProfesionalesPaginatedResponse>('/profesionales' + query);

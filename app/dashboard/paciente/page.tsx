@@ -26,7 +26,7 @@ import ResumenPacienteView from './components/ResumenPacienteView';
 // Conditionally-rendered heavy children — keep out of the dashboard's initial chunk.
 const ChatModal = dynamic(() => import('../../components/ChatModal'), { ssr: false });
 const VideoCallModal = dynamic(() => import('../../components/VideoCallModal'), { ssr: false });
-// Recharts-backed stats tab; only mounts when the user opens "Estadísticas".
+// Recharts-backed stats tab; only mounts when the user opens the statistics tab.
 const EstadisticasPaciente = dynamic(() => import('./components/EstadisticasPaciente'), {
   loading: () => <Spinner />,
 });
@@ -42,6 +42,9 @@ import {
 } from '../../components/icons';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { CalendarDays, Pill, FileText, Activity, Video, MapPin, Stethoscope, ArrowRight, Sparkles } from 'lucide-react';
 
 export default function PacienteDashboard() {
   const router = useRouter();
@@ -50,6 +53,8 @@ export default function PacienteDashboard() {
   const p = t('paciente');
   const d = t('dashboard');
   const c = t('common');
+  const i = t('inicio');
+  const m = t('modality');
   const locale = getLocale(lang);
   const pageText = p.page;
   const pacienteTourSteps = [
@@ -127,6 +132,9 @@ export default function PacienteDashboard() {
   const [loadingRecetas, setLoadingRecetas] = useState(false);
   const [misCertificados, setMisCertificados] = useState<CertificadoPaciente[]>([]);
   const [loadingCertificados, setLoadingCertificados] = useState(false);
+  // Próximos turnos (estable, independiente del tab activo) para hero + métricas
+  const [proximosTurnos, setProximosTurnos] = useState<Turno[]>([]);
+  const [proximosTotal, setProximosTotal] = useState(0);
 
   useEffect(() => {
     if (!authLoading) {
@@ -139,6 +147,7 @@ export default function PacienteDashboard() {
         loadMisRecetas();
         loadMisCertificados();
         loadStats();
+        loadProximos();
       } else {
         router.push('/dashboard');
       }
@@ -172,6 +181,14 @@ export default function PacienteDashboard() {
     try {
       const data = await api.recordatorios.getPaciente();
       setRecordatorios(data.turnos || []);
+    } catch (err) { console.error(err); }
+  };
+
+  const loadProximos = async () => {
+    try {
+      const data = await api.turnos.getMisTurnos({ tipo: 'proximos', page: 1, limit: 5 });
+      setProximosTurnos(data.turnos.filter(tn => tn.estado === 'RESERVADO' || tn.estado === 'CONFIRMADO'));
+      setProximosTotal(data.pagination.total);
     } catch (err) { console.error(err); }
   };
 
@@ -322,6 +339,18 @@ export default function PacienteDashboard() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const proximoTurno = proximosTurnos[0] ?? null;
+  const diasHastaProximo = proximoTurno
+    ? Math.ceil((new Date(proximoTurno.fechaHora).getTime() - Date.now()) / 86_400_000)
+    : null;
+  const pacSub = !proximoTurno
+    ? i.pacSubNone
+    : diasHastaProximo !== null && diasHastaProximo <= 0
+      ? i.pacSubToday
+      : diasHastaProximo === 1
+        ? i.pacSubTomorrow
+        : i.pacSubDays.replace('{days}', String(diasHastaProximo));
+
   return (
     <div className="min-h-screen bg-muted/30">
       {/* -- Reminder banner ------------------------------- */}
@@ -392,6 +421,19 @@ export default function PacienteDashboard() {
         </div>
       </header>
 
+      {/* -- Hero band ------------------------------------- */}
+      <section className="border-b bg-gradient-to-b from-accent/60 to-background">
+        <div className="page-container max-w-5xl mx-auto py-7">
+          <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Sparkles className="size-3.5 text-primary" /> MediSync
+          </p>
+          <h1 className="font-display mt-1.5 text-3xl font-medium tracking-tight sm:text-4xl">
+            {i.pacGreetingName}, {user.paciente.nombre}.
+          </h1>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">{pacSub}</p>
+        </div>
+      </section>
+
       <main className="page-container py-6 max-w-5xl mx-auto">
         {inlineNotice && (
           <div className={`alert mb-4 ${inlineNotice.type === 'success' ? 'alert-success' : inlineNotice.type === 'error' ? 'alert-error' : 'alert-info'}`} role="status" aria-live="polite">
@@ -407,6 +449,73 @@ export default function PacienteDashboard() {
           <span>
             {d.cancellationPolicy}: {d.cancellationPolicyText.replace('{horas}', String(horasMinCancelacion))}
           </span>
+        </div>
+
+        {/* -- Próximo turno destacado -------------------- */}
+        {proximoTurno && (
+          <Card className="mb-5 overflow-hidden rounded-2xl border-primary/20 bg-gradient-to-br from-primary/[0.06] to-card shadow-sm">
+            <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+              <div className="flex items-start gap-4">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-sm font-semibold text-primary">
+                  {(proximoTurno.profesional?.nombre?.[0] ?? '')}{proximoTurno.profesional?.apellido?.[0] ?? ''}
+                </span>
+                <div>
+                  <p className="text-xs font-medium uppercase tracking-wide text-primary">{i.proximoTurno}</p>
+                  <h2 className="font-heading mt-0.5 text-xl font-semibold">
+                    {proximoTurno.profesional?.nombre} {proximoTurno.profesional?.apellido}
+                  </h2>
+                  <p className="mt-1 flex items-center gap-1.5 text-sm text-muted-foreground">
+                    <Stethoscope className="size-4 text-primary" /> {translateSpecialty(proximoTurno.profesional?.especialidad?.nombre)}
+                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 text-sm">
+                    <span className="font-display text-lg font-medium capitalize">
+                      {formatClinicInstantDate(proximoTurno.fechaHora, locale, { weekday: 'long', day: 'numeric', month: 'long' })}
+                    </span>
+                    <span className="font-display text-lg font-medium tabular-nums">
+                      {formatClinicInstantTime(proximoTurno.fechaHora, locale)} hs
+                    </span>
+                    <Badge variant="outline" className="gap-1 border-border/70">
+                      {proximoTurno.modalidad === 'VIRTUAL' ? <Video className="text-primary" /> : <MapPin className="text-success" />}
+                      {proximoTurno.modalidad === 'VIRTUAL' ? m.VIRTUAL : m.PRESENCIAL}
+                    </Badge>
+                  </div>
+                  {(proximoTurno.lugarAtencion ?? proximoTurno.profesional?.lugarAtencion) && (
+                    <p className="mt-2 flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <MapPin className="size-3.5" /> {proximoTurno.lugarAtencion ?? proximoTurno.profesional?.lugarAtencion}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <div className="flex gap-2 md:flex-col md:items-stretch">
+                <Button onClick={() => handleTabChange('proximos')}>
+                  {i.verDetalles} <ArrowRight data-icon="inline-end" />
+                </Button>
+                <Button variant="outline" onClick={() => setTurnoReprogramar(proximoTurno)}>
+                  {i.reprogramar}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* -- Métricas ----------------------------------- */}
+        <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          {[
+            { icon: CalendarDays, value: String(proximosTotal), label: i.proximos },
+            { icon: Pill, value: String(misRecetas.length), label: i.recetasActivas },
+            { icon: FileText, value: String(misCertificados.length), label: i.certificados },
+            { icon: Activity, value: String(pacienteStats?.completados ?? 0), label: i.completados },
+          ].map((mt) => (
+            <Card key={mt.label} className="rounded-2xl shadow-sm transition-shadow hover:shadow-md">
+              <CardContent className="flex flex-col gap-2">
+                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                  <mt.icon className="size-5" />
+                </div>
+                <span className="font-display text-3xl font-medium leading-none tracking-tight">{mt.value}</span>
+                <p className="text-sm font-medium">{mt.label}</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
 
         {/* -- Tabs -------------------------------------- */}

@@ -90,6 +90,12 @@ export function ProfCard({
                 />
               </div>
             )}
+            {prof.distanciaKm != null && (
+              <p className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-primary">
+                <MapPin className="size-3.5" />
+                {h.landing.kmAway.replace("{n}", prof.distanciaKm.toLocaleString(locale))}
+              </p>
+            )}
           </div>
         </div>
 

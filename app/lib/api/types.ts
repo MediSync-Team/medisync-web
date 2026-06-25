@@ -57,6 +57,8 @@ export type Profesional = {
   matricula?: string | null;
   bio?: string;
   lugarAtencion?: string | null;
+  latitud?: number | null;
+  longitud?: number | null;
   obrasSociales?: string[];
   fotoUrl?: string | null;
   activo?: boolean;
@@ -65,6 +67,7 @@ export type Profesional = {
   disponibilidades?: Disponibilidad[];
   ratingPromedio?: number | null;
   totalResenas?: number;
+  distanciaKm?: number | null;
 };
 
 export type Resena = {

@@ -497,3 +497,6 @@
     transition: background 0.15s;
   }
   .widget-btn-secondary:hover { background: #e2e8f0; }
+
+/* Display accent para dashboards (saludos + números grandes). Var en app/layout.tsx */
+.font-display { font-family: var(--font-display), Georgia, "Times New Roman", serif; }

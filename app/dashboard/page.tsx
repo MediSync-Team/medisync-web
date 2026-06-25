@@ -34,7 +34,9 @@ import AuditoriaView from './components/AuditoriaView';
 import EmbedWidgetSection from './components/EmbedWidgetSection';
 import UpgradePrompt from './components/UpgradePrompt';
 import NuevoCuponModal, { CuponFormState } from './components/NuevoCuponModal';
-import ProfesionalStatCards from './components/ProfesionalStatCards';
+import InicioProfView from './components/InicioProfView';
+import { CalendarDays, CheckCheck, Users as UsersIcon, Sparkles, Star, Home as HomeIcon } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 
 // Appointment detail modal pulls in clinical panels + (lazily) WebRTC video & chat.
 // Only mounts when a turno is selected, so keep it out of the dashboard's initial chunk.
@@ -51,6 +53,7 @@ export default function ProfesionalDashboard() {
   const { user, loading: authLoading, logout } = useAuth();
   const { t, lang } = useLang();
   const d = t('dashboard');
+  const i = t('inicio');
   const profTourSteps = [
     { selector: '[data-onboarding="stat-cards"]', title: d.tour.activitySummaryTitle, description: d.tour.activitySummaryDesc, position: 'bottom' as const },
     { selector: '[data-onboarding="tab-calendario"]', title: d.tour.dailyAgendaTitle, description: d.tour.dailyAgendaDesc, position: 'bottom' as const },
@@ -62,7 +65,7 @@ export default function ProfesionalDashboard() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas' | 'cupones' | 'plan' | 'auditoria'>('calendario');
+  const [activeTab, setActiveTab] = useState<'inicio' | 'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas' | 'cupones' | 'plan' | 'auditoria'>('inicio');
   const [selectedDateKey, setSelectedDateKey] = useState(() => todayInputValue());
   const [turnosDelDia, setTurnosDelDia] = useState<Turno[]>([]);
   const [nuevaDisp, setNuevaDisp] = useState({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL' as const, lugarAtencion: '' });
@@ -71,6 +74,8 @@ export default function ProfesionalDashboard() {
   const [showRecordatorios, setShowRecordatorios] = useState(false);
   const [stats, setStats] = useState<StatsData | null>(null);
   const [loadingStats, setLoadingStats] = useState(false);
+  const [resenasStats, setResenasStats] = useState<{ promedio: number | null; total: number } | null>(null);
+  const [resenasRecientes, setResenasRecientes] = useState<any[]>([]);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [inlineFeedback, setInlineFeedback] = useState<Notice | null>(null);
   const [agendaSearch, setAgendaSearch] = useState('');
@@ -108,7 +113,7 @@ export default function ProfesionalDashboard() {
       setLoading(false);
       return;
     }
-    if (user?.profesional) { loadData(true); loadRecordatorios(); }
+    if (user?.profesional) { loadData(true); loadRecordatorios(); loadInicioData(); }
   }, [user, authLoading, router]);
 
   useEffect(() => {
@@ -188,6 +193,21 @@ export default function ProfesionalDashboard() {
     finally { setLoadingStats(false); }
   };
 
+  // Datos del tab "Inicio": ingresos (stats) + reseñas recientes para rating/lista.
+  const loadInicioData = async () => {
+    try {
+      const [statsData, resenasData] = await Promise.all([
+        api.profesional.getStats().catch(() => null),
+        api.resenas.getMisResenas({ page: 1, limit: 5 }).catch(() => null),
+      ]);
+      if (statsData) setStats(statsData);
+      if (resenasData) {
+        setResenasStats(resenasData.stats);
+        setResenasRecientes(resenasData.resenas);
+      }
+    } catch (err) { console.error(err); }
+  };
+
   const loadBloqueos = async () => {
     setLoadingBloqueos(true);
     try {
@@ -247,6 +267,9 @@ export default function ProfesionalDashboard() {
   const turnosMes = turnos.filter(t =>
     clinicDateKeyFromInstant(t.fechaHora).startsWith(clinicMonthPrefix) && t.estado !== 'CANCELADO'
   );
+  const confirmadosHoy = hoyTurnos.filter(t => t.estado === 'CONFIRMADO').length;
+  const horaActual = new Date().getHours();
+  const saludo = horaActual < 12 ? i.greetingMorning : horaActual < 20 ? i.greetingAfternoon : i.greetingEvening;
 
   const loadCupones = async () => {
     setLoadingCupones(true);
@@ -459,6 +482,21 @@ export default function ProfesionalDashboard() {
         </div>
       </header>
 
+      {/* -- Hero band ------------------------------------- */}
+      <section className="border-b bg-gradient-to-b from-accent/60 to-background">
+        <div className="page-container py-7">
+          <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
+            <Sparkles className="size-3.5 text-primary" /> MediSync
+          </p>
+          <h1 className="font-display mt-1.5 text-3xl font-medium tracking-tight sm:text-4xl">
+            {saludo}, Dr/a. {user.profesional.nombre}.
+          </h1>
+          <p className="mt-2 max-w-xl text-sm text-muted-foreground">
+            {i.profSub.replace('{count}', String(hoyTurnos.length)).replace('{confirmed}', String(confirmadosHoy))}
+          </p>
+        </div>
+      </section>
+
       <main className="page-container py-6">
         {inlineFeedback && (
           <div className={`alert mb-4 ${inlineFeedback.type === 'success' ? 'alert-success' : inlineFeedback.type === 'error' ? 'alert-error' : 'alert-info'}`} role="status" aria-live="polite">
@@ -498,16 +536,32 @@ export default function ProfesionalDashboard() {
           </>
         ) : (
           <>
-            <ProfesionalStatCards
-              todayCount={hoyTurnos.length}
-              todayConfirmed={hoyTurnos.filter(t => t.estado === 'CONFIRMADO').length}
-              monthCount={turnosMes.length}
-              especialidadNombre={user.profesional.especialidad?.nombre || ''}
-            />
+            <div data-onboarding="stat-cards" className="grid grid-cols-2 gap-4 mb-6 lg:grid-cols-4">
+              {[
+                { icon: CalendarDays, value: String(hoyTurnos.length), label: i.turnosHoy, hint: `${confirmadosHoy} ${i.confirmados.toLowerCase()}` },
+                { icon: CheckCheck, value: String(confirmadosHoy), label: i.confirmados, hint: `${i.turnosHoy.toLowerCase()}` },
+                { icon: UsersIcon, value: String(turnosMes.length), label: i.turnosMes, hint: new Date().toLocaleString(getLocale(lang), { month: 'long' }) },
+                { icon: Star, value: resenasStats?.promedio != null ? String(resenasStats.promedio) : '—', label: i.rating, hint: resenasStats?.total ? i.ratingHint.replace('{count}', String(resenasStats.total)) : i.sinResenas },
+              ].map((m) => (
+                <Card key={m.label} className="rounded-2xl shadow-sm transition-shadow hover:shadow-md">
+                  <CardContent className="flex flex-col gap-2">
+                    <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <m.icon className="size-5" />
+                    </div>
+                    <span className="font-display text-3xl font-medium leading-none tracking-tight">{m.value}</span>
+                    <div>
+                      <p className="text-sm font-medium">{m.label}</p>
+                      <p className="text-xs capitalize text-muted-foreground">{m.hint}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
 
             <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
               <div className="flex gap-1 overflow-x-auto border-b px-2 pt-1.5">
                 {([
+                  { id: 'inicio', label: i.tab, icon: <HomeIcon size={14} />, onboarding: 'tab-inicio' },
                   { id: 'calendario', label: d.agenda, icon: <CalendarIcon size={14} />, onboarding: 'tab-calendario' },
                   { id: 'disponibilidad', label: d.availability, icon: <ClockIcon size={14} />, onboarding: 'tab-disponibilidad' },
                   { id: 'stats', label: d.stats, icon: <ChartIcon size={14} />, onboarding: 'tab-stats' },
@@ -534,6 +588,17 @@ export default function ProfesionalDashboard() {
               </div>
 
               <div className="p-6">
+                {activeTab === 'inicio' && (
+                  <InicioProfView
+                    hoyTurnos={hoyTurnos}
+                    ingresosPorMes={(stats?.ingresosPorMes ?? []) as any}
+                    resenas={resenasRecientes}
+                    ratingPromedio={resenasStats?.promedio ?? null}
+                    ratingTotal={resenasStats?.total ?? 0}
+                    onSelectTurno={setSlotActual}
+                    translateSpecialty={translateSpecialty}
+                  />
+                )}
                 {activeTab === 'calendario' && (
                   <CalendarioView
                     selectedDateKey={selectedDateKey}
