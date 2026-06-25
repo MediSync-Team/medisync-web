@@ -6,7 +6,6 @@ import { useLang } from './lib/i18n/context';
 import OnboardingTour from './components/OnboardingTour';
 import { Navbar } from '@/components/navbar';
 import { Hero } from '@/components/landing/hero';
-import { SearchSection } from '@/components/landing/search-section';
 import { HowItWorks } from '@/components/landing/how-it-works';
 import { Footer } from '@/components/footer';
 
@@ -16,8 +15,6 @@ export default function HomePage() {
 
   const homeTourSteps = useMemo(() => [
     { selector: '[data-onboarding="hero"]', title: h.tour.welcomeTitle, description: h.tour.welcomeDesc, position: 'bottom' as const },
-    { selector: '[data-onboarding="search-bar"]', title: h.tour.searchTitle, description: h.tour.searchDesc, position: 'bottom' as const },
-    { selector: '[data-onboarding="prof-list"]', title: h.tour.listTitle, description: h.tour.listDesc, position: 'top' as const },
     { selector: '[data-onboarding="nav-register"]', title: h.tour.registerTitle, description: h.tour.registerDesc, position: 'bottom' as const },
   ], [h]);
 
@@ -29,7 +26,6 @@ export default function HomePage() {
       <Navbar />
       <main className="flex-1">
         <Hero />
-        <SearchSection />
         <HowItWorks />
       </main>
       <Footer />

@@ -27,7 +27,7 @@ export function Hero() {
             {h.heroSubtitle}
           </p>
           <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-            <Button size="lg" render={<Link href="#buscar" />}>
+            <Button size="lg" render={<Link href="/profesionales" />}>
               <Search data-icon="inline-start" />
               {l.heroCta}
             </Button>

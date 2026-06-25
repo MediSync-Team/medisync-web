@@ -5,7 +5,7 @@ const groups = [
   {
     title: "Plataforma",
     links: [
-      { label: "Buscar profesionales", href: "/#buscar" },
+      { label: "Buscar profesionales", href: "/profesionales" },
       { label: "Cómo funciona", href: "/#como-funciona" },
       { label: "Para profesionales", href: "/register" },
       { label: "Para clínicas", href: "/register" },

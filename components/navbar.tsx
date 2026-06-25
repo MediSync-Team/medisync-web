@@ -24,7 +24,7 @@ export function Navbar() {
   const { user, logout } = useAuth()
 
   const links: { label: string; href: string }[] = [
-    { label: nav.search, href: "/#buscar" },
+    { label: nav.search, href: "/profesionales" },
     { label: nav.howItWorks, href: "/#como-funciona" },
     { label: nav.forProfessionals, href: "/register" },
   ]
