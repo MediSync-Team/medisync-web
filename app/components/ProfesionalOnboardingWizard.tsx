@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { api, Disponibilidad } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
 import { getLocale } from '../lib/date';
@@ -50,6 +50,21 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
   const [precio, setPrecio] = useState('');
   const [lugarAtencion, setLugarAtencion] = useState('');
   const [modalidadPerfil, setModalidadPerfil] = useState<'PRESENCIAL' | 'VIRTUAL' | 'AMBOS'>('PRESENCIAL');
+
+  // Prefill from the existing profile so data already entered (e.g. teléfono) is not re-asked blank.
+  useEffect(() => {
+    let cancelled = false;
+    api.profesionales.getById(profesionalId).then((prof) => {
+      if (cancelled || !prof) return;
+      if (prof.fotoUrl) setFotoUrl(prof.fotoUrl);
+      if (prof.bio) setBio(prof.bio);
+      if (prof.matricula) setMatricula(prof.matricula);
+      if (prof.telefono) setTelefono(prof.telefono);
+      if (prof.precioConsulta && Number(prof.precioConsulta) > 0) setPrecio(String(prof.precioConsulta));
+      if (prof.lugarAtencion) setLugarAtencion(prof.lugarAtencion);
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [profesionalId]);
 
   // -- Helpers -------------------------------------------------
   const inp = 'field-input mt-1';

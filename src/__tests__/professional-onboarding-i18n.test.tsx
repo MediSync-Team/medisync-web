@@ -17,6 +17,7 @@ vi.mock('../../app/lib/api', () => ({
       updatePerfil: vi.fn(),
     },
     profesionales: {
+      getById: vi.fn(),
       crearDisponibilidad: vi.fn(),
       eliminarDisponibilidad: vi.fn(),
     },
@@ -34,6 +35,7 @@ describe('professional onboarding wizard i18n', () => {
       clear: vi.fn(() => storage.clear()),
     });
     (api.profesional.updatePerfil as any).mockResolvedValue({});
+    (api.profesionales.getById as any).mockResolvedValue({ id: 'prof-1', telefono: '', matricula: '', bio: '', fotoUrl: '', precioConsulta: 0, lugarAtencion: '' });
     (api.profesionales.crearDisponibilidad as any).mockResolvedValue({
       id: 'disp-1',
       diaSemana: 1,

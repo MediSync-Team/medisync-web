@@ -18,7 +18,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Select,
@@ -40,8 +39,7 @@ export default function RegisterPage() {
     rol: 'PACIENTE' as 'PROFESIONAL' | 'PACIENTE' | 'CLINICA',
     nombre: '', apellido: '', telefono: '',
     genero: 'NO_ESPECIFICADO' as Genero,
-    matricula: '', especialidadId: '', precioConsulta: '',
-    lugarAtencion: '', bio: '', fotoUrl: '',
+    especialidadId: '',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -69,12 +67,7 @@ export default function RegisterPage() {
         email: formData.email, password: formData.password, rol: formData.rol,
         nombre: formData.nombre, apellido: formData.apellido,
         telefono: formData.telefono || undefined, genero: formData.genero,
-        matricula: formData.rol === 'PROFESIONAL' ? formData.matricula : undefined,
         especialidadId: formData.rol === 'PROFESIONAL' ? formData.especialidadId : undefined,
-        precioConsulta: formData.rol === 'PROFESIONAL' && formData.precioConsulta ? Number(formData.precioConsulta) : undefined,
-        lugarAtencion: formData.rol === 'PROFESIONAL' ? formData.lugarAtencion : undefined,
-        bio: formData.rol === 'PROFESIONAL' ? formData.bio : undefined,
-        fotoUrl: formData.rol === 'PROFESIONAL' ? formData.fotoUrl : undefined,
       });
       router.push(getDashboardPath({ rol: formData.rol }));
     } catch (err) {
@@ -180,41 +173,19 @@ export default function RegisterPage() {
               </div>
 
               {formData.rol === 'PROFESIONAL' && (
-                <>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="matricula">{a.license}</Label>
-                    <Input id="matricula" name="matricula" required value={formData.matricula} onChange={handleChange} placeholder="MP 12345" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label>{a.specialty}</Label>
-                    <Select value={formData.especialidadId} onValueChange={(val) => val && setField('especialidadId', val)}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="—" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {especialidades.map((e) => (
-                          <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="precioConsulta">{a.price}</Label>
-                    <Input id="precioConsulta" name="precioConsulta" type="number" value={formData.precioConsulta} onChange={handleChange} placeholder="5000" />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="lugarAtencion">{a.location}</Label>
-                    <Input id="lugarAtencion" name="lugarAtencion" value={formData.lugarAtencion} onChange={handleChange} />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="fotoUrl">{t('profile').photoUrl}</Label>
-                    <Input id="fotoUrl" name="fotoUrl" type="url" value={formData.fotoUrl} onChange={handleChange} placeholder="https://..." />
-                  </div>
-                  <div className="flex flex-col gap-1.5">
-                    <Label htmlFor="bio">{a.bio}</Label>
-                    <Textarea id="bio" name="bio" value={formData.bio} onChange={handleChange} rows={3} className="resize-none" />
-                  </div>
-                </>
+                <div className="flex flex-col gap-1.5">
+                  <Label>{a.specialty}</Label>
+                  <Select value={formData.especialidadId} onValueChange={(val) => val && setField('especialidadId', val)}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="—" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {especialidades.map((e) => (
+                        <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
 
               <div className="flex flex-col gap-1.5">
