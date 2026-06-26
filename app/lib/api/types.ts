@@ -112,10 +112,24 @@ export type Slot = {
   lugarAtencion?: string | null;
 };
 
+export type TipoConsulta = {
+  id: string;
+  profesionalId: string;
+  nombre: string;
+  duracionMin: number;
+  precio?: number | null;
+  color?: string | null;
+  activo: boolean;
+  orden: number;
+  createdAt?: string;
+  updatedAt?: string;
+};
+
 export type Turno = {
   id: string;
   pacienteId: string;
   profesionalId: string;
+  tipoConsultaId?: string | null;
   fechaHora: string;
   duracionMin: number;
   estado: 'RESERVADO' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO' | 'AUSENTE';

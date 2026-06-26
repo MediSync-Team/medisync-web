@@ -26,6 +26,7 @@ import { Button } from '@/components/ui/button';
 
 import CalendarioView from './components/CalendarioView';
 import DisponibilidadView from './components/DisponibilidadView';
+import TiposConsultaView from './components/TiposConsultaView';
 import PagosView from './components/PagosView';
 import ResenasView from './components/ResenasView';
 import CuponesView from './components/CuponesView';
@@ -630,6 +631,7 @@ export default function ProfesionalDashboard() {
                       loadingBloqueos={loadingBloqueos}
                       onReloadBloqueos={loadBloqueos}
                     />
+                    <TiposConsultaView profesionalId={user.profesional!.id} />
                     <EmbedWidgetSection profesionalId={user.profesional!.id} />
                   </>
                 )}

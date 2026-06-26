@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { api, Profesional, Slot, ListaEsperaItem, ResenasResponse } from '../../lib/api';
+import { api, Profesional, Slot, TipoConsulta, ListaEsperaItem, ResenasResponse } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { useLang } from '../../lib/i18n/context';
 import { ArrowLeft } from 'lucide-react';
@@ -50,6 +50,8 @@ export default function ProfesionalPage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [modalidad, setModalidad] = useState<'PRESENCIAL' | 'VIRTUAL'>('PRESENCIAL');
+  const [tiposConsulta, setTiposConsulta] = useState<TipoConsulta[]>([]);
+  const [selectedTipoId, setSelectedTipoId] = useState<string | null>(null);
   const [reservando, setReservando] = useState(false);
   const [error, setError] = useState('');
   const [suscribiendoLista, setSuscribiendoLista] = useState(false);
@@ -66,9 +68,9 @@ export default function ProfesionalPage() {
   const [guestFormError, setGuestFormError] = useState('');
   const [guestTurnoReservado, setGuestTurnoReservado] = useState<{ id: string; fechaHora: string; duracionMin: number; needsPago: boolean } | null>(null);
 
-  useEffect(() => { loadProfesional(); loadResenas(1); }, [params.id]);
+  useEffect(() => { loadProfesional(); loadResenas(1); loadTiposConsulta(); }, [params.id]);
   useEffect(() => { loadListaEsperaActiva(); }, [params.id, user?.paciente?.id]);
-  useEffect(() => { if (selectedDate) loadSlots(selectedDate); }, [selectedDate, modalidad]);
+  useEffect(() => { if (selectedDate) loadSlots(selectedDate); }, [selectedDate, modalidad, selectedTipoId]);
 
   const loadProfesional = async () => {
     try {
@@ -76,6 +78,15 @@ export default function ProfesionalPage() {
       setProfesional(data);
     } catch (err) { console.error(err); }
     finally { setLoading(false); }
+  };
+
+  const loadTiposConsulta = async () => {
+    try {
+      const data = await api.profesionales.getTiposConsulta(params.id as string);
+      setTiposConsulta(data);
+      // Auto-select the first type so slots reflect a real duration out of the box.
+      if (data.length > 0) setSelectedTipoId((prev) => prev ?? data[0].id);
+    } catch (err) { console.error(err); }
   };
 
   const loadResenas = async (p: number) => {
@@ -91,7 +102,7 @@ export default function ProfesionalPage() {
     setSlotsError(null);
     try {
       const fecha = clinicDateKeyFromDateOnly(date);
-      const data = await api.profesionales.getSlots(params.id as string, fecha, modalidad);
+      const data = await api.profesionales.getSlots(params.id as string, fecha, modalidad, selectedTipoId ?? undefined);
       setSlots(data);
     } catch (err) {
       console.error(err);
@@ -192,6 +203,7 @@ export default function ProfesionalPage() {
         profesionalId: profesional.id,
         fechaHora,
         modalidad,
+        ...(selectedTipoId ? { tipoConsultaId: selectedTipoId } : {}),
       };
 
       const reserva = await api.turnos.reservar(reservaData);
@@ -609,6 +621,29 @@ export default function ProfesionalPage() {
                   ))}
                 </div>
               </div>
+
+              {/* Tipo de consulta (duración variable) */}
+              {tiposConsulta.length > 0 && (
+                <div className="mb-5">
+                  <p className="field-label mb-2">Tipo de consulta</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {tiposConsulta.map((tipo) => (
+                      <label key={tipo.id} className={`flex flex-col items-start gap-0.5 px-4 py-2.5 rounded-xl border-2 cursor-pointer font-medium text-sm transition-all ${
+                        selectedTipoId === tipo.id
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
+                          : 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'
+                      }`}>
+                        <input type="radio" name="tipoConsulta" value={tipo.id} checked={selectedTipoId === tipo.id} onChange={() => { setSelectedTipoId(tipo.id); setSelectedSlot(null); setSlotsError(null); }} className="sr-only" />
+                        <span>{tipo.nombre}</span>
+                        <span className="text-xs opacity-70 flex items-center gap-1">
+                          <ClockIcon size={11} /> {tipo.duracionMin} min
+                          {tipo.precio != null && tipo.precio > 0 ? ` · $${formatPrice(tipo.precio)}` : ''}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Modalidad toggle */}
               <div className="mb-5">

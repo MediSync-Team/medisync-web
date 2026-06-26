@@ -7,6 +7,7 @@ import type {
   Especialidad,
   Profesional,
   Slot,
+  TipoConsulta,
   Disponibilidad,
   ProfesionalesPaginatedResponse,
   TurnosPaginatedResponse,
@@ -118,8 +119,8 @@ const profesionalesApi = {
     return fetchApi<ProfesionalesPaginatedResponse>('/profesionales' + query);
   },
   getById: (id: string) => fetchApi<Profesional>(`/profesionales/${id}`),
-  getSlots: (id: string, fecha: string, modalidad: string) =>
-    fetchApi<Slot[]>(`/profesionales/${id}/slots-disponibles?fecha=${fecha}&modalidad=${modalidad}`),
+  getSlots: (id: string, fecha: string, modalidad: string, tipoConsultaId?: string) =>
+    fetchApi<Slot[]>(`/profesionales/${id}/slots-disponibles?fecha=${fecha}&modalidad=${modalidad}${tipoConsultaId ? `&tipoConsultaId=${tipoConsultaId}` : ''}`),
   crearDisponibilidad: (id: string, data: { diaSemana: number; horaInicio: string; horaFin: string; modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'AMBOS'; lugarAtencion?: string }) =>
     fetchApi<Disponibilidad>(`/profesionales/${id}/disponibilidad`, {
       method: 'POST',
@@ -127,6 +128,20 @@ const profesionalesApi = {
     }),
   eliminarDisponibilidad: (id: string, dispId: string) =>
     fetchApi<void>(`/profesionales/${id}/disponibilidad/${dispId}`, { method: 'DELETE' }),
+  getTiposConsulta: (id: string) =>
+    fetchApi<TipoConsulta[]>(`/profesionales/${id}/tipos-consulta`),
+  crearTipoConsulta: (id: string, data: { nombre: string; duracionMin: number; precio?: number | null; color?: string | null; orden?: number }) =>
+    fetchApi<TipoConsulta>(`/profesionales/${id}/tipos-consulta`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+  actualizarTipoConsulta: (id: string, tipoId: string, data: { nombre: string; duracionMin: number; precio?: number | null; color?: string | null; orden?: number }) =>
+    fetchApi<TipoConsulta>(`/profesionales/${id}/tipos-consulta/${tipoId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(data),
+    }),
+  eliminarTipoConsulta: (id: string, tipoId: string) =>
+    fetchApi<{ deleted: boolean }>(`/profesionales/${id}/tipos-consulta/${tipoId}`, { method: 'DELETE' }),
 };
 
 const turnosApi = {
@@ -161,6 +176,7 @@ const turnosApi = {
     profesionalId: string;
     fechaHora: string;
     modalidad: 'PRESENCIAL' | 'VIRTUAL';
+    tipoConsultaId?: string;
   }) =>
     fetchApi<{ turno: Turno; linkPago: null }>('/turnos/reservar', {
       method: 'POST',
