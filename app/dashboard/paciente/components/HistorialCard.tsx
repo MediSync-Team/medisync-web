@@ -10,7 +10,7 @@ const imprimirReceta = (...args: Parameters<typeof import('../../../lib/receta-p
   import('../../../lib/receta-pdf').then((m) => m.imprimirReceta(...args));
 const imprimirCertificado = (...args: Parameters<typeof import('../../../lib/certificado-pdf').imprimirCertificado>) =>
   import('../../../lib/certificado-pdf').then((m) => m.imprimirCertificado(...args));
-import { BuildingIcon, CalendarIcon, UserIcon, VideoIcon } from '../../../components/icons';
+import { BuildingIcon, CalendarIcon, ChatIcon, UserIcon, VideoIcon } from '../../../components/icons';
 
 function StarDisplay({ rating, size = 13 }: { rating: number; size?: number }) {
   return (
@@ -28,6 +28,7 @@ function StarDisplay({ rating, size = 13 }: { rating: number; size?: number }) {
 export default function HistorialCard({
   item,
   onCalificar,
+  onChat,
   d,
   m,
   s,
@@ -35,6 +36,7 @@ export default function HistorialCard({
 }: {
   item: HistorialTurno;
   onCalificar: (turno: HistorialTurno) => void;
+  onChat?: (turno: HistorialTurno) => void;
   d: Translations['dashboard'];
   m: Translations['modality'];
   s: Translations['status'];
@@ -78,6 +80,15 @@ export default function HistorialCard({
               ? <><VideoIcon size={11} /> {m.VIRTUAL}</>
               : <><BuildingIcon size={11} /> {m.PRESENCIAL}</>}
           </span>
+          {onChat && (
+            <button
+              onClick={() => onChat(item)}
+              className="flex items-center gap-1 px-2 py-1 text-xs font-semibold text-primary border border-primary/20 bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors"
+            >
+              <ChatIcon size={11} />
+              {p.chatLabel}
+            </button>
+          )}
         </div>
 
         {/* {d.clinicalEvolution} */}

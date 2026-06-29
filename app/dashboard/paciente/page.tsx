@@ -631,6 +631,7 @@ export default function PacienteDashboard() {
                 onPageChange={(p) => { setHistorialPage(p); loadHistorial(p); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
                 onDownloadPDF={downloadHistorialPDF}
                 onCalificar={(turno) => setTurnoCalificar(turno as any)}
+                onChat={(turno) => setTurnoChat(turno)}
                 translateSpecialty={translateSpecialty}
               />
             ) : activeTab === 'recetas' ? (
@@ -734,6 +735,7 @@ export default function PacienteDashboard() {
       {turnoChat && user.paciente && (
         <ChatModal
           turnoId={turnoChat.id}
+          readOnly={turnoChat.estado !== 'RESERVADO' && turnoChat.estado !== 'CONFIRMADO'}
           myUserId={user.id}
           otherName={turnoChat.profesional ? `${turnoChat.profesional.nombre} ${turnoChat.profesional.apellido}` : pageText.professionalFallback}
           onClose={() => setTurnoChat(null)}

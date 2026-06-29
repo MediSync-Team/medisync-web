@@ -143,6 +143,7 @@ export function GlobalChatHub({ user }: { user: User }) {
       {activeTurno && (
         <ChatModal
           turnoId={activeTurno.id}
+          readOnly={activeTurno.estado !== 'RESERVADO' && activeTurno.estado !== 'CONFIRMADO'}
           myUserId={user.id}
           otherName={user.rol === 'PACIENTE' 
             ? `Dr/a. ${activeTurno.profesional?.nombre ?? chat.professionalFallback} ${activeTurno.profesional?.apellido ?? ''}`.trim()

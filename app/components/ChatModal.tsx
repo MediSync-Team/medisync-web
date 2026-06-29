@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { api, ChatMensaje } from '../lib/api';
 import { XIcon, SendIcon } from './icons';
 import Spinner from './Spinner';
@@ -13,10 +14,13 @@ interface Props {
   myUserId: string;
   /** Display name of the other party */
   otherName: string;
+  /** When true the composer is disabled (read-only history). Used for closed
+   *  turnos — completed/cancelled/no-show — where sending isn't allowed. */
+  readOnly?: boolean;
   onClose: () => void;
 }
 
-export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Props) {
+export default function ChatModal({ turnoId, myUserId, otherName, readOnly = false, onClose }: Props) {
   const { t, lang } = useLang();
   const chat = t('chat');
   const locale = getLocale(lang);
@@ -51,7 +55,7 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
     const text = input.trim();
-    if (!text || sending) return;
+    if (!text || sending || readOnly) return;
 
     setSending(true);
     setError(null);
@@ -92,7 +96,14 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
     }
   }
 
-  return (
+  // Render into <body> so the modal's `fixed inset-0` resolves against the viewport.
+  // The dashboard navbar that hosts GlobalChatHub uses `backdrop-blur`, which makes
+  // it the containing block for fixed descendants and was clipping this modal to the
+  // navbar's height (its top half rendered above the viewport).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  const modalContent = (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4">
       <div className="bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md flex flex-col"
            style={{ height: '80vh', maxHeight: '600px' }}>
@@ -172,7 +183,12 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
           <div ref={bottomRef} />
         </div>
 
-        {/* Input */}
+        {/* Input — disabled for closed turnos (read-only history) */}
+        {readOnly ? (
+          <div className="px-4 py-3 border-t flex-shrink-0 text-center text-xs text-muted-foreground">
+            {chat.readOnly}
+          </div>
+        ) : (
         <form onSubmit={handleSend} className="px-4 py-3 border-t flex gap-2 items-end flex-shrink-0">
           <textarea
             value={input}
@@ -200,7 +216,11 @@ export default function ChatModal({ turnoId, myUserId, otherName, onClose }: Pro
             )}
           </button>
         </form>
+        )}
       </div>
     </div>
   );
+
+  if (!mounted) return null;
+  return createPortal(modalContent, document.body);
 }

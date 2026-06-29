@@ -199,7 +199,7 @@ const turnosApi = {
       body: JSON.stringify(data),
     }),
   getVideoToken: (id: string) =>
-    fetchApi<{ ticket: string; roomId: string; iceServers?: RTCIceServer[] }>(`/turnos/${id}/video-token`),
+    fetchApi<{ token: string; url: string; roomName: string }>(`/turnos/${id}/video-token`),
   getReceta: (id: string) =>
     fetchApi<RecetaIndicacion | null>(`/turnos/${id}/receta`),
   guardarReceta: (id: string, data: RecetaIndicacionInput) =>

@@ -14,11 +14,14 @@ const formatFileSize = (bytes: number) => {
 
 interface ArchivosPanelProps {
   turnoId: string;
-  onNotice: (notice: Notice) => void;
+  onNotice?: (notice: Notice) => void;
+  /** Read-only mode: hides the upload control and per-file delete (e.g. a patient
+   *  reviewing the files of a past/cancelled turno). */
+  readOnly?: boolean;
 }
 
 /** Archivos adjuntos del turno (extracted from TurnoModal). */
-export default function ArchivosPanel({ turnoId, onNotice }: ArchivosPanelProps) {
+export default function ArchivosPanel({ turnoId, onNotice, readOnly = false }: ArchivosPanelProps) {
   const { t } = useLang();
   const d = t('dashboard');
   const common = t('common');
@@ -41,7 +44,7 @@ export default function ArchivosPanel({ turnoId, onNotice }: ArchivosPanelProps)
   };
 
   const handleDelete = async (id: string) => {
-    if (await remove(id)) onNotice({ type: 'success', text: modal.notices.fileDeleted });
+    if (await remove(id)) onNotice?.({ type: 'success', text: modal.notices.fileDeleted });
   };
 
   return (
@@ -51,6 +54,7 @@ export default function ArchivosPanel({ turnoId, onNotice }: ArchivosPanelProps)
         <h4 className="font-semibold text-slate-700 dark:text-slate-200 text-sm">{d.files}</h4>
       </div>
 
+      {!readOnly && (
       <div className="flex gap-2 mb-3">
         <select value={fileType} onChange={(e) => setFileType(e.target.value)} className="field-select text-xs">
           <option value="LABORATORIO">{modal.files.types.LABORATORIO}</option>
@@ -65,6 +69,7 @@ export default function ArchivosPanel({ turnoId, onNotice }: ArchivosPanelProps)
           </span>
         </label>
       </div>
+      )}
 
       {archivos.length > 0 ? (
         <div className="space-y-2">
@@ -78,9 +83,11 @@ export default function ArchivosPanel({ turnoId, onNotice }: ArchivosPanelProps)
                 <p className="text-xs text-slate-400 dark:text-slate-500">{fileTypeLabel(archivo.tipo)} · {formatFileSize(archivo.tamanoBytes ?? 0)}</p>
               </div>
               <a href={archivo.url} target="_blank" rel="noopener noreferrer" className="btn btn-ghost p-1.5 text-blue-500 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 text-xs">{modal.files.view}</a>
-              <button onClick={() => handleDelete(archivo.id)} className="btn btn-ghost p-1.5 text-red-400 hover:text-red-600 dark:hover:text-red-300">
-                <TrashIcon size={13} />
-              </button>
+              {!readOnly && (
+                <button onClick={() => handleDelete(archivo.id)} className="btn btn-ghost p-1.5 text-red-400 hover:text-red-600 dark:hover:text-red-300">
+                  <TrashIcon size={13} />
+                </button>
+              )}
             </div>
           ))}
         </div>

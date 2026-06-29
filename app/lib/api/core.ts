@@ -64,10 +64,14 @@ export async function fetchApi<T>(
 ): Promise<T> {
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
   const hasBody = options.body !== undefined && options.body !== null;
+  // FormData (file uploads) must keep the browser-set multipart Content-Type
+  // (with its boundary); forcing application/json here makes the API route the
+  // upload to the JSON body-parser instead of multer.
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
   const headers = new Headers(options.headers);
 
   if (token) headers.set('Authorization', `Bearer ${token}`);
-  if (hasBody && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+  if (hasBody && !isFormData && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
 
   const path = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
@@ -81,7 +85,9 @@ export async function fetchApi<T>(
     const data = await parseApiResponse<T>(response);
 
     if (!response.ok) {
-      throw new Error(data?.error?.message || `Error HTTP ${response.status}`);
+      const err = new Error(data?.error?.message || `Error HTTP ${response.status}`);
+      (err as Error & { status?: number }).status = response.status; // let callers branch on expected codes (e.g. 403)
+      throw err;
     }
 
     if (!data?.success) {

@@ -234,6 +234,7 @@ const translations = {
       sendError: 'No se pudo enviar el mensaje',
       professionalFallback: 'Profesional',
       patientFallback: 'Paciente',
+      readOnly: 'Este turno está cerrado. El chat es de solo lectura.',
     },
     widget: {
       steps: {
@@ -2274,6 +2275,12 @@ const translations = {
       signalingError: 'Error al conectar con el servidor de videollamada.',
       startError: 'Error al iniciar la videollamada',
       unknownError: 'Error desconocido',
+      chatTitle: 'Chat',
+      chatPlaceholder: 'Escribí un mensaje...',
+      chatEmpty: 'Todavía no hay mensajes',
+      attachFile: 'Adjuntar archivo',
+      fileError: 'No se pudo enviar el archivo. Formatos: imágenes o PDF (máx. 10 MB).',
+      remoteCameraOff: 'Cámara apagada',
     },
   },
 
@@ -2365,6 +2372,7 @@ const translations = {
       sendError: 'Could not send the message',
       professionalFallback: 'Professional',
       patientFallback: 'Patient',
+      readOnly: 'This appointment is closed. The chat is read-only.',
     },
     widget: {
       steps: {
@@ -4404,6 +4412,12 @@ waitlistDesc: "We'll notify you when a slot becomes available",
       signalingError: 'Error connecting to the video call server.',
       startError: 'Error starting the video call',
       unknownError: 'Unknown error',
+      chatTitle: 'Chat',
+      chatPlaceholder: 'Type a message...',
+      chatEmpty: 'No messages yet',
+      attachFile: 'Attach file',
+      fileError: 'Could not send the file. Allowed: images or PDF (max 10 MB).',
+      remoteCameraOff: 'Camera off',
     },
   },
 } as const;
