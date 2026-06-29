@@ -70,6 +70,7 @@ export default function VideoCallModal({ turnoId, participantName, participantRo
   const [sending, setSending]     = useState(false);
   const [chatError, setChatError] = useState('');
   const [myUserId, setMyUserId]   = useState('');
+  const [unread, setUnread]       = useState(0);
 
   const roomRef        = useRef<Room | null>(null);
   const localVideoRef  = useRef<HTMLVideoElement>(null);
@@ -81,6 +82,9 @@ export default function VideoCallModal({ turnoId, participantName, participantRo
   const closingRef     = useRef(false);
   const hasRemoteRef   = useRef(false);
   const seenIdsRef     = useRef<Set<string>>(new Set());
+  const chatOpenRef    = useRef(false);
+  const connectPromiseRef  = useRef<Promise<void> | null>(null);
+  const disconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fecha = formatClinicInstantDateTime(fechaHora, dateLocale, { dateStyle: 'short', timeStyle: 'short' });
 
@@ -101,92 +105,127 @@ export default function VideoCallModal({ turnoId, participantName, participantRo
   }, []);
 
   // ── Connect to the LiveKit room ────────────────────────────────────────────
+  // StrictMode-safe: connect exactly once and defer teardown one tick, so the
+  // dev mount→unmount→mount cycle can't disconnect a still-connecting room
+  // (which dropped the call with "cannot send signal request before connected"
+  // and let a second join kick the real one).
   useEffect(() => {
-    let cancelled = false;
-    closingRef.current = false;
-    const room = new Room({ adaptiveStream: true, dynacast: true });
-    roomRef.current = room;
-
-    room
-      .on(RoomEvent.TrackSubscribed, (track: RemoteTrack) => {
-        if (track.kind === Track.Kind.Video && remoteVideoRef.current) {
-          track.attach(remoteVideoRef.current);
-          hasRemoteRef.current = true;
-          setHasRemote(true);
-          setState('in-call');
-          startCallTimer();
-        } else if (track.kind === Track.Kind.Audio && remoteAudioRef.current) {
-          track.attach(remoteAudioRef.current);
-        }
-      })
-      .on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack) => {
-        track.detach();
-      })
-      .on(RoomEvent.ParticipantDisconnected, () => {
-        // The other party left → end the call.
-        hasRemoteRef.current = false;
-        setHasRemote(false);
-        stopCallTimer();
-        setState('ended');
-      })
-      .on(RoomEvent.Reconnecting, () => setState('reconnecting'))
-      .on(RoomEvent.Reconnected, () => setState(prev => (prev === 'reconnecting' ? (hasRemoteRef.current ? 'in-call' : 'waiting') : prev)))
-      .on(RoomEvent.Disconnected, () => {
-        if (!closingRef.current && !cancelled) {
-          stopCallTimer();
-          setState(prev => (prev === 'error' ? prev : 'ended'));
-        }
-      })
-      .on(RoomEvent.DataReceived, (payload: Uint8Array, _p?: RemoteParticipant, _k?: unknown, topic?: string) => {
-        if (topic !== CHAT_TOPIC) return;
-        try {
-          const wire = JSON.parse(decoder.decode(payload)) as ChatWire;
-          addItem(wire);
-        } catch { /* ignore malformed data */ }
-      });
-
-    async function connect() {
-      try {
-        // 1. Mint a LiveKit access token from the API (auth-gated by turno + join window).
-        const { token, url } = await api.turnos.getVideoToken(turnoId);
-        if (cancelled) return;
-
-        // 2. Join the SFU room.
-        await room.connect(url, token);
-        if (cancelled) { room.disconnect(); return; }
-        setMyUserId(room.localParticipant.identity);
-        // Stay in "waiting" until a remote video track subscribes (→ in-call).
-        setState('waiting');
-
-        // 3. Publish camera + mic (degrade gracefully if a device is unavailable).
-        try {
-          const pub = await room.localParticipant.setCameraEnabled(true);
-          attachLocalVideo(pub);
-          setCameraOn(true);
-        } catch { setCameraOn(false); }
-        try {
-          await room.localParticipant.setMicrophoneEnabled(true);
-          setMicOn(true);
-        } catch { setMicOn(false); }
-
-        // 4. Preload the conversation so far (text + files), aligned once we know our id.
-        void loadHistory(room.localParticipant.identity);
-      } catch (err) {
-        if (!cancelled) {
-          setErrorMsg(err instanceof Error ? err.message : vc.startError);
-          setState('error');
-        }
-      }
+    // Cancel a teardown scheduled by a StrictMode fake-unmount; keep the room.
+    if (disconnectTimerRef.current) {
+      clearTimeout(disconnectTimerRef.current);
+      disconnectTimerRef.current = null;
     }
 
-    connect();
+    if (!roomRef.current) {
+      closingRef.current = false;
+      const room = new Room({ adaptiveStream: true, dynacast: true });
+      roomRef.current = room;
+
+      // Show the call as soon as the other participant is present — even if they
+      // have no camera (audio-only) and never publish a video track.
+      const markInCall = () => {
+        setState(prev => (prev === 'ended' || prev === 'error' ? prev : 'in-call'));
+        startCallTimer();
+      };
+
+      room
+        .on(RoomEvent.ParticipantConnected, markInCall)
+        .on(RoomEvent.TrackSubscribed, (track: RemoteTrack) => {
+          if (track.kind === Track.Kind.Video && remoteVideoRef.current) {
+            track.attach(remoteVideoRef.current);
+            hasRemoteRef.current = true;
+            setHasRemote(true);
+          } else if (track.kind === Track.Kind.Audio && remoteAudioRef.current) {
+            track.attach(remoteAudioRef.current);
+          }
+          markInCall();
+        })
+        .on(RoomEvent.TrackUnsubscribed, (track: RemoteTrack) => {
+          track.detach();
+        })
+        .on(RoomEvent.ParticipantDisconnected, () => {
+          // The other party left → end the call.
+          hasRemoteRef.current = false;
+          setHasRemote(false);
+          stopCallTimer();
+          setState('ended');
+        })
+        .on(RoomEvent.Reconnecting, () => setState('reconnecting'))
+        .on(RoomEvent.Reconnected, () => setState(prev => (prev === 'reconnecting' ? (room.remoteParticipants.size > 0 ? 'in-call' : 'waiting') : prev)))
+        .on(RoomEvent.Disconnected, () => {
+          if (!closingRef.current && roomRef.current === room) {
+            stopCallTimer();
+            setState(prev => (prev === 'error' ? prev : 'ended'));
+          }
+        })
+        .on(RoomEvent.DataReceived, (payload: Uint8Array, _p?: RemoteParticipant, _k?: unknown, topic?: string) => {
+          if (topic !== CHAT_TOPIC) return;
+          try {
+            const wire = JSON.parse(decoder.decode(payload)) as ChatWire;
+            addItem(wire);
+            if (!chatOpenRef.current) setUnread(u => u + 1);
+          } catch { /* ignore malformed data */ }
+        });
+
+      connectPromiseRef.current = (async () => {
+        try {
+          // Auth-gated by turno + join window.
+          const { token, url } = await api.turnos.getVideoToken(turnoId);
+          if (roomRef.current !== room) return;
+
+          // The LiveKit signal connection can fail transiently (slow network /
+          // cold edge); retry a few times before surfacing an error.
+          let lastErr: unknown;
+          for (let attempt = 0; attempt < 3; attempt++) {
+            if (roomRef.current !== room || closingRef.current) return;
+            try {
+              await room.connect(url, token);
+              lastErr = undefined;
+              break;
+            } catch (e) {
+              lastErr = e;
+              if (attempt < 2) await new Promise(r => setTimeout(r, 1000));
+            }
+          }
+          if (lastErr) throw lastErr;
+          if (roomRef.current !== room || closingRef.current) return; // torn down / closed while connecting
+          setMyUserId(room.localParticipant.identity);
+          // Someone may already be in the room (joined before us) → go straight to in-call.
+          if (room.remoteParticipants.size > 0) markInCall();
+          else setState('waiting');
+
+          // Publish camera + mic (degrade gracefully if a device is unavailable).
+          try {
+            const pub = await room.localParticipant.setCameraEnabled(true);
+            attachLocalVideo(pub);
+            setCameraOn(true);
+          } catch { setCameraOn(false); }
+          try {
+            await room.localParticipant.setMicrophoneEnabled(true);
+            setMicOn(true);
+          } catch { setMicOn(false); }
+
+          void loadHistory(room.localParticipant.identity);
+        } catch (err) {
+          if (roomRef.current === room && !closingRef.current) {
+            setErrorMsg(err instanceof Error ? err.message : vc.startError);
+            setState('error');
+          }
+        }
+      })();
+    }
 
     return () => {
-      cancelled = true;
-      closingRef.current = true;
-      stopCallTimer();
-      room.disconnect();
-      roomRef.current = null;
+      // Defer one tick: StrictMode's immediate re-setup cancels this; a real
+      // unmount lets it run and disconnects only after connect settles.
+      disconnectTimerRef.current = setTimeout(() => {
+        closingRef.current = true;
+        stopCallTimer();
+        const room = roomRef.current;
+        roomRef.current = null;
+        connectPromiseRef.current?.finally(() => room?.disconnect());
+        connectPromiseRef.current = null;
+      }, 0);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [turnoId]);
@@ -220,6 +259,17 @@ export default function VideoCallModal({ turnoId, participantName, participantRo
     if (chatOpen) chatBottomRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [items, chatOpen]);
 
+  // Mirror chatOpen into a ref for the (stable) data-channel handler.
+  useEffect(() => { chatOpenRef.current = chatOpen; }, [chatOpen]);
+
+  const toggleChat = useCallback(() => {
+    setChatOpen(o => {
+      const next = !o;
+      if (next) setUnread(0); // clear the unread badge when opening
+      return next;
+    });
+  }, []);
+
   // ── Controls ───────────────────────────────────────────────────────────────
   const toggleMic = useCallback(async () => {
     const room = roomRef.current;
@@ -242,8 +292,12 @@ export default function VideoCallModal({ turnoId, participantName, participantRo
   const hangUp = useCallback(() => {
     closingRef.current = true;
     stopCallTimer();
-    roomRef.current?.disconnect();
     setState('ended');
+    // Disconnect only after any in-flight connect settles, so closing never
+    // aborts a still-connecting room ("could not establish signal connection").
+    const room = roomRef.current;
+    if (connectPromiseRef.current) connectPromiseRef.current.finally(() => room?.disconnect());
+    else room?.disconnect();
   }, [stopCallTimer]);
 
   // ── Chat ─────────────────────────────────────────────────────────────────
@@ -338,26 +392,15 @@ export default function VideoCallModal({ turnoId, participantName, participantRo
           )}
           <span className="text-slate-500 text-xs hidden sm:inline shrink-0">{fecha}</span>
         </div>
-        <div className="flex items-center gap-1 shrink-0">
-          {state !== 'ended' && state !== 'error' && (
-            <button
-              onClick={() => setChatOpen(o => !o)}
-              title={vc.chatTitle}
-              className={`relative p-1.5 rounded-lg transition-colors ${chatOpen ? 'bg-slate-700 text-white' : 'text-slate-400 hover:text-white hover:bg-slate-700'}`}
-            >
-              <ChatIcon size={20} />
-            </button>
-          )}
-          <button
-            onClick={state === 'ended' || state === 'error' ? onClose : hangUp}
-            className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-700 transition-colors"
-            title={vc.close}
-          >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        <button
+          onClick={state === 'ended' || state === 'error' ? onClose : hangUp}
+          className="shrink-0 text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-700 transition-colors"
+          title={vc.close}
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
       </div>
 
       {/* -- Body: video + chat panel -- */}
@@ -389,6 +432,17 @@ export default function VideoCallModal({ turnoId, participantName, participantRo
               {(state === 'connecting' || state === 'reconnecting') && (
                 <Spinner size={20} className="text-slate-400" />
               )}
+            </div>
+          )}
+
+          {/* Connected, but the other participant has their camera off / no video yet. */}
+          {!hasRemote && state === 'in-call' && (
+            <div className="absolute inset-0 flex flex-col items-center justify-center gap-3">
+              <div className="w-24 h-24 rounded-full bg-slate-700 flex items-center justify-center text-3xl font-semibold text-slate-200">
+                {participantName.charAt(0).toUpperCase()}
+              </div>
+              <p className="text-slate-200 font-medium">{participantRoleLabel} {participantName}</p>
+              <p className="text-slate-400 text-sm">{vc.remoteCameraOff}</p>
             </div>
           )}
 
@@ -579,6 +633,22 @@ export default function VideoCallModal({ turnoId, participantName, participantRo
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 10.5l4.72-4.72a.75.75 0 011.28.531v11.378a.75.75 0 01-1.28.531l-4.72-4.72M12 18.75H4.5a2.25 2.25 0 01-2.25-2.25v-9a2.25 2.25 0 012.25-2.25h9M3 3l18 18" />
               </svg>
+            )}
+          </button>
+
+          {/* Chat toggle — bottom controls, to the right of the camera button */}
+          <button
+            onClick={toggleChat}
+            title={vc.chatTitle}
+            className={`relative w-14 h-14 rounded-full flex items-center justify-center transition-all ${
+              chatOpen ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-slate-700 hover:bg-slate-600 text-white'
+            }`}
+          >
+            <ChatIcon size={24} />
+            {!chatOpen && unread > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 min-w-[20px] h-5 px-1 rounded-full bg-red-500 text-white text-[11px] font-bold flex items-center justify-center ring-2 ring-slate-800">
+                {unread > 9 ? '9+' : unread}
+              </span>
             )}
           </button>
         </div>

@@ -2279,6 +2279,7 @@ const translations = {
       chatEmpty: 'Todavía no hay mensajes',
       attachFile: 'Adjuntar archivo',
       fileError: 'No se pudo enviar el archivo. Formatos: imágenes o PDF (máx. 10 MB).',
+      remoteCameraOff: 'Cámara apagada',
     },
   },
 
@@ -4414,6 +4415,7 @@ waitlistDesc: "We'll notify you when a slot becomes available",
       chatEmpty: 'No messages yet',
       attachFile: 'Attach file',
       fileError: 'Could not send the file. Allowed: images or PDF (max 10 MB).',
+      remoteCameraOff: 'Camera off',
     },
   },
 } as const;

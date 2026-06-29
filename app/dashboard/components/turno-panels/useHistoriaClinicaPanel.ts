@@ -34,7 +34,10 @@ export function useHistoriaClinicaPanel(pacienteId: string | undefined) {
         notasClinicasGenerales: data.paciente.notasClinicasGenerales ?? '',
       });
     } catch (err) {
-      console.error(err);
+      // A 403 is expected: without a CONFIRMADO/COMPLETADO consult with this patient
+      // the professional can't see the clinical history yet — show an empty state
+      // quietly instead of surfacing it as an error.
+      if ((err as { status?: number })?.status !== 403) console.error(err);
       setHistoria(null);
       setForm({});
     } finally {
