@@ -7,11 +7,12 @@ import { Translations } from '../../../lib/i18n/translations';
 import { useLang } from '../../../lib/i18n/context';
 import { formatClinicInstantDate, formatClinicInstantTime, getLocale } from '../../../lib/date';
 import {
-  VideoIcon, BuildingIcon, MapPinIcon, CreditCardIcon, RefreshIcon, XIcon, ChatIcon, ClipboardIcon,
+  VideoIcon, BuildingIcon, MapPinIcon, CreditCardIcon, RefreshIcon, XIcon, ChatIcon, ClipboardIcon, PaperclipIcon,
 } from '../../../components/icons';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import AgendarCalendario from '../../../components/AgendarCalendario';
+import ArchivosPanel from '../../components/turno-panels/ArchivosPanel';
 
 interface TurnoCardProps {
   turno: Turno;
@@ -42,6 +43,7 @@ export default function TurnoCard({
   const isFuture = new Date(turno.fechaHora) >= new Date();
   const preconsultaCompletada = Boolean(turno.preconsultaCompletadaAt);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [showArchivos, setShowArchivos] = useState(false);
 
   useEffect(() => {
     if (!isActive) return;
@@ -217,6 +219,40 @@ export default function TurnoCard({
                 lugarAtencion: turno.lugarAtencion ?? turno.profesional.lugarAtencion,
               }}
             />
+          </div>
+        )}
+
+        {/* Chat + archivos access for past / cancelled turnos (the action row above is
+            upcoming-only). Lets the patient still read the conversation — including the
+            in-call chat — and review the attached files after the turno is completed or
+            cancelled. */}
+        {!(isActive && isFuture) && (
+          <div className="mt-3 border-t pt-3">
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => { onChat(); setUnreadCount(0); }}
+                className="relative text-primary hover:bg-primary/10"
+              >
+                <ChatIcon size={13} />
+                {p.chatLabel}
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setShowArchivos(v => !v)}
+                className="text-primary hover:bg-primary/10"
+              >
+                <PaperclipIcon size={13} />
+                {d.files}
+              </Button>
+            </div>
+            {showArchivos && (
+              <div className="mt-3">
+                <ArchivosPanel turnoId={turno.id} readOnly />
+              </div>
+            )}
           </div>
         )}
       </div>

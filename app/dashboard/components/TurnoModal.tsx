@@ -132,8 +132,11 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
             </div>
           </div>
 
-          {/* Chat pre-turno */}
-          {turno.estado !== 'CANCELADO' && turno.paciente && (
+          {/* Chat con el paciente — disponible en cualquier estado, incluido CANCELADO,
+              para poder revisar lo conversado (p. ej. en la videollamada) aunque el turno
+              después se cancele por falta de pago. La API permite leer el historial y sólo
+              bloquea el envío de mensajes nuevos en turnos cancelados. */}
+          {turno.paciente && (
             <button
               onClick={() => { setShowChat(true); setUnreadChat(0); }}
               className="w-full flex items-center justify-center gap-2 py-2.5 border border-primary/20 bg-primary/10 hover:bg-primary/20 text-primary rounded-xl text-sm font-medium transition-colors relative"
@@ -224,6 +227,7 @@ function TurnoModal({ turno, onClose, onUpdate, translateSpecialty }: { turno: T
     {showChat && authUser && turno.paciente && (
       <ChatModal
         turnoId={turno.id}
+        readOnly={turno.estado !== 'RESERVADO' && turno.estado !== 'CONFIRMADO'}
         myUserId={authUser.id}
         otherName={`${turno.paciente.nombre} ${turno.paciente.apellido}`}
         onClose={() => setShowChat(false)}

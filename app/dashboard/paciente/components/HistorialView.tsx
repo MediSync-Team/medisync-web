@@ -17,12 +17,13 @@ interface HistorialViewProps {
   onPageChange: (page: number) => void;
   onDownloadPDF: () => void;
   onCalificar: (turno: HistorialTurno) => void;
+  onChat?: (turno: HistorialTurno) => void;
   translateSpecialty: (name?: string) => string;
 }
 
 /** Clinical history tab body (extracted from the paciente dashboard page). */
 export default function HistorialView({
-  historial, loading, page, totalPages, total, limit, onPageChange, onDownloadPDF, onCalificar, translateSpecialty,
+  historial, loading, page, totalPages, total, limit, onPageChange, onDownloadPDF, onCalificar, onChat, translateSpecialty,
 }: HistorialViewProps) {
   const { t } = useLang();
   const d = t('dashboard');
@@ -53,7 +54,7 @@ export default function HistorialView({
       </div>
       <div className="space-y-4">
         {historial.map((item) => (
-          <HistorialCard key={item.id} item={item} onCalificar={onCalificar} d={d} m={m} s={s} translateSpecialty={translateSpecialty} />
+          <HistorialCard key={item.id} item={item} onCalificar={onCalificar} onChat={onChat} d={d} m={m} s={s} translateSpecialty={translateSpecialty} />
         ))}
       </div>
       <Pagination

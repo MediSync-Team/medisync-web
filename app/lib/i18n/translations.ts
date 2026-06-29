@@ -234,6 +234,7 @@ const translations = {
       sendError: 'No se pudo enviar el mensaje',
       professionalFallback: 'Profesional',
       patientFallback: 'Paciente',
+      readOnly: 'Este turno está cerrado. El chat es de solo lectura.',
     },
     widget: {
       steps: {
@@ -2371,6 +2372,7 @@ const translations = {
       sendError: 'Could not send the message',
       professionalFallback: 'Professional',
       patientFallback: 'Patient',
+      readOnly: 'This appointment is closed. The chat is read-only.',
     },
     widget: {
       steps: {
