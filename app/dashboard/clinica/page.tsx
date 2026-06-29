@@ -27,11 +27,11 @@ import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
 
 // -- helpers ------------------------------------------------------------------
 const ESTADO_COLORS: Record<string, string> = {
-  RESERVADO:   'bg-blue-100 text-blue-700',
-  CONFIRMADO:  'bg-emerald-100 text-emerald-700',
-  COMPLETADO:  'bg-slate-100 text-slate-600',
-  CANCELADO:   'bg-red-100 text-red-600',
-  AUSENTE:     'bg-amber-100 text-amber-700',
+  RESERVADO:   'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+  CONFIRMADO:  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+  COMPLETADO:  'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+  CANCELADO:   'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300',
+  AUSENTE:     'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
 };
 function interpolate(template: string, values: Record<string, string | number>) {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => String(values[key] ?? ''));
@@ -40,10 +40,10 @@ function interpolate(template: string, values: Record<string, string | number>) 
 // -- sub-components -----------------------------------------------------------
 function StatCard({ label, value, sub, color }: { label: string; value: string | number; sub?: string; color?: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 p-5">
-      <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">{label}</p>
+    <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-5">
+      <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">{label}</p>
       <p className={`text-3xl font-bold mt-1 ${color ?? 'text-slate-800 dark:text-slate-200'}`}>{value}</p>
-      {sub && <p className="text-xs text-slate-400 mt-0.5">{sub}</p>}
+      {sub && <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">{sub}</p>}
     </div>
   );
 }
@@ -51,7 +51,7 @@ function StatCard({ label, value, sub, color }: { label: string; value: string |
 function Avatar({ p }: { p: Pick<Profesional, 'nombre' | 'apellido' | 'fotoUrl'> }) {
   const initials = `${p.nombre[0]}${p.apellido[0]}`.toUpperCase();
   return (
-    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center text-xs font-bold text-blue-700 shrink-0 overflow-hidden">
+    <div className="w-9 h-9 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-xs font-bold text-blue-700 dark:text-blue-300 shrink-0 overflow-hidden">
       {p.fotoUrl ? <img src={p.fotoUrl} alt="" className="w-full h-full object-cover" /> : initials}
     </div>
   );
@@ -197,7 +197,7 @@ export default function ClinicaDashboard() {
 
   if (authLoading || loadingMain) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full" />
       </div>
     );
@@ -212,9 +212,9 @@ export default function ClinicaDashboard() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
+      <header className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
@@ -225,7 +225,7 @@ export default function ClinicaDashboard() {
             </div>
             <div>
               <p className="font-bold text-slate-800 dark:text-slate-200 text-sm leading-tight">{clinica?.nombre ?? c.defaultName}</p>
-              <p className="text-xs text-slate-500">{c.panelSubtitle}</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">{c.panelSubtitle}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
@@ -250,8 +250,8 @@ export default function ClinicaDashboard() {
               onClick={() => setTab(t.key)}
               className={`px-4 py-2.5 text-sm font-medium whitespace-nowrap border-b-2 transition-colors ${
                 tab === t.key
-                  ? 'border-blue-600 text-blue-600'
-                  : 'border-transparent text-slate-500 hover:text-slate-700'
+                  ? 'border-blue-600 text-blue-600 dark:border-blue-400 dark:text-blue-400'
+                  : 'border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'
               }`}
             >
               {t.label}
@@ -262,7 +262,7 @@ export default function ClinicaDashboard() {
 
       <main className="max-w-6xl mx-auto px-4 py-6">
         {pageError && (
-          <div className="mb-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mb-4 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-300">
             {pageError}
           </div>
         )}
@@ -271,18 +271,18 @@ export default function ClinicaDashboard() {
         {tab === 'overview' && stats && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <StatCard label={c.stats.todayAppointments} value={stats.turnosHoy} color="text-blue-600" />
-              <StatCard label={c.stats.monthAppointments} value={stats.turnosMes} color="text-emerald-600" />
-              <StatCard label={c.stats.monthRevenue} value={`$${stats.ingresosMes.toLocaleString(locale)}`} color="text-emerald-600" sub={c.stats.net} />
+              <StatCard label={c.stats.todayAppointments} value={stats.turnosHoy} color="text-blue-600 dark:text-blue-400" />
+              <StatCard label={c.stats.monthAppointments} value={stats.turnosMes} color="text-emerald-600 dark:text-emerald-400" />
+              <StatCard label={c.stats.monthRevenue} value={`$${stats.ingresosMes.toLocaleString(locale)}`} color="text-emerald-600 dark:text-emerald-400" sub={c.stats.net} />
               <StatCard label={c.stats.professionals} value={stats.profesionalesActivos} sub={cancellationsLabel(stats.cancelacionesMes)} />
             </div>
 
             {/* Quick professional cards */}
             <div>
-              <h2 className="text-sm font-semibold text-slate-700 mb-3">{c.team.title}</h2>
+              <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">{c.team.title}</h2>
               {!clinica?.profesionales.length ? (
-                <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-8 text-center">
-                  <p className="text-slate-500 text-sm mb-3">{c.team.empty}</p>
+                <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-8 text-center">
+                  <p className="text-slate-500 dark:text-slate-400 text-sm mb-3">{c.team.empty}</p>
                   <button onClick={() => setShowInvite(true)} className="btn btn-primary btn-sm">
                     {c.inviteFirst}
                   </button>
@@ -290,16 +290,16 @@ export default function ClinicaDashboard() {
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {clinica.profesionales.map(p => (
-                    <div key={p.id} className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
+                    <div key={p.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 flex items-center gap-3">
                       <Avatar p={p} />
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{p.nombre} {p.apellido}</p>
-                        <p className="text-xs text-blue-600 truncate">{translateSpecialty(p.especialidad?.nombre)}</p>
-                        <p className="text-xs text-slate-400">
+                        <p className="text-xs text-blue-600 dark:text-blue-400 truncate">{translateSpecialty(p.especialidad?.nombre)}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500">
                           {(p.disponibilidades ?? []).length} {(p.disponibilidades ?? []).length === 1 ? c.team.scheduleBlock : c.team.scheduleBlocks}{c.team.scheduleBlocksSuffix ? ` ${c.team.scheduleBlocksSuffix}` : ''}
                         </p>
                       </div>
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${p.activo ? 'bg-emerald-400' : 'bg-slate-300'}`} title={p.activo ? c.team.active : c.team.inactive} />
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${p.activo ? 'bg-emerald-400' : 'bg-slate-300 dark:bg-slate-600'}`} title={p.activo ? c.team.active : c.team.inactive} />
                     </div>
                   ))}
                 </div>
@@ -319,11 +319,11 @@ export default function ClinicaDashboard() {
             </div>
 
             {!clinica?.profesionales.length ? (
-              <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center">
-                <p className="text-slate-500">{c.team.inviteProfessionalsEmpty}</p>
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center">
+                <p className="text-slate-500 dark:text-slate-400">{c.team.inviteProfessionalsEmpty}</p>
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
                 {clinica.profesionales.map(p => {
                   const dias = [...new Set((p.disponibilidades ?? []).map(d => d.diaSemana))].sort();
                   return (
@@ -332,24 +332,24 @@ export default function ClinicaDashboard() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">{p.nombre} {p.apellido}</p>
-                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${p.activo ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${p.activo ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300'}`}>
                             {p.activo ? c.team.active : c.team.inactive}
                           </span>
                         </div>
-                        <p className="text-xs text-blue-600">{translateSpecialty(p.especialidad?.nombre)}</p>
-                        <p className="text-xs text-slate-400 mt-0.5">
+                        <p className="text-xs text-blue-600 dark:text-blue-400">{translateSpecialty(p.especialidad?.nombre)}</p>
+                        <p className="text-xs text-slate-400 dark:text-slate-500 mt-0.5">
                           {dias.length ? dias.map(d => dayLabel(d)).join(' · ') : c.team.noAvailability}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
                         {Number(p.precioConsulta) > 0 && (
-                          <span className="text-xs font-medium text-slate-600">
+                          <span className="text-xs font-medium text-slate-600 dark:text-slate-300">
                             ${Number(p.precioConsulta).toLocaleString(locale)}
                           </span>
                         )}
                         <button
                           onClick={() => setRemoveTarget(p as Profesional)}
-                          className="text-xs text-red-500 hover:text-red-700 hover:bg-red-50 px-2 py-1 rounded-lg transition-colors"
+                          className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-900/20 px-2 py-1 rounded-lg transition-colors"
                         >
                           {c.team.unlink}
                         </button>
@@ -372,7 +372,7 @@ export default function ClinicaDashboard() {
                   onClick={() => setAgendaDateKey(prev => addDaysToClinicDateKey(prev, -1))}
                   className="btn btn-secondary btn-sm"
                 >←</button>
-                <span className="text-sm font-medium text-slate-700 min-w-[140px] text-center">
+                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 min-w-[140px] text-center">
                   {formatClinicDateKeyForDisplay(agendaDateKey, locale, { weekday: 'long', day: 'numeric', month: 'long' })}
                 </span>
                 <button
@@ -384,32 +384,32 @@ export default function ClinicaDashboard() {
             </div>
 
             {agenda.length === 0 ? (
-              <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-400 text-sm">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-10 text-center text-slate-400 dark:text-slate-500 text-sm">
                 {c.agenda.noAppointments}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
                 {agenda.map(t => {
                   return (
                     <div key={t.id} className="flex items-center gap-4 px-5 py-3">
                       <div className="w-14 shrink-0 text-center">
                         <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{formatClinicInstantTime(t.fechaHora, locale)}</p>
                       </div>
-                      <div className="w-px h-8 bg-slate-200 shrink-0" />
+                      <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 shrink-0" />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
                           {t.paciente ? `${t.paciente.nombre} ${t.paciente.apellido}` : c.agenda.noPatient}
                         </p>
-                        <p className="text-xs text-slate-500">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
                           {c.agenda.withProfessional} {t.profesional.nombre} {t.profesional.apellido} · {translateSpecialty(t.profesional.especialidad?.nombre)}
                         </p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${ESTADO_COLORS[t.estado] ?? 'bg-slate-100 text-slate-600'}`}>
+                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${ESTADO_COLORS[t.estado] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>
                           {estadoLabel(t.estado, status)}
                         </span>
-                        <span title={modality[t.modalidad as keyof typeof modality] ?? t.modalidad} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${t.modalidad === 'VIRTUAL' ? 'text-purple-600 border-purple-200 bg-purple-50' : 'text-slate-500 border-slate-200 bg-slate-50'}`}>
-                          {t.modalidad === 'VIRTUAL' ? <VideoIcon size={12} className="text-blue-600" /> : <BuildingIcon size={12} className="text-slate-500" />}
+                        <span title={modality[t.modalidad as keyof typeof modality] ?? t.modalidad} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${t.modalidad === 'VIRTUAL' ? 'text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/30' : 'text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700'}`}>
+                          {t.modalidad === 'VIRTUAL' ? <VideoIcon size={12} className="text-blue-600 dark:text-blue-300" /> : <BuildingIcon size={12} className="text-slate-500 dark:text-slate-300" />}
                         </span>
                       </div>
                     </div>
@@ -431,11 +431,11 @@ export default function ClinicaDashboard() {
             </div>
 
             {!clinica?.invitaciones.length ? (
-              <div className="bg-white rounded-2xl border border-dashed border-slate-300 p-10 text-center text-slate-400 text-sm">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 p-10 text-center text-slate-400 dark:text-slate-500 text-sm">
                 {c.invitations.empty}
               </div>
             ) : (
-              <div className="bg-white rounded-2xl border border-slate-200 divide-y divide-slate-100">
+              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
                 {clinica.invitaciones.map(inv => (
                   <InvitacionRow key={inv.id} inv={inv} onCancel={() => handleCancelInvitacion(inv.id)} locale={locale} labels={c.invitations} />
                 ))}
@@ -448,7 +448,7 @@ export default function ClinicaDashboard() {
         {tab === 'configuracion' && (
           <div className="max-w-lg space-y-5">
             <h2 className="font-semibold text-slate-800 dark:text-slate-200">{c.config.title}</h2>
-            <div className="bg-white rounded-2xl border border-slate-200 p-6 space-y-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 space-y-4">
               <Field label={c.config.name} value={cfgNombre} onChange={setCfgNombre} />
               <Field label={c.config.description} value={cfgDesc} onChange={setCfgDesc} multiline />
               <Field label={c.config.address} value={cfgDir} onChange={setCfgDir} placeholder={c.config.addressPlaceholder} />
@@ -459,7 +459,7 @@ export default function ClinicaDashboard() {
                   {cfgSaving ? c.config.saving : c.config.saveChanges}
                 </button>
                 {cfgFeedback && (
-                  <p className={`text-xs ${cfgFeedback.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                  <p className={`text-xs ${cfgFeedback.type === 'success' ? 'text-emerald-600 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'}`}>
                     {cfgFeedback.text}
                   </p>
                 )}
@@ -472,23 +472,23 @@ export default function ClinicaDashboard() {
       {/* -- Invite modal -- */}
       {showInvite && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-md w-full p-6 space-y-4 border border-transparent dark:border-slate-700">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-slate-800 dark:text-slate-200">{c.inviteModal.title}</h3>
-              <button onClick={() => { setShowInvite(false); setInviteEmail(''); setInviteError(''); setInviteOk(''); }} className="text-slate-400 hover:text-slate-600">
+              <button onClick={() => { setShowInvite(false); setInviteEmail(''); setInviteError(''); setInviteOk(''); }} className="text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
             </div>
 
-            <p className="text-sm text-slate-600">
+            <p className="text-sm text-slate-600 dark:text-slate-300">
               {c.inviteModal.description}
             </p>
 
-            {inviteError && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{inviteError}</p>}
-             {inviteOk    && <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2 inline-flex items-center gap-1.5"><CheckIcon size={12} /> {inviteOk}</p>}
+            {inviteError && <p className="text-sm text-red-600 dark:text-red-300 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2">{inviteError}</p>}
+             {inviteOk    && <p className="text-sm text-emerald-600 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2 inline-flex items-center gap-1.5"><CheckIcon size={12} /> {inviteOk}</p>}
 
             <div>
-              <label className="text-xs font-semibold text-slate-600 mb-1 block">{c.inviteModal.emailLabel}</label>
+              <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 block">{c.inviteModal.emailLabel}</label>
               <input
                 type="email"
                 value={inviteEmail}
@@ -518,13 +518,13 @@ export default function ClinicaDashboard() {
       {/* -- Remove confirmation -- */}
       {removeTarget && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4 text-center">
-            <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl max-w-sm w-full p-6 space-y-4 text-center border border-transparent dark:border-slate-700">
+            <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mx-auto">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/><path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
             </div>
             <div>
               <p className="font-semibold text-slate-800 dark:text-slate-200">{c.removeModal.title}</p>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 {interpolate(c.removeModal.description, { name: `${removeTarget.nombre} ${removeTarget.apellido}` })}
               </p>
             </div>
@@ -564,16 +564,16 @@ function InvitacionRow({
   const expiry  = new Date(inv.expiresAt);
   const expired = expiry < new Date();
   const ESTADO_STYLE: Record<string, string> = {
-    PENDIENTE: 'bg-amber-100 text-amber-700',
-    ACEPTADA:  'bg-emerald-100 text-emerald-700',
-    RECHAZADA: 'bg-red-100 text-red-600',
-    EXPIRADA:  'bg-slate-100 text-slate-500',
+    PENDIENTE: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    ACEPTADA:  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
+    RECHAZADA: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300',
+    EXPIRADA:  'bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-300',
   };
   return (
     <div className="flex items-center gap-4 px-5 py-3">
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">{inv.email}</p>
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-slate-400 dark:text-slate-500">
           {expired ? labels.expired : labels.expires} {labels.on} {expiry.toLocaleDateString(locale)}
         </p>
       </div>
@@ -581,7 +581,7 @@ function InvitacionRow({
         {invitacionEstadoLabel(inv.estado, { invitations: { status: labels.states } })}
       </span>
       {inv.estado === 'PENDIENTE' && !expired && (
-        <button onClick={onCancel} className="text-xs text-red-500 hover:text-red-700">{labels.cancel}</button>
+        <button onClick={onCancel} className="text-xs text-red-500 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300">{labels.cancel}</button>
       )}
     </div>
   );
@@ -592,7 +592,7 @@ function Field({
 }: { label: string; value: string; onChange: (v: string) => void; placeholder?: string; multiline?: boolean }) {
   return (
     <div>
-      <label className="text-xs font-semibold text-slate-600 mb-1 block">{label}</label>
+      <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 mb-1 block">{label}</label>
       {multiline
         ? <textarea value={value} onChange={e => onChange(e.target.value)} rows={3} className="field-input resize-none" placeholder={placeholder} />
         : <input value={value} onChange={e => onChange(e.target.value)} className="field-input" placeholder={placeholder} />
