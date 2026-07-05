@@ -2,6 +2,7 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import ResenasView from '../../app/dashboard/components/ResenasView';
 import { api } from '../../app/lib/api';
+import { clearApiCache } from '../../app/lib/api/cache';
 import translations from '../../app/lib/i18n/translations';
 
 vi.mock('../../app/lib/i18n/context', () => ({
@@ -158,6 +159,7 @@ describe('ResenasView i18n', () => {
     expect(screen.getByText('When a patient rates a completed appointment, it will appear here.')).toBeInTheDocument();
 
     cleanup();
+    clearApiCache();
     render(<ResenasView />);
 
     expect(await screen.findByText('2 reviews')).toBeInTheDocument();

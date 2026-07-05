@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Cupon, SuscripcionEstado } from '../lib/api';
+import { cachedFetch, cacheKeys, TTL } from '../lib/api/cache';
 import { Notice } from '../lib/ui-notice';
 import { clinicDateKeyFromInstant, formatClinicDateKey, formatClinicInstantTime, getClinicMonthFetchBounds, getLocale, todayInputValue } from '../lib/date';
 import StatsPanel from '../components/StatsPanel';
@@ -139,11 +140,15 @@ export default function ProfesionalDashboard() {
     const initialEnd = getClinicMonthFetchBounds(clinicYear, clinicMonth);
     try {
       const [turnosData, dispData] = await Promise.all([
-        api.turnos.getByProfesional(user.profesional.id, {
-          desde: initialStart.desde,
-          hasta: initialEnd.hasta,
-          limit: '200',
-        }),
+        cachedFetch(
+          cacheKeys.turnosProf(user.profesional.id, initialStart.desde, initialEnd.hasta),
+          () => api.turnos.getByProfesional(user.profesional!.id, {
+            desde: initialStart.desde,
+            hasta: initialEnd.hasta,
+            limit: '200',
+          }),
+          TTL.short
+        ),
         api.profesionales.getById(user.profesional.id),
       ]);
       setTurnos(turnosData.turnos);
@@ -167,7 +172,11 @@ export default function ProfesionalDashboard() {
     loadedMonths.current.add(key);
     try {
       const { desde, hasta } = getClinicMonthFetchBounds(year, month);
-      const data = await api.turnos.getByProfesional(user.profesional.id, { desde, hasta, limit: '200' });
+      const data = await cachedFetch(
+        cacheKeys.turnosProf(user.profesional.id, desde, hasta),
+        () => api.turnos.getByProfesional(user.profesional!.id, { desde, hasta, limit: '200' }),
+        TTL.short
+      );
       setTurnos(prev => {
         const ids = new Set(prev.map(t => t.id));
         const fresh = data.turnos.filter(t => !ids.has(t.id));
@@ -180,15 +189,15 @@ export default function ProfesionalDashboard() {
 
   const loadRecordatorios = async () => {
     try {
-      const data = await api.recordatorios.getProfesional();
+      const data = await cachedFetch(cacheKeys.recordatoriosProfesional, () => api.recordatorios.getProfesional(), TTL.short);
       setRecordatorios(data.turnos || []);
     } catch (err) { console.error(err); }
   };
 
   const loadStats = async () => {
-    setLoadingStats(true);
+    if (!stats) setLoadingStats(true);
     try {
-      const data = await api.profesional.getStats();
+      const data = await cachedFetch(cacheKeys.statsProfesional, () => api.profesional.getStats(), TTL.short);
       setStats(data);
     } catch (err) { console.error(err); }
     finally { setLoadingStats(false); }
@@ -198,8 +207,8 @@ export default function ProfesionalDashboard() {
   const loadInicioData = async () => {
     try {
       const [statsData, resenasData] = await Promise.all([
-        api.profesional.getStats().catch(() => null),
-        api.resenas.getMisResenas({ page: 1, limit: 5 }).catch(() => null),
+        cachedFetch(cacheKeys.statsProfesional, () => api.profesional.getStats(), TTL.short).catch(() => null),
+        cachedFetch(cacheKeys.misResenas(1, 5), () => api.resenas.getMisResenas({ page: 1, limit: 5 }), TTL.short).catch(() => null),
       ]);
       if (statsData) setStats(statsData);
       if (resenasData) {
@@ -210,9 +219,9 @@ export default function ProfesionalDashboard() {
   };
 
   const loadBloqueos = async () => {
-    setLoadingBloqueos(true);
+    if (bloqueos.length === 0) setLoadingBloqueos(true);
     try {
-      const data = await api.bloqueos.getMisBloqueos();
+      const data = await cachedFetch(cacheKeys.bloqueos, () => api.bloqueos.getMisBloqueos(), TTL.short);
       setBloqueos(data);
     } catch (err) { console.error(err); }
     finally { setLoadingBloqueos(false); }
@@ -273,9 +282,9 @@ export default function ProfesionalDashboard() {
   const saludo = horaActual < 12 ? i.greetingMorning : horaActual < 20 ? i.greetingAfternoon : i.greetingEvening;
 
   const loadCupones = async () => {
-    setLoadingCupones(true);
+    if (cupones.length === 0) setLoadingCupones(true);
     try {
-      const data = await api.cupones.listar();
+      const data = await cachedFetch(cacheKeys.cupones, () => api.cupones.listar(), TTL.medium);
       setCupones(data);
     } catch (err) {
       console.error(err);
@@ -334,9 +343,9 @@ export default function ProfesionalDashboard() {
   };
 
   const loadSuscripcion = async () => {
-    setLoadingSuscripcion(true);
+    if (!suscripcion) setLoadingSuscripcion(true);
     try {
-      const data = await api.suscripciones.estado();
+      const data = await cachedFetch(cacheKeys.suscripcionEstado, () => api.suscripciones.estado(), TTL.medium);
       setSuscripcion(data);
     } catch (err) {
       console.error(err);
@@ -420,7 +429,7 @@ export default function ProfesionalDashboard() {
         </div>
       )}
 
-      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <header className="sticky top-0 z-30 border-b bg-card">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
