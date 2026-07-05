@@ -102,6 +102,7 @@ export default function PagosView() {
     if (e === 'APROBADO') return 'badge badge-green';
     if (e === 'PENDIENTE') return 'badge badge-yellow';
     if (e === 'RECHAZADO') return 'badge badge-red';
+    if (e === 'REEMBOLSADO') return 'badge badge-blue';
     return 'badge badge-gray';
   };
 
@@ -196,6 +197,7 @@ export default function PagosView() {
             <option value="APROBADO">{estadoLabel('APROBADO')}</option>
             <option value="PENDIENTE">{estadoLabel('PENDIENTE')}</option>
             <option value="RECHAZADO">{estadoLabel('RECHAZADO')}</option>
+            <option value="REEMBOLSADO">{estadoLabel('REEMBOLSADO')}</option>
           </select>
         </div>
         <div className="flex gap-2 mt-4 sm:mt-0 flex-wrap">
