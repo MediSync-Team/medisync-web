@@ -317,7 +317,7 @@ export const api = {
   suscripciones: {
     estado: () => fetchApi<SuscripcionEstado>('/suscripciones/estado'),
     iniciar: () => fetchApi<{ initPoint: string }>('/suscripciones/iniciar', { method: 'POST' }),
-    cancelar: () => fetchApi<{ cancelada: boolean }>('/suscripciones/cancelar', { method: 'POST' }),
+    cancelar: () => fetchApi<{ cancelled: boolean; planVenceAt: string | null }>('/suscripciones/cancelar', { method: 'POST' }),
   },
   obrasSociales: {
     getAll: () => fetchApi<string[]>('/obras-sociales'),
@@ -394,6 +394,11 @@ export const api = {
     getStatus: () => fetchApi<{ connected: boolean }>('/google/status'),
     getAuthUrl: () => fetchApi<{ url: string }>('/google/auth-url'),
     disconnect: () => fetchApi<void>('/google/disconnect', { method: 'DELETE' }),
+  },
+  mercadopago: {
+    getStatus: () => fetchApi<{ connected: boolean; vendedorId: string | null }>('/mercadopago/oauth/status'),
+    getAuthUrl: () => fetchApi<{ url: string }>('/mercadopago/oauth/auth-url'),
+    disconnect: () => fetchApi<{ disconnected: boolean }>('/mercadopago/oauth/disconnect', { method: 'DELETE' }),
   },
   resenas: {
     getByProfesional: (profesionalId: string, params?: { page?: number; limit?: number }) => {

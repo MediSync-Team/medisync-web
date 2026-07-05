@@ -6,6 +6,7 @@ import { api, Profesional, Paciente, Genero, NotificationPreferences } from '../
 import { loadObrasSociales, getObrasSociales } from '../lib/obras-sociales';
 import { useLang } from '../lib/i18n/context';
 import GoogleCalendarConnect from './GoogleCalendarConnect';
+import MercadoPagoConnect from './MercadoPagoConnect';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -547,6 +548,11 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
                       <h3 className="text-lg font-semibold text-foreground">{p.integrations}</h3>
                     </header>
                     <GoogleCalendarConnect />
+                    {userType === 'profesional' && (
+                      <div className="border-t border-slate-200 dark:border-slate-700 pt-5">
+                        <MercadoPagoConnect />
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
