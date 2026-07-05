@@ -1,6 +1,6 @@
 ﻿'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../lib/auth-context';
 import { useLang } from '../../lib/i18n/context';
@@ -11,28 +11,22 @@ import {
   ClinicaAgendaTurno,
   InvitacionClinica,
   Profesional,
+  Turno,
 } from '../../lib/api';
-import { BuildingIcon, VideoIcon, CheckIcon } from '../../components/icons';
+import { CheckIcon } from '../../components/icons';
 import { Notice } from '../../lib/ui-notice';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
-import { estadoLabel, invitacionEstadoLabel } from '../../lib/utils';
+import { invitacionEstadoLabel } from '../../lib/utils';
 import {
-  addDaysToClinicDateKey,
-  formatClinicDateKeyForDisplay,
-  formatClinicInstantTime,
+  clinicDateKeyFromInstant,
+  getClinicMonthFetchBounds,
   getLocale,
   todayInputValue,
 } from '../../lib/date';
 import { useTranslateSpecialty } from '../../lib/i18n/use-translate-specialty';
+import CalendarioView from '../components/CalendarioView';
 
 // -- helpers ------------------------------------------------------------------
-const ESTADO_COLORS: Record<string, string> = {
-  RESERVADO:   'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
-  CONFIRMADO:  'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-  COMPLETADO:  'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
-  CANCELADO:   'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-300',
-  AUSENTE:     'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-};
 function interpolate(template: string, values: Record<string, string | number>) {
   return template.replace(/\{\{(\w+)\}\}/g, (_, key) => String(values[key] ?? ''));
 }
@@ -67,8 +61,6 @@ export default function ClinicaDashboard() {
   const { lang, t } = useLang();
   const d = t('dashboard');
   const c = t('clinica');
-  const status = t('status');
-  const modality = t('modality');
   const translateSpecialty = useTranslateSpecialty();
   const locale = getLocale(lang);
   const dayLabel = (day: number) => {
@@ -80,11 +72,17 @@ export default function ClinicaDashboard() {
   const cancellationsLabel = (count: number) =>
     interpolate(count === 1 ? c.stats.cancellationThisMonth : c.stats.cancellationsThisMonth, { count });
 
-  const [tab, setTab]               = useState<Tab>('overview');
-  const [clinica, setClinica]       = useState<ClinicaConRelaciones | null>(null);
-  const [stats, setStats]           = useState<ClinicaStats | null>(null);
-  const [agenda, setAgenda]         = useState<ClinicaAgendaTurno[]>([]);
+  const [tab, setTab]                 = useState<Tab>('overview');
+  const [clinica, setClinica]         = useState<ClinicaConRelaciones | null>(null);
+  const [stats, setStats]             = useState<ClinicaStats | null>(null);
+  const [agenda, setAgenda]           = useState<ClinicaAgendaTurno[]>([]);
   const [agendaDateKey, setAgendaDateKey] = useState(() => todayInputValue());
+  const [turnosDelDia, setTurnosDelDia] = useState<ClinicaAgendaTurno[]>([]);
+  const [agendaSearch, setAgendaSearch] = useState('');
+  const [agendaEstado, setAgendaEstado] = useState<'TODOS' | 'RESERVADO' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO' | 'AUSENTE'>('TODOS');
+  const [agendaModalidad, setAgendaModalidad] = useState<'TODAS' | 'PRESENCIAL' | 'VIRTUAL'>('TODAS');
+  const [agendaSoloRiesgo, setAgendaSoloRiesgo] = useState(false);
+  const loadedMonths = useRef<Set<string>>(new Set());
   const [loadingMain, setLoadingMain] = useState(true);
 
   // Invite modal
@@ -130,15 +128,43 @@ export default function ClinicaDashboard() {
     }
   }, []);
 
-  const loadAgenda = useCallback(async (dateKey: string) => {
+  const loadInitialAgenda = useCallback(async () => {
+    const today = todayInputValue();
+    const [clinicYear, clinicMonth] = today.split('-').map(Number);
+    const initialStart = getClinicMonthFetchBounds(clinicYear, clinicMonth - 2);
+    const initialEnd = getClinicMonthFetchBounds(clinicYear, clinicMonth);
     try {
-      const data = await clinicasApi.getAgenda(dateKey);
+      const data = await clinicasApi.getAgendaRange(initialStart.desde, initialEnd.hasta);
       setAgenda(data);
+      [-2, -1, 0].forEach(delta => {
+        const d = new Date(Date.UTC(clinicYear, clinicMonth - 1 + delta, 1, 12, 0, 0, 0));
+        loadedMonths.current.add(`${d.getUTCFullYear()}-${d.getUTCMonth()}`);
+      });
     } catch { setAgenda([]); }
   }, []);
 
-  useEffect(() => { if (user?.rol === 'CLINICA') load(); }, [user, load]);
-  useEffect(() => { if (tab === 'agenda') loadAgenda(agendaDateKey); }, [tab, agendaDateKey, loadAgenda]);
+  const handleFetchMonth = useCallback(async (year: number, month: number) => {
+    const key = `${year}-${month}`;
+    if (loadedMonths.current.has(key)) return;
+    loadedMonths.current.add(key);
+    try {
+      const { desde, hasta } = getClinicMonthFetchBounds(year, month);
+      const data = await clinicasApi.getAgendaRange(desde, hasta);
+      setAgenda(prev => {
+        const ids = new Set(prev.map(t => t.id));
+        const fresh = data.filter(t => !ids.has(t.id));
+        return fresh.length > 0 ? [...prev, ...fresh] : prev;
+      });
+    } catch {
+      loadedMonths.current.delete(key);
+    }
+  }, []);
+
+  useEffect(() => { if (user?.rol === 'CLINICA') { load(); loadInitialAgenda(); } }, [user, load, loadInitialAgenda]);
+  useEffect(() => {
+    const delDia = agenda.filter(t => clinicDateKeyFromInstant(t.fechaHora) === agendaDateKey);
+    setTurnosDelDia(delDia);
+  }, [agenda, agendaDateKey]);
 
   const handleInvite = async () => {
     setInviteError('');
@@ -365,58 +391,23 @@ export default function ClinicaDashboard() {
         {/* -- AGENDA -- */}
         {tab === 'agenda' && (
           <div className="space-y-4">
-            <div className="flex items-center justify-between flex-wrap gap-3">
-              <h2 className="font-semibold text-slate-800 dark:text-slate-200">{c.agenda.combined}</h2>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setAgendaDateKey(prev => addDaysToClinicDateKey(prev, -1))}
-                  className="btn btn-secondary btn-sm"
-                >←</button>
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300 min-w-[140px] text-center">
-                  {formatClinicDateKeyForDisplay(agendaDateKey, locale, { weekday: 'long', day: 'numeric', month: 'long' })}
-                </span>
-                <button
-                  onClick={() => setAgendaDateKey(prev => addDaysToClinicDateKey(prev, 1))}
-                  className="btn btn-secondary btn-sm"
-                >→</button>
-                <button onClick={() => setAgendaDateKey(todayInputValue())} className="btn btn-secondary btn-sm text-xs">{c.agenda.today}</button>
-              </div>
-            </div>
-
-            {agenda.length === 0 ? (
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-10 text-center text-slate-400 dark:text-slate-500 text-sm">
-                {c.agenda.noAppointments}
-              </div>
-            ) : (
-              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700">
-                {agenda.map(t => {
-                  return (
-                    <div key={t.id} className="flex items-center gap-4 px-5 py-3">
-                      <div className="w-14 shrink-0 text-center">
-                        <p className="text-sm font-bold text-slate-800 dark:text-slate-200">{formatClinicInstantTime(t.fechaHora, locale)}</p>
-                      </div>
-                      <div className="w-px h-8 bg-slate-200 dark:bg-slate-700 shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-slate-800 dark:text-slate-200">
-                          {t.paciente ? `${t.paciente.nombre} ${t.paciente.apellido}` : c.agenda.noPatient}
-                        </p>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">
-                          {c.agenda.withProfessional} {t.profesional.nombre} {t.profesional.apellido} · {translateSpecialty(t.profesional.especialidad?.nombre)}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-semibold ${ESTADO_COLORS[t.estado] ?? 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300'}`}>
-                          {estadoLabel(t.estado, status)}
-                        </span>
-                        <span title={modality[t.modalidad as keyof typeof modality] ?? t.modalidad} className={`text-[10px] px-1.5 py-0.5 rounded-full border ${t.modalidad === 'VIRTUAL' ? 'text-purple-600 dark:text-purple-300 border-purple-200 dark:border-purple-700 bg-purple-50 dark:bg-purple-900/30' : 'text-slate-500 dark:text-slate-300 border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700'}`}>
-                          {t.modalidad === 'VIRTUAL' ? <VideoIcon size={12} className="text-blue-600 dark:text-blue-300" /> : <BuildingIcon size={12} className="text-slate-500 dark:text-slate-300" />}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            <h2 className="font-semibold text-slate-800 dark:text-slate-200">{c.agenda.combined}</h2>
+            <CalendarioView
+              selectedDateKey={agendaDateKey}
+              setSelectedDateKey={setAgendaDateKey}
+              turnos={agenda as unknown as Turno[]}
+              turnosDelDia={turnosDelDia as unknown as Turno[]}
+              onSelectTurno={() => {}}
+              agendaSearch={agendaSearch}
+              setAgendaSearch={setAgendaSearch}
+              agendaEstado={agendaEstado}
+              setAgendaEstado={setAgendaEstado}
+              agendaModalidad={agendaModalidad}
+              setAgendaModalidad={setAgendaModalidad}
+              agendaSoloRiesgo={agendaSoloRiesgo}
+              setAgendaSoloRiesgo={setAgendaSoloRiesgo}
+              onFetchMonth={handleFetchMonth}
+            />
           </div>
         )}
 

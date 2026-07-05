@@ -490,6 +490,8 @@ export const clinicasApi = {
     }),
   getStats: () => fetchApi<ClinicaStats>('/clinicas/me/stats'),
   getAgenda: (fecha: string) => fetchApi<ClinicaAgendaTurno[]>(`/clinicas/me/agenda${buildQuery({ fecha })}`),
+  getAgendaRange: (desde: string, hasta: string) =>
+    fetchApi<ClinicaAgendaTurno[]>(`/clinicas/me/agenda${buildQuery({ desde, hasta })}`),
   invitar: (email: string) =>
     fetchApi<{ id: string; email: string; expiresAt: string }>('/clinicas/me/invitar', {
       method: 'POST',

@@ -712,10 +712,12 @@ export type ClinicaStats = {
 export type ClinicaAgendaTurno = {
   id: string;
   fechaHora: string;
-  estado: string;
-  modalidad: string;
-  paciente?: { nombre: string; apellido: string };
+  estado: 'RESERVADO' | 'CONFIRMADO' | 'COMPLETADO' | 'CANCELADO' | 'AUSENTE';
+  modalidad: 'PRESENCIAL' | 'VIRTUAL';
+  paciente?: { nombre: string; apellido: string } | null;
   profesional: { nombre: string; apellido: string; especialidad?: { nombre: string } };
+  lugarAtencion?: string | null;
+  preconsultaRiesgo?: string;
 };
 
 export type InvitacionClinica = {
