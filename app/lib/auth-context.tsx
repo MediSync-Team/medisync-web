@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { api, User } from './api';
 import { setAutoCoverageDisabled } from './home-filters';
+import { clearApiCache } from './api/cache';
 
 interface AuthContextType {
   user: User | null;
@@ -56,12 +57,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const login = async (email: string, password: string) => {
+    clearApiCache();
     const result = await api.auth.login({ email, password });
     if (result.token) localStorage.setItem('token', result.token);
     return loadCurrentUser();
   };
 
   const register = async (data: Parameters<typeof api.auth.register>[0]) => {
+    clearApiCache();
     const result = await api.auth.register(data);
     if (result.token) localStorage.setItem('token', result.token);
     await loadCurrentUser();
@@ -70,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     await api.auth.logout();
     localStorage.removeItem('token');
+    clearApiCache();
     setUser(null);
   };
 
