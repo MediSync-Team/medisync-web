@@ -5,8 +5,10 @@ import { useLang } from '../../../lib/i18n/context';
 import { api, Turno } from '../../../lib/api';
 import { buildReprogrammingFechaHora, getReprogrammingMinDate } from '../../../lib/reprogramming';
 import { XIcon, InfoIcon } from '../../../components/icons';
+import { useScrollLock } from '../../../hooks/useScrollLock';
 
 export default function ReprogramarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
+  useScrollLock();
   const { t } = useLang();
   const p = t('paciente');
   const common = t('common');
@@ -46,7 +48,7 @@ export default function ReprogramarModal({ turno, onClose, onSuccess }: { turno:
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-card rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h3 className="font-bold text-foreground">{p.rescheduleTitle}</h3>

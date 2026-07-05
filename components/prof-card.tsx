@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import Link from "next/link"
 import { Video, MapPin, BadgeCheck } from "lucide-react"
 import type { Profesional } from "@/app/lib/api"
@@ -16,7 +17,7 @@ function initials(nombre: string, apellido: string) {
   return `${nombre?.[0] ?? ""}${apellido?.[0] ?? ""}`.toUpperCase()
 }
 
-export function ProfCard({
+export const ProfCard = memo(function ProfCard({
   prof,
   showDisponible = false,
 }: {
@@ -47,7 +48,7 @@ export function ProfCard({
 
   return (
     <Card
-      className={`group flex flex-col overflow-hidden rounded-2xl py-0 shadow-sm transition-all hover:shadow-md ${
+      className={`group flex flex-col overflow-hidden rounded-2xl py-0 shadow-sm transition-[box-shadow,border-color] hover:shadow-md ${
         showDisponible
           ? "border-success/40 hover:border-success/60"
           : "border-border/80 hover:border-primary/30"
@@ -65,7 +66,7 @@ export function ProfCard({
 
         <div className="flex items-start gap-4">
           <Avatar className="size-16 rounded-xl ring-1 ring-border">
-            <AvatarImage src={prof.fotoUrl || undefined} alt={prof.nombre} />
+            <AvatarImage src={prof.fotoUrl || undefined} alt={prof.nombre} loading="lazy" decoding="async" />
             <AvatarFallback className="rounded-xl bg-primary/10 text-base font-semibold text-primary">
               {initials(prof.nombre, prof.apellido)}
             </AvatarFallback>
@@ -159,4 +160,4 @@ export function ProfCard({
       </CardFooter>
     </Card>
   )
-}
+})

@@ -315,7 +315,7 @@ export default function ProfesionalPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* -- Navbar ---------------------------------------- */}
-      <header className="sticky top-0 z-30 border-b border-border/80 bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-border/80 bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-14 items-center justify-between">
             <Button

@@ -9,8 +9,10 @@ import { useTranslateSpecialty } from '../../../lib/i18n/use-translate-specialty
 const imprimirReceta = (...args: Parameters<typeof import('../../../lib/receta-pdf').imprimirReceta>) =>
   import('../../../lib/receta-pdf').then((m) => m.imprimirReceta(...args));
 import { InfoIcon, XIcon } from '../../../components/icons';
+import { useScrollLock } from '../../../hooks/useScrollLock';
 
 export default function RecetaModal({ turno, onClose }: { turno: Turno; onClose: () => void }) {
+  useScrollLock();
   const { t, lang } = useLang();
   const p = t('paciente');
   const common = t('common');
@@ -36,7 +38,7 @@ export default function RecetaModal({ turno, onClose }: { turno: Turno; onClose:
   }, [turno.id]);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-card rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-card z-10">
           <h3 className="font-bold text-foreground">{p.prescriptionModalTitle}</h3>

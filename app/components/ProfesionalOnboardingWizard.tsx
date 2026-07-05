@@ -4,6 +4,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { api, Disponibilidad } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
 import { getLocale } from '../lib/date';
+import { useScrollLock } from '../hooks/useScrollLock';
 import { CalendarIcon, CheckIcon, ClipboardIcon, CreditCardIcon, InfoIcon, UserIcon } from './icons';
 
 interface Props {
@@ -16,6 +17,7 @@ interface Props {
 type Modalidad = 'PRESENCIAL' | 'VIRTUAL';
 
 export default function ProfesionalOnboardingWizard({ profesionalId, userId, nombre, onComplete }: Props) {
+  useScrollLock();
   const { lang, t } = useLang();
   const labels = t('professionalOnboarding');
   const steps = [
@@ -172,7 +174,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
   const progressPct = step === 3 ? 100 : Math.round((step / (steps.length - 1)) * 100);
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-slate-900/80 flex items-center justify-center p-4">
       <div className="w-full max-w-lg bg-white dark:bg-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[95vh]">
 
         {/* -- Header ------------------------------------------- */}

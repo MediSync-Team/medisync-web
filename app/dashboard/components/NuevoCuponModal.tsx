@@ -3,6 +3,7 @@
 import { TipoDescuento } from '../../lib/api';
 import { useLang } from '../../lib/i18n/context';
 import { XIcon } from '../../components/icons';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 export interface CuponFormState {
   codigo: string;
@@ -23,11 +24,12 @@ interface NuevoCuponModalProps {
 
 /** New coupon creation modal (extracted from the profesional dashboard page). */
 export default function NuevoCuponModal({ form, setForm, onClose, onSave, saving }: NuevoCuponModalProps) {
+  useScrollLock();
   const { t } = useLang();
   const d = t('dashboard');
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-50 p-4">
       <div className="bg-card rounded-2xl w-full max-w-md shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h3 className="font-bold text-foreground text-lg">{d.couponModal.title}</h3>

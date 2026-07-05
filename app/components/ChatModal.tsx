@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { api, ChatMensaje } from '../lib/api';
 import { XIcon, SendIcon } from './icons';
 import Spinner from './Spinner';
 import { getLocale, formatClinicInstantTime, formatClinicInstantDate } from '../lib/date';
 import { useLang } from '../lib/i18n/context';
+import { useScrollLock } from '../hooks/useScrollLock';
 
 interface Props {
   turnoId: string;
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function ChatModal({ turnoId, myUserId, otherName, readOnly = false, onClose }: Props) {
+  useScrollLock();
   const { t, lang } = useLang();
   const chat = t('chat');
   const locale = getLocale(lang);
@@ -29,27 +31,70 @@ export default function ChatModal({ turnoId, myUserId, otherName, readOnly = fal
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastTsRef = useRef<string | null>(null);
+  const prevCountRef = useRef(0);
+  const scrolledOnceRef = useRef(false);
 
-  const load = useCallback(async () => {
+  // Merge incoming messages into state without creating a new array reference
+  // when nothing changed, so an empty poll tick doesn't trigger a re-render.
+  const applyIncoming = useCallback((incoming: ChatMensaje[], mode: 'replace' | 'append') => {
+    setMensajes(prev => {
+      let next: ChatMensaje[];
+      if (mode === 'replace') {
+        next = incoming;
+      } else {
+        if (incoming.length === 0) return prev;
+        const known = new Set(prev.map(m => m.id));
+        const fresh = incoming.filter(m => !known.has(m.id));
+        if (fresh.length === 0) return prev;
+        next = [...prev, ...fresh];
+      }
+      if (next.length > 0) lastTsRef.current = next[next.length - 1].createdAt;
+      return next;
+    });
+  }, []);
+
+  // Full resync — used on open and when the tab becomes visible again, so it
+  // also picks up leidoAt (read receipt) updates on older messages.
+  const loadFull = useCallback(async () => {
     try {
       const data = await api.chat.getMensajes(turnoId);
-      setMensajes(data);
+      applyIncoming(data, 'replace');
     } catch (e: any) {
       setError(e.message ?? chat.loadError);
     }
-  }, [turnoId, chat.loadError]);
+  }, [turnoId, chat.loadError, applyIncoming]);
+
+  // Incremental poll — only asks the server for messages newer than the last
+  // one we know about, instead of re-fetching and re-rendering the whole thread.
+  const pollNew = useCallback(async () => {
+    if (document.hidden) return;
+    try {
+      const data = await api.chat.getMensajes(turnoId, lastTsRef.current ?? undefined);
+      applyIncoming(data, lastTsRef.current ? 'append' : 'replace');
+    } catch {
+      // silent — the next tick retries
+    }
+  }, [turnoId, applyIncoming]);
 
   useEffect(() => {
-    load();
-    // Poll every 5 seconds for new messages
-    pollRef.current = setInterval(load, 5000);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [load]);
+    loadFull();
+    const pollId = setInterval(pollNew, 5000);
+    const onVisibilityChange = () => { if (!document.hidden) loadFull(); };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      clearInterval(pollId);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [loadFull, pollNew]);
 
-  // Scroll to bottom whenever messages change
+  // Scroll to bottom only when messages were actually appended; the first
+  // paint jumps without animation, later arrivals scroll smoothly.
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (mensajes.length === 0 || mensajes.length === prevCountRef.current) return;
+    prevCountRef.current = mensajes.length;
+    bottomRef.current?.scrollIntoView({ behavior: scrolledOnceRef.current ? 'smooth' : 'auto' });
+    scrolledOnceRef.current = true;
   }, [mensajes]);
 
   async function handleSend(e: React.FormEvent) {
@@ -62,7 +107,7 @@ export default function ChatModal({ turnoId, myUserId, otherName, readOnly = fal
     try {
       const nuevo = await api.chat.enviar(turnoId, text);
       setInput('');
-      setMensajes(prev => [...prev, nuevo]);
+      applyIncoming([nuevo], 'append');
     } catch (e: any) {
       setError(e.message ?? chat.sendError);
     } finally {
@@ -86,25 +131,28 @@ export default function ChatModal({ turnoId, myUserId, otherName, readOnly = fal
   }
 
   // Group messages by date
-  const grouped: { date: string; msgs: ChatMensaje[] }[] = [];
-  for (const m of mensajes) {
-    const d = formatDate(m.createdAt);
-    if (!grouped.length || grouped[grouped.length - 1].date !== d) {
-      grouped.push({ date: d, msgs: [m] });
-    } else {
-      grouped[grouped.length - 1].msgs.push(m);
+  const grouped = useMemo(() => {
+    const groups: { date: string; msgs: ChatMensaje[] }[] = [];
+    for (const m of mensajes) {
+      const d = formatDate(m.createdAt);
+      if (!groups.length || groups[groups.length - 1].date !== d) {
+        groups.push({ date: d, msgs: [m] });
+      } else {
+        groups[groups.length - 1].msgs.push(m);
+      }
     }
-  }
+    return groups;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mensajes, locale]);
 
-  // Render into <body> so the modal's `fixed inset-0` resolves against the viewport.
-  // The dashboard navbar that hosts GlobalChatHub uses `backdrop-blur`, which makes
-  // it the containing block for fixed descendants and was clipping this modal to the
-  // navbar's height (its top half rendered above the viewport).
+  // Render into <body> so the modal's `fixed inset-0` resolves against the viewport,
+  // keeping it out of any transformed/filtered ancestor (e.g. the dashboard navbar)
+  // that would otherwise become the containing block for fixed descendants.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
   const modalContent = (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-sm p-0 sm:p-4">
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4">
       <div className="bg-card rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-md flex flex-col"
            style={{ height: '80vh', maxHeight: '600px' }}>
 

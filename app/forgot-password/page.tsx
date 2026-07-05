@@ -82,7 +82,7 @@ function ForgotPasswordContent() {
 
   return (
     <div className="flex min-h-screen flex-col bg-muted/30">
-      <header className="border-b bg-background/80 py-4 backdrop-blur-md">
+      <header className="border-b bg-background py-4">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Logo />
           <div className="flex items-center gap-1">

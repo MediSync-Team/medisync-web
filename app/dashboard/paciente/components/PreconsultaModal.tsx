@@ -4,8 +4,10 @@ import { useState, useEffect } from 'react';
 import { useLang } from '../../../lib/i18n/context';
 import { api, Turno } from '../../../lib/api';
 import { XIcon, InfoIcon } from '../../../components/icons';
+import { useScrollLock } from '../../../hooks/useScrollLock';
 
 export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
+  useScrollLock();
   const { t } = useLang();
   const p = t('paciente');
   const common = t('common');
@@ -86,7 +88,7 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
     : 'badge-gray';
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4">
       <div className="w-full max-w-2xl bg-card rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-card z-10">
           <h3 className="font-bold text-foreground">{p.preconsultaTitle}</h3>
