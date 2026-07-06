@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useLang } from '../../lib/i18n/context';
 import { api, TipoConsulta } from '../../lib/api';
+import { cacheKeys, peekCache } from '../../lib/api/cache';
 import { ClockIcon, TrashIcon } from '../../components/icons';
 
 const DURACIONES = [15, 20, 30, 45, 60, 90];
@@ -11,8 +12,11 @@ export default function TiposConsultaView({ profesionalId }: { profesionalId: st
   const { t } = useLang();
   const common = t('common');
 
-  const [tipos, setTipos] = useState<TipoConsulta[]>([]);
-  const [loading, setLoading] = useState(true);
+  // Its endpoint is already cached 10min at the api layer (Layer A); peek it here
+  // only to skip the loading flash on remount, not to duplicate the caching.
+  const cached = peekCache<TipoConsulta[]>(cacheKeys.tiposConsulta(profesionalId));
+  const [tipos, setTipos] = useState<TipoConsulta[]>(() => cached?.data ?? []);
+  const [loading, setLoading] = useState(!cached);
   const [nuevo, setNuevo] = useState({ nombre: '', duracionMin: 30, precio: '' });
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');

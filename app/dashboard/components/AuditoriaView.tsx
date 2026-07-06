@@ -1,35 +1,30 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { useLang } from '../../lib/i18n/context';
-import { api, AuditoriaDisponibilidad } from '../../lib/api';
+import { api } from '../../lib/api';
+import { useCachedAsync } from '../../hooks/useCachedAsync';
+import { cacheKeys, TTL } from '../../lib/api/cache';
 import Spinner from '../../components/Spinner';
 import { getLocale, formatClinicInstantDate, formatClinicInstantTime } from '../../lib/date';
 
 export default function AuditoriaView({ profesionalId }: { profesionalId: string }) {
-  const [auditoria, setAuditoria] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [selectedEvent, setSelectedEvent] = useState<string | null>(null);
   const { t, lang } = useLang();
   const d = t('dashboard');
 
-  useEffect(() => {
-    loadAuditoria();
-  }, [page]);
+  const { data: response, loading } = useCachedAsync(
+    cacheKeys.auditoria(profesionalId, page),
+    () => api.profesional.getAuditoria(profesionalId, { page, limit: 20 }),
+    TTL.short
+  );
 
-  const loadAuditoria = async () => {
-    setLoading(true);
-    try {
-      const response = await api.profesional.getAuditoria(profesionalId, { page, limit: 20 });
-      setAuditoria(response.data ?? response.auditoria ?? []);
-      setTotalPages(Math.max(1, Math.ceil((response.meta?.total ?? response.total ?? 0) / 20)));
-    } catch (err) {
-      console.error('Error loading auditoria:', err);
-    }
-    setLoading(false);
-  };
+  const auditoria = useMemo<any[]>(() => (response as any)?.data ?? (response as any)?.auditoria ?? [], [response]);
+  const totalPages = useMemo(
+    () => Math.max(1, Math.ceil((((response as any)?.meta?.total ?? (response as any)?.total ?? 0)) / 20)),
+    [response]
+  );
 
   const getEventoLabel = (tipo: string): string => {
     const labels: Record<string, string> = {

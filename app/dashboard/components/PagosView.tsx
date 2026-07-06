@@ -1,8 +1,10 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLang } from '../../lib/i18n/context';
-import { api, PagosDashboardResponse } from '../../lib/api';
+import { api } from '../../lib/api';
+import { useCachedAsync } from '../../hooks/useCachedAsync';
+import { cacheKeys, TTL } from '../../lib/api/cache';
 import { CreditCardIcon, VideoIcon, BuildingIcon } from '../../components/icons';
 import Spinner from '../../components/Spinner';
 import { formatClinicInstantDate, formatClinicInstantDateTime, formatClinicInstantTime, getClinicCurrentMonthRange, getLocale } from '../../lib/date';
@@ -13,8 +15,6 @@ export default function PagosView() {
   const payments = d.paymentsView;
   const pg = t('pagination');
   const m = t('modality');
-  const [data, setData] = useState<PagosDashboardResponse | null>(null);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
 
   // Filters
@@ -23,28 +23,21 @@ export default function PagosView() {
   const [estado, setEstado] = useState('TODOS');
   const [applied, setApplied] = useState({ desde: '', hasta: '', estado: 'TODOS' });
 
-  const load = async (p = 1, filters = applied) => {
-    setLoading(true);
-    try {
-      const res = await api.profesional.getPagos({
-        desde: filters.desde || undefined,
-        hasta: filters.hasta || undefined,
-        estado: filters.estado !== 'TODOS' ? filters.estado : undefined,
-        page: p,
-        limit: 15,
-      });
-      setData(res);
-      setPage(p);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  };
-
-  useEffect(() => { load(1, { desde: '', hasta: '', estado: 'TODOS' }); }, []);
+  const { data, loading } = useCachedAsync(
+    cacheKeys.pagosProf(page, applied.desde, applied.hasta, applied.estado),
+    () => api.profesional.getPagos({
+      desde: applied.desde || undefined,
+      hasta: applied.hasta || undefined,
+      estado: applied.estado !== 'TODOS' ? applied.estado : undefined,
+      page,
+      limit: 15,
+    }),
+    TTL.short
+  );
 
   const applyFilters = () => {
-    const f = { desde, hasta, estado };
-    setApplied(f);
-    load(1, f);
+    setApplied({ desde, hasta, estado });
+    setPage(1);
   };
 
   const clearFilters = () => {
@@ -52,9 +45,8 @@ export default function PagosView() {
     setDesde(currentClinicMonth.desde);
     setHasta(currentClinicMonth.hasta);
     setEstado('TODOS');
-    const f = { desde: '', hasta: '', estado: 'TODOS' };
-    setApplied(f);
-    load(1, f);
+    setApplied({ desde: '', hasta: '', estado: 'TODOS' });
+    setPage(1);
   };
 
   const [exporting, setExporting] = useState(false);
@@ -315,14 +307,14 @@ export default function PagosView() {
               <div className="flex gap-2">
                 <button
                   disabled={page === 1}
-                  onClick={() => load(page - 1)}
+                  onClick={() => setPage(page - 1)}
                   className="btn btn-ghost text-sm disabled:opacity-40"
                 >
                   {d.previous}
                 </button>
                 <button
                   disabled={page >= (data.pagination.pages ?? data.pagination.totalPages ?? 1)}
-                  onClick={() => load(page + 1)}
+                  onClick={() => setPage(page + 1)}
                   className="btn btn-ghost text-sm disabled:opacity-40"
                 >
                   {d.next}

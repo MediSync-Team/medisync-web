@@ -1,5 +1,6 @@
 "use client"
 
+import { memo } from "react"
 import Link from "next/link"
 import { Video, MapPin, BadgeCheck } from "lucide-react"
 import type { Profesional } from "@/app/lib/api"
@@ -16,12 +17,17 @@ function initials(nombre: string, apellido: string) {
   return `${nombre?.[0] ?? ""}${apellido?.[0] ?? ""}`.toUpperCase()
 }
 
-export function ProfCard({
+export const ProfCard = memo(function ProfCard({
   prof,
   showDisponible = false,
+  highlightObraSocial,
 }: {
   prof: Profesional
   showDisponible?: boolean
+  /** Obra social currently applied as a search filter, if any is matched
+   *  by this professional it's shown first and styled like the primary
+   *  search button so it stands out from the rest. */
+  highlightObraSocial?: string
 }) {
   const { t, lang } = useLang()
   const h = t("home")
@@ -43,11 +49,15 @@ export function ProfCard({
     lang,
     (h.specialties as Record<string, string>) || {}
   )
-  const obras = prof.obrasSociales ?? []
+  const obrasRaw = prof.obrasSociales ?? []
+  const obras =
+    highlightObraSocial && obrasRaw.includes(highlightObraSocial)
+      ? [highlightObraSocial, ...obrasRaw.filter((o) => o !== highlightObraSocial)]
+      : obrasRaw
 
   return (
     <Card
-      className={`group flex flex-col overflow-hidden rounded-2xl py-0 shadow-sm transition-all hover:shadow-md ${
+      className={`group flex flex-col overflow-hidden rounded-2xl py-0 shadow-sm transition-[box-shadow,border-color] hover:shadow-md ${
         showDisponible
           ? "border-success/40 hover:border-success/60"
           : "border-border/80 hover:border-primary/30"
@@ -65,7 +75,7 @@ export function ProfCard({
 
         <div className="flex items-start gap-4">
           <Avatar className="size-16 rounded-xl ring-1 ring-border">
-            <AvatarImage src={prof.fotoUrl || undefined} alt={prof.nombre} />
+            <AvatarImage src={prof.fotoUrl || undefined} alt={prof.nombre} loading="lazy" decoding="async" />
             <AvatarFallback className="rounded-xl bg-primary/10 text-base font-semibold text-primary">
               {initials(prof.nombre, prof.apellido)}
             </AvatarFallback>
@@ -115,14 +125,25 @@ export function ProfCard({
         )}
 
         {obras.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {obras.slice(0, 3).map((o) => (
-              <Badge key={o} variant="outline" className="font-normal">
-                {o}
-              </Badge>
-            ))}
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            {obras.slice(0, 3).map((o) => {
+              const isMatch = o === highlightObraSocial
+              return (
+                <Badge
+                  key={o}
+                  variant={isMatch ? "default" : "outline"}
+                  className={
+                    isMatch
+                      ? "shrink-0 font-normal"
+                      : "min-w-0 shrink truncate font-normal"
+                  }
+                >
+                  {o}
+                </Badge>
+              )
+            })}
             {obras.length > 3 && (
-              <Badge variant="outline" className="font-normal">
+              <Badge variant="outline" className="shrink-0 font-normal">
                 +{obras.length - 3}
               </Badge>
             )}
@@ -159,4 +180,4 @@ export function ProfCard({
       </CardFooter>
     </Card>
   )
-}
+})

@@ -1,8 +1,10 @@
 ﻿'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLang } from '../../lib/i18n/context';
-import { api, Resena, ResenasStats } from '../../lib/api';
+import { api, Resena } from '../../lib/api';
+import { useCachedAsync } from '../../hooks/useCachedAsync';
+import { cacheKeys, TTL } from '../../lib/api/cache';
 import { InfoIcon } from '../../components/icons';
 import StarRating from '../../components/StarRating';
 import { formatClinicInstantDate, getLocale } from '../../lib/date';
@@ -12,8 +14,6 @@ export default function ResenasView() {
   const { lang, t } = useLang();
   const d = t('dashboard');
   const reviews = d.reviewsView;
-  const [data, setData] = useState<{ resenas: Resena[]; stats: ResenasStats; pagination: { page: number; totalPages: number; total: number } } | null>(null);
-  const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [ratingFilter, setRatingFilter] = useState<number | undefined>(undefined);
   // Per-review state
@@ -22,21 +22,15 @@ export default function ResenasView() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
 
-  const load = async (p = 1, rating?: number) => {
-    setLoading(true);
-    try {
-      const res = await api.resenas.getMisResenas({ page: p, limit: 10, rating });
-      setData(res as any);
-      setPage(p);
-    } catch (e) { console.error(e); }
-    finally { setLoading(false); }
-  };
-
-  useEffect(() => { load(1, ratingFilter); }, []);
+  const { data, loading, reload } = useCachedAsync(
+    cacheKeys.misResenas(page, 10, ratingFilter),
+    () => api.resenas.getMisResenas({ page, limit: 10, rating: ratingFilter }),
+    TTL.short
+  );
 
   const applyFilter = (r?: number) => {
     setRatingFilter(r);
-    load(1, r);
+    setPage(1);
   };
 
   const startEdit = (resena: Resena) => {
@@ -61,7 +55,7 @@ export default function ResenasView() {
       await api.resenas.responder(id, respuestaText.trim());
       setNotice({ type: 'success', text: reviews.replyPublished });
       setEditingId(null);
-      load(page, ratingFilter);
+      reload();
     } catch (err) {
       setNotice({ type: 'error', text: err instanceof Error ? err.message : reviews.saveError });
     } finally { setSaving(false); }
@@ -72,7 +66,7 @@ export default function ResenasView() {
     try {
       await api.resenas.borrarRespuesta(id);
       setNotice({ type: 'success', text: reviews.replyDeleted });
-      load(page, ratingFilter);
+      reload();
     } catch (err) {
       setNotice({ type: 'error', text: err instanceof Error ? err.message : reviews.deleteError });
     } finally { setSaving(false); }
@@ -268,13 +262,13 @@ export default function ResenasView() {
         <div className="flex justify-between items-center pt-2">
           <button
             disabled={page === 1}
-            onClick={() => { const p = page - 1; setPage(p); load(p, ratingFilter); }}
+            onClick={() => setPage(page - 1)}
             className="btn btn-secondary btn-sm disabled:opacity-40"
           >{d.previous}</button>
           <span className="text-sm text-slate-500">{page} / {data.pagination.totalPages}</span>
           <button
             disabled={page === data.pagination.totalPages}
-            onClick={() => { const p = page + 1; setPage(p); load(p, ratingFilter); }}
+            onClick={() => setPage(page + 1)}
             className="btn btn-secondary btn-sm disabled:opacity-40"
           >{d.next}</button>
         </div>

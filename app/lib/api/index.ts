@@ -1,4 +1,5 @@
 import { fetchApi, buildQuery } from './core';
+import { cachedFetch, invalidateCache, cacheKeys, TTL } from './cache';
 import type {
   RegisterData,
   LoginData,
@@ -15,6 +16,7 @@ import type {
   Evolucion,
   PreconsultaTurno,
   PreconsultaInput,
+  PreconsultaConfig,
   RecetaIndicacion,
   RecetaIndicacionInput,
   HistorialPaginatedResponse,
@@ -64,6 +66,14 @@ import type {
 export * from './core';
 export * from './types';
 
+/** `.then(invalidate('a','b'))` — invalidates cache prefixes only on success, result passes through unchanged. */
+function invalidate<T>(...prefixes: string[]) {
+  return (result: T): T => {
+    prefixes.forEach(invalidateCache);
+    return result;
+  };
+}
+
 const authApi = {
   register: (data: RegisterData) =>
     fetchApi<AuthResponse>('/auth/register', {
@@ -96,7 +106,7 @@ const authApi = {
 };
 
 const especialidadesApi = {
-  getAll: () => fetchApi<Especialidad[]>('/especialidades'),
+  getAll: () => cachedFetch(cacheKeys.especialidades, () => fetchApi<Especialidad[]>('/especialidades'), TTL.day),
 };
 
 const profesionalesApi = {
@@ -118,30 +128,42 @@ const profesionalesApi = {
     const query = buildQuery(params ?? {});
     return fetchApi<ProfesionalesPaginatedResponse>('/profesionales' + query);
   },
-  getById: (id: string) => fetchApi<Profesional>(`/profesionales/${id}`),
+  getById: (id: string) =>
+    cachedFetch(cacheKeys.profesional(id), () => fetchApi<Profesional>(`/profesionales/${id}`), TTL.medium),
   getSlots: (id: string, fecha: string, modalidad: string, tipoConsultaId?: string) =>
     fetchApi<Slot[]>(`/profesionales/${id}/slots-disponibles?fecha=${fecha}&modalidad=${modalidad}${tipoConsultaId ? `&tipoConsultaId=${tipoConsultaId}` : ''}`),
   crearDisponibilidad: (id: string, data: { diaSemana: number; horaInicio: string; horaFin: string; modalidad: 'PRESENCIAL' | 'VIRTUAL' | 'AMBOS'; lugarAtencion?: string }) =>
     fetchApi<Disponibilidad>(`/profesionales/${id}/disponibilidad`, {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+    }).then(invalidate(cacheKeys.profesional(id), 'turnos', 'auditoria')),
   eliminarDisponibilidad: (id: string, dispId: string) =>
-    fetchApi<void>(`/profesionales/${id}/disponibilidad/${dispId}`, { method: 'DELETE' }),
+    fetchApi<void>(`/profesionales/${id}/disponibilidad/${dispId}`, { method: 'DELETE' }).then(
+      invalidate(cacheKeys.profesional(id), 'turnos', 'auditoria')
+    ),
   getTiposConsulta: (id: string) =>
-    fetchApi<TipoConsulta[]>(`/profesionales/${id}/tipos-consulta`),
+    cachedFetch(cacheKeys.tiposConsulta(id), () => fetchApi<TipoConsulta[]>(`/profesionales/${id}/tipos-consulta`), TTL.tipos),
   crearTipoConsulta: (id: string, data: { nombre: string; duracionMin: number; precio?: number | null; color?: string | null; orden?: number }) =>
     fetchApi<TipoConsulta>(`/profesionales/${id}/tipos-consulta`, {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+    }).then(invalidate(cacheKeys.profesional(id))),
   actualizarTipoConsulta: (id: string, tipoId: string, data: { nombre: string; duracionMin: number; precio?: number | null; color?: string | null; orden?: number }) =>
     fetchApi<TipoConsulta>(`/profesionales/${id}/tipos-consulta/${tipoId}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
-    }),
+    }).then(invalidate(cacheKeys.profesional(id))),
   eliminarTipoConsulta: (id: string, tipoId: string) =>
-    fetchApi<{ deleted: boolean }>(`/profesionales/${id}/tipos-consulta/${tipoId}`, { method: 'DELETE' }),
+    fetchApi<{ deleted: boolean }>(`/profesionales/${id}/tipos-consulta/${tipoId}`, { method: 'DELETE' }).then(
+      invalidate(cacheKeys.profesional(id))
+    ),
+  getPreconsultaConfig: (id: string) =>
+    cachedFetch(cacheKeys.preconsultaConfig(id), () => fetchApi<PreconsultaConfig>(`/profesionales/${id}/preconsulta-config`), TTL.tipos),
+  updatePreconsultaConfig: (id: string, config: PreconsultaConfig) =>
+    fetchApi<PreconsultaConfig>(`/profesionales/${id}/preconsulta-config`, {
+      method: 'PUT',
+      body: JSON.stringify(config),
+    }).then(invalidate(cacheKeys.profesional(id))),
 };
 
 const turnosApi = {
@@ -166,12 +188,12 @@ const turnosApi = {
     fetchApi<Turno>(`/turnos/${id}`, {
       method: 'PATCH',
       body: JSON.stringify({ estado, notasCancelacion }),
-    }),
+    }).then(invalidate('turnos', 'stats', 'pagos', 'recordatorios')),
   reprogramar: (id: string, data: { fechaHora: string; modalidad?: 'PRESENCIAL' | 'VIRTUAL' }) =>
     fetchApi<Turno>(`/turnos/${id}/reprogramar`, {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+    }).then(invalidate('turnos', 'stats', 'pagos', 'recordatorios')),
   reservar: (data: {
     profesionalId: string;
     fechaHora: string;
@@ -181,23 +203,23 @@ const turnosApi = {
     fetchApi<{ turno: Turno; linkPago: null }>('/turnos/reservar', {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+    }).then(invalidate('turnos', 'stats', 'pagos', 'recordatorios')),
   getPoliticaCancelacion: () =>
-    fetchApi<{ horasMinimas: number }>('/turnos/politica-cancelacion'),
+    cachedFetch(cacheKeys.politicaCancelacion, () => fetchApi<{ horasMinimas: number }>('/turnos/politica-cancelacion'), TTL.day),
   getEvolucion: (id: string) =>
     fetchApi<Evolucion | null>(`/turnos/${id}/evolucion`),
   guardarEvolucion: (id: string, contenido: string) =>
     fetchApi<Evolucion>(`/turnos/${id}/evolucion`, {
       method: 'POST',
       body: JSON.stringify({ contenido }),
-    }),
+    }).then(invalidate('turnos')),
   getPreconsulta: (id: string) =>
     fetchApi<PreconsultaTurno>(`/turnos/${id}/preconsulta`),
   updatePreconsulta: (id: string, data: PreconsultaInput) =>
     fetchApi<PreconsultaTurno>(`/turnos/${id}/preconsulta`, {
       method: 'PUT',
       body: JSON.stringify(data),
-    }),
+    }).then(invalidate('turnos')),
   getVideoToken: (id: string) =>
     fetchApi<{ token: string; url: string; roomName: string }>(`/turnos/${id}/video-token`),
   getReceta: (id: string) =>
@@ -206,7 +228,7 @@ const turnosApi = {
     fetchApi<{ receta: RecetaIndicacion; shareText: string }>(`/turnos/${id}/receta`, {
       method: 'POST',
       body: JSON.stringify(data),
-    }),
+    }).then(invalidate('turnos', 'paciente:recetas')),
   miHistorial: (params?: { page?: number; limit?: number }) => {
     const query = buildQuery(params ? { page: params.page, limit: params.limit } : {});
     return fetchApi<HistorialPaginatedResponse>('/turnos/mi-historial' + query);
@@ -229,7 +251,7 @@ const pagosApi = {
   confirmarPago: (turnoId: string) =>
     fetchApi<{ confirmed: boolean; estado: string | null; turnoEstado?: Turno['estado'] }>(`/pagos/confirmar-pago${buildQuery({ turnoId })}`, {
       method: 'POST',
-    }),
+    }).then(invalidate('pagos', 'turnos', 'stats')),
 };
 
 const archivosApi = {
@@ -295,7 +317,7 @@ export const api = {
       fetchApi<Profesional>(`/profesionales/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
-      }),
+      }).then(invalidate(cacheKeys.profesional(id))),
     getPagos: (params?: { desde?: string; hasta?: string; estado?: string; page?: number; limit?: number }) => {
       const query = buildQuery(params ?? {});
       return fetchApi<PagosDashboardResponse>(`/profesional/pagos${query}`);
@@ -316,11 +338,11 @@ export const api = {
   },
   suscripciones: {
     estado: () => fetchApi<SuscripcionEstado>('/suscripciones/estado'),
-    iniciar: () => fetchApi<{ initPoint: string }>('/suscripciones/iniciar', { method: 'POST' }),
-    cancelar: () => fetchApi<{ cancelled: boolean; planVenceAt: string | null }>('/suscripciones/cancelar', { method: 'POST' }),
+    iniciar: () => fetchApi<{ initPoint: string }>('/suscripciones/iniciar', { method: 'POST' }).then(invalidate('suscripciones')),
+    cancelar: () => fetchApi<{ cancelled: boolean; planVenceAt: string | null }>('/suscripciones/cancelar', { method: 'POST' }).then(invalidate('suscripciones')),
   },
   obrasSociales: {
-    getAll: () => fetchApi<string[]>('/obras-sociales'),
+    getAll: () => cachedFetch(cacheKeys.obrasSociales, () => fetchApi<string[]>('/obras-sociales'), TTL.day),
   },
   cupones: {
     getAll: () => fetchApi<Cupon[]>('/cupones'),
@@ -329,13 +351,13 @@ export const api = {
       fetchApi<Cupon>('/cupones', {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
+      }).then(invalidate(cacheKeys.cupones)),
     actualizar: (id: string, data: Partial<Cupon>) =>
       fetchApi<Cupon>(`/cupones/${id}`, {
         method: 'PATCH',
         body: JSON.stringify(data),
-      }),
-    eliminar: (id: string) => fetchApi<void>(`/cupones/${id}`, { method: 'DELETE' }),
+      }).then(invalidate(cacheKeys.cupones)),
+    eliminar: (id: string) => fetchApi<void>(`/cupones/${id}`, { method: 'DELETE' }).then(invalidate(cacheKeys.cupones)),
     validar: (codigo: string, turnoId: string) =>
       fetchApi<CuponValidado>('/cupones/validar', {
         method: 'POST',
@@ -368,8 +390,8 @@ export const api = {
       fetchApi<BloqueoDisponibilidad>('/bloqueos', {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
-    eliminar: (id: string) => fetchApi<void>(`/bloqueos/${id}`, { method: 'DELETE' }),
+      }).then(invalidate('bloqueos', 'turnos', 'auditoria')),
+    eliminar: (id: string) => fetchApi<void>(`/bloqueos/${id}`, { method: 'DELETE' }).then(invalidate('bloqueos', 'turnos', 'auditoria')),
   },
   certificados: {
     getByTurno: (turnoId: string) => fetchApi<CertificadoConDatos>(`/certificados/turno/${turnoId}`),
@@ -377,13 +399,14 @@ export const api = {
       fetchApi<CertificadoConDatos>('/certificados', {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
+      }).then(invalidate(cacheKeys.misCertificados)),
   },
   archivos: archivosApi,
   chat: {
     getUnreadGlobal: () => fetchApi<{ count: number }>('/chat/unread-global'),
     getUnread: (turnoId: string) => fetchApi<{ count: number }>(`/chat/${turnoId}/unread`),
-    getMensajes: (turnoId: string) => fetchApi<{ id: string; remitenteId: string; contenido: string; createdAt: string }[]>(`/chat/${turnoId}`),
+    getMensajes: (turnoId: string, since?: string) =>
+      fetchApi<ChatMensaje[]>(`/chat/${turnoId}${buildQuery({ since })}`),
     enviar: (turnoId: string, contenido: string) =>
       fetchApi<ChatMensaje>(`/chat/${turnoId}`, {
         method: 'POST',
@@ -414,14 +437,14 @@ export const api = {
       fetchApi<Resena>('/resenas', {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
+      }).then(invalidate('resenas', 'profesionales')),
     responder: (id: string, respuesta: string) =>
       fetchApi<Resena>(`/resenas/${id}/respuesta`, {
         method: 'PATCH',
         body: JSON.stringify({ respuesta }),
-      }),
+      }).then(invalidate('resenas')),
     borrarRespuesta: (id: string) =>
-      fetchApi<Resena>(`/resenas/${id}/respuesta`, { method: 'DELETE' }),
+      fetchApi<Resena>(`/resenas/${id}/respuesta`, { method: 'DELETE' }).then(invalidate('resenas')),
   },
   admin: {
     getStats: () => fetchApi<AdminStats>('/admin/stats'),
@@ -443,13 +466,13 @@ export const api = {
       fetchApi<Especialidad>('/admin/especialidades', {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
+      }).then(invalidate(cacheKeys.especialidades)),
     editarEspecialidad: (id: string, data: { nombre: string; descripcion?: string; icono?: string }) =>
       fetchApi<Especialidad>(`/admin/especialidades/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
-      }),
-    eliminarEspecialidad: (id: string) => fetchApi<void>(`/admin/especialidades/${id}`, { method: 'DELETE' }),
+      }).then(invalidate(cacheKeys.especialidades)),
+    eliminarEspecialidad: (id: string) => fetchApi<void>(`/admin/especialidades/${id}`, { method: 'DELETE' }).then(invalidate(cacheKeys.especialidades)),
   },
   listaEspera: {
     misSuscripciones: () => fetchApi<ListaEsperaItem[]>('/lista-espera/mis-suscripciones'),
@@ -457,8 +480,8 @@ export const api = {
       fetchApi<ListaEsperaItem>('/lista-espera/suscribirme', {
         method: 'POST',
         body: JSON.stringify(data),
-      }),
-    cancelar: (id: string) => fetchApi<void>(`/lista-espera/${id}`, { method: 'DELETE' }),
+      }).then(invalidate(cacheKeys.listaEspera)),
+    cancelar: (id: string) => fetchApi<void>(`/lista-espera/${id}`, { method: 'DELETE' }).then(invalidate(cacheKeys.listaEspera)),
   },
   notifications: {
     getPreferences: () => fetchApi<NotificationPreferences>('/notifications/preferences'),

@@ -3,6 +3,7 @@
 import { useLang } from '../../lib/i18n/context';
 import { XIcon } from '../../components/icons';
 import { TipoCertificado } from '../../lib/api';
+import { useScrollLock } from '../../hooks/useScrollLock';
 
 interface EmitirCertificadoModalProps {
   form: { tipo: TipoCertificado; diagnostico: string; texto: string; diasReposo: number };
@@ -21,12 +22,13 @@ export default function EmitirCertificadoModal({
   onClose,
   translateSpecialty,
 }: EmitirCertificadoModalProps) {
+  useScrollLock();
   const { t } = useLang();
   const d = t('dashboard');
   const certificate = d.certificate;
 
   return (
-    <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-slate-900/70 flex items-center justify-center z-50 p-4">
       <div className="bg-card rounded-2xl w-full max-w-2xl shadow-2xl">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h3 className="font-bold text-foreground text-lg">{certificate.title}</h3>

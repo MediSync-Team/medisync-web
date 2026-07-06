@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '../../lib/auth-context';
 import { api, Turno, ListaEsperaItem, HistorialTurno, PacienteStats, RecetaPaciente, CertificadoPaciente } from '../../lib/api';
+import { cachedFetch, cacheKeys, peekCache, TTL } from '../../lib/api/cache';
 import ProfileModal from '../../components/ProfileModal';
 import OnboardingTour from '../../components/OnboardingTour';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
@@ -155,9 +156,10 @@ export default function PacienteDashboard() {
   }, [user, authLoading, router]);
 
   const loadTurnos = useCallback(async (tab: 'proximos' | 'pasados' = 'proximos', p: number = 1) => {
-    setLoading(true);
+    const key = cacheKeys.misTurnos(tab, p, TURNOS_LIMIT);
+    if (!peekCache(key)) setLoading(true);
     try {
-      const data = await api.turnos.getMisTurnos({ tipo: tab, page: p, limit: TURNOS_LIMIT });
+      const data = await cachedFetch(key, () => api.turnos.getMisTurnos({ tipo: tab, page: p, limit: TURNOS_LIMIT }), TTL.short);
       setTurnos(data.turnos);
       setPaginationMeta({ total: data.pagination.total, totalPages: data.pagination.totalPages });
       loadPagosInfo(data.turnos);
@@ -179,14 +181,18 @@ export default function PacienteDashboard() {
 
   const loadRecordatorios = async () => {
     try {
-      const data = await api.recordatorios.getPaciente();
+      const data = await cachedFetch(cacheKeys.recordatoriosPaciente, () => api.recordatorios.getPaciente(), TTL.short);
       setRecordatorios(data.turnos || []);
     } catch (err) { console.error(err); }
   };
 
   const loadProximos = async () => {
     try {
-      const data = await api.turnos.getMisTurnos({ tipo: 'proximos', page: 1, limit: 5 });
+      const data = await cachedFetch(
+        cacheKeys.misTurnos('proximos', 1, TURNOS_LIMIT),
+        () => api.turnos.getMisTurnos({ tipo: 'proximos', page: 1, limit: 5 }),
+        TTL.short
+      );
       setProximosTurnos(data.turnos.filter(tn => tn.estado === 'RESERVADO' || tn.estado === 'CONFIRMADO'));
       setProximosTotal(data.pagination.total);
     } catch (err) { console.error(err); }
@@ -200,9 +206,10 @@ export default function PacienteDashboard() {
   };
 
   const loadHistorial = async (p: number = 1) => {
-    setLoadingHistorial(true);
+    const key = cacheKeys.miHistorial(p, HISTORIAL_LIMIT);
+    if (!peekCache(key)) setLoadingHistorial(true);
     try {
-      const data = await api.turnos.miHistorial({ page: p, limit: HISTORIAL_LIMIT });
+      const data = await cachedFetch(key, () => api.turnos.miHistorial({ page: p, limit: HISTORIAL_LIMIT }), TTL.short);
       setHistorial(data.turnos);
       setHistorialPagination({ total: data.pagination.total, totalPages: data.pagination.totalPages });
     } catch (err) { console.error(err); }
@@ -211,24 +218,24 @@ export default function PacienteDashboard() {
 
   const loadListaEspera = async () => {
     try {
-      const data = await api.listaEspera.misSuscripciones();
+      const data = await cachedFetch(cacheKeys.listaEspera, () => api.listaEspera.misSuscripciones(), TTL.short);
       setListaEspera(data);
     } catch (err) { console.error(err); }
   };
 
   const loadMisRecetas = async () => {
-    setLoadingRecetas(true);
+    if (misRecetas.length === 0) setLoadingRecetas(true);
     try {
-      const data = await api.pacientes.getMisRecetas();
+      const data = await cachedFetch(cacheKeys.misRecetas, () => api.pacientes.getMisRecetas(), TTL.medium);
       setMisRecetas(data.recetas);
     } catch (err) { console.error(err); }
     finally { setLoadingRecetas(false); }
   };
 
   const loadMisCertificados = async () => {
-    setLoadingCertificados(true);
+    if (misCertificados.length === 0) setLoadingCertificados(true);
     try {
-      const data = await api.pacientes.getMisCertificados();
+      const data = await cachedFetch(cacheKeys.misCertificados, () => api.pacientes.getMisCertificados(), TTL.medium);
       setMisCertificados(data.certificados);
     } catch (err) { console.error(err); }
     finally { setLoadingCertificados(false); }
@@ -310,9 +317,9 @@ export default function PacienteDashboard() {
   }
 
   const loadStats = async () => {
-    setLoadingStats(true);
+    if (!pacienteStats) setLoadingStats(true);
     try {
-      const data = await api.pacientes.getMisStats();
+      const data = await cachedFetch(cacheKeys.statsPaciente, () => api.pacientes.getMisStats(), TTL.short);
       setPacienteStats(data);
     } catch (err) { console.error(err); }
     finally { setLoadingStats(false); }
@@ -393,7 +400,7 @@ export default function PacienteDashboard() {
       )}
 
       {/* -- Navbar ---------------------------------------- */}
-      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <header className="sticky top-0 z-30 border-b bg-card">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">

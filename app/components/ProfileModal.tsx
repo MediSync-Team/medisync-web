@@ -5,6 +5,7 @@ import { X, User, Bell, Plug, Stethoscope, type LucideIcon } from 'lucide-react'
 import { api, Profesional, Paciente, Genero, NotificationPreferences } from '../lib/api';
 import { loadObrasSociales, getObrasSociales } from '../lib/obras-sociales';
 import { useLang } from '../lib/i18n/context';
+import { useScrollLock } from '../hooks/useScrollLock';
 import GoogleCalendarConnect from './GoogleCalendarConnect';
 import MercadoPagoConnect from './MercadoPagoConnect';
 
@@ -38,6 +39,7 @@ const validateDNI = (dni: string): boolean => {
 };
 
 export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate }: ProfileModalProps) {
+  useScrollLock(isOpen);
   const { t } = useLang();
   const p = t('profile');
   const c = t('common');
@@ -231,7 +233,7 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
   );
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
       <div className="relative bg-card text-card-foreground rounded-2xl shadow-2xl ring-1 ring-foreground/10 w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden">
         <button
           type="button"

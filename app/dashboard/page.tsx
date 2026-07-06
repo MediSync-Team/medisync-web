@@ -5,6 +5,7 @@ import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../lib/auth-context';
 import { api, Turno, Disponibilidad, BloqueoDisponibilidad, Cupon, SuscripcionEstado } from '../lib/api';
+import { cachedFetch, cacheKeys, TTL } from '../lib/api/cache';
 import { Notice } from '../lib/ui-notice';
 import { clinicDateKeyFromInstant, formatClinicDateKey, formatClinicInstantTime, getClinicMonthFetchBounds, getLocale, todayInputValue } from '../lib/date';
 import StatsPanel from '../components/StatsPanel';
@@ -27,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import CalendarioView from './components/CalendarioView';
 import DisponibilidadView from './components/DisponibilidadView';
 import TiposConsultaView from './components/TiposConsultaView';
+import PreconsultaConfigView from './components/PreconsultaConfigView';
 import PagosView from './components/PagosView';
 import ResenasView from './components/ResenasView';
 import CuponesView from './components/CuponesView';
@@ -66,7 +68,7 @@ export default function ProfesionalDashboard() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'inicio' | 'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas' | 'cupones' | 'plan' | 'auditoria'>('inicio');
+  const [activeTab, setActiveTab] = useState<'inicio' | 'calendario' | 'disponibilidad' | 'preconsulta' | 'stats' | 'pagos' | 'resenas' | 'cupones' | 'plan' | 'auditoria'>('inicio');
   const [selectedDateKey, setSelectedDateKey] = useState(() => todayInputValue());
   const [turnosDelDia, setTurnosDelDia] = useState<Turno[]>([]);
   const [nuevaDisp, setNuevaDisp] = useState({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL' as const, lugarAtencion: '' });
@@ -139,11 +141,15 @@ export default function ProfesionalDashboard() {
     const initialEnd = getClinicMonthFetchBounds(clinicYear, clinicMonth);
     try {
       const [turnosData, dispData] = await Promise.all([
-        api.turnos.getByProfesional(user.profesional.id, {
-          desde: initialStart.desde,
-          hasta: initialEnd.hasta,
-          limit: '200',
-        }),
+        cachedFetch(
+          cacheKeys.turnosProf(user.profesional.id, initialStart.desde, initialEnd.hasta),
+          () => api.turnos.getByProfesional(user.profesional!.id, {
+            desde: initialStart.desde,
+            hasta: initialEnd.hasta,
+            limit: '200',
+          }),
+          TTL.short
+        ),
         api.profesionales.getById(user.profesional.id),
       ]);
       setTurnos(turnosData.turnos);
@@ -167,7 +173,11 @@ export default function ProfesionalDashboard() {
     loadedMonths.current.add(key);
     try {
       const { desde, hasta } = getClinicMonthFetchBounds(year, month);
-      const data = await api.turnos.getByProfesional(user.profesional.id, { desde, hasta, limit: '200' });
+      const data = await cachedFetch(
+        cacheKeys.turnosProf(user.profesional.id, desde, hasta),
+        () => api.turnos.getByProfesional(user.profesional!.id, { desde, hasta, limit: '200' }),
+        TTL.short
+      );
       setTurnos(prev => {
         const ids = new Set(prev.map(t => t.id));
         const fresh = data.turnos.filter(t => !ids.has(t.id));
@@ -180,15 +190,15 @@ export default function ProfesionalDashboard() {
 
   const loadRecordatorios = async () => {
     try {
-      const data = await api.recordatorios.getProfesional();
+      const data = await cachedFetch(cacheKeys.recordatoriosProfesional, () => api.recordatorios.getProfesional(), TTL.short);
       setRecordatorios(data.turnos || []);
     } catch (err) { console.error(err); }
   };
 
   const loadStats = async () => {
-    setLoadingStats(true);
+    if (!stats) setLoadingStats(true);
     try {
-      const data = await api.profesional.getStats();
+      const data = await cachedFetch(cacheKeys.statsProfesional, () => api.profesional.getStats(), TTL.short);
       setStats(data);
     } catch (err) { console.error(err); }
     finally { setLoadingStats(false); }
@@ -198,8 +208,8 @@ export default function ProfesionalDashboard() {
   const loadInicioData = async () => {
     try {
       const [statsData, resenasData] = await Promise.all([
-        api.profesional.getStats().catch(() => null),
-        api.resenas.getMisResenas({ page: 1, limit: 5 }).catch(() => null),
+        cachedFetch(cacheKeys.statsProfesional, () => api.profesional.getStats(), TTL.short).catch(() => null),
+        cachedFetch(cacheKeys.misResenas(1, 5), () => api.resenas.getMisResenas({ page: 1, limit: 5 }), TTL.short).catch(() => null),
       ]);
       if (statsData) setStats(statsData);
       if (resenasData) {
@@ -210,9 +220,9 @@ export default function ProfesionalDashboard() {
   };
 
   const loadBloqueos = async () => {
-    setLoadingBloqueos(true);
+    if (bloqueos.length === 0) setLoadingBloqueos(true);
     try {
-      const data = await api.bloqueos.getMisBloqueos();
+      const data = await cachedFetch(cacheKeys.bloqueos, () => api.bloqueos.getMisBloqueos(), TTL.short);
       setBloqueos(data);
     } catch (err) { console.error(err); }
     finally { setLoadingBloqueos(false); }
@@ -273,9 +283,9 @@ export default function ProfesionalDashboard() {
   const saludo = horaActual < 12 ? i.greetingMorning : horaActual < 20 ? i.greetingAfternoon : i.greetingEvening;
 
   const loadCupones = async () => {
-    setLoadingCupones(true);
+    if (cupones.length === 0) setLoadingCupones(true);
     try {
-      const data = await api.cupones.listar();
+      const data = await cachedFetch(cacheKeys.cupones, () => api.cupones.listar(), TTL.medium);
       setCupones(data);
     } catch (err) {
       console.error(err);
@@ -334,9 +344,9 @@ export default function ProfesionalDashboard() {
   };
 
   const loadSuscripcion = async () => {
-    setLoadingSuscripcion(true);
+    if (!suscripcion) setLoadingSuscripcion(true);
     try {
-      const data = await api.suscripciones.estado();
+      const data = await cachedFetch(cacheKeys.suscripcionEstado, () => api.suscripciones.estado(), TTL.medium);
       setSuscripcion(data);
     } catch (err) {
       console.error(err);
@@ -420,7 +430,7 @@ export default function ProfesionalDashboard() {
         </div>
       )}
 
-      <header className="sticky top-0 z-30 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <header className="sticky top-0 z-30 border-b bg-card">
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
@@ -565,6 +575,7 @@ export default function ProfesionalDashboard() {
                   { id: 'inicio', label: i.tab, icon: <HomeIcon size={14} />, onboarding: 'tab-inicio' },
                   { id: 'calendario', label: d.agenda, icon: <CalendarIcon size={14} />, onboarding: 'tab-calendario' },
                   { id: 'disponibilidad', label: d.availability, icon: <ClockIcon size={14} />, onboarding: 'tab-disponibilidad' },
+                  { id: 'preconsulta', label: d.preconsultaTab ?? 'Preconsulta', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>, onboarding: 'tab-preconsulta' },
                   { id: 'stats', label: d.stats, icon: <ChartIcon size={14} />, onboarding: 'tab-stats' },
                   { id: 'pagos', label: d.payments, icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>, onboarding: 'tab-pagos' },
                   { id: 'resenas', label: d.reviews, icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>, onboarding: 'tab-resenas' },
@@ -634,6 +645,9 @@ export default function ProfesionalDashboard() {
                     <TiposConsultaView profesionalId={user.profesional!.id} />
                     <EmbedWidgetSection profesionalId={user.profesional!.id} />
                   </>
+                )}
+                {activeTab === 'preconsulta' && (
+                  <PreconsultaConfigView profesionalId={user.profesional!.id} />
                 )}
                 {activeTab === 'stats' && (
                   <div>

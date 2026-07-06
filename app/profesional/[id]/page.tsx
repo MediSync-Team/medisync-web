@@ -315,7 +315,7 @@ export default function ProfesionalPage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
       {/* -- Navbar ---------------------------------------- */}
-      <header className="sticky top-0 z-30 border-b border-border/80 bg-background/80 backdrop-blur-md">
+      <header className="sticky top-0 z-30 border-b border-border/80 bg-background">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-14 items-center justify-between">
             <Button
@@ -343,7 +343,7 @@ export default function ProfesionalPage() {
         </div>
       </header>
 
-      <main className="page-container py-6 max-w-4xl mx-auto">
+      <main className="page-container py-6 max-w-6xl mx-auto">
         {/* -- Guest confirmation (no account) -------------- */}
         {guestTurnoReservado && profesional ? (
           <GuestConfirmacion
@@ -375,9 +375,9 @@ export default function ProfesionalPage() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* -- Left: Professional profile -------------- */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="lg:col-span-3 lg:order-1 space-y-4">
             <div className="card p-5">
               {/* Avatar + name */}
               <div className="flex flex-col items-center text-center">
@@ -512,7 +512,10 @@ export default function ProfesionalPage() {
                 </div>
               )}
             </div>
+          </div>
 
+          {/* -- Right: Schedules + ratings -------------- */}
+          <div className="lg:col-span-4 lg:order-3 space-y-4">
             {/* Weekly availability visual grid */}
             {profesional.disponibilidades && profesional.disponibilidades.length > 0 && (
               <HorariosGrid disponibilidades={profesional.disponibilidades} />
@@ -600,8 +603,8 @@ export default function ProfesionalPage() {
             )}
           </div>
 
-          {/* -- Right: Booking -------------------------- */}
-          <div className="lg:col-span-3">
+          {/* -- Middle: Booking ------------------------- */}
+          <div className="lg:col-span-5 lg:order-2">
             <div className="card p-5">
               <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">{p.bookAppointment}</h2>
 

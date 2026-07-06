@@ -589,6 +589,7 @@ export function SearchSection() {
                   key={p.id}
                   prof={p}
                   showDisponible={filters.disponibleEstaSemana}
+                  highlightObraSocial={filters.obraSocial || undefined}
                 />
               ))}
             </div>

@@ -7,8 +7,10 @@ import { formatClinicInstantDate, getLocale } from '../../../lib/date';
 import { useTranslateSpecialty } from '../../../lib/i18n/use-translate-specialty';
 import { XIcon, InfoIcon, UserIcon } from '../../../components/icons';
 import StarRating from '../../../components/StarRating';
+import { useScrollLock } from '../../../hooks/useScrollLock';
 
 export default function CalificarModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
+  useScrollLock();
   const { t, lang } = useLang();
   const translateSpecialty = useTranslateSpecialty();
   const p = t('paciente');
@@ -41,7 +43,7 @@ export default function CalificarModal({ turno, onClose, onSuccess }: { turno: T
   const labels = p.ratingLabels;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4">
       <div className="w-full max-w-md bg-card rounded-2xl shadow-2xl overflow-hidden">
         <div className="flex items-center justify-between px-6 py-4 border-b">
           <h3 className="font-bold text-foreground">{p.rateTitle}</h3>

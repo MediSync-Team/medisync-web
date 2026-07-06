@@ -1,4 +1,5 @@
 import { api } from './api';
+import { cacheKeys, peekCache } from './api/cache';
 
 /**
  * Canonical fallback list of obras sociales, mirroring the API source of truth
@@ -30,16 +31,13 @@ export const KNOWN_OBRAS_SOCIALES: readonly string[] = [
   'PARTICULAR (SIN COBERTURA)',
 ];
 
-let cache: string[] | null = null;
-
+/** Loads (and caches 24h via the api layer's Layer-A cache) the obras sociales list. */
 export async function loadObrasSociales(): Promise<string[]> {
-  if (cache) return cache;
   try {
-    cache = await api.obrasSociales.getAll();
+    return await api.obrasSociales.getAll();
   } catch {
-    cache = [];
+    return [];
   }
-  return cache;
 }
 
 /**
@@ -47,5 +45,6 @@ export async function loadObrasSociales(): Promise<string[]> {
  * to {@link KNOWN_OBRAS_SOCIALES} so callers always have a usable list.
  */
 export function getObrasSociales(): string[] {
-  return cache && cache.length > 0 ? cache : [...KNOWN_OBRAS_SOCIALES];
+  const hit = peekCache<string[]>(cacheKeys.obrasSociales);
+  return hit && hit.data.length > 0 ? hit.data : [...KNOWN_OBRAS_SOCIALES];
 }

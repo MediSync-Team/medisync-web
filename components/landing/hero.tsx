@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Search, ShieldCheck, Star, Users } from "lucide-react"
+import { Search, ShieldCheck } from "lucide-react"
 import { useLang } from "@/app/lib/i18n/context"
 import { Button } from "@/components/ui/button"
 
@@ -12,7 +12,7 @@ export function Hero() {
   return (
     <section
       data-onboarding="hero"
-      className="relative overflow-hidden border-b bg-gradient-to-b from-accent/60 to-background"
+      className="relative overflow-hidden border-b bg-gradient-to-b from-primary/15 via-accent to-background"
     >
       <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 sm:py-20 lg:px-8 lg:py-28">
         <div className="mx-auto max-w-3xl text-center">
@@ -35,20 +35,6 @@ export function Hero() {
               {l.heroCtaSecondary}
             </Button>
           </div>
-
-          <dl className="mx-auto mt-12 grid max-w-lg grid-cols-3 gap-4">
-            {[
-              { icon: Users, value: "12.000+", label: l.statPatients },
-              { icon: ShieldCheck, value: "850+", label: l.statProfessionals },
-              { icon: Star, value: "4.8", label: l.statRating },
-            ].map((stat) => (
-              <div key={stat.label} className="flex flex-col items-center gap-1">
-                <stat.icon className="size-5 text-primary" />
-                <dt className="font-heading text-xl font-bold">{stat.value}</dt>
-                <dd className="text-xs text-muted-foreground">{stat.label}</dd>
-              </div>
-            ))}
-          </dl>
         </div>
       </div>
     </section>
