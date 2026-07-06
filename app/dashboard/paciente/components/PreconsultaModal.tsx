@@ -2,15 +2,28 @@
 
 import { useState, useEffect } from 'react';
 import { useLang } from '../../../lib/i18n/context';
-import { api, Turno } from '../../../lib/api';
+import { api, Turno, PreconsultaConfig, PreconsultaRespuestas } from '../../../lib/api';
 import { XIcon, InfoIcon } from '../../../components/icons';
 import { useScrollLock } from '../../../hooks/useScrollLock';
+
+// Fallback when the API hasn't returned a config yet: mirror the historical form.
+const ALL_ENABLED: PreconsultaConfig = {
+  defaults: {
+    escalaDolor: { enabled: true, required: false },
+    escalaAnsiedad: { enabled: true, required: false },
+    inicioSintomas: { enabled: true, required: false },
+    temperatura: { enabled: true, required: false },
+    notasPaciente: { enabled: true, required: false },
+  },
+  custom: [],
+};
 
 export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno: Turno; onClose: () => void; onSuccess: () => void }) {
   useScrollLock();
   const { t } = useLang();
   const p = t('paciente');
   const common = t('common');
+  const pre = t('preconsulta');
   const [motivo, setMotivo] = useState('');
   const [sintomas, setSintomas] = useState('');
   const [escalaDolor, setEscalaDolor] = useState(0);
@@ -18,6 +31,8 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
   const [inicioSintomas, setInicioSintomas] = useState('');
   const [temperatura, setTemperatura] = useState('');
   const [notasPaciente, setNotasPaciente] = useState('');
+  const [config, setConfig] = useState<PreconsultaConfig>(ALL_ENABLED);
+  const [respuestas, setRespuestas] = useState<PreconsultaRespuestas>({});
   const [riesgo, setRiesgo] = useState<string | null>(null);
   const [flags, setFlags] = useState<string[]>([]);
   const [guardando, setGuardando] = useState(false);
@@ -38,6 +53,8 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
         setNotasPaciente(data.notasPaciente || '');
         setRiesgo(data.riesgo ?? null);
         setFlags(data.flags || []);
+        if (data.config) setConfig(data.config);
+        if (data.respuestas) setRespuestas(data.respuestas);
       } catch (err) {
         console.error(err);
       } finally {
@@ -48,10 +65,39 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
     loadPreconsulta();
   }, [turno.id]);
 
+  const setRespuesta = (id: string, value: string | number | boolean) =>
+    setRespuestas((prev) => ({ ...prev, [id]: value }));
+
   const handleGuardar = async () => {
     if (motivo.trim().length < 5 || sintomas.trim().length < 5) {
       setNotice({ type: 'error', text: p.preconsultaValidation });
       return;
+    }
+
+    // Required built-in fields (only the enabled ones can be required).
+    const d = config.defaults;
+    if (d.inicioSintomas.enabled && d.inicioSintomas.required && !inicioSintomas.trim()) {
+      setNotice({ type: 'error', text: `${p.symptomsStart}: ${pre.requiredField}` });
+      return;
+    }
+    if (d.temperatura.enabled && d.temperatura.required && !temperatura.trim()) {
+      setNotice({ type: 'error', text: `${p.bodyTemperature}: ${pre.requiredField}` });
+      return;
+    }
+    if (d.notasPaciente.enabled && d.notasPaciente.required && !notasPaciente.trim()) {
+      setNotice({ type: 'error', text: `${p.patientAdditionalNotes}: ${pre.requiredField}` });
+      return;
+    }
+
+    // Required custom questions.
+    for (const q of config.custom) {
+      if (q.required && q.type !== 'boolean') {
+        const v = respuestas[q.id];
+        if (v === undefined || v === null || String(v).trim() === '') {
+          setNotice({ type: 'error', text: `${q.label}: ${pre.requiredField}` });
+          return;
+        }
+      }
     }
 
     setGuardando(true);
@@ -59,11 +105,12 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
       const data = await api.turnos.updatePreconsulta(turno.id, {
         motivo: motivo.trim(),
         sintomas: sintomas.trim(),
-        escalaDolor,
-        escalaAnsiedad,
-        inicioSintomas: inicioSintomas.trim() || null,
-        temperatura: temperatura.trim() ? Number(temperatura) : null,
-        notasPaciente: notasPaciente.trim() || null,
+        escalaDolor: d.escalaDolor.enabled ? escalaDolor : null,
+        escalaAnsiedad: d.escalaAnsiedad.enabled ? escalaAnsiedad : null,
+        inicioSintomas: d.inicioSintomas.enabled ? (inicioSintomas.trim() || null) : null,
+        temperatura: d.temperatura.enabled ? (temperatura.trim() ? Number(temperatura) : null) : null,
+        notasPaciente: d.notasPaciente.enabled ? (notasPaciente.trim() || null) : null,
+        respuestas,
       });
 
       setRiesgo(data.riesgo ?? null);
@@ -86,6 +133,9 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
     : riesgo === 'BAJO'
     ? 'badge-green'
     : 'badge-gray';
+
+  const req = (required: boolean) => (required ? <span className="text-red-500"> *</span> : null);
+  const d = config.defaults;
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/70 flex items-center justify-center p-4">
@@ -114,42 +164,133 @@ export default function PreconsultaModal({ turno, onClose, onSuccess }: { turno:
             </div>
           ) : (
             <>
+              {/* Core — always required */}
               <div>
-                <label className="field-label">{p.mainReason}</label>
+                <label className="field-label">{p.mainReason}{req(true)}</label>
                 <textarea value={motivo} onChange={(e) => setMotivo(e.target.value)} className="field-input resize-none min-h-[72px]" placeholder={p.mainReasonPlaceholder} />
               </div>
 
               <div>
-                <label className="field-label">{p.currentSymptoms}</label>
+                <label className="field-label">{p.currentSymptoms}{req(true)}</label>
                 <textarea value={sintomas} onChange={(e) => setSintomas(e.target.value)} className="field-input resize-none min-h-[88px]" placeholder={p.currentSymptomsPlaceholder} />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="field-label">{p.painLevel}: {escalaDolor}/10</label>
-                  <input type="range" min={0} max={10} value={escalaDolor} onChange={(e) => setEscalaDolor(Number(e.target.value))} className="w-full" />
+              {/* Built-in fields the professional left enabled */}
+              {(d.escalaDolor.enabled || d.escalaAnsiedad.enabled) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {d.escalaDolor.enabled && (
+                    <div>
+                      <label className="field-label">{p.painLevel}: {escalaDolor}/10</label>
+                      <input type="range" min={0} max={10} value={escalaDolor} onChange={(e) => setEscalaDolor(Number(e.target.value))} className="w-full" />
+                    </div>
+                  )}
+                  {d.escalaAnsiedad.enabled && (
+                    <div>
+                      <label className="field-label">{p.anxietyLevel}: {escalaAnsiedad}/10</label>
+                      <input type="range" min={0} max={10} value={escalaAnsiedad} onChange={(e) => setEscalaAnsiedad(Number(e.target.value))} className="w-full" />
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="field-label">{p.anxietyLevel}: {escalaAnsiedad}/10</label>
-                  <input type="range" min={0} max={10} value={escalaAnsiedad} onChange={(e) => setEscalaAnsiedad(Number(e.target.value))} className="w-full" />
-                </div>
-              </div>
+              )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="field-label">{p.symptomsStart}</label>
-                  <input value={inicioSintomas} onChange={(e) => setInicioSintomas(e.target.value)} className="field-input" placeholder={p.symptomsStartPlaceholder} />
+              {(d.inicioSintomas.enabled || d.temperatura.enabled) && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  {d.inicioSintomas.enabled && (
+                    <div>
+                      <label className="field-label">{p.symptomsStart}{req(d.inicioSintomas.required)}</label>
+                      <input value={inicioSintomas} onChange={(e) => setInicioSintomas(e.target.value)} className="field-input" placeholder={p.symptomsStartPlaceholder} />
+                    </div>
+                  )}
+                  {d.temperatura.enabled && (
+                    <div>
+                      <label className="field-label">{p.bodyTemperature}{req(d.temperatura.required)}</label>
+                      <input type="number" min="34" max="43" step="0.1" value={temperatura} onChange={(e) => setTemperatura(e.target.value)} className="field-input" placeholder={p.temperaturePlaceholder} />
+                    </div>
+                  )}
                 </div>
-                <div>
-                  <label className="field-label">{p.bodyTemperature}</label>
-                  <input type="number" min="34" max="43" step="0.1" value={temperatura} onChange={(e) => setTemperatura(e.target.value)} className="field-input" placeholder={p.temperaturePlaceholder} />
-                </div>
-              </div>
+              )}
 
-              <div>
-                <label className="field-label">{p.patientAdditionalNotes}</label>
-                <textarea value={notasPaciente} onChange={(e) => setNotasPaciente(e.target.value)} className="field-input resize-none min-h-[72px]" placeholder={p.patientAdditionalNotesPlaceholder} />
-              </div>
+              {d.notasPaciente.enabled && (
+                <div>
+                  <label className="field-label">{p.patientAdditionalNotes}{req(d.notasPaciente.required)}</label>
+                  <textarea value={notasPaciente} onChange={(e) => setNotasPaciente(e.target.value)} className="field-input resize-none min-h-[72px]" placeholder={p.patientAdditionalNotesPlaceholder} />
+                </div>
+              )}
+
+              {/* Professional's custom questions */}
+              {config.custom.length > 0 && (
+                <div className="space-y-4 border-t border-border pt-4">
+                  {config.custom.map((q) => {
+                    const value = respuestas[q.id];
+                    return (
+                      <div key={q.id}>
+                        {q.type === 'boolean' ? (
+                          <label className="flex items-center gap-2.5 cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={value === true}
+                              onChange={(e) => setRespuesta(q.id, e.target.checked)}
+                              className="size-4 accent-blue-600"
+                            />
+                            <span className="text-sm font-medium text-foreground">{q.label}</span>
+                          </label>
+                        ) : (
+                          <>
+                            <label className="field-label">{q.label}{req(q.required)}</label>
+                            {q.type === 'textarea' && (
+                              <textarea
+                                value={(value as string) ?? ''}
+                                onChange={(e) => setRespuesta(q.id, e.target.value)}
+                                className="field-input resize-none min-h-[72px]"
+                              />
+                            )}
+                            {q.type === 'text' && (
+                              <input
+                                value={(value as string) ?? ''}
+                                onChange={(e) => setRespuesta(q.id, e.target.value)}
+                                className="field-input"
+                              />
+                            )}
+                            {q.type === 'number' && (
+                              <input
+                                type="number"
+                                value={value === undefined || value === null ? '' : String(value)}
+                                onChange={(e) => setRespuesta(q.id, e.target.value === '' ? '' : Number(e.target.value))}
+                                className="field-input"
+                              />
+                            )}
+                            {q.type === 'scale' && (
+                              <div>
+                                <span className="text-xs text-muted-foreground">{typeof value === 'number' ? value : 0}/10</span>
+                                <input
+                                  type="range"
+                                  min={0}
+                                  max={10}
+                                  value={typeof value === 'number' ? value : 0}
+                                  onChange={(e) => setRespuesta(q.id, Number(e.target.value))}
+                                  className="w-full"
+                                />
+                              </div>
+                            )}
+                            {q.type === 'select' && (
+                              <select
+                                value={(value as string) ?? ''}
+                                onChange={(e) => setRespuesta(q.id, e.target.value)}
+                                className="field-select"
+                              >
+                                <option value="">—</option>
+                                {(q.options ?? []).map((opt) => (
+                                  <option key={opt} value={opt}>{opt}</option>
+                                ))}
+                              </select>
+                            )}
+                          </>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {riesgo && (
                 <div className="alert alert-info text-xs">

@@ -220,6 +220,9 @@ export type PreconsultaTurno = {
   aiGenerated?: boolean;
   resumen?: string;
   flags?: string[];
+  // Config the professional set + this patient's answers to custom questions.
+  respuestas?: PreconsultaRespuestas;
+  config?: PreconsultaConfig;
 };
 
 export type PreconsultaInput = {
@@ -233,7 +236,35 @@ export type PreconsultaInput = {
   inicioSintomas?: string | null;
   temperatura?: number | null;
   notasPaciente?: string | null;
+  respuestas?: PreconsultaRespuestas;
 };
+
+// ── Configurable pre-consultation questionnaire (per professional) ──────────
+export type PreconsultaFieldType = 'text' | 'textarea' | 'number' | 'scale' | 'boolean' | 'select';
+
+export type PreconsultaDefaultField =
+  | 'escalaDolor'
+  | 'escalaAnsiedad'
+  | 'inicioSintomas'
+  | 'temperatura'
+  | 'notasPaciente';
+
+export type PreconsultaDefaultToggle = { enabled: boolean; required: boolean };
+
+export type PreconsultaCustomQuestion = {
+  id: string;
+  label: string;
+  type: PreconsultaFieldType;
+  required: boolean;
+  options?: string[]; // only for type === 'select'
+};
+
+export type PreconsultaConfig = {
+  defaults: Record<PreconsultaDefaultField, PreconsultaDefaultToggle>;
+  custom: PreconsultaCustomQuestion[];
+};
+
+export type PreconsultaRespuestas = Record<string, string | number | boolean>;
 
 export type RecetaIndicacion = {
   id: string;

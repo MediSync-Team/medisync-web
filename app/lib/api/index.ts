@@ -16,6 +16,7 @@ import type {
   Evolucion,
   PreconsultaTurno,
   PreconsultaInput,
+  PreconsultaConfig,
   RecetaIndicacion,
   RecetaIndicacionInput,
   HistorialPaginatedResponse,
@@ -156,6 +157,13 @@ const profesionalesApi = {
     fetchApi<{ deleted: boolean }>(`/profesionales/${id}/tipos-consulta/${tipoId}`, { method: 'DELETE' }).then(
       invalidate(cacheKeys.profesional(id))
     ),
+  getPreconsultaConfig: (id: string) =>
+    cachedFetch(cacheKeys.preconsultaConfig(id), () => fetchApi<PreconsultaConfig>(`/profesionales/${id}/preconsulta-config`), TTL.tipos),
+  updatePreconsultaConfig: (id: string, config: PreconsultaConfig) =>
+    fetchApi<PreconsultaConfig>(`/profesionales/${id}/preconsulta-config`, {
+      method: 'PUT',
+      body: JSON.stringify(config),
+    }).then(invalidate(cacheKeys.profesional(id))),
 };
 
 const turnosApi = {

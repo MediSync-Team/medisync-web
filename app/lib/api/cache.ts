@@ -21,6 +21,7 @@ export const cacheKeys = {
   politicaCancelacion: 'politica-cancelacion',
   profesional: (id: string) => `profesionales:${id}`,
   tiposConsulta: (id: string) => `profesionales:${id}:tipos`,
+  preconsultaConfig: (id: string) => `profesionales:${id}:preconsulta`,
   statsProfesional: 'stats:profesional',
   statsPaciente: 'stats:paciente',
   turnosProf: (id: string, desde: string, hasta: string) => `turnos:prof:${id}:${desde}:${hasta}`,

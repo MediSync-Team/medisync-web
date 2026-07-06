@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import CalendarioView from './components/CalendarioView';
 import DisponibilidadView from './components/DisponibilidadView';
 import TiposConsultaView from './components/TiposConsultaView';
+import PreconsultaConfigView from './components/PreconsultaConfigView';
 import PagosView from './components/PagosView';
 import ResenasView from './components/ResenasView';
 import CuponesView from './components/CuponesView';
@@ -67,7 +68,7 @@ export default function ProfesionalDashboard() {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'inicio' | 'calendario' | 'disponibilidad' | 'stats' | 'pagos' | 'resenas' | 'cupones' | 'plan' | 'auditoria'>('inicio');
+  const [activeTab, setActiveTab] = useState<'inicio' | 'calendario' | 'disponibilidad' | 'preconsulta' | 'stats' | 'pagos' | 'resenas' | 'cupones' | 'plan' | 'auditoria'>('inicio');
   const [selectedDateKey, setSelectedDateKey] = useState(() => todayInputValue());
   const [turnosDelDia, setTurnosDelDia] = useState<Turno[]>([]);
   const [nuevaDisp, setNuevaDisp] = useState({ diaSemana: 1, horaInicio: '09:00', horaFin: '17:00', modalidad: 'PRESENCIAL' as const, lugarAtencion: '' });
@@ -574,6 +575,7 @@ export default function ProfesionalDashboard() {
                   { id: 'inicio', label: i.tab, icon: <HomeIcon size={14} />, onboarding: 'tab-inicio' },
                   { id: 'calendario', label: d.agenda, icon: <CalendarIcon size={14} />, onboarding: 'tab-calendario' },
                   { id: 'disponibilidad', label: d.availability, icon: <ClockIcon size={14} />, onboarding: 'tab-disponibilidad' },
+                  { id: 'preconsulta', label: d.preconsultaTab ?? 'Preconsulta', icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" /></svg>, onboarding: 'tab-preconsulta' },
                   { id: 'stats', label: d.stats, icon: <ChartIcon size={14} />, onboarding: 'tab-stats' },
                   { id: 'pagos', label: d.payments, icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z" /></svg>, onboarding: 'tab-pagos' },
                   { id: 'resenas', label: d.reviews, icon: <svg xmlns="http://www.w3.org/2000/svg" width={14} height={14} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8}><path strokeLinecap="round" strokeLinejoin="round" d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" /></svg>, onboarding: 'tab-resenas' },
@@ -643,6 +645,9 @@ export default function ProfesionalDashboard() {
                     <TiposConsultaView profesionalId={user.profesional!.id} />
                     <EmbedWidgetSection profesionalId={user.profesional!.id} />
                   </>
+                )}
+                {activeTab === 'preconsulta' && (
+                  <PreconsultaConfigView profesionalId={user.profesional!.id} />
                 )}
                 {activeTab === 'stats' && (
                   <div>
