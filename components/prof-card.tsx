@@ -20,9 +20,14 @@ function initials(nombre: string, apellido: string) {
 export const ProfCard = memo(function ProfCard({
   prof,
   showDisponible = false,
+  highlightObraSocial,
 }: {
   prof: Profesional
   showDisponible?: boolean
+  /** Obra social currently applied as a search filter, if any is matched
+   *  by this professional it's shown first and styled like the primary
+   *  search button so it stands out from the rest. */
+  highlightObraSocial?: string
 }) {
   const { t, lang } = useLang()
   const h = t("home")
@@ -44,7 +49,11 @@ export const ProfCard = memo(function ProfCard({
     lang,
     (h.specialties as Record<string, string>) || {}
   )
-  const obras = prof.obrasSociales ?? []
+  const obrasRaw = prof.obrasSociales ?? []
+  const obras =
+    highlightObraSocial && obrasRaw.includes(highlightObraSocial)
+      ? [highlightObraSocial, ...obrasRaw.filter((o) => o !== highlightObraSocial)]
+      : obrasRaw
 
   return (
     <Card
@@ -116,14 +125,25 @@ export const ProfCard = memo(function ProfCard({
         )}
 
         {obras.length > 0 && (
-          <div className="flex flex-wrap gap-1.5">
-            {obras.slice(0, 3).map((o) => (
-              <Badge key={o} variant="outline" className="font-normal">
-                {o}
-              </Badge>
-            ))}
+          <div className="flex items-center gap-1.5 overflow-hidden">
+            {obras.slice(0, 3).map((o) => {
+              const isMatch = o === highlightObraSocial
+              return (
+                <Badge
+                  key={o}
+                  variant={isMatch ? "default" : "outline"}
+                  className={
+                    isMatch
+                      ? "shrink-0 font-normal"
+                      : "min-w-0 shrink truncate font-normal"
+                  }
+                >
+                  {o}
+                </Badge>
+              )
+            })}
             {obras.length > 3 && (
-              <Badge variant="outline" className="font-normal">
+              <Badge variant="outline" className="shrink-0 font-normal">
                 +{obras.length - 3}
               </Badge>
             )}
