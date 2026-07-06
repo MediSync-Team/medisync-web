@@ -128,21 +128,6 @@ export default function ClinicaDashboard() {
     }
   }, []);
 
-  const loadInitialAgenda = useCallback(async () => {
-    const today = todayInputValue();
-    const [clinicYear, clinicMonth] = today.split('-').map(Number);
-    const initialStart = getClinicMonthFetchBounds(clinicYear, clinicMonth - 2);
-    const initialEnd = getClinicMonthFetchBounds(clinicYear, clinicMonth);
-    try {
-      const data = await clinicasApi.getAgendaRange(initialStart.desde, initialEnd.hasta);
-      setAgenda(data);
-      [-2, -1, 0].forEach(delta => {
-        const d = new Date(Date.UTC(clinicYear, clinicMonth - 1 + delta, 1, 12, 0, 0, 0));
-        loadedMonths.current.add(`${d.getUTCFullYear()}-${d.getUTCMonth()}`);
-      });
-    } catch { setAgenda([]); }
-  }, []);
-
   const handleFetchMonth = useCallback(async (year: number, month: number) => {
     const key = `${year}-${month}`;
     if (loadedMonths.current.has(key)) return;
@@ -159,6 +144,19 @@ export default function ClinicaDashboard() {
       loadedMonths.current.delete(key);
     }
   }, []);
+
+  const loadInitialAgenda = useCallback(async () => {
+    const today = todayInputValue();
+    const [clinicYear, clinicMonth] = today.split('-').map(Number);
+    const currentMonth0 = clinicMonth - 1; // date-key month is 1-indexed; getClinicMonthFetchBounds/handleFetchMonth expect 0-indexed
+    // One request per month (like handleFetchMonth) instead of a single combined
+    // desde/hasta span — the api caps ranges at 62 days, less than the ~90 days
+    // these 3 calendar months add up to.
+    await Promise.all([-2, -1, 0].map(delta => {
+      const d = new Date(Date.UTC(clinicYear, currentMonth0 + delta, 1, 12, 0, 0, 0));
+      return handleFetchMonth(d.getUTCFullYear(), d.getUTCMonth());
+    }));
+  }, [handleFetchMonth]);
 
   useEffect(() => { if (user?.rol === 'CLINICA') { load(); loadInitialAgenda(); } }, [user, load, loadInitialAgenda]);
   useEffect(() => {
