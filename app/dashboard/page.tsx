@@ -434,7 +434,7 @@ export default function ProfesionalDashboard() {
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              <Logo href="/dashboard" />
+              <Logo href="/" />
               <span className="hidden text-xs text-muted-foreground sm:block">{d.title}</span>
             </div>
             <div className="flex items-center gap-1">
@@ -717,7 +717,7 @@ export default function ProfesionalDashboard() {
         />
       )}
 
-      <OnboardingTour storageKey="medisync-prof-tour-v1" steps={profTourSteps} delay={1000} />
+      <OnboardingTour storageKey={`medisync-prof-tour-v1-${user.id}`} steps={profTourSteps} delay={1000} enabled={!showOnboarding} />
     </div>
   );
 }

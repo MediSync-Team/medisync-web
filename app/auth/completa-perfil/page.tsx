@@ -6,6 +6,8 @@ import { api, clinicasApi, Especialidad } from '../../lib/api';
 import { useLang } from '../../lib/i18n/context';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { MediSyncLogo } from '../../components/icons';
+import ImageUpload from '../../components/ImageUpload';
+import { isValidMatricula, MATRICULA_MAX_LENGTH } from '../../lib/format';
 
 export default function CompletaPerfilPage() {
   const router = useRouter();
@@ -70,12 +72,16 @@ export default function CompletaPerfilPage() {
 
     try {
       if (user.rol === 'PROFESIONAL') {
-        if (!formData.matricula || !formData.especialidadId) {
+        if (!formData.matricula.trim() || !formData.especialidadId) {
           setError(cp.licenseAndSpecialtyRequired);
           return;
         }
+        if (!isValidMatricula(formData.matricula)) {
+          setError(cp.licenseInvalid);
+          return;
+        }
         await api.profesional.updatePerfil(user.profesional.id, {
-          matricula: formData.matricula,
+          matricula: formData.matricula.trim(),
           especialidadId: formData.especialidadId,
           precioConsulta: formData.precioConsulta ? Number(formData.precioConsulta) : undefined,
           lugarAtencion: formData.lugarAtencion || undefined,
@@ -143,7 +149,7 @@ export default function CompletaPerfilPage() {
               : cp.clinicInfo}
           </h2>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} noValidate className="space-y-4">
             {error && <div className="alert alert-error text-sm" role="alert" aria-live="polite" aria-atomic="true">{error}</div>}
 
             {user?.rol === 'PROFESIONAL' && (
@@ -154,6 +160,7 @@ export default function CompletaPerfilPage() {
                     id="matricula"
                     name="matricula"
                     required
+                    maxLength={MATRICULA_MAX_LENGTH}
                     value={formData.matricula}
                     onChange={handleChange}
                     className={inp}
@@ -205,16 +212,14 @@ export default function CompletaPerfilPage() {
                 </div>
 
                 <div>
-                  <label htmlFor="fotoUrl" className="field-label">{cp.photoLabel}</label>
-                  <input
-                    id="fotoUrl"
-                    name="fotoUrl"
-                    type="url"
-                    value={formData.fotoUrl}
-                    onChange={handleChange}
-                    className={inp}
-                    placeholder="https://..."
-                  />
+                  <label className="field-label">{cp.photoLabel}</label>
+                  <div className="mt-1">
+                    <ImageUpload
+                      value={formData.fotoUrl}
+                      onChange={(url) => setFormData((prev) => ({ ...prev, fotoUrl: url }))}
+                      initials={formData.nombre?.[0]?.toUpperCase()}
+                    />
+                  </div>
                 </div>
 
                 <div>
