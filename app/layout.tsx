@@ -31,6 +31,10 @@ const newsreader = Newsreader({
 export const metadata: Metadata = {
   title: "MediSync",
   description: "Medical scheduling and practice management platform for healthcare professionals. Plataforma de gestión médica para profesionales de la salud.",
+  icons: {
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+  },
 };
 
 export default function RootLayout({

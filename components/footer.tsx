@@ -1,45 +1,31 @@
+"use client"
+
 import Link from "next/link"
+import { useLang } from "@/app/lib/i18n/context"
 import { Logo } from "@/components/logo"
 
-const groups = [
-  {
-    title: "Plataforma",
-    links: [
-      { label: "Buscar profesionales", href: "/profesionales" },
-      { label: "Cómo funciona", href: "/#como-funciona" },
-      { label: "Para profesionales", href: "/register" },
-      { label: "Para clínicas", href: "/register" },
-    ],
-  },
-  {
-    title: "Empresa",
-    links: [
-      { label: "Sobre nosotros", href: "#" },
-      { label: "Blog", href: "#" },
-      { label: "Contacto", href: "#" },
-      { label: "Trabajá con nosotros", href: "#" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { label: "Términos y condiciones", href: "#" },
-      { label: "Política de privacidad", href: "#" },
-      { label: "Protección de datos", href: "#" },
-    ],
-  },
-]
-
 export function Footer() {
+  const footer = useLang().t("home").footer
+  const groups = [
+    {
+      title: footer.platform,
+      links: [
+        { label: footer.searchProfessionals, href: "/profesionales" },
+        { label: footer.howItWorks, href: "/#como-funciona" },
+        { label: footer.forProfessionals, href: "/register" },
+        { label: footer.forClinics, href: "/register" },
+      ],
+    },
+  ]
+
   return (
     <footer className="border-t bg-muted/30">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-10 lg:grid-cols-[1.5fr_1fr_1fr_1fr]">
+        <div className="grid gap-10 lg:grid-cols-[1.5fr_1fr]">
           <div className="flex flex-col gap-3">
             <Logo />
             <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-              Tu salud, sincronizada. La plataforma que conecta pacientes y
-              profesionales de la salud.
+              {footer.description}
             </p>
           </div>
           {groups.map((group) => (
@@ -64,11 +50,10 @@ export function Footer() {
         </div>
         <div className="mt-10 flex flex-col items-center justify-between gap-4 border-t pt-6 sm:flex-row">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} MediSync. Todos los derechos
-            reservados.
+            {footer.rights.replace("{{year}}", String(new Date().getFullYear()))}
           </p>
           <p className="text-sm text-muted-foreground">
-            Hecho con cuidado para tu salud.
+            {footer.care}
           </p>
         </div>
       </div>
