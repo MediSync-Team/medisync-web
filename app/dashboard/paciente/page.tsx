@@ -433,7 +433,7 @@ export default function PacienteDashboard() {
 
       {/* -- Hero band ------------------------------------- */}
       <section className="border-b bg-gradient-to-b from-accent/60 to-background">
-        <div className="page-container max-w-5xl mx-auto py-7">
+        <div className="page-container max-w-5xl mx-auto py-7 animate-in fade-in slide-in-from-bottom-1 duration-500 motion-reduce:animate-none">
           <p className="inline-flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
             <Sparkles className="size-3.5 text-primary" /> MediSync
           </p>
@@ -453,17 +453,19 @@ export default function PacienteDashboard() {
           </div>
         )}
 
-        {/* -- Cancellation policy notice ----------------- */}
-        <div className="alert alert-info mb-4 text-xs">
-          <InfoIcon size={15} className="shrink-0" />
-          <span>
-            {d.cancellationPolicy}: {d.cancellationPolicyText.replace('{horas}', String(horasMinCancelacion))}
-          </span>
-        </div>
+        {/* -- Cancellation policy notice (only where it applies) -- */}
+        {(activeTab === 'proximos' || activeTab === 'pasados') && (
+          <div className="alert alert-info mb-4 text-xs">
+            <InfoIcon size={15} className="shrink-0" />
+            <span>
+              {d.cancellationPolicy}: {d.cancellationPolicyText.replace('{horas}', String(horasMinCancelacion))}
+            </span>
+          </div>
+        )}
 
         {/* -- Próximo turno destacado -------------------- */}
         {proximoTurno && (
-          <Card className="mb-5 overflow-hidden rounded-2xl border-primary/20 bg-gradient-to-br from-primary/[0.06] to-card shadow-sm">
+          <Card className="mb-5 overflow-hidden rounded-2xl border-primary/20 bg-gradient-to-br from-primary/[0.06] to-card shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500 motion-reduce:animate-none">
             <CardContent className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
               <div className="flex items-start gap-4">
                 <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-sm font-semibold text-primary">
@@ -508,18 +510,50 @@ export default function PacienteDashboard() {
           </Card>
         )}
 
-        {/* -- Métricas ----------------------------------- */}
+        {/* -- Sin próximo turno: invitación a reservar --- */}
+        {!proximoTurno && !loading && (
+          <Card className="mb-5 rounded-2xl border-dashed shadow-none animate-in fade-in duration-500 motion-reduce:animate-none">
+            <CardContent className="flex flex-col items-center gap-4 py-6 text-center sm:flex-row sm:justify-between sm:text-left">
+              <div className="flex items-center gap-4">
+                <span className="flex size-12 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <CalendarDays className="size-6" />
+                </span>
+                <div>
+                  <p className="font-heading font-semibold">{i.proximoTurno}</p>
+                  <p className="text-sm text-muted-foreground">{i.pacSubNone}</p>
+                </div>
+              </div>
+              <Button render={<Link href="/profesionales" />}>
+                <SearchIcon size={15} />
+                {d.searchProfessionals}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* -- Métricas (clickeables, cada una lleva a su tab) -- */}
         <div className="mb-5 grid grid-cols-2 gap-4 lg:grid-cols-4">
           {[
-            { icon: CalendarDays, value: String(proximosTotal), label: i.proximos },
-            { icon: Pill, value: String(misRecetas.length), label: i.recetasActivas },
-            { icon: FileText, value: String(misCertificados.length), label: i.certificados },
-            { icon: Activity, value: String(pacienteStats?.completados ?? 0), label: i.completados },
-          ].map((mt) => (
-            <Card key={mt.label} className="rounded-2xl shadow-sm transition-shadow hover:shadow-md">
+            { icon: CalendarDays, value: String(proximosTotal), label: i.proximos, tab: 'proximos' as const, tone: 'bg-primary/10 text-primary' },
+            { icon: Pill, value: String(misRecetas.length), label: i.recetasActivas, tab: 'recetas' as const, tone: 'bg-success/10 text-success' },
+            { icon: FileText, value: String(misCertificados.length), label: i.certificados, tab: 'certificados' as const, tone: 'bg-chart-4/10 text-chart-4' },
+            { icon: Activity, value: String(pacienteStats?.completados ?? 0), label: i.completados, tab: 'estadisticas' as const, tone: 'bg-warning/10 text-warning' },
+          ].map((mt, idx) => (
+            <Card
+              key={mt.label}
+              role="button"
+              tabIndex={0}
+              onClick={() => handleTabChange(mt.tab)}
+              onKeyDown={(e: React.KeyboardEvent) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleTabChange(mt.tab); } }}
+              className="group cursor-pointer rounded-2xl shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md hover:border-primary/30 animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-backwards motion-reduce:animate-none"
+              style={{ animationDelay: `${idx * 75}ms` }}
+            >
               <CardContent className="flex flex-col gap-2">
-                <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                  <mt.icon className="size-5" />
+                <div className="flex items-center justify-between">
+                  <div className={`flex size-10 items-center justify-center rounded-xl ${mt.tone}`}>
+                    <mt.icon className="size-5" />
+                  </div>
+                  <ArrowRight className="size-4 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100" />
                 </div>
                 <span className="font-display text-3xl font-medium leading-none tracking-tight">{mt.value}</span>
                 <p className="text-sm font-medium">{mt.label}</p>
@@ -530,95 +564,36 @@ export default function PacienteDashboard() {
 
         {/* -- Tabs -------------------------------------- */}
         <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
-          <div className="flex gap-1 overflow-x-auto border-b px-2 pt-1.5">
-            <button
-              onClick={() => handleTabChange('resumen')}
-              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='resumen' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
-{p.summary}
-            </button>
-            <button
-              data-onboarding="pac-tab-proximos"
-              onClick={() => handleTabChange('proximos')}
-              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='proximos' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
-            >
-              <CalendarIcon size={13} />
-              {p.upcoming}
-              {activeTab === 'proximos' && paginationMeta.total > 0 && (
-                <span className="ml-1 bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                  {paginationMeta.total}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => handleTabChange('pasados')}
-              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='pasados' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
-            >
-              <ClockIcon size={13} />
-              {p.past}
-              {activeTab === 'pasados' && paginationMeta.total > 0 && (
-                <span className="ml-1 bg-muted text-muted-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                  {paginationMeta.total}
-                </span>
-              )}
-            </button>
-            <button
-              data-onboarding="pac-tab-lista-espera"
-              onClick={() => handleTabChange('listaEspera')}
-              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='listaEspera' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
-            >
-              <WaitlistIcon size={13} />
-              {p.waitlist}
-              {listaEspera.length > 0 && (
-                <span className="ml-1 bg-warning/15 text-warning text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                  {listaEspera.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => handleTabChange('historial')}
-              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='historial' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
-            >
-<ClipboardIcon size={13} />
-              {d.medicalHistory}
-            </button>
-            <button
-              onClick={() => handleTabChange('recetas')}
-              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='recetas' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
-              {d.recipes}
-            </button>
-            <button
-              onClick={() => handleTabChange('certificados')}
-              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='certificados' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="19" x2="12" y2="13"/><line x1="9" y1="16" x2="15" y2="16"/></svg>
-              {d.certificates_}
-              {misCertificados.length > 0 && (
-                <span className="ml-1 bg-primary/10 text-primary text-[10px] font-bold px-1.5 py-0.5 rounded-full">
-                  {misCertificados.length}
-                </span>
-              )}
-            </button>
-            <button
-              onClick={() => handleTabChange('datosMedicos')}
-              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='datosMedicos' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
-              {d.myMedicalData}
-            </button>
-            <button
-              onClick={() => handleTabChange('estadisticas')}
-              className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab ==='estadisticas' ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
-            >
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-              {d.statistics}
-            </button>
+          <div className="flex gap-1 overflow-x-auto scrollbar-none border-b px-2 pt-1.5">
+            {([
+              { key: 'resumen', label: p.summary, icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="2" x2="12" y2="22"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg> },
+              { key: 'proximos', label: p.upcoming, icon: <CalendarIcon size={13} />, count: proximosTotal, onboarding: 'pac-tab-proximos' },
+              { key: 'pasados', label: p.past, icon: <ClockIcon size={13} /> },
+              { key: 'listaEspera', label: p.waitlist, icon: <WaitlistIcon size={13} />, count: listaEspera.length, badgeClass: 'bg-warning/15 text-warning', onboarding: 'pac-tab-lista-espera' },
+              { key: 'historial', label: d.medicalHistory, icon: <ClipboardIcon size={13} /> },
+              { key: 'recetas', label: d.recipes, icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>, count: misRecetas.length },
+              { key: 'certificados', label: d.certificates_, icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="19" x2="12" y2="13"/><line x1="9" y1="16" x2="15" y2="16"/></svg>, count: misCertificados.length },
+              { key: 'datosMedicos', label: d.myMedicalData, icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg> },
+              { key: 'estadisticas', label: d.statistics, icon: <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg> },
+            ] as { key: PacienteDashboardTab; label: string; icon: React.ReactNode; count?: number; badgeClass?: string; onboarding?: string }[]).map((tb) => (
+              <button
+                key={tb.key}
+                data-onboarding={tb.onboarding}
+                onClick={() => handleTabChange(tb.key)}
+                className={`inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-t-lg border-b-2 px-3.5 py-2.5 text-sm font-medium transition-colors ${activeTab === tb.key ? 'border-primary text-primary' : 'border-transparent text-muted-foreground hover:bg-muted/60 hover:text-foreground'}`}
+              >
+                {tb.icon}
+                {tb.label}
+                {tb.count != null && tb.count > 0 && (
+                  <span className={`ml-1 rounded-full px-1.5 py-0.5 text-[10px] font-bold ${tb.badgeClass ?? (activeTab === tb.key ? 'bg-primary/10 text-primary' : 'bg-muted text-muted-foreground')}`}>
+                    {tb.count}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
 
-          <div className="p-5">
+          <div key={activeTab} className="p-5 animate-in fade-in duration-300 motion-reduce:animate-none">
             {activeTab === 'resumen' ? (
               <ResumenPacienteView
                 turnosProximos={turnos.filter(t => t.estado === 'RESERVADO' || t.estado === 'CONFIRMADO')}
