@@ -2,10 +2,13 @@
 
 import { Search, CalendarCheck, Video, ClipboardList } from "lucide-react"
 import { useLang } from "@/app/lib/i18n/context"
+import { useInView } from "@/hooks/use-in-view"
+import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 
 export function HowItWorks() {
   const l = useLang().t("home").landing
+  const { ref, inView } = useInView<HTMLDivElement>()
   const steps = [
     { icon: Search, ...l.steps.search },
     { icon: CalendarCheck, ...l.steps.book },
@@ -25,11 +28,17 @@ export function HowItWorks() {
           </h2>
           <p className="mt-3 text-muted-foreground">{l.howItWorksSubtitle}</p>
         </div>
-        <div className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div ref={ref} className="mt-12 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {steps.map((step, i) => (
             <Card
               key={step.title}
-              className="relative rounded-2xl border-border/80 shadow-sm"
+              className={cn(
+                "relative rounded-2xl border-border/80 shadow-sm",
+                inView
+                  ? "animate-in fade-in slide-in-from-bottom-6 duration-700 fill-mode-backwards motion-reduce:animate-none"
+                  : "opacity-0"
+              )}
+              style={{ animationDelay: `${i * 120}ms` }}
             >
               <CardContent className="flex flex-col gap-3 p-6">
                 <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
