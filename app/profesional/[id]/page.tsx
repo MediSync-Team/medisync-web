@@ -805,9 +805,11 @@ export default function ProfesionalPage() {
                   </div>
 
                   {slotsLoading ? (
-                    <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600">
-                      <Spinner size={18} className="text-blue-600 dark:text-blue-400" />
-                      <span className="text-sm text-slate-600 dark:text-slate-300">{p.loadingSlots}</span>
+                    <div className="flex gap-2 flex-wrap" aria-busy="true">
+                      <span className="sr-only">{p.loadingSlots}</span>
+                      {Array.from({ length: 8 }).map((_, i) => (
+                        <div key={i} className="skeleton h-9 w-[4.5rem] rounded-xl" />
+                      ))}
                     </div>
                   ) : slotsError ? (
                     <div className="alert alert-error">
