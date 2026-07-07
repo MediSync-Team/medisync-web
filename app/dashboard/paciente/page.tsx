@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { useAuth } from '../../lib/auth-context';
+import { useAuth, hasStoredAuthToken } from '../../lib/auth-context';
 import { api, Turno, ListaEsperaItem, HistorialTurno, PacienteStats, RecetaPaciente, CertificadoPaciente } from '../../lib/api';
 import { cachedFetch, cacheKeys, peekCache, TTL } from '../../lib/api/cache';
 import ProfileModal from '../../components/ProfileModal';
@@ -170,6 +170,9 @@ export default function PacienteDashboard() {
   const loadPagosInfo = async (turnosData: Turno[]) => {
     const pagos: Record<string, any> = {};
     for (const turno of turnosData) {
+      // Bail if the session ended mid-loop (e.g. the user logged out); otherwise the
+      // next auth-gated call fires without a token and logs a "Token requerido" error.
+      if (!hasStoredAuthToken()) return;
       if (turno.estado === 'RESERVADO' && Number(turno.profesional?.precioConsulta) > 0) {
         try {
           pagos[turno.id] = await api.pagos.getEstado(turno.id);
@@ -404,7 +407,7 @@ export default function PacienteDashboard() {
         <div className="page-container">
           <div className="flex items-center justify-between h-14">
             <div className="flex items-center gap-3">
-              <Logo href="/dashboard/paciente" />
+              <Logo href="/" />
               <span className="hidden text-xs text-muted-foreground sm:block">{d.title}</span>
             </div>
             <div className="flex items-center gap-1">
@@ -750,7 +753,7 @@ export default function PacienteDashboard() {
       )}
 
       <OnboardingTour
-        storageKey="medisync-paciente-tour-v1"
+        storageKey={`medisync-paciente-tour-v1-${user.id}`}
         steps={pacienteTourSteps}
         delay={1000}
       />

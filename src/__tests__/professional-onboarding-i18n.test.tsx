@@ -59,8 +59,8 @@ describe('professional onboarding wizard i18n', () => {
     expect(screen.getByText('Set up your professional profile')).toBeInTheDocument();
     expect(screen.getAllByText('Step 1 of 4')).toHaveLength(2);
     expect(screen.getByText('Your profile')).toBeInTheDocument();
-    expect(screen.getByText('Profile photo URL')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('https://example.com/your-photo.jpg')).toBeInTheDocument();
+    expect(screen.getByText('Profile photo')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Upload photo' })).toBeInTheDocument();
     expect(screen.getByText('Professional biography')).toBeInTheDocument();
     expect(screen.getByText('Complete later')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Next →' })).toBeInTheDocument();
@@ -143,7 +143,7 @@ describe('professional onboarding wizard i18n', () => {
     expect(onComplete).toHaveBeenCalledTimes(1);
   });
 
-  it('shows translated photo URL validation', async () => {
+  it('shows translated license (matrícula) format validation', async () => {
     render(
       <ProfesionalOnboardingWizard
         profesionalId="prof-1"
@@ -153,9 +153,9 @@ describe('professional onboarding wizard i18n', () => {
       />
     );
 
-    fireEvent.change(screen.getByPlaceholderText('https://example.com/your-photo.jpg'), { target: { value: 'bad-url' } });
+    fireEvent.change(screen.getByPlaceholderText('MN 123456'), { target: { value: 'not-a-license' } });
     fireEvent.click(screen.getByRole('button', { name: 'Next →' }));
 
-    expect(await screen.findByText('The photo URL must start with http or https')).toBeInTheDocument();
+    expect(await screen.findByText('The license number format is invalid (e.g. MN 123456 or MP 12345)')).toBeInTheDocument();
   });
 });

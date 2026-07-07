@@ -8,6 +8,7 @@ import { useAuth } from '../lib/auth-context';
 import { api, API_BASE, Especialidad, Genero } from '../lib/api';
 import { getDashboardPath } from '../lib/auth-redirects';
 import { useLang } from '../lib/i18n/context';
+import { translateSpecialtyName } from '../lib/i18n/translations';
 import { GoogleIcon } from '../components/icons';
 import PasswordInput from '../components/PasswordInput';
 import PasswordStrengthIndicator, { getRequirements } from '../components/PasswordStrengthIndicator';
@@ -30,7 +31,7 @@ import {
 export default function RegisterPage() {
   const router = useRouter();
   const { register } = useAuth();
-  const { t } = useLang();
+  const { t, lang } = useLang();
   const a = t('auth');
   const v = a.validation;
   const [especialidades, setEspecialidades] = useState<Especialidad[]>([]);
@@ -53,20 +54,32 @@ export default function RegisterPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    // Trim first so whitespace-only entries are treated as empty (bug: empty/whitespace fields).
+    const email = formData.email.trim();
+    const nombre = formData.nombre.trim();
+    const apellido = formData.apellido.trim();
+    const telefono = formData.telefono.trim();
+
+    // Field-specific, localized checks so the user knows exactly what failed
+    // instead of a generic API "invalid data" message.
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) { setError(v.invalidEmail); return; }
+    if (nombre.length < 2 || apellido.length < 2) { setError(v.nameMinLength); return; }
+    if (telefono && !/^[\d\s\-\+\(\)]{8,20}$/.test(telefono)) { setError(v.invalidPhone); return; }
+    if (formData.rol === 'PROFESIONAL' && !formData.especialidadId) { setError(v.specialtyRequired); return; }
     if (formData.password !== formData.confirmPassword) { setError(v.passwordsNoMatch); return; }
     const reqs = getRequirements(formData.password);
     if (!reqs.minLength || !reqs.hasUppercase || !reqs.hasLowercase || !reqs.hasNumber || !reqs.hasSpecial) {
       setError(v.passwordRequirements);
       return;
     }
-    if (formData.nombre.length < 2 || formData.apellido.length < 2) { setError(v.nameMinLength); return; }
-    if (formData.telefono && !/^[\d\s\-\+\(\)]{8,20}$/.test(formData.telefono)) { setError(v.invalidPhone); return; }
+
     setLoading(true);
     try {
       await register({
-        email: formData.email, password: formData.password, rol: formData.rol,
-        nombre: formData.nombre, apellido: formData.apellido,
-        telefono: formData.telefono || undefined, genero: formData.genero,
+        email, password: formData.password, rol: formData.rol,
+        nombre, apellido,
+        telefono: telefono || undefined, genero: formData.genero,
         especialidadId: formData.rol === 'PROFESIONAL' ? formData.especialidadId : undefined,
       });
       router.push(getDashboardPath({ rol: formData.rol }));
@@ -75,6 +88,15 @@ export default function RegisterPage() {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Base UI's <SelectValue> renders the raw stored value (e.g. "FEMENINO" or a
+  // specialty UUID) unless given a formatter. Map each value to its translated label.
+  const genderLabels: Record<Genero, string> = {
+    NO_ESPECIFICADO: a.genderNS,
+    MASCULINO: a.genderM,
+    FEMENINO: a.genderF,
+    OTRO: a.genderO,
   };
 
   const roles = [
@@ -100,7 +122,7 @@ export default function RegisterPage() {
           <CardContent className="p-8">
             <h2 className="mb-6 font-heading text-lg font-semibold">{a.createAccount}</h2>
 
-            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+            <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-4">
               {error && (
                 <Alert variant="destructive" aria-live="polite">
                   <AlertDescription>{error}</AlertDescription>
@@ -118,7 +140,7 @@ export default function RegisterPage() {
                         key={value}
                         type="button"
                         onClick={() => setFormData((f) => ({ ...f, rol: value }))}
-                        className={`flex cursor-pointer flex-col items-center gap-1 rounded-xl border-2 p-3 text-center transition-all ${
+                        className={`flex min-h-28 cursor-pointer flex-col items-center justify-center gap-1 rounded-xl border-2 p-3 text-center transition-all ${
                           active
                             ? 'border-primary bg-accent'
                             : 'border-border hover:border-primary/40 hover:bg-muted'
@@ -161,7 +183,7 @@ export default function RegisterPage() {
                 <Label>{a.gender}</Label>
                 <Select value={formData.genero} onValueChange={(val) => val && setField('genero', val)}>
                   <SelectTrigger className="w-full">
-                    <SelectValue />
+                    <SelectValue>{(val: Genero) => genderLabels[val] ?? a.genderNS}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="NO_ESPECIFICADO">{a.genderNS}</SelectItem>
@@ -177,11 +199,16 @@ export default function RegisterPage() {
                   <Label>{a.specialty}</Label>
                   <Select value={formData.especialidadId} onValueChange={(val) => val && setField('especialidadId', val)}>
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="—" />
+                      <SelectValue placeholder="—">
+                        {(val: string) => {
+                          const nombre = especialidades.find((esp) => esp.id === val)?.nombre;
+                          return nombre ? translateSpecialtyName(nombre, lang) : '—';
+                        }}
+                      </SelectValue>
                     </SelectTrigger>
                     <SelectContent>
                       {especialidades.map((e) => (
-                        <SelectItem key={e.id} value={e.id}>{e.nombre}</SelectItem>
+                        <SelectItem key={e.id} value={e.id}>{translateSpecialtyName(e.nombre, lang)}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>

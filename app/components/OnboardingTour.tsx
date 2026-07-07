@@ -19,9 +19,15 @@ interface Props {
   steps: TourStep[];
   /** Delay (ms) before the tour appears after mount */
   delay?: number;
+  /**
+   * Gate the tour. When false the tour never activates and hides if already
+   * showing — used to hold it back while a higher-priority modal (e.g. the
+   * professional onboarding wizard) is open so they don't overlap.
+   */
+  enabled?: boolean;
 }
 
-export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props) {
+export default function OnboardingTour({ storageKey, steps, delay = 900, enabled = true }: Props) {
   const { t } = useLang();
   const tour = t('onboardingTour');
   const [mounted, setMounted] = useState(false);
@@ -33,13 +39,13 @@ export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !enabled) return;
     const seen = localStorage.getItem(storageKey);
     if (!seen) {
       const t = setTimeout(() => setActive(true), delay);
       return () => clearTimeout(t);
     }
-  }, [mounted, storageKey, delay]);
+  }, [mounted, storageKey, delay, enabled]);
 
   const updateRect = useCallback(() => {
     if (!active || stepIndex >= steps.length) return;
@@ -93,7 +99,7 @@ export default function OnboardingTour({ storageKey, steps, delay = 900 }: Props
     if (stepIndex > 0) setStepIndex((i) => i - 1);
   }, [stepIndex]);
 
-  if (!mounted || !active) return null;
+  if (!mounted || !active || !enabled) return null;
 
   const step = steps[stepIndex];
   if (!step) return null;

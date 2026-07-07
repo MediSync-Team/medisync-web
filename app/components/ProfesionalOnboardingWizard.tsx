@@ -1,11 +1,13 @@
 ﻿'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { api, Disponibilidad } from '../lib/api';
 import { useLang } from '../lib/i18n/context';
 import { getLocale } from '../lib/date';
+import { isValidMatricula, MATRICULA_MAX_LENGTH } from '../lib/format';
 import { useScrollLock } from '../hooks/useScrollLock';
 import { CalendarIcon, CheckIcon, ClipboardIcon, CreditCardIcon, InfoIcon, UserIcon } from './icons';
+import ImageUpload from './ImageUpload';
 
 interface Props {
   profesionalId: string;
@@ -35,8 +37,6 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
   const [bio, setBio] = useState('');
   const [matricula, setMatricula] = useState('');
   const [telefono, setTelefono] = useState('');
-  const [fotoError, setFotoError] = useState('');
-  const [fotoOk, setFotoOk] = useState(false);
 
   // -- Step 1: Disponibilidad ----------------------------------
   const [disponibilidades, setDisponibilidades] = useState<Disponibilidad[]>([]);
@@ -51,7 +51,17 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
   // -- Step 2: Precio ------------------------------------------
   const [precio, setPrecio] = useState('');
   const [lugarAtencion, setLugarAtencion] = useState('');
-  const [modalidadPerfil, setModalidadPerfil] = useState<'PRESENCIAL' | 'VIRTUAL' | 'AMBOS'>('PRESENCIAL');
+
+  // The profile modality is derived from the schedules the professional already
+  // added in step 1 — never chosen by hand — so a profile can't advertise a
+  // modality with no bookable hours behind it.
+  const modalidadPerfil = useMemo<'PRESENCIAL' | 'VIRTUAL' | 'AMBOS'>(() => {
+    const hasPresencial = disponibilidades.some(d => d.modalidad === 'PRESENCIAL' || d.modalidad === 'AMBOS');
+    const hasVirtual = disponibilidades.some(d => d.modalidad === 'VIRTUAL' || d.modalidad === 'AMBOS');
+    if (hasPresencial && hasVirtual) return 'AMBOS';
+    if (hasVirtual) return 'VIRTUAL';
+    return 'PRESENCIAL';
+  }, [disponibilidades]);
 
   // Prefill from the existing profile so data already entered (e.g. teléfono) is not re-asked blank.
   useEffect(() => {
@@ -126,6 +136,11 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
       if (step === 0) {
         if (fotoUrl.trim() && !fotoUrl.startsWith('http')) {
           setError(labels.errors.photoUrl);
+          setSaving(false);
+          return;
+        }
+        if (matricula.trim() && !isValidMatricula(matricula)) {
+          setError(labels.errors.matriculaInvalid);
           setSaving(false);
           return;
         }
@@ -239,26 +254,9 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
               {/* Foto */}
               <div>
                 <label className="field-label">{labels.profile.photoUrl}</label>
-                <input
-                  type="url"
-                  className={inp}
-                  placeholder={labels.profile.photoPlaceholder}
-                  value={fotoUrl}
-                  onChange={e => { setFotoUrl(e.target.value); setFotoOk(false); setFotoError(''); }}
-                />
-                {fotoUrl.trim().startsWith('http') && (
-                  <div className="mt-2 flex items-center gap-3">
-                    <img
-                      src={fotoUrl}
-                      alt={labels.profile.photoPreviewAlt}
-                      className="w-14 h-14 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600 shrink-0"
-                      onLoad={() => setFotoOk(true)}
-                      onError={() => { setFotoError(labels.errors.imageLoad); setFotoOk(false); }}
-                    />
-                    {fotoError && <p className="text-xs text-red-600">{fotoError}</p>}
-                    {fotoOk && !fotoError && <p className="text-xs text-emerald-600">{labels.profile.photoOk}</p>}
-                  </div>
-                )}
+                <div className="mt-1">
+                  <ImageUpload value={fotoUrl} onChange={setFotoUrl} initials={nombre?.[0]?.toUpperCase()} />
+                </div>
               </div>
 
               {/* Bio */}
@@ -284,6 +282,7 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                     className={inp}
                     placeholder={labels.profile.licensePlaceholder}
                     value={matricula}
+                    maxLength={MATRICULA_MAX_LENGTH}
                     onChange={e => setMatricula(e.target.value)}
                   />
                   <p className="text-xs text-slate-400 mt-1">{labels.profile.licenseHelp}</p>
@@ -426,20 +425,14 @@ export default function ProfesionalOnboardingWizard({ profesionalId, userId, nom
                 </p>
               </div>
 
-              {/* Modalidad */}
+              {/* Modalidad — derivada automáticamente de los horarios cargados */}
               <div>
                 <label className="field-label">{labels.price.modality}</label>
-                <div className="flex gap-2 mt-2">
-                  {(['PRESENCIAL', 'VIRTUAL', 'AMBOS'] as const).map(m => (
-                    <button key={m} type="button" onClick={() => setModalidadPerfil(m)}
-                      className={`flex-1 py-2.5 rounded-lg border text-xs font-semibold transition-colors
-                        ${modalidadPerfil === m
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                          : 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-blue-300'}`}>
-                      {modalityLabel(m)}
-                    </button>
-                  ))}
+                <div className="mt-2 flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-600 bg-slate-50 dark:bg-slate-700/40 px-3 py-2.5">
+                  <CheckIcon size={15} className="text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">{profileModalityLabel()}</span>
                 </div>
+                <p className="text-xs text-slate-400 mt-1">{labels.price.modalityAuto}</p>
               </div>
 
               {/* Lugar */}

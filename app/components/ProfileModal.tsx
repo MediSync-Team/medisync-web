@@ -8,6 +8,7 @@ import { useLang } from '../lib/i18n/context';
 import { useScrollLock } from '../hooks/useScrollLock';
 import GoogleCalendarConnect from './GoogleCalendarConnect';
 import MercadoPagoConnect from './MercadoPagoConnect';
+import ImageUpload from './ImageUpload';
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -138,6 +139,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
     setError('');
     setSuccess('');
 
+    if (formData.nombre.trim().length < 2 || formData.apellido.trim().length < 2) {
+      setError(p.nameError);
+      setActiveSection('cuenta');
+      setLoading(false);
+      return;
+    }
+
     if (formData.telefono && !validateTelefono(formData.telefono)) {
       setError(p.phoneError);
       setActiveSection('cuenta');
@@ -166,8 +174,8 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
     try {
       if (userType === 'profesional' && user.profesional) {
         await api.profesional.updatePerfil(user.profesional.id, {
-          nombre: formData.nombre,
-          apellido: formData.apellido,
+          nombre: formData.nombre.trim(),
+          apellido: formData.apellido.trim(),
           telefono: formData.telefono || '',
           genero: formData.genero,
           precioConsulta: formData.precioConsulta ? Number(formData.precioConsulta) : undefined,
@@ -178,8 +186,8 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
         } as any);
       } else if (userType === 'paciente' && user.paciente) {
         await api.pacientes.updatePerfil({
-          nombre: formData.nombre,
-          apellido: formData.apellido,
+          nombre: formData.nombre.trim(),
+          apellido: formData.apellido.trim(),
           telefono: formData.telefono || undefined,
           genero: formData.genero,
           fechaNacimiento: formData.fechaNacimiento || undefined,
@@ -306,14 +314,13 @@ export default function ProfileModal({ isOpen, onClose, userType, user, onUpdate
 
                     <div>
                       <label className="field-label">{p.photoUrl}</label>
-                      <input
-                        type="url"
-                        name="fotoUrl"
-                        value={formData.fotoUrl}
-                        onChange={handleChange}
-                        className="field-input"
-                        placeholder={p.photoUrlPlaceholder}
-                      />
+                      <div className="mt-1">
+                        <ImageUpload
+                          value={formData.fotoUrl}
+                          onChange={(url) => setFormData((f) => ({ ...f, fotoUrl: url }))}
+                          initials={`${formData.nombre?.[0] ?? ''}${formData.apellido?.[0] ?? ''}`.toUpperCase()}
+                        />
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

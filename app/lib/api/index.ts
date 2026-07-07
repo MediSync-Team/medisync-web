@@ -268,11 +268,24 @@ const archivosApi = {
   eliminar: (id: string) => fetchApi<{ deleted: boolean }>(`/archivos/${id}`, { method: 'DELETE' }),
 };
 
+const mediaApi = {
+  /** Upload a profile/avatar image and get back the URL to store in `fotoUrl`. */
+  subirImagen: (archivo: File) => {
+    const formData = new FormData();
+    formData.append('archivo', archivo);
+    return fetchApi<{ url: string }>('/media/imagen', {
+      method: 'POST',
+      body: formData,
+    });
+  },
+};
+
 export const api = {
   auth: authApi,
   especialidades: especialidadesApi,
   profesionales: profesionalesApi,
   turnos: turnosApi,
+  media: mediaApi,
   pacientes: {
     updatePerfil: (data: Partial<Paciente>) =>
       fetchApi<Paciente>('/pacientes/perfil', {
