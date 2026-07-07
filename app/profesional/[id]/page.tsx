@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { api, Profesional, Slot, TipoConsulta, ListaEsperaItem, ResenasResponse } from '../../lib/api';
 import { useAuth } from '../../lib/auth-context';
 import { useLang } from '../../lib/i18n/context';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Sunrise, SunMedium, Moon, ShieldCheck } from 'lucide-react';
 import ThemeLangToggle from '../../components/ThemeLangToggle';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
@@ -67,10 +67,23 @@ export default function ProfesionalPage() {
   const [guestForm, setGuestForm] = useState({ nombre: '', apellido: '', email: '', telefono: '' });
   const [guestFormError, setGuestFormError] = useState('');
   const [guestTurnoReservado, setGuestTurnoReservado] = useState<{ id: string; fechaHora: string; duracionMin: number; needsPago: boolean } | null>(null);
+  const [showAllCoverages, setShowAllCoverages] = useState(false);
+  const summaryRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => { loadProfesional(); loadResenas(1); loadTiposConsulta(); }, [params.id]);
   useEffect(() => { loadListaEsperaActiva(); }, [params.id, user?.paciente?.id]);
   useEffect(() => { if (selectedDate) loadSlots(selectedDate); }, [selectedDate, modalidad, selectedTipoId]);
+  // Bring the confirmation step into view once a time is picked, so the CTA is never off-screen.
+  useEffect(() => {
+    if (selectedSlot) summaryRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }, [selectedSlot]);
+  // If the professional only attends virtually, don't leave the default PRESENCIAL preselected.
+  useEffect(() => {
+    const dispo = (profesional?.disponibilidades ?? []).filter(d => d.activo !== false);
+    if (dispo.length === 0) return;
+    const offers = (m: 'PRESENCIAL' | 'VIRTUAL') => dispo.some(d => d.modalidad === m || d.modalidad === 'AMBOS');
+    if (!offers('PRESENCIAL') && offers('VIRTUAL')) setModalidad('VIRTUAL');
+  }, [profesional]);
 
   const loadProfesional = async () => {
     try {
@@ -182,6 +195,29 @@ export default function ProfesionalPage() {
 
   const getProximosDias = () => {
     return buildUpcomingClinicDays(14);
+  };
+
+  // Weekly schedule helpers: disable days/modalities the professional never attends,
+  // so users don't dead-end on "no availability" for structurally closed days.
+  const dispoActivas = (profesional?.disponibilidades ?? []).filter(d => d.activo !== false);
+  const weekdaysForModalidad = (m: 'PRESENCIAL' | 'VIRTUAL') => {
+    const set = new Set<number>();
+    for (const d of dispoActivas) {
+      if (d.modalidad === m || d.modalidad === 'AMBOS') set.add(d.diaSemana);
+    }
+    return set;
+  };
+  const modalityOffered = (m: 'PRESENCIAL' | 'VIRTUAL') =>
+    dispoActivas.length === 0 || dispoActivas.some(d => d.modalidad === m || d.modalidad === 'AMBOS');
+
+  const handleModalidadChange = (value: 'PRESENCIAL' | 'VIRTUAL') => {
+    setModalidad(value);
+    setSelectedSlot(null);
+    setSlotsError(null);
+    // Deselect the day if the new modality is never attended on that weekday.
+    if (selectedDate && dispoActivas.length > 0 && !weekdaysForModalidad(value).has(selectedDate.getUTCDay())) {
+      setSelectedDate(null);
+    }
   };
 
   const buildFechaHora = () => {
@@ -311,6 +347,10 @@ export default function ProfesionalPage() {
   const availableSlots = slots.filter(s => s.disponible);
   const hasSlots = selectedDate && availableSlots.length > 0;
   const bookingStep = !selectedDate ? 1 : !selectedSlot ? 2 : 3;
+  const selectedTipo = tiposConsulta.find(tc => tc.id === selectedTipoId) ?? null;
+  const displayPrice = selectedTipo?.precio != null && Number(selectedTipo.precio) > 0
+    ? Number(selectedTipo.precio)
+    : Number(profesional.precioConsulta);
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-900">
@@ -377,7 +417,7 @@ export default function ProfesionalPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
           {/* -- Left: Professional profile -------------- */}
-          <div className="lg:col-span-3 lg:order-1 space-y-4">
+          <div className="lg:col-span-3 lg:order-1 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-backwards motion-reduce:animate-none">
             <div className="card p-5">
               {/* Avatar + name */}
               <div className="flex flex-col items-center text-center">
@@ -398,6 +438,12 @@ export default function ProfesionalPage() {
                 </h1>
                 {profesional.especialidad?.nombre && (
                   <span className="badge badge-blue mt-1.5">{specialtyName(profesional.especialidad.nombre)}</span>
+                )}
+                {profesional.matricula && (
+                  <span className="mt-2 inline-flex items-center gap-1 rounded-full border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/30 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400">
+                    <ShieldCheck className="size-3.5" />
+                    {p.licenseLabel.replace('{{matricula}}', profesional.matricula)}
+                  </span>
                 )}
 
                 {/* Rating */}
@@ -496,11 +542,21 @@ export default function ProfesionalPage() {
                 <div className="mt-4 pt-4 border-t border-slate-100">
                   <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">{p.acceptedCoverages}</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {profesional.obrasSociales.map((os) => (
+                    {(showAllCoverages ? profesional.obrasSociales : profesional.obrasSociales.slice(0, 6)).map((os) => (
                       <span key={os} className="inline-flex items-center px-2 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-xs font-medium">
                         {os}
                       </span>
                     ))}
+                    {profesional.obrasSociales.length > 6 && (
+                      <button
+                        onClick={() => setShowAllCoverages(v => !v)}
+                        className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-semibold text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900 bg-blue-50 dark:bg-blue-900/20 hover:bg-blue-100 dark:hover:bg-blue-900/40 transition-colors"
+                      >
+                        {showAllCoverages
+                          ? p.showLess
+                          : p.showMoreCount.replace('{{count}}', String(profesional.obrasSociales.length - 6))}
+                      </button>
+                    )}
                   </div>
                 </div>
               )}
@@ -515,7 +571,7 @@ export default function ProfesionalPage() {
           </div>
 
           {/* -- Right: Schedules + ratings -------------- */}
-          <div className="lg:col-span-4 lg:order-3 space-y-4">
+          <div className="lg:col-span-4 lg:order-3 space-y-4 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-150 fill-mode-backwards motion-reduce:animate-none">
             {/* Weekly availability visual grid */}
             {profesional.disponibilidades && profesional.disponibilidades.length > 0 && (
               <HorariosGrid disponibilidades={profesional.disponibilidades} />
@@ -604,31 +660,50 @@ export default function ProfesionalPage() {
           </div>
 
           {/* -- Middle: Booking ------------------------- */}
-          <div className="lg:col-span-5 lg:order-2">
+          <div className="lg:col-span-5 lg:order-2 animate-in fade-in slide-in-from-bottom-2 duration-500 delay-75 fill-mode-backwards motion-reduce:animate-none">
             <div className="card p-5">
               <h2 className="text-lg font-bold text-slate-800 dark:text-slate-200 mb-4">{p.bookAppointment}</h2>
 
               <div className="mb-5 bg-slate-50 dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl p-3">
-                <div className="flex items-center gap-2 text-xs sm:text-sm">
+                <ol className="flex items-center text-xs sm:text-sm">
                   {[
                     { n: 1, label: p.chooseDay },
                     { n: 2, label: p.selectHour },
                     { n: 3, label: p.confirmBooking },
-                  ].map((step) => (
-                    <div key={step.n} className="flex items-center gap-2">
-                      <span className={`w-6 h-6 rounded-full inline-flex items-center justify-center font-bold ${bookingStep >= step.n ? 'bg-blue-600 text-white' : 'bg-slate-200 text-slate-600'}`}>
-                        {step.n}
-                      </span>
-                      <span className={`${bookingStep >= step.n ? 'text-slate-800 dark:text-slate-200' : 'text-slate-500'} font-medium`}>{step.label}</span>
-                    </div>
+                  ].map((step, idx) => (
+                    <li key={step.n} className="flex items-center flex-1 last:flex-none">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`w-6 h-6 shrink-0 rounded-full inline-flex items-center justify-center font-bold transition-colors ${
+                            bookingStep > step.n
+                              ? 'bg-emerald-500 text-white'
+                              : bookingStep === step.n
+                              ? 'bg-blue-600 text-white ring-4 ring-blue-600/15'
+                              : 'bg-slate-200 dark:bg-slate-600 text-slate-600 dark:text-slate-300'
+                          }`}
+                        >
+                          {bookingStep > step.n ? <CheckIcon size={12} /> : step.n}
+                        </span>
+                        <span className={`font-medium ${bookingStep >= step.n ? 'text-slate-800 dark:text-slate-200' : 'text-slate-500'}`}>
+                          {step.label}
+                        </span>
+                      </div>
+                      {idx < 2 && (
+                        <div
+                          className={`mx-2 h-0.5 flex-1 rounded transition-colors ${
+                            bookingStep > step.n ? 'bg-emerald-400' : 'bg-slate-200 dark:bg-slate-600'
+                          }`}
+                        />
+                      )}
+                    </li>
                   ))}
-                </div>
+                </ol>
               </div>
 
               {/* Tipo de consulta (duración variable) */}
               {tiposConsulta.length > 0 && (
                 <div className="mb-5">
-                  <p className="field-label mb-2">Tipo de consulta</p>
+                  <p className="field-label mb-2">{p.consultTypeLabel}</p>
                   <div className="flex gap-2 flex-wrap">
                     {tiposConsulta.map((tipo) => (
                       <label key={tipo.id} className={`flex flex-col items-start gap-0.5 px-4 py-2.5 rounded-xl border-2 cursor-pointer font-medium text-sm transition-all ${
@@ -655,17 +730,25 @@ export default function ProfesionalPage() {
                   {[
                     { value: 'PRESENCIAL' as const, icon: <BuildingIcon size={14} />, label: modalityLabels.PRESENCIAL },
                     { value: 'VIRTUAL' as const, icon: <VideoIcon size={14} />, label: modalityLabels.VIRTUAL },
-                  ].map(({ value, icon, label }) => (
-                    <label key={value} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 cursor-pointer flex-1 justify-center font-medium text-sm transition-all ${
-                      modalidad === value
-                        ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300'
-                        : 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500'
-                    }`}>
-                      <input type="radio" name="modalidad" value={value} checked={modalidad === value} onChange={() => { setModalidad(value); setSelectedSlot(null); setSlotsError(null); }} className="sr-only" />
-                      {icon}
-                      {label}
-                    </label>
-                  ))}
+                  ].map(({ value, icon, label }) => {
+                    const offered = modalityOffered(value);
+                    return (
+                      <label key={value} className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 flex-1 justify-center font-medium text-sm transition-all ${
+                        !offered
+                          ? 'border-slate-100 dark:border-slate-700 text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                          : modalidad === value
+                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 cursor-pointer'
+                          : 'border-slate-200 dark:border-slate-600 text-slate-600 dark:text-slate-300 hover:border-slate-300 dark:hover:border-slate-500 cursor-pointer'
+                      }`}>
+                        <input type="radio" name="modalidad" value={value} checked={modalidad === value} disabled={!offered} onChange={() => handleModalidadChange(value)} className="sr-only" />
+                        {icon}
+                        <span>
+                          {label}
+                          {!offered && <span className="block text-[10px] font-normal leading-tight">{p.modalityNotOffered}</span>}
+                        </span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
 
@@ -673,38 +756,53 @@ export default function ProfesionalPage() {
               <div className="mb-5">
                 <p className="field-label mb-2">{p.chooseDay}</p>
                 <div className="flex gap-1.5 flex-wrap">
-                  {getProximosDias().map((fecha) => {
-                    const fechaKey = clinicDateKeyFromDateOnly(fecha);
-                    const isSelected = selectedDate ? clinicDateKeyFromDateOnly(selectedDate) === fechaKey : false;
-                    const isToday = fechaKey === todayInputValue();
-                    return (
-                      <button
-                        key={fechaKey}
-                        onClick={() => { setSelectedDate(fecha); setSelectedSlot(null); setSlotsError(null); }}
-                        className={`flex flex-col items-center justify-center rounded-xl p-2 min-w-[50px] border-2 transition-all ${
-                          isSelected
-                            ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                            : isToday
-                            ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
-                            : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
-                        }`}
-                      >
-                        <span className="text-[9px] font-semibold uppercase tracking-wide">
-                          {formatBookingDate(fecha, { weekday: 'short' })}
-                        </span>
-                        <span className="text-base font-bold leading-none mt-0.5">{formatBookingDate(fecha, { day: 'numeric' })}</span>
-                      </button>
-                    );
-                  })}
+                  {(() => {
+                    const attendedWeekdays = weekdaysForModalidad(modalidad);
+                    return getProximosDias().map((fecha) => {
+                      const fechaKey = clinicDateKeyFromDateOnly(fecha);
+                      const isSelected = selectedDate ? clinicDateKeyFromDateOnly(selectedDate) === fechaKey : false;
+                      const isToday = fechaKey === todayInputValue();
+                      const atiende = dispoActivas.length === 0 || attendedWeekdays.has(fecha.getUTCDay());
+                      return (
+                        <button
+                          key={fechaKey}
+                          disabled={!atiende}
+                          title={atiende ? undefined : p.noScheduleThatDay}
+                          onClick={() => { setSelectedDate(fecha); setSelectedSlot(null); setSlotsError(null); }}
+                          className={`flex flex-col items-center justify-center rounded-xl p-2 min-w-[50px] border-2 transition-all ${
+                            !atiende
+                              ? 'bg-slate-50 dark:bg-slate-800 text-slate-300 dark:text-slate-600 border-slate-100 dark:border-slate-700 cursor-not-allowed'
+                              : isSelected
+                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                              : isToday
+                              ? 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
+                              : 'bg-white dark:bg-slate-700 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500'
+                          }`}
+                        >
+                          <span className="text-[9px] font-semibold uppercase tracking-wide">
+                            {formatBookingDate(fecha, { weekday: 'short' })}
+                          </span>
+                          <span className="text-base font-bold leading-none mt-0.5">{formatBookingDate(fecha, { day: 'numeric' })}</span>
+                        </button>
+                      );
+                    });
+                  })()}
                 </div>
               </div>
 
               {/* Slot selection */}
               {selectedDate && (
                 <div className="mb-5">
-                  <p className="field-label mb-2">
-                    {p.slotsFor.replace('{{date}}', formatBookingDate(selectedDate, { weekday: 'long', day: 'numeric', month: 'long' }))}
-                  </p>
+                  <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+                    <p className="field-label mb-0">
+                      {p.slotsFor.replace('{{date}}', formatBookingDate(selectedDate, { weekday: 'long', day: 'numeric', month: 'long' }))}
+                    </p>
+                    {!slotsLoading && !slotsError && availableSlots.length > 0 && (
+                      <span className="badge badge-green">
+                        {(availableSlots.length === 1 ? p.slotsAvailableSingular : p.slotsAvailablePlural).replace('{{count}}', String(availableSlots.length))}
+                      </span>
+                    )}
+                  </div>
 
                   {slotsLoading ? (
                     <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600">
@@ -754,24 +852,44 @@ export default function ProfesionalPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="flex gap-2 flex-wrap">
-                      {slots.map((slot) => (
-                        <button
-                          key={slot.hora}
-                          onClick={() => slot.disponible && setSelectedSlot(slot.hora)}
-                          disabled={!slot.disponible}
-                          className={`px-3.5 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
-                            !slot.disponible
-                              ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border-slate-100 dark:border-slate-700 cursor-not-allowed line-through'
-                              : selectedSlot === slot.hora
-                              ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
-                              : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400'
-                          }`}
-                        >
-                          {slot.hora}
-                        </button>
-                      ))}
-                    </div>
+                    (() => {
+                      const hourOf = (s: Slot) => parseInt(s.hora.slice(0, 2), 10);
+                      const groups = [
+                        { key: 'morning', label: p.morningLabel, icon: <Sunrise className="size-3.5" />, items: slots.filter(s => hourOf(s) < 12) },
+                        { key: 'afternoon', label: p.afternoonLabel, icon: <SunMedium className="size-3.5" />, items: slots.filter(s => hourOf(s) >= 12 && hourOf(s) < 18) },
+                        { key: 'evening', label: p.eveningLabel, icon: <Moon className="size-3.5" />, items: slots.filter(s => hourOf(s) >= 18) },
+                      ].filter(g => g.items.length > 0);
+                      return (
+                        <div className="space-y-3 animate-in fade-in duration-300 motion-reduce:animate-none">
+                          {groups.map((g) => (
+                            <div key={g.key}>
+                              <p className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide mb-1.5">
+                                {g.icon}
+                                {g.label}
+                              </p>
+                              <div className="flex gap-2 flex-wrap">
+                                {g.items.map((slot) => (
+                                  <button
+                                    key={slot.hora}
+                                    onClick={() => slot.disponible && setSelectedSlot(slot.hora)}
+                                    disabled={!slot.disponible}
+                                    className={`px-3.5 py-2 rounded-xl text-sm font-medium border-2 transition-all ${
+                                      !slot.disponible
+                                        ? 'bg-slate-100 dark:bg-slate-700 text-slate-400 dark:text-slate-500 border-slate-100 dark:border-slate-700 cursor-not-allowed line-through'
+                                        : selectedSlot === slot.hora
+                                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                        : 'bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800 hover:border-emerald-400'
+                                    }`}
+                                  >
+                                    {slot.hora}
+                                  </button>
+                                ))}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      );
+                    })()
                   )}
                 </div>
               )}
@@ -786,7 +904,11 @@ export default function ProfesionalPage() {
 
               {/* Booking summary + CTA */}
               {selectedSlot && selectedDate && (
-                <div className="border-2 border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mt-2" aria-live="polite">
+                <div
+                  ref={summaryRef}
+                  className="border-2 border-blue-200 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20 rounded-xl p-4 mt-2 animate-in fade-in slide-in-from-bottom-2 duration-300 motion-reduce:animate-none"
+                  aria-live="polite"
+                >
                   <p className="text-sm text-blue-800 dark:text-blue-300 mb-3 font-medium">
                     {p.bookingWith} <strong>{profesional.nombre} {profesional.apellido}</strong>
                   </p>
@@ -807,6 +929,12 @@ export default function ProfesionalPage() {
                           {modalidad === 'VIRTUAL' ? <VideoIcon size={13} /> : <BuildingIcon size={13} />}
                           {modalityText(modalidad)}
                         </span>
+                        {selectedTipo && (
+                          <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
+                            <UserIcon size={13} />
+                            {selectedTipo.nombre} · {selectedTipo.duracionMin} min
+                          </span>
+                        )}
                         {lugarSlot && modalidad === 'PRESENCIAL' && (
                           <span className="flex items-center gap-1.5 bg-white dark:bg-slate-700 rounded-lg px-2.5 py-1 border border-blue-200 dark:border-blue-700">
                             <MapPinIcon size={13} />
@@ -817,9 +945,15 @@ export default function ProfesionalPage() {
                     );
                   })()}
 
+                  {displayPrice > 0 && (
+                    <div className="flex items-center justify-between border-t border-blue-200 dark:border-blue-700 pt-3 mb-3">
+                      <span className="text-sm font-medium text-blue-800 dark:text-blue-300">{p.totalLabel}</span>
+                      <span className="text-lg font-bold text-blue-900 dark:text-blue-200">${formatPrice(displayPrice)}</span>
+                    </div>
+                  )}
                   {profesional.precioConsulta > 0 && (
-                    <p className="text-sm text-blue-700 dark:text-blue-300 mb-3">
-                      {p.paymentNoticeStart}<strong>${formatPrice(profesional.precioConsulta)}</strong>{p.paymentNoticeEnd}
+                    <p className="text-xs text-blue-600 dark:text-blue-400 mb-3">
+                      {p.paymentNoticeStart}<strong>${formatPrice(displayPrice)}</strong>{p.paymentNoticeEnd}
                     </p>
                   )}
 
@@ -896,7 +1030,7 @@ export default function ProfesionalPage() {
                       {reservando ? (
                         <><svg className="animate-spin" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>{p.reserving}</>
                       ) : (
-                        <><CheckIcon size={16} />{p.confirmBooking}</>
+                        <><CheckIcon size={16} />{user && Number(profesional.precioConsulta) > 0 ? p.confirmAndPay : p.confirmBooking}</>
                       )}
                     </button>
                   )}
